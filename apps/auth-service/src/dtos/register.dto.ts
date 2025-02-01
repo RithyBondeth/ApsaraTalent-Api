@@ -10,6 +10,10 @@ export class RegisterDTO {
     @IsNotEmpty()
     lastname: string;
 
+    @IsString()
+    @IsNotEmpty()
+    username: string;
+
     @IsEmail()
     @IsNotEmpty()
     email: string;
@@ -21,4 +25,8 @@ export class RegisterDTO {
     @IsEnum(EUserRole)
     @IsNotEmpty()
     role: EUserRole;
+
+    @IsString({ each: true })
+    @IsNotEmpty()
+    careers: string[];
 }  
