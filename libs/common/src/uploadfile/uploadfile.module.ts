@@ -9,6 +9,7 @@ import { ConfigModule } from '@nestjs/config';
       envFilePath: './libs/.env',
     }),
   ],
-  providers: [UploadfileService]
+  providers: [UploadfileService],
+  exports: [UploadfileService]
 })
 export class UploadfileModule {}

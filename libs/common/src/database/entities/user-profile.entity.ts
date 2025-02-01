@@ -1,7 +1,6 @@
 import { EGender } from "@app/common/enums/gender.enum";
-import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { User } from "./user.entity";
-import { Career } from "./career.entity";
 
 @Entity()
 export class UserProfile {
@@ -13,7 +12,7 @@ export class UserProfile {
     user: User;
 
     @Column({ nullable: true })
-    avatar: string;
+    profile: string;
 
     @Column({ nullable: true })
     bio: string;
@@ -31,8 +30,8 @@ export class UserProfile {
     @Column({ nullable: true })
     address: string;
 
-    @OneToMany(() => Career, (career) => career.profile)
-    careers: Career[];
+    @Column('text', { array: true })
+    careerScopes: string[];
 
     @Column('text', { array: true, nullable: true })
     skills: string[];
