@@ -1,8 +1,10 @@
 import { EUserRole } from "@app/common/enums/user-role.enum";
-import { Column, CreateDateColumn, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BeforeInsert, Column, CreateDateColumn, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import * as bcrypt from 'bcrypt';
 import { UserProfile } from "./user-profile.entity";
 import { JobPosting } from "./job-posting.entity";
 import { Match } from "./match.entity";
+import { SALT_ROUNDS } from "@app/common/constants/password.constant";
 
 @Entity()
 export class User {
@@ -16,10 +18,37 @@ export class User {
     lastname: string;
 
     @Column({ unique: true })
+    username: string;
+
+    @Column({ unique: true })
     email: string;
 
     @Column()
     password: string;
+
+    @BeforeInsert()
+    async hashPassword() {
+        if(this.password) 
+            this.password = await bcrypt.hash(this.password, SALT_ROUNDS);
+    }
+
+    @Column({ nullable: true })
+    resetPasswordToken: string;
+
+    @Column({ nullable: true })
+    resetPasswordExpires: Date;
+
+    @Column({ nullable: true })
+    facebookId: string;
+
+    @Column({ nullable: true })
+    googleId: string;
+
+    @Column({ nullable: true })
+    linkinId: string;
+
+    @Column({ nullable: true })
+    githubId: string;
 
     @Column({
         type: 'enum',
