@@ -1,4 +1,4 @@
-import { AUTH_SERVICE } from '@app/common/constants/auth-service.constant';
+import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
 import { UploadFileInterceptor } from '@app/common/uploadfile/uploadfile.interceptor';
 import { Body, Controller, Inject, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
