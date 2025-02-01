@@ -1,6 +1,8 @@
 import { EUserRole } from "@app/common/enums/user-role.enum";
-import { Column, CreateDateColumn, Entity, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { UserProfile } from "./user-profile.entity";
+import { JobPosting } from "./job-posting.entity";
+import { Match } from "./match.entity";
 
 @Entity()
 export class User {
@@ -22,19 +24,21 @@ export class User {
     @Column({
         type: 'enum',
         enum: EUserRole,
-        default: EUserRole.FREELANCE,
+        default: EUserRole.FREELANCER,
     })
-    role: EUserRole;
+    role: EUserRole;    
 
-    // For Freelancer
-    @Column({ nullable: true })
-    cvFile: string;
-
-    @Column({ nullable: true })
-    coverLetterFile: string;
-
-    @OneToOne(() => UserProfile, (profile) => profile.user)
+    @OneToOne(() => UserProfile, (profile) => profile.user, { cascade: true })
     profile: UserProfile;
+
+    @OneToMany(() => JobPosting, (posting) => posting.employer, { cascade: true })
+    jobPostings: JobPosting[];
+
+    @OneToMany(() => Match, (match) => match.freelancer)
+    freelancerMatches: Match[];
+
+    @OneToMany(() => Match, (match) => match.employer)
+    employerMatches: Match[];
 
     @CreateDateColumn()
     createdAt: Date;

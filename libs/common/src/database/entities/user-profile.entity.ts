@@ -51,6 +51,13 @@ export class UserProfile {
     @Column({ nullable: true })
     githubUrl: string;
 
+    // For Freelancer
+    @Column({ nullable: true })
+    cvFile: string;
+ 
+    @Column({ nullable: true })
+    coverLetterFile: string;
+
     // For Employers
     @Column({ nullable: true })
     companyName: string
