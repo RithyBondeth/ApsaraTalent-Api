@@ -1,5 +1,5 @@
-import { EGender } from "@app/common/enums/gender.enum";
-import { EUserRole } from "@app/common/enums/user-role.enum";
+import { EGender } from "@app/common/database/enums/gender.enum";
+import { EUserRole } from "@app/common/database/enums/user-role.enum";
 import { Exclude, Type } from "class-transformer";
 
 class UserProfileDTO {

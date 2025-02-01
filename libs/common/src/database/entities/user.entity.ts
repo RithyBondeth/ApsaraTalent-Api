@@ -1,10 +1,10 @@
-import { EUserRole } from "@app/common/enums/user-role.enum";
+import { EUserRole } from "@app/common/database/enums/user-role.enum";
 import { BeforeInsert, Column, CreateDateColumn, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import * as bcrypt from 'bcrypt';
 import { UserProfile } from "./user-profile.entity";
 import { JobPosting } from "./job-posting.entity";
 import { Match } from "./match.entity";
-import { SALT_ROUNDS } from "@app/common/constants/password.constant";
+import { SALT_ROUNDS } from "utils/constants/password.constant";
 
 @Entity()
 export class User {

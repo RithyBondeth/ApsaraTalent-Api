@@ -1,4 +1,4 @@
-import { EJobPostingStatus } from "@app/common/enums/job-posting.enum";
+import { EJobPostingStatus } from "@app/common/database/enums/job-posting.enum";
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { User } from "./user.entity";
 import { Match } from "./match.entity";

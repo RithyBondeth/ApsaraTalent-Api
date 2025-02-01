@@ -1,7 +1,7 @@
 import { Controller } from "@nestjs/common";
 import { LoginService } from "../services/login.service";
 import { MessagePattern, Payload } from "@nestjs/microservices";
-import { AUTH_SERVICE } from "@app/common/constants/auth-service.constant";
+import { AUTH_SERVICE } from "utils/constants/auth-service.constant";
 import { LoginDTO } from "../dtos/login.dto";
 import { LoginResponseDTO } from "../dtos/login-response.dto";
 
