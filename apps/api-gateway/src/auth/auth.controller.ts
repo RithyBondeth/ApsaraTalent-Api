@@ -1,13 +1,19 @@
 import { AUTH_SERVICE } from '@app/common/constants/auth-service.constant';
-import { Body, Controller, Get, Inject, Post } from '@nestjs/common';
-import { ClientGrpcProxy } from '@nestjs/microservices';
+import { UploadFileInterceptor } from '@app/common/uploadfile/uploadfile.interceptor';
+import { Body, Controller, Inject, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 
 @Controller('auth')
 export class AuthController {
-    constructor(@Inject(AUTH_SERVICE.NAME) private readonly authClient: ClientGrpcProxy) {}
+    constructor(@Inject(AUTH_SERVICE.NAME) private readonly authClient: ClientProxy) {}
 
-    @Get('register')
-    async login(@Body() registerDTO: any) {
-        return this.authClient.send({ cmd: AUTH_SERVICE.ACTIONS.REGISTER }, registerDTO);
+    @Post('register')
+    @UseInterceptors(new UploadFileInterceptor('profile','user-profiles'))
+    async register(@Body() registerDTO: any, @UploadedFile() profile: Express.Multer.File): Promise<any> {
+        const payload = {...registerDTO, profile};
+        return await firstValueFrom(
+            this.authClient.send(AUTH_SERVICE.ACTIONS.REGISTER, payload)
+        );
     }
 }

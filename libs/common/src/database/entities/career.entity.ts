@@ -1,5 +1,4 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
-import { UserProfile } from "./user-profile.entity";
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity()
 export class Career {
@@ -13,10 +12,7 @@ export class Career {
     description: string;
 
     @Column({ nullable: true })
-    icon: string;
-
-    @ManyToOne(() => UserProfile, (profile) => profile.careers)
-    profile: UserProfile[];      
+    icon: string; 
 
     @CreateDateColumn()
     createdAt: Date;
