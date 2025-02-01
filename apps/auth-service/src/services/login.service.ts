@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { LoginDTO } from "../dtos/login.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { User } from "@app/common/database/entities/user.entity";
@@ -8,12 +8,14 @@ import { JwtService } from "@app/common/jwt/jwt.service";
 import { IPayload } from "@app/common/jwt/interfaces/payload.interface";
 import { LoginResponseDTO } from "../dtos/login-response.dto";
 import { RegisterReponseDTO } from "../dtos/register-response.dto";
+import { PinoLogger } from "nestjs-pino";
 
 @Injectable()
 export class LoginService {
     constructor(
         @InjectRepository(User) private readonly userRepository: Repository<User>,
         private readonly jwtService: JwtService,
+        private readonly logger: PinoLogger,
     ) {}
 
     async login(loginDTO: LoginDTO): Promise<LoginResponseDTO> {
@@ -36,12 +38,12 @@ export class LoginService {
 
             //Return token and user details
             return new LoginResponseDTO({
-                message: 'Logged in successfully',
+                message: 'Successfully Logged in',
                 token: token,
                 user: new RegisterReponseDTO(user),
             });
         } catch (error) {
-            console.error(error.message);
+            this.logger.error(error.message);
             throw new UnauthorizedException('An error occurred while login.');
         }
     }
