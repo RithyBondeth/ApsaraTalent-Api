@@ -13,6 +13,8 @@ import { UploadfileModule } from '@app/common/uploadfile/uploadfile.module';
 import { LoginController } from './controllers/login.controller';
 import { LoginService } from './services/login.service';
 import { EmailModule } from '@app/common/email/email.module';
+import { ForgotPasswordController } from './controllers/forgot-password.controller';
+import { ForgotPasswordService } from './services/forgot-password.service';
 
 @Module({
   imports: [
@@ -27,10 +29,11 @@ import { EmailModule } from '@app/common/email/email.module';
     EmailModule,
     TypeOrmModule.forFeature([ User, UserProfile ])
   ],
-  controllers: [RegisterController, LoginController],
+  controllers: [RegisterController, LoginController, ForgotPasswordController],
   providers: [
     RegisterService,
     LoginService,
+    ForgotPasswordService,
     {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor,

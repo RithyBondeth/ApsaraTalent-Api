@@ -24,4 +24,12 @@ export class AuthController {
             this.authClient.send(AUTH_SERVICE.ACTIONS.LOGIN, payload)
         )
     }
+
+    @Post('forgot-password')
+    async forgotPassword(@Body() forgotPasswordDTO: any): Promise<any> {
+        const payload = { ...forgotPasswordDTO };
+        return await firstValueFrom(
+            this.authClient.send(AUTH_SERVICE.ACTIONS.FORGOT_PASSWORD, payload)
+        );
+    }
 }
