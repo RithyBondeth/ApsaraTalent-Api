@@ -15,6 +15,7 @@ import { JwtService } from './jwt.service';
             useFactory: jwtConfig,
         })
     ],
-    providers: [JwtService]
+    providers: [JwtService],
+    exports: [JwtService]
 })
 export class JwtModule {}
