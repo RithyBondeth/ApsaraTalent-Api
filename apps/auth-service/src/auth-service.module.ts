@@ -11,6 +11,8 @@ import { JwtModule } from '@app/common/jwt/jwt.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { UploadfileModule } from '@app/common/uploadfile/uploadfile.module';
 import { UploadfileService } from '@app/common/uploadfile/uploadfile.service';
+import { LoginController } from './controllers/login.controller';
+import { LoginService } from './services/login.service';
 
 @Module({
   imports: [
@@ -24,9 +26,10 @@ import { UploadfileService } from '@app/common/uploadfile/uploadfile.service';
     UploadfileModule,
     TypeOrmModule.forFeature([ User, UserProfile ])
   ],
-  controllers: [RegisterController],
+  controllers: [RegisterController, LoginController],
   providers: [
     RegisterService,
+    LoginService,
     {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor,
