@@ -1,4 +1,4 @@
-import { EGender } from "@app/common/enums/gender.enum";
+import { EGender } from "@app/common/database/enums/gender.enum";
 import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { User } from "./user.entity";
 

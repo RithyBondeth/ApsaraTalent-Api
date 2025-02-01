@@ -1,4 +1,4 @@
-import { USER_SERVICE } from '@app/common/constants/user-service.constant';
+import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { Controller, Get, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 

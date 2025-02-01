@@ -2,7 +2,7 @@ import { Controller } from "@nestjs/common";
 import { MessagePattern, Payload, RpcException } from "@nestjs/microservices";
 import { RegisterService } from "../services/register.service";
 import { RegisterDTO } from "../dtos/register.dto";
-import { AUTH_SERVICE } from "@app/common/constants/auth-service.constant";
+import { AUTH_SERVICE } from "utils/constants/auth-service.constant";
 import { RegisterReponseDTO } from "../dtos/register-response.dto";
 
 @Controller()
