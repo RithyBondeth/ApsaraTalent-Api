@@ -1,13 +1,13 @@
-import { AUTH_SERVICE } from 'utils/constants/services.constant';
-import { Controller, Get, Inject } from '@nestjs/common';
+import { AUTH_SERVICE } from '@app/common/constants/auth-service.constant';
+import { Body, Controller, Get, Inject, Post } from '@nestjs/common';
 import { ClientGrpcProxy } from '@nestjs/microservices';
 
 @Controller('auth')
 export class AuthController {
-    constructor(@Inject(AUTH_SERVICE) private readonly authClient: ClientGrpcProxy) {}
+    constructor(@Inject(AUTH_SERVICE.NAME) private readonly authClient: ClientGrpcProxy) {}
 
-    @Get('login')
-    async login() {
-        return this.authClient.send({ cmd: 'login' }, {});
+    @Get('register')
+    async login(@Body() registerDTO: any) {
+        return this.authClient.send({ cmd: AUTH_SERVICE.ACTIONS.REGISTER }, registerDTO);
     }
 }
