@@ -8,17 +8,25 @@ import * as fs from 'fs';
 export class UploadfileService {
     constructor(private readonly configService: ConfigService) {}
 
-    static storageOptions = (folderName: string): StorageEngine => diskStorage({
-        destination: `../../../../storage/${folderName}`,
-        filename: (req, file, callback) => {
-            const name = file.originalname.split('.')[0];
-            const fileExtName = path.extname(file.originalname);
-            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-         
-            callback(null, `${name}-${uniqueSuffix}${fileExtName}`);
+    static storageOptions = (folderName: string): StorageEngine => {
+        // Use relative path from project root
+        const storagePath = path.join(process.cwd(), 'storage', folderName);
+        
+        // Create directory if it doesn't exist
+        if(!fs.existsSync(storagePath)) {
+            fs.mkdirSync(storagePath, { recursive: true });
         }
-    });
-
+ 
+        return diskStorage({
+            destination: storagePath,  // Use absolute path
+            filename: (req, file, callback) => {
+                const name = file.originalname.split('.')[0];
+                const fileExtName = path.extname(file.originalname);
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                callback(null, `${name}-${uniqueSuffix}${fileExtName}`);
+            }
+        });
+    }
     getUploadFile(folderName: string, file: Express.Multer.File): string {
         return this.configService.get<string>('BASE_URL') + `storage/${folderName}/` + file.filename;
     }
