@@ -8,6 +8,7 @@ import { UploadfileService } from "@app/common/uploadfile/uploadfile.service";
 import { ConfigService } from "@nestjs/config";
 import { UserProfile } from "@app/common/database/entities/user-profile.entity";
 import { RegisterReponseDTO } from "../dtos/register-response.dto";
+import { PinoLogger } from "nestjs-pino";
 
 @Injectable()
 export class RegisterService {
@@ -16,6 +17,7 @@ export class RegisterService {
         @InjectRepository(UserProfile) private readonly userProfileRepository: Repository<UserProfile>,
         private readonly uploadFileService: UploadfileService,
         private readonly configService: ConfigService,
+        private readonly logger: PinoLogger
     ) {}
 
     async register(registerDTO: RegisterDTO): Promise<RegisterReponseDTO> {
@@ -55,7 +57,7 @@ export class RegisterService {
             return new RegisterReponseDTO(user);
         } catch (error) {
             //Handle error
-            console.error(error.message);  
+            this.logger.error(error.message);  
             throw new InternalServerErrorException("An error occurred while registering the user.");
         }
     }
