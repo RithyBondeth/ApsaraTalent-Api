@@ -16,4 +16,12 @@ export class AuthController {
             this.authClient.send(AUTH_SERVICE.ACTIONS.REGISTER, payload)
         );
     }
+
+    @Post('login')
+    async login(@Body() loginDTO: any): Promise<any> {
+        const payload = { ...loginDTO };
+        return await firstValueFrom(
+            this.authClient.send(AUTH_SERVICE.ACTIONS.LOGIN, payload)
+        )
+    }
 }
