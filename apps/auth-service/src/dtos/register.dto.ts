@@ -1,5 +1,6 @@
 import { EUserRole } from "@app/common/enums/user-role.enum";
-import { IsEmail, IsEnum, IsNotEmpty, IsString, IsStrongPassword } from "class-validator";
+import { Type } from "class-transformer";
+import { IsArray, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, IsStrongPassword, ValidateNested } from "class-validator";
 
 export class RegisterDTO {
     @IsString()
@@ -26,7 +27,10 @@ export class RegisterDTO {
     @IsNotEmpty()
     role: EUserRole;
 
-    @IsString({ each: true })
+    @IsString()
     @IsNotEmpty()
-    careers: string[];
+    careerScopes: string;
+
+    @IsOptional()
+    profile?: Express.Multer.File;
 }  

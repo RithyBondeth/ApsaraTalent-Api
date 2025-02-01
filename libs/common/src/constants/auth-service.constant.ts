@@ -1,7 +1,7 @@
 export const AUTH_SERVICE = {
     NAME: 'AUTH_SERVICE', 
     ACTIONS: {
-        LOGIN: 'Login',
-        REGISTER: 'register',
+        LOGIN: { cmd: 'login' },
+        REGISTER: { cmd: 'register' },
     }
 }
