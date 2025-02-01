@@ -3,12 +3,11 @@ import { RegisterDTO } from "../dtos/register.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { User } from "@app/common/database/entities/user.entity";
 import { Repository } from "typeorm";
-import { JwtService } from "@app/common/jwt/jwt.service";
 import * as path from "path";
 import { UploadfileService } from "@app/common/uploadfile/uploadfile.service";
 import { ConfigService } from "@nestjs/config";
 import { UserProfile } from "@app/common/database/entities/user-profile.entity";
-import { Career } from "@app/common/database/entities/career.entity";
+import { RegisterReponseDTO } from "../dtos/register-response.dto";
 
 @Injectable()
 export class RegisterService {
@@ -16,11 +15,10 @@ export class RegisterService {
         @InjectRepository(User) private readonly userRepository: Repository<User>,
         @InjectRepository(UserProfile) private readonly userProfileRepository: Repository<UserProfile>,
         private readonly uploadFileService: UploadfileService,
-        private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
     ) {}
 
-    async register(registerDTO: RegisterDTO) {
+    async register(registerDTO: RegisterDTO): Promise<RegisterReponseDTO> {
         try {
             //Find if the user has already registered (username)
             let user = await this.userRepository.findOne({ 
@@ -31,7 +29,7 @@ export class RegisterService {
                 //Cleanup the profile image if the user has already registered
                 if(registerDTO.profile) {
                     const profilePath = path.join(process.cwd(), 'storage/auth-service/profiles', registerDTO.profile.filename); 
-                    UploadfileService.deleteFile(profilePath, 'Avatar Image');     
+                    UploadfileService.deleteFile(profilePath, 'Profile Image');     
                 }
                 throw new NotFoundException(`User with username ${registerDTO.username} is already registered`);
             }  
@@ -48,13 +46,13 @@ export class RegisterService {
                 ...registerDTO,
                 profile: this.userProfileRepository.create({ 
                     profile: profileImage,
-                    careerScopes: registerDTO.careerScopes.split(' '),
+                    careerScopes: registerDTO.careerScopes.split(','),
                 })
             });
             await this.userRepository.save(user);
 
             //Return user profile
-            return user;
+            return new RegisterReponseDTO(user);
         } catch (error) {
             //Handle error
             console.error(error.message);  
