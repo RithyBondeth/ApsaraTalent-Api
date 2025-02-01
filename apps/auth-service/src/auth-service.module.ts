@@ -10,9 +10,9 @@ import { UserProfile } from '@app/common/database/entities/user-profile.entity';
 import { JwtModule } from '@app/common/jwt/jwt.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { UploadfileModule } from '@app/common/uploadfile/uploadfile.module';
-import { UploadfileService } from '@app/common/uploadfile/uploadfile.service';
 import { LoginController } from './controllers/login.controller';
 import { LoginService } from './services/login.service';
+import { EmailModule } from '@app/common/email/email.module';
 
 @Module({
   imports: [
@@ -24,6 +24,7 @@ import { LoginService } from './services/login.service';
     JwtModule,
     DatabaseModule,
     UploadfileModule,
+    EmailModule,
     TypeOrmModule.forFeature([ User, UserProfile ])
   ],
   controllers: [RegisterController, LoginController],
