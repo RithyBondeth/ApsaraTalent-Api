@@ -23,6 +23,13 @@ export class User {
     @Column({ unique: true })
     email: string;
 
+    @Column({
+        type: 'enum',
+        enum: EUserRole,
+        default: EUserRole.FREELANCER,
+    })
+    role: EUserRole;  
+
     @Column()
     password: string;
 
@@ -32,6 +39,7 @@ export class User {
             this.password = await bcrypt.hash(this.password, SALT_ROUNDS);
     }
 
+    // Auth related fields
     @Column({ nullable: true })
     resetPasswordToken: string;
 
@@ -39,23 +47,33 @@ export class User {
     resetPasswordExpires: Date;
 
     @Column({ nullable: true })
+    refreshToken: string;
+
+    @Column({ default: false })
+    isEmailVerified: boolean;
+
+    @Column({ nullable: true })
+    emailVerificationToken: string;
+
+    // 2FA fields
+    @Column({ default: false })
+    isTwoFactorEnabled: boolean;
+
+    @Column({ nullable: true })
+    twoFactorSecret: string;
+
+    // Social login fields
+    @Column({ nullable: true })
     facebookId: string;
 
     @Column({ nullable: true })
     googleId: string;
 
     @Column({ nullable: true })
-    linkinId: string;
+    linkedinId: string;
 
     @Column({ nullable: true })
-    githubId: string;
-
-    @Column({
-        type: 'enum',
-        enum: EUserRole,
-        default: EUserRole.FREELANCER,
-    })
-    role: EUserRole;    
+    githubId: string;  
 
     @OneToOne(() => UserProfile, (profile) => profile.user, { cascade: true })
     profile: UserProfile;

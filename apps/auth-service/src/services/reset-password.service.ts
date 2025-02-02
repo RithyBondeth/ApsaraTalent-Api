@@ -16,7 +16,7 @@ export class ResetPasswordService {
 
     async resetPassword(resetPasswordDTO: ResetPasswordDTO): Promise<ResetPasswordResponseDTO> {
         try {
-             //Check if new password and confirm password are valid
+            //Check if new password and confirm password are valid
             const isMatchedPassword = resetPasswordDTO.newPassword === resetPasswordDTO.confirmPassword;
             if(!isMatchedPassword) throw new UnauthorizedException('Password do not match');
             

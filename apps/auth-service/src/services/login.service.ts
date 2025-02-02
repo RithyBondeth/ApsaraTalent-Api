@@ -22,24 +22,31 @@ export class LoginService {
         try {
             //Find the user by their email address
             const user = await this.userRepository.findOne({ where: { email: loginDTO.email } });
-            if(!user) throw new UnauthorizedException('Invalid Credentials (Email not found)');  
+            if(!user) throw new UnauthorizedException('Invalid Credentials (Email not found)'); 
+
+            //Check email verification
+            if(!user.isEmailVerified) throw new UnauthorizedException('Please verify your email first');
 
             //Compare password
             const validPassword: boolean = await bcrypt.compare(loginDTO.password, user.password); 
             if(!validPassword) throw new UnauthorizedException('Invalid Credentials (Wrong password)');
-            
-            //Generate token 
+
+            //Generate tokens
             const payload: IPayload = {
                 id: user.id,    
                 username: user.username,
                 role: user.role,
             };
-            const token = await this.jwtService.generateToken(payload);
+            const [accessToken, refreshToken] = await Promise.all([
+                this.jwtService.generateToken(payload),
+                this.jwtService.generateRefreshToken(user.id), 
+            ]);
 
             //Return token and user details
             return new LoginResponseDTO({
                 message: 'Successfully Logged in',
-                token: token,
+                accessToken: accessToken,
+                refreshToken: refreshToken,
                 user: new RegisterReponseDTO(user),
             });
         } catch (error) {
