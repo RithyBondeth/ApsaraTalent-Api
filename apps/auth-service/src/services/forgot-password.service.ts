@@ -10,11 +10,10 @@ import { ForgotPasswordResponseDTO } from "../dtos/forgot-password-response.dto"
 
 @Injectable()
 export class ForgotPasswordService {
-    private readonly logger: PinoLogger
-
     constructor(
         @InjectRepository(User) private readonly userRepository: Repository<User>,
         private readonly emailService: EmailService,
+        private readonly logger: PinoLogger
     ) {}
 
     async forgotPassword(forgotPasswordDTO: ForgotPasswordDTO): Promise<ForgotPasswordResponseDTO> {
@@ -38,6 +37,7 @@ export class ForgotPasswordService {
                 text: `Hello, ${user.username}. Here is your reset password token: ${resetToken}.`,
             });
 
+            //Return message
             return new ForgotPasswordResponseDTO(`Reset password token was sent successfully to ${user.email}`);
         } catch (error) {
             this.logger.error('Failure while forgot password: ', error.message);

@@ -1,6 +1,6 @@
 import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
 import { UploadFileInterceptor } from '@app/common/uploadfile/uploadfile.interceptor';
-import { Body, Controller, Inject, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Inject, Param, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 
@@ -30,6 +30,14 @@ export class AuthController {
         const payload = { ...forgotPasswordDTO };
         return await firstValueFrom(
             this.authClient.send(AUTH_SERVICE.ACTIONS.FORGOT_PASSWORD, payload)
+        );
+    }
+
+    @Post('reset-password/:token')
+    async resetPassword(@Body() resetPasswordDTO: any, @Param('token') token: string): Promise<any> {
+        const payload = { ...resetPasswordDTO, token };
+        return await firstValueFrom(
+            this.authClient.send(AUTH_SERVICE.ACTIONS.RESET_PASSWORD, payload)
         );
     }
 }

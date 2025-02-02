@@ -4,5 +4,6 @@ export const AUTH_SERVICE = {
         LOGIN: { cmd: 'login' },
         REGISTER: { cmd: 'register' },
         FORGOT_PASSWORD: { cmd: 'forgot-password' },
+        RESET_PASSWORD: { cmd: 'reset-password' },
     }
 }

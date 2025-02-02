@@ -15,6 +15,8 @@ import { LoginService } from './services/login.service';
 import { EmailModule } from '@app/common/email/email.module';
 import { ForgotPasswordController } from './controllers/forgot-password.controller';
 import { ForgotPasswordService } from './services/forgot-password.service';
+import { ResetPasswordService } from './services/reset-password.service';
+import { ResetPasswordController } from './controllers/reset-password.controller';
 
 @Module({
   imports: [
@@ -29,11 +31,17 @@ import { ForgotPasswordService } from './services/forgot-password.service';
     EmailModule,
     TypeOrmModule.forFeature([ User, UserProfile ])
   ],
-  controllers: [RegisterController, LoginController, ForgotPasswordController],
+  controllers: [
+    RegisterController, 
+    LoginController, 
+    ForgotPasswordController, 
+    ResetPasswordController,
+  ],
   providers: [
     RegisterService,
     LoginService,
     ForgotPasswordService,
+    ResetPasswordService,
     {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor,
