@@ -9,6 +9,8 @@ import { ConfigService } from "@nestjs/config";
 import { UserProfile } from "@app/common/database/entities/user-profile.entity";
 import { RegisterReponseDTO } from "../dtos/register-response.dto";
 import { PinoLogger } from "nestjs-pino";
+import { JwtService } from "@app/common/jwt/jwt.service";
+import { EmailService } from "@app/common/email/email.service";
 
 @Injectable()
 export class RegisterService {
@@ -17,6 +19,8 @@ export class RegisterService {
         @InjectRepository(UserProfile) private readonly userProfileRepository: Repository<UserProfile>,
         private readonly uploadFileService: UploadfileService,
         private readonly configService: ConfigService,
+        private readonly jwtService: JwtService,
+        private readonly emailService: EmailService,
         private readonly logger: PinoLogger
     ) {}
 
@@ -24,7 +28,10 @@ export class RegisterService {
         try {
             //Find if the user has already registered (username)
             let user = await this.userRepository.findOne({ 
-                where: { username: registerDTO.username },
+                where: { 
+                    username: registerDTO.username,
+                    email: registerDTO.email
+                },
                 relations: ['profile']
             });
             if(user) {
@@ -43,15 +50,28 @@ export class RegisterService {
             else 
                 profileImage = this.configService.get<string>("BASE_URL") + this.configService.get<string>('DEFAULT_PROFILE');
 
+            //Generate email verification token
+            const emailVerificationToken = await this.jwtService.generateEmailVerificationToken(registerDTO.email);
+
             //Register user in database            
             user = this.userRepository.create({
                 ...registerDTO,
+                isEmailVerified: false,
+                emailVerificationToken: emailVerificationToken,
                 profile: this.userProfileRepository.create({ 
                     profile: profileImage,
                     careerScopes: registerDTO.careerScopes.split(','),
                 })
             });
             await this.userRepository.save(user);
+
+            // Send verification email
+            await this.emailService.sendEmail({
+                to: user.email,
+                subject: 'Apsara Talent - Verify Your Email Address',
+                text: `Hello, ${user.username}. Please verify your email address by clicking on the following link: 
+                       ${this.configService.get<string>("BASE_URL")}/verify-email/${emailVerificationToken}`,
+            });
 
             //Return user profile
             return new RegisterReponseDTO(user);

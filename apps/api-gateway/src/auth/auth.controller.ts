@@ -40,4 +40,12 @@ export class AuthController {
             this.authClient.send(AUTH_SERVICE.ACTIONS.RESET_PASSWORD, payload)
         );
     }
+
+    @Post('refresh')
+    async refreshToken(@Body() refreshTokenDTO: any): Promise<any> {
+        const payload = { ...refreshTokenDTO };
+        return await firstValueFrom(
+            this.authClient.send(AUTH_SERVICE.ACTIONS.REFRESH_TOKEN, payload)
+        );
+    }
 }
