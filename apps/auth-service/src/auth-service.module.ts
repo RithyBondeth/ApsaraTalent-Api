@@ -17,6 +17,10 @@ import { ForgotPasswordController } from './controllers/forgot-password.controll
 import { ForgotPasswordService } from './services/forgot-password.service';
 import { ResetPasswordService } from './services/reset-password.service';
 import { ResetPasswordController } from './controllers/reset-password.controller';
+import { RefreshTokenController } from './controllers/refresh-token.controller';
+import { RefreshTokenService } from './services/refresh-token.service';
+import { VerifyEmailController } from './controllers/verify-email.controller';
+import { VerifyEmailService } from './services/verify-email.service';
 
 @Module({
   imports: [
@@ -36,12 +40,16 @@ import { ResetPasswordController } from './controllers/reset-password.controller
     LoginController, 
     ForgotPasswordController, 
     ResetPasswordController,
+    RefreshTokenController,
+    VerifyEmailController
   ],
   providers: [
     RegisterService,
     LoginService,
     ForgotPasswordService,
     ResetPasswordService,
+    RefreshTokenService,
+    VerifyEmailService,
     {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor,

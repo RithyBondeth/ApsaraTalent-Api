@@ -6,5 +6,6 @@ export const AUTH_SERVICE = {
         FORGOT_PASSWORD: { cmd: 'forgot-password' },
         RESET_PASSWORD: { cmd: 'reset-password' },
         REFRESH_TOKEN: { cmd: 'refresh-token' },
+        VERIFY_EMAIL: { cmd: 'verify-email' }
     }
 }

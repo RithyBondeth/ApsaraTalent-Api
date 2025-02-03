@@ -3,6 +3,7 @@ import { UploadFileInterceptor } from '@app/common/uploadfile/uploadfile.interce
 import { Body, Controller, Inject, Param, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
+import { console } from 'inspector';
 
 @Controller('auth')
 export class AuthController {
@@ -47,5 +48,12 @@ export class AuthController {
         return await firstValueFrom(
             this.authClient.send(AUTH_SERVICE.ACTIONS.REFRESH_TOKEN, payload)
         );
+    }
+
+    @Post('verify-email/:token')
+    async verifyEmail(@Param('token') token: string): Promise<any> {
+        return await firstValueFrom(
+            this.authClient.send(AUTH_SERVICE.ACTIONS.VERIFY_EMAIL, token)
+        )
     }
 }
