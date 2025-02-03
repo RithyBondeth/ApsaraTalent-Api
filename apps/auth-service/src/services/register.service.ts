@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { RegisterDTO } from "../dtos/register.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { User } from "@app/common/database/entities/user.entity";
@@ -78,7 +78,7 @@ export class RegisterService {
         } catch (error) {
             //Handle error
             this.logger.error(error.message);  
-            throw new InternalServerErrorException("An error occurred while registering the user.");
+            throw new BadRequestException("An error occurred while registering the user.");
         }
     }
 }

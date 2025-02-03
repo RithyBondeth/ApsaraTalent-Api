@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { LoginDTO } from "../dtos/login.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { User } from "@app/common/database/entities/user.entity";
@@ -42,6 +42,10 @@ export class LoginService {
                 this.jwtService.generateRefreshToken(user.id), 
             ]);
 
+            //Save refresh token to use
+            user.refreshToken = refreshToken;
+            await this.userRepository.save(user);
+
             //Return token and user details
             return new LoginResponseDTO({
                 message: 'Successfully Logged in',
@@ -51,7 +55,7 @@ export class LoginService {
             });
         } catch (error) {
             this.logger.error(error.message);
-            throw new UnauthorizedException('An error occurred while login.');
+            throw new BadRequestException('An error occurred while login.');
         }
     }
 }

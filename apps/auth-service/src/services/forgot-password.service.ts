@@ -40,8 +40,8 @@ export class ForgotPasswordService {
             //Return message
             return new ForgotPasswordResponseDTO(`Reset password token was sent successfully to ${user.email}`);
         } catch (error) {
-            this.logger.error('Failure while forgot password: ', error.message);
-            throw new BadRequestException(error.message);
+            this.logger.error(error.message);
+            throw new BadRequestException('An error occurred while user forgetting the password.');
         }
     }
 }

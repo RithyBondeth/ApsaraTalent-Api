@@ -1,5 +1,5 @@
 import { User } from "@app/common/database/entities/user.entity";
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { PinoLogger } from "nestjs-pino";
 import { MoreThan, Repository } from "typeorm";
@@ -41,8 +41,8 @@ export class ResetPasswordService {
             //Return message
             return new ResetPasswordResponseDTO('You password was updated successfully');
         } catch (error) {
-            this.logger.error('Failed to reset password', error.message);
-            throw new UnauthorizedException(error.message);
+            this.logger.error(error.message);
+            throw new BadRequestException('An error occurred while user resetting password.');
         }  
     }  
 }
