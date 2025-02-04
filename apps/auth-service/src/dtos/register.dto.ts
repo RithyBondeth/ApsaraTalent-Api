@@ -1,6 +1,5 @@
 import { EUserRole } from "@app/common/database/enums/user-role.enum";
-import { Type } from "class-transformer";
-import { IsArray, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, IsStrongPassword, ValidateNested } from "class-validator";
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, IsStrongPassword, ValidateNested } from "class-validator";
 
 export class RegisterDTO {
     @IsString()

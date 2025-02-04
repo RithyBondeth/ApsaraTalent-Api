@@ -24,11 +24,12 @@ export class ForgotPasswordService {
 
             //Generate a reset password token and expiry date
             const resetToken = crypto.randomBytes(20).toString('hex');
-            const expireDateToken =  new Date(Date.now() + 10 * 60 * 1000);
+            const expireDateToken =  new Date(Date.now() + 3600000); // 1 hour
 
             //Set a reset password token and expiry date
             user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
             user.resetPasswordExpires = expireDateToken;
+            await this.userRepository.save(user);
 
             //Send reset password token to user email address
             await this.emailService.sendEmail({

@@ -22,14 +22,14 @@ export class LoginService {
         try {
             //Find the user by their email address
             const user = await this.userRepository.findOne({ where: { email: loginDTO.email } });
-            if(!user) throw new UnauthorizedException('Invalid Credentials (Email not found)'); 
-
-            //Check email verification
-            if(!user.isEmailVerified) throw new UnauthorizedException('Please verify your email first');
 
             //Compare password
             const validPassword: boolean = await bcrypt.compare(loginDTO.password, user.password); 
-            if(!validPassword) throw new UnauthorizedException('Invalid Credentials (Wrong password)');
+
+            if(!user || !validPassword) throw new UnauthorizedException('Invalid Credentials');
+
+            //Check email verification
+            if(!user.isEmailVerified) throw new UnauthorizedException('Please verify your email first');
 
             //Generate tokens
             const payload: IPayload = {
