@@ -55,7 +55,7 @@ export class AuthController {
     }
 
     @Post('verify-email/:emailVerificationToken')
-    @HttpCode(HttpStatus.OK)
+     @HttpCode(HttpStatus.OK)
     async verifyEmail(@Param('emailVerificationToken') emailVerificationToken: string): Promise<any> {
         return await firstValueFrom(
             this.authClient.send(AUTH_SERVICE.ACTIONS.VERIFY_EMAIL, emailVerificationToken)
