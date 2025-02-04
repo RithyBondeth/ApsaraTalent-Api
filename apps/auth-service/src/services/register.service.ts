@@ -70,7 +70,7 @@ export class RegisterService {
                 to: user.email,
                 subject: 'Apsara Talent - Verify Your Email Address',
                 text: `Hello, ${user.username}. Please verify your email address by clicking on the following link: 
-                       ${this.configService.get<string>("BASE_URL")}/verify-email/${emailVerificationToken}`,
+                       ${this.configService.get<string>("BASE_URL")}auth/verify-email/${emailVerificationToken}`,
             });
 
             //Return user profile

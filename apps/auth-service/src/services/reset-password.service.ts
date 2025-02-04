@@ -5,7 +5,9 @@ import { PinoLogger } from "nestjs-pino";
 import { MoreThan, Repository } from "typeorm";
 import { ResetPasswordDTO } from "../dtos/reset-password.dto";
 import * as crypto from "crypto";
+import * as bcrypt from "bcrypt";
 import { ResetPasswordResponseDTO } from "../dtos/reset-password-response.dto";
+import { SALT_ROUNDS } from "utils/constants/password.constant";
 
 @Injectable()
 export class ResetPasswordService {
@@ -33,7 +35,7 @@ export class ResetPasswordService {
             if(!user) throw new UnauthorizedException('Invalid token or expires token');
 
             //Set user new password and save user into the database
-            user.password = resetPasswordDTO.newPassword;
+            user.password = await bcrypt.hash(resetPasswordDTO.newPassword, SALT_ROUNDS);
             user.resetPasswordToken = null;
             user.resetPasswordExpires = null;
             await this.userRepository.save(user);
