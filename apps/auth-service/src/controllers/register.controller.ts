@@ -13,4 +13,4 @@ export class RegisterController {
     async register(@Payload() registerDto: RegisterDTO): Promise<RegisterReponseDTO> {
         return await this.registerService.register(registerDto);
     }
-} 
+}
