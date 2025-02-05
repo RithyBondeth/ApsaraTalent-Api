@@ -3,6 +3,9 @@ import { AuthController } from './auth.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
 import { ThrottlerModule } from '@app/common';
+import { GoogleController } from './socials/controllers/google.controller';
+import { GoogleStrategy } from './socials/strategies/google.strategy';
+import { LinkedInStrategy } from './socials/strategies/linkedin-strategy';
 
 @Module({
   imports: [
@@ -18,7 +21,13 @@ import { ThrottlerModule } from '@app/common';
     ]),
     ThrottlerModule,
   ],
-  controllers: [AuthController],
-  providers: [],
+  controllers: [
+    AuthController,
+    GoogleController
+  ],
+  providers: [
+    GoogleStrategy, 
+    LinkedInStrategy,
+  ],
 })
 export class AuthModule {}

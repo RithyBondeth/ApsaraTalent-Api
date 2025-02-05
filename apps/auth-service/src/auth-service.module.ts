@@ -2,25 +2,27 @@ import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { LoggerModule } from '@app/common';
 import { DatabaseModule } from '@app/common/database/database.module';
-import { RegisterController } from './controllers/register.controller';
-import { RegisterService } from './services/register.service';
+import { RegisterService } from './basic/services/register.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '@app/common/database/entities/user.entity';
 import { UserProfile } from '@app/common/database/entities/user-profile.entity';
 import { JwtModule } from '@app/common/jwt/jwt.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { UploadfileModule } from '@app/common/uploadfile/uploadfile.module';
-import { LoginController } from './controllers/login.controller';
-import { LoginService } from './services/login.service';
+import { LoginService } from './basic/services/login.service';
 import { EmailModule } from '@app/common/email/email.module';
-import { ForgotPasswordController } from './controllers/forgot-password.controller';
-import { ForgotPasswordService } from './services/forgot-password.service';
-import { ResetPasswordService } from './services/reset-password.service';
-import { ResetPasswordController } from './controllers/reset-password.controller';
-import { RefreshTokenController } from './controllers/refresh-token.controller';
-import { RefreshTokenService } from './services/refresh-token.service';
-import { VerifyEmailController } from './controllers/verify-email.controller';
-import { VerifyEmailService } from './services/verify-email.service';
+import { ForgotPasswordService } from './basic/services/forgot-password.service';
+import { ResetPasswordService } from './basic/services/reset-password.service';
+import { RefreshTokenService } from './basic/services/refresh-token.service';
+import { VerifyEmailService } from './basic/services/verify-email.service';
+import { GoogleAuthController } from './socials/controllers/google-auth.controlle';
+import { RegisterController } from './basic/controllers/register.controller';
+import { LoginController } from './basic/controllers/login.controller';
+import { ForgotPasswordController } from './basic/controllers/forgot-password.controller';
+import { ResetPasswordController } from './basic/controllers/reset-password.controller';
+import { VerifyEmailController } from './basic/controllers/verify-email.controller';
+import { RefreshTokenController } from './basic/controllers/refresh-token.controller';
+import { GoogleAuthService } from './socials/services/google-auth.service';
 
 @Module({
   imports: [
@@ -41,7 +43,8 @@ import { VerifyEmailService } from './services/verify-email.service';
     ForgotPasswordController, 
     ResetPasswordController,
     RefreshTokenController,
-    VerifyEmailController
+    VerifyEmailController,
+    GoogleAuthController,
   ],
   providers: [
     RegisterService,
@@ -50,6 +53,7 @@ import { VerifyEmailService } from './services/verify-email.service';
     ResetPasswordService,
     RefreshTokenService,
     VerifyEmailService,
+    GoogleAuthService,
     {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor,
