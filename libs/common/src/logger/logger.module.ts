@@ -5,15 +5,23 @@ import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
     imports: [
         PinoLoggerModule.forRoot({
             pinoHttp: {
+                level: 'trace',
                 transport: {
-                target: 'pino-pretty',
-                options: {
-                   singleLine: true,
-                   prettyPrint: true,
-                   colorize: true,
+                  targets: [
+                    {
+                      target: 'pino-pretty',
+                      options: {
+                        destination: './logs/app.log',
+                        mkdir: true,
+                        singleLine: true,
+                      },
+                    },
+                    {
+                      target: 'pino-pretty',
+                    },
+                  ],
                 },
-              }
-            }
+              },
         })
     ]
 })
