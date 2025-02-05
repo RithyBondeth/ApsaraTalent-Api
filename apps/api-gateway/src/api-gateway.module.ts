@@ -15,7 +15,11 @@ import { TerminusModule } from '@nestjs/terminus';
       isGlobal: true,
       envFilePath: './apps/api-gateway/.env',
     }), 
-    LoggerModule, AuthModule, UserModule, UploadfileModule, TerminusModule,
+    LoggerModule, 
+    AuthModule, 
+    UserModule, 
+    UploadfileModule, 
+    TerminusModule,
     ServeStaticModule.forRoot({
       rootPath: path.join(process.cwd(), 'storage'),
       serveRoot: '/storage',
