@@ -26,8 +26,8 @@ import { LinkedInStrategy } from './socials/strategies/linkedin-strategy';
     GoogleController
   ],
   providers: [
-    GoogleStrategy, 
-    LinkedInStrategy,
+    //GoogleStrategy, 
+    //LinkedInStrategy,
   ],
 })
 export class AuthModule {}
