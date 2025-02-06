@@ -21,9 +21,12 @@
     "start:dev:api": "nest start api-gateway --watch",
     "start:dev:auth": "nest start auth-service --watch",
     "start:dev:users": "nest start user-service --watch",
+    "start:dev:resume": "nest start resume-builder-service --watch",
     "start:api": "nest start api-gateway",
     "start:auth": "nest start auth-service",
-    "start:users": "nest start user-service"
+    "start:users": "nest start user-service",
+    "start:resume": "nest start resume-builder-service"
+
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

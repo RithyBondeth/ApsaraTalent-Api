@@ -8,6 +8,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { HealthController } from './health/health.controller';
 import * as path from 'path';
 import { TerminusModule } from '@nestjs/terminus';
+import { ResumeBuilderModule } from './resume-builder/resume-builder.module';
 
 @Module({
   imports: [
@@ -20,10 +21,11 @@ import { TerminusModule } from '@nestjs/terminus';
     UserModule, 
     UploadfileModule, 
     TerminusModule,
+    ResumeBuilderModule,
     ServeStaticModule.forRoot({
       rootPath: path.join(process.cwd(), 'storage'),
       serveRoot: '/storage',
-    })
+    }),
   ],
   controllers: [HealthController],
   providers: [],
