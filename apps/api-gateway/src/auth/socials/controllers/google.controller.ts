@@ -3,9 +3,10 @@ import { ClientProxy } from '@nestjs/microservices';
 import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
 import { GoogleAuthGuard } from '../guards/google-auth.guard';
 import { firstValueFrom } from 'rxjs';
+import { IGoogleAuthController } from '@app/common/interfaces/auth-controller.interface';
 
 @Controller('social')
-export class GoogleController {
+export class GoogleController implements IGoogleAuthController {
     constructor(@Inject(AUTH_SERVICE.NAME) private readonly authService: ClientProxy) {}
 
     @Get('google/login')
