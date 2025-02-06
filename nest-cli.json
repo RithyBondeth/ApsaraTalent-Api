@@ -54,6 +54,15 @@
       "compilerOptions": {
         "tsConfigPath": "libs/common/tsconfig.lib.json"
       }
+    },
+    "resume-builder-service": {
+      "type": "application",
+      "root": "apps/resume-builder-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/resume-builder-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/resume-builder-service/tsconfig.app.json"
+      }
     }
   }
 }
