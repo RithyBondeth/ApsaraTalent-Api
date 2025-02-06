@@ -4,9 +4,10 @@ import { MessagePattern, Payload } from "@nestjs/microservices";
 import { AUTH_SERVICE } from "utils/constants/auth-service.constant";
 import { ResetPasswordDTO } from "../dtos/reset-password.dto";
 import { ResetPasswordResponseDTO } from "../dtos/reset-password-response.dto";
+import { IBasicAuthResetPasswordController } from "@app/common/interfaces/auth-controller.interface";
 
 @Controller()
-export class ResetPasswordController {
+export class ResetPasswordController implements IBasicAuthResetPasswordController {
     constructor(private readonly resetPasswordService: ResetPasswordService) {}
 
     @MessagePattern(AUTH_SERVICE.ACTIONS.RESET_PASSWORD)

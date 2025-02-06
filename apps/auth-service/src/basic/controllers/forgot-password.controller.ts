@@ -4,9 +4,10 @@ import { MessagePattern, Payload } from "@nestjs/microservices";
 import { AUTH_SERVICE } from "utils/constants/auth-service.constant";
 import { ForgotPasswordDTO } from "../dtos/forgot-password.dto";
 import { ForgotPasswordResponseDTO } from "../dtos/forgot-password-response.dto";
+import { IBasicAuthForgotPasswordController } from "@app/common/interfaces/auth-controller.interface";
 
 @Controller()
-export class ForgotPasswordController {
+export class ForgotPasswordController implements IBasicAuthForgotPasswordController {
     constructor(private readonly forgotPasswordService: ForgotPasswordService) {}
 
     @MessagePattern(AUTH_SERVICE.ACTIONS.FORGOT_PASSWORD)
