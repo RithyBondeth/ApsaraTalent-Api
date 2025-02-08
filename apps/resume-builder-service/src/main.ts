@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { ResumeBuilderServiceModule } from './resume-builder-service.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { Logger } from 'nestjs-pino';
 import { ValidationPipe } from '@nestjs/common';
+import { Logger } from 'nestjs-pino/Logger';
 
 async function bootstrap() {
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(ResumeBuilderServiceModule, {
@@ -29,6 +29,6 @@ async function bootstrap() {
     app.useLogger(logger);
   
     await app.listen();
-    logger.log("Auth service is running on port " + process.env.AUTH_SERVICE_PORT);
+    //logger.log("Resume service is running on port " + process.env.RESUME_SERVICE_PORT);
 }
 bootstrap();
