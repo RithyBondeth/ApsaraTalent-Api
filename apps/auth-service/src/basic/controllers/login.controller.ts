@@ -4,9 +4,10 @@ import { MessagePattern, Payload } from "@nestjs/microservices";
 import { AUTH_SERVICE } from "utils/constants/auth-service.constant";
 import { LoginDTO } from "../dtos/login.dto";
 import { LoginResponseDTO } from "../dtos/login-response.dto";
+import { IBasicAuthLoginController } from "@app/common/interfaces/auth-controller.interface";
 
 @Controller()
-export class LoginController {
+export class LoginController implements  IBasicAuthLoginController {
     constructor(private readonly loginService: LoginService) {}
 
     @MessagePattern(AUTH_SERVICE.ACTIONS.LOGIN)

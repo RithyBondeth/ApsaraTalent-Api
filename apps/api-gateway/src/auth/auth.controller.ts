@@ -4,9 +4,10 @@ import { Body, Controller, HttpCode, HttpStatus, Inject, Param, Post, UploadedFi
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ThrottlerGuard } from '@app/common/throttler/guards/throttler.guard';
+import { IBasicAuthController } from '@app/common/interfaces/auth-controller.interface';
 
 @Controller('auth')
-export class AuthController {
+export class AuthController implements IBasicAuthController {
     constructor(@Inject(AUTH_SERVICE.NAME) private readonly authClient: ClientProxy) {}
 
     @Post('register')
