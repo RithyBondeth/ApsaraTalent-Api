@@ -1,4 +1,3 @@
-import { User } from "@app/common/database/entities/user.entity";
 import { BadRequestException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { PinoLogger } from "nestjs-pino";
@@ -6,7 +5,7 @@ import { Repository } from "typeorm";
 import { RefreshTokenDTO } from "../dtos/refresh-token.dto";
 import { JwtService } from "@app/common/jwt/jwt.service";
 import { RefreshTokenResponseDTO } from "../dtos/refresh-token-response.dto";
-import { RegisterReponseDTO } from "../dtos/register-response.dto";
+import { User } from "@app/common/database/entities/user.entiry";
 
 @Injectable()
 export class RefreshTokenService {
@@ -35,7 +34,7 @@ export class RefreshTokenService {
             const [accessToken, refreshToken] = await Promise.all([
                 this.jwtService.generateToken({
                     id: user.id,
-                    username: user.username,
+                    email: user.email,
                     role: user.role,
                 }),
                 this.jwtService.generateRefreshToken(user.id),
@@ -50,7 +49,7 @@ export class RefreshTokenService {
                 message: 'New refresh token was created successfully',
                 accessToken: accessToken,
                 refreshToken: refreshToken,
-                user: new RegisterReponseDTO(user)
+                user: user
             });
             
         } catch (error) {
