@@ -1,4 +1,3 @@
-import { User } from "@app/common/database/entities/user.entity";
 import { BadRequestException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { PinoLogger } from "nestjs-pino";
@@ -8,6 +7,7 @@ import * as crypto from "crypto";
 import * as bcrypt from "bcrypt";
 import { ResetPasswordResponseDTO } from "../dtos/reset-password-response.dto";
 import { SALT_ROUNDS } from "utils/constants/password.constant";
+import { User } from "@app/common/database/entities/user.entiry";
 
 @Injectable()
 export class ResetPasswordService {

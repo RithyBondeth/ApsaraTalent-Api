@@ -4,23 +4,44 @@ import { Body, Controller, HttpCode, HttpStatus, Inject, Param, Post, UploadedFi
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ThrottlerGuard } from '@app/common/throttler/guards/throttler.guard';
-import { IBasicAuthController } from '@app/common/interfaces/auth-controller.interface';
 
 @Controller('auth')
-export class AuthController implements IBasicAuthController {
+export class AuthController {
     constructor(@Inject(AUTH_SERVICE.NAME) private readonly authClient: ClientProxy) {}
-
-    @Post('register')
+    
+    @Post('register-company')
     @HttpCode(HttpStatus.CREATED)
     @UseGuards(ThrottlerGuard)
-    @UseInterceptors(new UploadFileInterceptor('profile','user-profiles'))
-    async register(@Body() registerDTO: any, @UploadedFile() profile: Express.Multer.File): Promise<any> {
-        const payload = {...registerDTO, profile};
+    @UseInterceptors(
+        new UploadFileInterceptor('avatar','company-avatars'),
+        new UploadFileInterceptor('cover','company-covers')
+    )
+    async companyRegister(
+        @Body() companyRegisterDTO: any, 
+        @UploadedFile() avatar: Express.Multer.File, 
+        @UploadedFile() cover: Express.Multer.File
+    ): Promise<any> {
+        const payload = {...companyRegisterDTO, avatar, cover};
         return await firstValueFrom(
-            this.authClient.send(AUTH_SERVICE.ACTIONS.REGISTER, payload)
+            this.authClient.send(AUTH_SERVICE.ACTIONS.REGISTER_COMPANY, payload)
         );
     }
 
+    @Post('register-employee')
+    @HttpCode(HttpStatus.CREATED)
+    @UseGuards(ThrottlerGuard)
+    @UseInterceptors(new UploadFileInterceptor('avatar', 'employee-avatars'))
+    async employeeRegister(
+        @Body() employeeRegisterDTO: any, 
+        @UploadedFile() avatar: Express.Multer.File
+    ): Promise<any> {
+        const payload = {...employeeRegisterDTO, avatar};
+        return await firstValueFrom(
+            this.authClient.send(AUTH_SERVICE.ACTIONS.REGISTER_EMPLOYEE, payload)
+        );
+    }
+
+    
     @Post('login')
     @HttpCode(HttpStatus.OK)
     @UseGuards(ThrottlerGuard)

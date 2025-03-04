@@ -1,10 +1,10 @@
-import { User } from "@app/common/database/entities/user.entity";
 import { JwtService } from "@app/common/jwt/jwt.service";
 import { BadRequestException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { PinoLogger } from "nestjs-pino";
 import { Repository } from "typeorm";
 import { VerifyEmailResponseDTO } from "../dtos/verify-email-response.dto";
+import { User } from "@app/common/database/entities/user.entiry";
 
 @Injectable()
 export class VerifyEmailService {

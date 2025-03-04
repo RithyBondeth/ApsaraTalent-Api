@@ -4,8 +4,6 @@ import { LoggerModule } from '@app/common';
 import { DatabaseModule } from '@app/common/database/database.module';
 import { RegisterService } from './basic/services/register.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from '@app/common/database/entities/user.entity';
-import { UserProfile } from '@app/common/database/entities/user-profile.entity';
 import { JwtModule } from '@app/common/jwt/jwt.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { UploadfileModule } from '@app/common/uploadfile/uploadfile.module';
@@ -23,6 +21,7 @@ import { ResetPasswordController } from './basic/controllers/reset-password.cont
 import { VerifyEmailController } from './basic/controllers/verify-email.controller';
 import { RefreshTokenController } from './basic/controllers/refresh-token.controller';
 import { GoogleAuthService } from './socials/services/google-auth.service';
+import { User } from '@app/common/database/entities/user.entiry';
 
 @Module({
   imports: [
@@ -35,7 +34,7 @@ import { GoogleAuthService } from './socials/services/google-auth.service';
     DatabaseModule,
     UploadfileModule,
     EmailModule,
-    TypeOrmModule.forFeature([ User, UserProfile ])
+    TypeOrmModule.forFeature([ User ])
   ],
   controllers: [
     RegisterController, 

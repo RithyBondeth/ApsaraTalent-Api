@@ -1,17 +1,21 @@
 import { Controller } from "@nestjs/common";
-import { MessagePattern, Payload, RpcException } from "@nestjs/microservices";
+import { MessagePattern, Payload } from "@nestjs/microservices";
 import { RegisterService } from "../services/register.service";
-import { RegisterDTO } from "../dtos/register.dto";
 import { AUTH_SERVICE } from "utils/constants/auth-service.constant";
-import { RegisterReponseDTO } from "../dtos/register-response.dto";
-import { IBasicAuthRegisterController } from "@app/common/interfaces/auth-controller.interface";
+import { CompanyRegisterDTO } from "../dtos/company-register.dto";
+import { EmployeeRegisterDTO } from "../dtos/employee-register.dto";
 
 @Controller()
-export class RegisterController implements IBasicAuthRegisterController {
+export class RegisterController {
     constructor(private readonly registerService: RegisterService) {}
 
-    @MessagePattern(AUTH_SERVICE.ACTIONS.REGISTER)
-    async register(@Payload() registerDto: RegisterDTO): Promise<RegisterReponseDTO> {
-        return await this.registerService.register(registerDto);
+    @MessagePattern(AUTH_SERVICE.ACTIONS.REGISTER_COMPANY)
+    async registerCompany(@Payload() registerCompanyDto: CompanyRegisterDTO) {
+        return await this.registerService.companyRegister(registerCompanyDto);
+    }
+
+    @MessagePattern(AUTH_SERVICE.ACTIONS.REGISTER_EMPLOYEE) 
+    async registerEmployee(@Payload() registerEmployeeDto: EmployeeRegisterDTO) {
+        return await this.registerService.employeeRegitser(registerEmployeeDto);
     }
 }
