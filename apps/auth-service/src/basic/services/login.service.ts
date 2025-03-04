@@ -1,14 +1,13 @@
 import { BadRequestException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { LoginDTO } from "../dtos/login.dto";
 import { InjectRepository } from "@nestjs/typeorm";
-import { User } from "@app/common/database/entities/user.entity";
 import { Repository } from "typeorm";
 import * as bcrypt from 'bcrypt';
 import { JwtService } from "@app/common/jwt/jwt.service";
 import { IPayload } from "@app/common/jwt/interfaces/payload.interface";
 import { LoginResponseDTO } from "../dtos/login-response.dto";
-import { RegisterReponseDTO } from "../dtos/register-response.dto";
 import { PinoLogger } from "nestjs-pino";
+import { User } from "@app/common/database/entities/user.entiry";
 
 @Injectable()
 export class LoginService {
@@ -34,7 +33,7 @@ export class LoginService {
             //Generate tokens
             const payload: IPayload = {
                 id: user.id,    
-                username: user.username,
+                email: user.email,
                 role: user.role,
             };
             const [accessToken, refreshToken] = await Promise.all([
@@ -51,7 +50,7 @@ export class LoginService {
                 message: 'Successfully Logged in',
                 accessToken: accessToken,
                 refreshToken: refreshToken,
-                user: new RegisterReponseDTO(user),
+                user: user,
             });
         } catch (error) {
             this.logger.error(error.message);

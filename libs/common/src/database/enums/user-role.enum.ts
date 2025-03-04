@@ -1,5 +1,5 @@
 export enum EUserRole {
-    FREELANCER = 'freelancer',
-    EMPLOYER = 'employer',
+    EMPLOYEE = 'employee',
+    COMPANY = 'company',
     ADMIN = 'admin'
 }

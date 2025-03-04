@@ -1,26 +1,24 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import { Match } from "./match.entity";
-import { User } from "./user.entity";
+import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Employee } from "./employee/employee.entiry";
+import { User } from "./user.entiry";
 
 @Entity()
 export class Message {
     @PrimaryGeneratedColumn('uuid')
     id: string;
-
-    @ManyToOne(() => Match, (match) => match)
-    @JoinColumn({ name: 'match_id' })
-    match: Match;
-
-    @ManyToOne(() => User)
-    @JoinColumn({ name: 'sender_id' })
-    sender: User;
+    
+    @ManyToOne(() => User, { onDelete: 'CASCADE' })
+    user: User;
+    
+    @ManyToOne(() => User, { onDelete: 'CASCADE' })
+    receiver: User;
 
     @Column('text')
-    content: string;
+    message: string;
 
     @Column({ default: false })
     isRead: boolean;
 
     @CreateDateColumn()
-    createdAt: Date;
+    sentAt: Date;
 }
