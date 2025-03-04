@@ -1,4 +1,3 @@
-import { User } from "@app/common/database/entities/user.entity";
 import { EmailService } from "@app/common/email/email.service";
 import { BadRequestException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -7,6 +6,7 @@ import { ForgotPasswordDTO } from "../dtos/forgot-password.dto";
 import { PinoLogger } from "nestjs-pino";
 import * as crypto from "crypto";
 import { ForgotPasswordResponseDTO } from "../dtos/forgot-password-response.dto";
+import { User } from "@app/common/database/entities/user.entiry";
 
 @Injectable()
 export class ForgotPasswordService {
@@ -35,7 +35,7 @@ export class ForgotPasswordService {
             await this.emailService.sendEmail({
                 to: user.email,
                 subject: 'Apsara Talent - Reset Password Token',
-                text: `Hello, ${user.username}. Here is your reset password token: ${resetToken}.`,
+                text: `Hello, ${user.email}. Here is your reset password token: ${resetToken}.`,
             });
 
             //Return message

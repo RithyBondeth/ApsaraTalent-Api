@@ -1,11 +1,19 @@
 import { Module } from '@nestjs/common';
-import { ResumeBuilderServiceController } from './controllers/resume-builder-service.controller';
-import { ResumeBuilderServiceService } from './services/resume-builder-service.service';
+import { BuildeResumeController } from './controllers/build-resume.controller';
+import { BuildResumeService } from './services/build-resume.service';
+import { ImageService } from './services/image.service';
+import { ConfigModule } from '@nestjs/config';
 import { LoggerModule } from '@app/common';
 
 @Module({
-  imports: [LoggerModule],
-  controllers: [ResumeBuilderServiceController],
-  providers: [ResumeBuilderServiceService],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: './apps/resume-builder-service/.env',
+    }),
+    LoggerModule,
+  ],
+  controllers: [BuildeResumeController],
+  providers: [BuildResumeService, ImageService],
 })
 export class ResumeBuilderServiceModule {}
