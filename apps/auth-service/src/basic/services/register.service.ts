@@ -10,10 +10,19 @@ import { EmailService } from "@app/common/email/email.service";
 import { User } from "@app/common/database/entities/user.entiry";
 import { CompanyRegisterDTO } from "../dtos/company-register.dto";
 import { EmployeeRegisterDTO } from "../dtos/employee-register.dto";
+import { EUserRole } from "@app/common/database/enums/user-role.enum";
+import { Skill } from "@app/common/database/entities/employee/skill.entity";
+import { Experience } from "@app/common/database/entities/employee/experince.entity";
+import { CareerScope } from "@app/common/database/entities/career-scope.entity";
+import { Education } from "@app/common/database/entities/employee/education.entity";
 @Injectable()
 export class RegisterService {
     constructor(
         @InjectRepository(User) private readonly userRepository: Repository<User>,
+        @InjectRepository(Skill) private readonly skillRepository: Repository<Skill>,
+        @InjectRepository(Experience) private readonly experinceRepository: Repository<Experience>,
+        @InjectRepository(CareerScope) private readonly careerScopeRepository: Repository<CareerScope>,
+        @InjectRepository(Education) private readonly educationRepository: Repository<Education>,
         private readonly uploadFileService: UploadfileService,
         private readonly configService: ConfigService,
         private readonly jwtService: JwtService,
@@ -113,7 +122,7 @@ export class RegisterService {
                 where: {
                     email: employeeRegisterDTO.email
                 },
-                relations: ['employee']
+                relations: ['employee', 'employee.skills', 'employee.experiences', 'employee.careerScopes', 'employee.socials', 'employee.educations']
             })
             if(employee) {
                 if(employeeRegisterDTO.avatar) {
@@ -134,11 +143,24 @@ export class RegisterService {
 
             //Register employee in database
             employee = this.userRepository.create({
+                role: EUserRole.EMPLOYEE,
+                email: employeeRegisterDTO.email,
+                password: employeeRegisterDTO.password,
                 employee: {
                     firstname: employeeRegisterDTO.firstname,
                     lastname: employeeRegisterDTO.lastname,
                     username: employeeRegisterDTO.username,
+                    gender: employeeRegisterDTO.gender,
                     avatar: avatarImage,
+                    job: employeeRegisterDTO.job,
+                    yearsOfExperience: employeeRegisterDTO.yearsOfExperience,
+                    availability: employeeRegisterDTO.availability,
+                    description: employeeRegisterDTO.description,
+                    location: employeeRegisterDTO.location,
+                    phone: employeeRegisterDTO.phone,
+                   
+                    skills: employeeRegisterDTO.skills.map((skill) => this.skillRepository.create(skill)),
+                    experiences: employeeRegisterDTO.experiences.map((exp) => this.skillRepository.create(exp)),
                 },
                 isEmailVerified: false,
                 emailVerificationToken: emailVerificationToken,

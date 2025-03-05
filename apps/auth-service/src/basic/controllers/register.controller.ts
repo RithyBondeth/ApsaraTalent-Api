@@ -10,12 +10,12 @@ export class RegisterController {
     constructor(private readonly registerService: RegisterService) {}
 
     @MessagePattern(AUTH_SERVICE.ACTIONS.REGISTER_COMPANY)
-    async registerCompany(@Payload() registerCompanyDto: CompanyRegisterDTO) {
-        return await this.registerService.companyRegister(registerCompanyDto);
+    async testAuth() {
+        return "Hi from Auth Service";
     }
 
     @MessagePattern(AUTH_SERVICE.ACTIONS.REGISTER_EMPLOYEE) 
     async registerEmployee(@Payload() registerEmployeeDto: EmployeeRegisterDTO) {
-        return await this.registerService.employeeRegitser(registerEmployeeDto);
+        return this.registerService.employeeRegitser(registerEmployeeDto);
     }
 }
