@@ -9,23 +9,24 @@ import { ThrottlerGuard } from '@app/common/throttler/guards/throttler.guard';
 export class AuthController {
     constructor(@Inject(AUTH_SERVICE.NAME) private readonly authClient: ClientProxy) {}
     
-    @Post('register-company')
+    @Post('test')
     @HttpCode(HttpStatus.CREATED)
     @UseGuards(ThrottlerGuard)
-    @UseInterceptors(
-        new UploadFileInterceptor('avatar','company-avatars'),
-        new UploadFileInterceptor('cover','company-covers')
-    )
+    // @UseInterceptors(
+    //     new UploadFileInterceptor('avatar','company-avatars'),
+    //     new UploadFileInterceptor('cover','company-covers')
+    // )
     async companyRegister(
         @Body() companyRegisterDTO: any, 
-        @UploadedFile() avatar: Express.Multer.File, 
-        @UploadedFile() cover: Express.Multer.File
+        // @UploadedFile() avatar: Express.Multer.File,
+        // @UploadedFile() cover: Express.Multer.File
     ): Promise<any> {
-        const payload = {...companyRegisterDTO, avatar, cover};
+        const payload = {...companyRegisterDTO};
         return await firstValueFrom(
             this.authClient.send(AUTH_SERVICE.ACTIONS.REGISTER_COMPANY, payload)
         );
     }
+
 
     @Post('register-employee')
     @HttpCode(HttpStatus.CREATED)
@@ -33,7 +34,7 @@ export class AuthController {
     @UseInterceptors(new UploadFileInterceptor('avatar', 'employee-avatars'))
     async employeeRegister(
         @Body() employeeRegisterDTO: any, 
-        @UploadedFile() avatar: Express.Multer.File
+        @UploadedFile() avatar: Express.Multer.File,
     ): Promise<any> {
         const payload = {...employeeRegisterDTO, avatar};
         return await firstValueFrom(
