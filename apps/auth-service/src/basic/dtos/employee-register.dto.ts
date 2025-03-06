@@ -59,6 +59,12 @@ export class EmployeeRegisterDTO {
 
     @IsArray()
     @ValidateNested({ each: true })
+    @Type(() => EducationDto)
+    @IsOptional()
+    educations?: EducationDto[];
+
+    @IsArray()
+    @ValidateNested({ each: true })
     @Type(() => SkillDto)
     @IsOptional()
     skills?: SkillDto[];
@@ -135,19 +141,13 @@ class SocialDto {
 class EducationDto {
     @IsString()
     @IsOptional()
-    title?: string;
+    school?: string;
 
     @IsString()
     @IsOptional()
-    description: string;
+    degree: string;
     
-    @IsDate()
-    @Type(() => Date)
+    @IsString()
     @IsOptional()
-    startDate: Date;
-
-    @IsDate()
-    @Type(() => Date)
-    @IsOptional()
-    endDate: Date;
+    year: string;
 }

@@ -28,7 +28,7 @@ export class Employee {
     @Column({ type: 'enum', enum: EGender, default: EGender.OTHER })
     gender: EGender;
 
-    @Column()
+    @Column({ nullable: true })
     avatar: string;
 
     @Column()
