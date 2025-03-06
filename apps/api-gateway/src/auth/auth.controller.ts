@@ -18,7 +18,7 @@ export class AuthController {
     // )
     async companyRegister(
         @Body() companyRegisterDTO: any, 
-        // @UploadedFile() avatar: Express.Multer.File, 
+        // @UploadedFile() avatar: Express.Multer.File,
         // @UploadedFile() cover: Express.Multer.File
     ): Promise<any> {
         const payload = {...companyRegisterDTO};
