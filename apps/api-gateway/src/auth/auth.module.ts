@@ -14,8 +14,8 @@ import { LinkedInStrategy } from './socials/strategies/linkedin-strategy';
         name: AUTH_SERVICE.NAME,
         transport: Transport.TCP,
         options: {
-          host: 'localhost',
-          port: 3001,
+          host: '127.0.0.1',
+          port: 4001,
         },
       }
     ]),

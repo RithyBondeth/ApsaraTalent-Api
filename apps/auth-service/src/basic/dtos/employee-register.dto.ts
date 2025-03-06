@@ -1,4 +1,5 @@
 import { EGender } from "@app/common/database/enums/gender.enum";
+import { EUserRole } from "@app/common/database/enums/user-role.enum";
 import { Type } from "class-transformer";
 import { IsArray, IsDate, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsStrongPassword, IsUrl, ValidateNested  } from "class-validator";
 
@@ -11,6 +12,7 @@ export class EmployeeRegisterDTO {
     @IsNotEmpty()
     password: string;
 
+    // Employee 
     @IsString()
     @IsNotEmpty()
     firstname: string;
@@ -44,8 +46,8 @@ export class EmployeeRegisterDTO {
     availability?: string;
 
     @IsString()
-    @IsNotEmpty()
-    description: string;
+    @IsOptional()
+    description?: string;
 
     @IsString()
     @IsNotEmpty()
@@ -54,6 +56,12 @@ export class EmployeeRegisterDTO {
     @IsString()
     @IsOptional()
     phone?: string;
+
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => EducationDto)
+    @IsOptional()
+    educations?: EducationDto[];
 
     @IsArray()
     @ValidateNested({ each: true })
@@ -128,4 +136,18 @@ class SocialDto {
     @IsUrl()
     @IsOptional()
     url?: string;
+}
+
+class EducationDto {
+    @IsString()
+    @IsOptional()
+    school?: string;
+
+    @IsString()
+    @IsOptional()
+    degree: string;
+    
+    @IsString()
+    @IsOptional()
+    year: string;
 }

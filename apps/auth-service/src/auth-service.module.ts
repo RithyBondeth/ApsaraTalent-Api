@@ -22,6 +22,15 @@ import { VerifyEmailController } from './basic/controllers/verify-email.controll
 import { RefreshTokenController } from './basic/controllers/refresh-token.controller';
 import { GoogleAuthService } from './socials/services/google-auth.service';
 import { User } from '@app/common/database/entities/user.entiry';
+import { Company } from '@app/common/database/entities/company/company.entity';
+import { Employee } from '@app/common/database/entities/employee/employee.entiry';
+import { Skill } from '@app/common/database/entities/employee/skill.entity';
+import { CareerScope } from '@app/common/database/entities/career-scope.entity';
+import { Benefit } from '@app/common/database/entities/company/benefit.entity';
+import { Value } from '@app/common/database/entities/company/value.entity';
+import { Social } from '@app/common/database/entities/social.entity';
+import { Experience } from '@app/common/database/entities/employee/experince.entity';
+import { Education } from '@app/common/database/entities/employee/education.entity';
 
 @Module({
   imports: [
@@ -34,7 +43,7 @@ import { User } from '@app/common/database/entities/user.entiry';
     DatabaseModule,
     UploadfileModule,
     EmailModule,
-    TypeOrmModule.forFeature([ User ])
+    TypeOrmModule.forFeature([ User, Company, Employee, Skill, CareerScope, Benefit, Value, Social, Experience, Education ])
   ],
   controllers: [
     RegisterController, 

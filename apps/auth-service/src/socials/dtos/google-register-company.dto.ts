@@ -1,14 +1,10 @@
-import { Type } from "class-transformer";
-import { IsArray, IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, IsStrongPassword, ValidateNested } from "class-validator";
+import { IsArray, IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 
-export class CompanyRegisterDTO {
+export class RegisterGoogleCompanyDTO {
     @IsEmail()
     @IsNotEmpty()
     email: string;
-
-    @IsStrongPassword()
-    @IsNotEmpty()
-    password: string;
 
     @IsString()
     @IsNotEmpty()
@@ -18,11 +14,13 @@ export class CompanyRegisterDTO {
     @IsNotEmpty()
     description: string;
 
+    @IsString()
     @IsOptional()
-    avatar?: Express.Multer.File;
+    avatar?: string;  // Now stores Google profile image URL
 
+    @IsString()
     @IsOptional()
-    cover?: Express.Multer.File;
+    cover?: string;  // Now stores Google cover image URL
 
     @IsString()
     @IsNotEmpty()
@@ -33,7 +31,7 @@ export class CompanyRegisterDTO {
     location: string;
 
     @IsNumber()
-    @Type(() => Number) 
+    @Type(() => Number)
     @IsNotEmpty()
     companySize: number;
 
@@ -57,15 +55,16 @@ export class CompanyRegisterDTO {
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => CareerScopeDTO)
-    @IsOptional() 
+    @IsOptional()
     careerScopes?: CareerScopeDTO[];
-
+    
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => SocialDTO)
     @IsOptional()
     socials?: SocialDTO[];
 }
+
 
 class BenefitDTO {
     @IsString()
@@ -79,16 +78,6 @@ class ValueDTO {
     label: string;
 }
 
-class CareerScopeDTO {
-    @IsString()
-    @IsNotEmpty()
-    name: string;
-
-    @IsString()
-    @IsOptional()
-    description?: string;
-}
-
 class SocialDTO {
     @IsString()
     @IsOptional()
@@ -97,4 +86,14 @@ class SocialDTO {
     @IsString()
     @IsOptional()
     url?: string;
+}
+
+class CareerScopeDTO {
+    @IsString()
+    @IsNotEmpty()
+    name: string;
+
+    @IsString()
+    @IsOptional()
+    description?: string;
 }
