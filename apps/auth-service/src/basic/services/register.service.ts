@@ -1,7 +1,6 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import * as path from "path";
 import { UploadfileService } from "@app/common/uploadfile/uploadfile.service";
 import { ConfigService } from "@nestjs/config";
 import { PinoLogger } from "nestjs-pino";
@@ -17,16 +16,22 @@ import { CareerScope } from "@app/common/database/entities/career-scope.entity";
 import { Education } from "@app/common/database/entities/employee/education.entity";
 import { Social } from "@app/common/database/entities/social.entity";
 import { Employee } from "@app/common/database/entities/employee/employee.entiry";
+import { Company } from "@app/common/database/entities/company/company.entity";
+import { Benefit } from "@app/common/database/entities/company/benefit.entity";
+import { Value } from "@app/common/database/entities/company/value.entity";
 @Injectable()
 export class RegisterService {
     constructor(
         @InjectRepository(User) private readonly userRepository: Repository<User>,
         @InjectRepository(Employee) private readonly employeeRepository: Repository<Employee>,
+        @InjectRepository(Company) private readonly companyRepository: Repository<Company>,
         @InjectRepository(Skill) private readonly skillRepository: Repository<Skill>,
         @InjectRepository(Experience) private readonly experienceRepository: Repository<Experience>,
         @InjectRepository(CareerScope) private readonly careerScopeRepository: Repository<CareerScope>,
         @InjectRepository(Education) private readonly educationRepository: Repository<Education>,
         @InjectRepository(Social) private readonly socialRepository: Repository<Social>,
+        @InjectRepository(Benefit) private readonly benefitRepository: Repository<Benefit>,
+        @InjectRepository(Value) private readonly valueRepository: Repository<Value>,
         private readonly uploadFileService: UploadfileService,
         private readonly configService: ConfigService,
         private readonly jwtService: JwtService,
@@ -34,86 +39,105 @@ export class RegisterService {
         private readonly logger: PinoLogger
     ) {}
 
-    async companyRegister(companyRegisterDTO: CompanyRegisterDTO) {
+    async companyRegister(companyRegisterDTO: CompanyRegisterDTO) {        
         try {
-            //Find company by name if it exists
+            // Check if a company with this email already exists
             let company = await this.userRepository.findOne({ 
-                relations: ['company'],
-                where: {
-                    company: {
-                        name: companyRegisterDTO.name,
-                    }
-                }
-            })
-            if(company) {
-                //Clean up avatar and cover image if they exist
-                if(companyRegisterDTO.avatar || companyRegisterDTO.cover) {
-                    if(companyRegisterDTO.avatar) {
-                        const avatarPath = path.join(process.cwd(), 'storage/auth-service/company-avatars', companyRegisterDTO.avatar.filename); 
-                        UploadfileService.deleteFile(avatarPath, 'Company Avatar');     
-                    }
-                    if(companyRegisterDTO.cover) {
-                        const coverPath = path.join(process.cwd(), 'storage/auth-service/company-covers', companyRegisterDTO.cover.filename); 
-                        UploadfileService.deleteFile(coverPath, 'Company Cover');     
-                    }
-                }
-                throw new NotFoundException(`Company with name ${companyRegisterDTO.name} is already registered`);
-            }
-
-            //Handle avatar and cover image
-            let avatarImage = null;
-            let coverImage = null;
-            if(companyRegisterDTO.avatar || companyRegisterDTO.cover) {
-                if(companyRegisterDTO.avatar) {
-                    avatarImage = this.uploadFileService.getUploadFile('company-avatars', companyRegisterDTO.avatar);
-                }
-
-                if(companyRegisterDTO.cover) {
-                    coverImage = this.uploadFileService.getUploadFile('company-covers', companyRegisterDTO.cover);
-                } else {    
-                    // Default cover image
-                    // coverImage = this.configService.get<string>("BASE_URL") + this.configService.get<string>('DEFAULT_COMPANY_COVER');
-                }
-            }
-
-            //Generate email verification token
+                where: { email: companyRegisterDTO.email },
+                relations: ['company', 'company.benefits', 'company.values', 'company.careerScopes', 'company.socials'],
+            });
+    
+            // Generate email verification token
             const emailVerificationToken = await this.jwtService.generateEmailVerificationToken(companyRegisterDTO.email);
-
-            //Register company in database
+    
+            // Create company entity
+            const newCompany = this.companyRepository.create({
+                name: companyRegisterDTO.name,
+                description: companyRegisterDTO.description,
+                industry: companyRegisterDTO.industry,
+                location: companyRegisterDTO.location,
+                companySize: companyRegisterDTO.companySize,
+                foundedYear: companyRegisterDTO.foundedYear,
+            });
+    
+            // Save company first to get the ID
+            await this.companyRepository.save(newCompany);
+    
+            // Create benefits and associate them with the company
+            const newBenefits = companyRegisterDTO.benefits?.map((benefit) => {
+                return this.benefitRepository.create({
+                    label: benefit.label,
+                    companies: [newCompany]
+                });
+            }) || []; 
+    
+            // Create values and associate them with the company
+            const newValues = companyRegisterDTO.values?.map((value) => {
+                return this.valueRepository.create({
+                    label: value.label,
+                    companies: [newCompany]
+                });
+            }) || [];
+    
+            // Create career scopes and associate them with the company
+            const newCareerScopes = companyRegisterDTO.careerScopes?.map((career) => {
+                return this.careerScopeRepository.create({
+                    name: career.name,
+                    description: career.description,
+                    companies: [newCompany]
+                });
+            }) || [];
+    
+            // Create socials and associate them with the company
+            const newSocials = companyRegisterDTO.socials?.map((social) => {
+                return this.socialRepository.create({
+                    platform: social.platform,
+                    url: social.url,
+                    company: newCompany
+                });
+            }) || [];
+    
+            // Save benefits, values, career scopes, and socials
+            await this.benefitRepository.save(newBenefits);
+            await this.valueRepository.save(newValues);
+            await this.careerScopeRepository.save(newCareerScopes);
+            await this.socialRepository.save(newSocials);
+    
+            // Update the company entity with the new relations
+            newCompany.benefits = newBenefits;
+            newCompany.values = newValues;
+            newCompany.careerScopes = newCareerScopes;
+            newCompany.socials = newSocials;
+    
+            // Save the updated company entity
+            await this.companyRepository.save(newCompany);
+    
+            // Create user role company in database
             company = this.userRepository.create({
-                company: {
-                    name: companyRegisterDTO.name,
-                    description: companyRegisterDTO.description,
-                    avatar: avatarImage,
-                    cover: coverImage,
-                    industry: companyRegisterDTO.industry,
-                    location: companyRegisterDTO.location,
-                    companySize: companyRegisterDTO.companySize,
-                    foundedYear: companyRegisterDTO.foundedYear,
-                    benefits: companyRegisterDTO.benefits,
-                    values: companyRegisterDTO.values,
-                    careerScopes: companyRegisterDTO.careerScopes,
-                    socials: companyRegisterDTO.socials,
-                },  
+                role: EUserRole.COMPANY,
+                email: companyRegisterDTO.email,
+                password: companyRegisterDTO.password,
+                company: newCompany,
                 isEmailVerified: false,
                 emailVerificationToken: emailVerificationToken,
-            })
+            });
             
-            //Save company in database
+            // Save user role company in database
             await this.userRepository.save(company);
-
-            //Send verification email
+    
+            // Send verification email
             await this.emailService.sendEmail({
                 to: company.email,
                 subject: 'Apsara Talent - Verify Your Email Address',
                 text: `Hello, ${company.company.name}. Please verify your email address by clicking on the following link: 
                        ${this.configService.get<string>("BASE_URL")}auth/verify-email/${emailVerificationToken}`,
             });
-
-            //Return company profile
+    
+            // Return company profile
             return company;
+
         } catch (error) {
-            //Handle error
+            // Handle error
             this.logger.error(error.message);  
             throw new BadRequestException("An error occurred while registering the user.");
         }
@@ -126,48 +150,93 @@ export class RegisterService {
                 where: { email: employeeRegisterDTO.email },
                 relations: ['employee', 'employee.skills', 'employee.experiences', 'employee.careerScopes', 'employee.socials', 'employee.educations']
             });
-    
-            if (employee) {
-                if (employeeRegisterDTO.avatar) {
-                    const avatarPath = path.join(process.cwd(), 'storage/auth-service/employee-avatars', employeeRegisterDTO.avatar.filename);
-                    UploadfileService.deleteFile(avatarPath, 'Employee Avatar');     
-                }
-                throw new NotFoundException(`Employee with email ${employeeRegisterDTO.email} is already registered`);
-            }
-            
-            // Handle avatar upload
-            let avatarImage = null;
-            if (employeeRegisterDTO.avatar) {
-                avatarImage = this.uploadFileService.getUploadFile('employee-avatars', employeeRegisterDTO.avatar);
-            }
-    
+
             // Generate email verification token
             const emailVerificationToken = await this.jwtService.generateEmailVerificationToken(employeeRegisterDTO.email);
-    
-            // Create Employee entity
+
+            // Create employee entity
             const newEmployee = this.employeeRepository.create({
                 firstname: employeeRegisterDTO.firstname,
                 lastname: employeeRegisterDTO.lastname,
                 username: employeeRegisterDTO.username,
                 gender: employeeRegisterDTO.gender,
-                avatar: avatarImage,
                 job: employeeRegisterDTO.job,
                 yearsOfExperience: employeeRegisterDTO.yearsOfExperience,
                 availability: employeeRegisterDTO.availability,
                 description: employeeRegisterDTO.description,
                 location: employeeRegisterDTO.location,
                 phone: employeeRegisterDTO.phone,
-                educations: employeeRegisterDTO.educations?.map((edu) => this.educationRepository.create(edu)) || [],
-                skills: employeeRegisterDTO.skills?.map((skill) => this.skillRepository.create(skill)) || [],
-                experiences: employeeRegisterDTO.experiences?.map((exp) => this.experienceRepository.create(exp)) || [],
-                careerScopes: employeeRegisterDTO.careerScopes?.map((scope) => this.careerScopeRepository.create(scope)) || [],
-                socials: employeeRegisterDTO.socials?.map((social) => this.socialRepository.create(social)) || [],
-            }); 
+            })
 
-            //Save employee into database
+            // Save employee first to get the ID
             await this.employeeRepository.save(newEmployee);
+
+            // Create education and associate them with the employee
+            const newEducations = employeeRegisterDTO.educations?.map((edu) => {
+                return this.educationRepository.create({
+                    school: edu.school,
+                    degree: edu.degree,
+                    year: edu.year,
+                    employee: newEmployee,
+                });
+            }) || [];
     
-            // Create User entity and link to Employee
+            // Create skills and associdate them with the employee
+            const newSkills = employeeRegisterDTO.skills?.map((skill) => {
+                return this.skillRepository.create({
+                    name: skill.name,
+                    description: skill.description,
+                    employees: [newEmployee],
+                });
+            }) || [];
+
+            // Create experinces and associdate them with the employee
+            const newExperinces = employeeRegisterDTO.experiences?.map((exp) => {
+                return this.experienceRepository.create({
+                    title: exp.title,
+                    description: exp.description,
+                    startDate: exp.startDate,
+                    endDate: exp.endDate,
+                    employee: newEmployee,
+                });
+            }) || [];
+
+            // Create careerScopes and associdate them with the employee
+            const newCareerScopes = employeeRegisterDTO.careerScopes?.map((csp) => {
+                return this.careerScopeRepository.create({
+                    name: csp.name,
+                    description: csp.description,
+                    employees: [newEmployee],
+                });
+            }) || [];
+
+            // Create socials and associdate them with the employee
+            const newSocials = employeeRegisterDTO.socials?.map((social) => {
+                return this.socialRepository.create({
+                    platform: social.platform,
+                    url: social.url,
+                    employee: newEmployee,
+                });
+            }) || [];
+
+            // Save educations, skills, experiences, career scopes, and socials
+            await this.educationRepository.save(newEducations);
+            await this.skillRepository.save(newSkills);
+            await this.experienceRepository.save(newExperinces);
+            await this.careerScopeRepository.save(newCareerScopes);
+            await this.socialRepository.save(newSocials);
+
+            // Update the employee entity with the new relations
+            newEmployee.educations = newEducations;
+            newEmployee.skills = newSkills;
+            newEmployee.experiences = newExperinces;
+            newEmployee.careerScopes = newCareerScopes;
+            newEmployee.socials = newSocials;
+
+            // Save the updated employee entity
+            await this.employeeRepository.save(newEmployee);
+
+            // Create user role employee in database
             employee = this.userRepository.create({
                 role: EUserRole.EMPLOYEE,
                 email: employeeRegisterDTO.email,
@@ -175,23 +244,24 @@ export class RegisterService {
                 employee: newEmployee,
                 isEmailVerified: false,
                 emailVerificationToken: emailVerificationToken,
-            });
-    
-            // Save employee in database
+            })
+
+            // Save user role employee in database
             await this.userRepository.save(employee);
-            
+
             // Send verification email
             await this.emailService.sendEmail({
                 to: employee.email,
                 subject: 'Apsara Talent - Verify Your Email Address',
-                text: `Hello, ${employee.employee.firstname}. Please verify your email address by clicking on the following link: 
+                text: `Hello, ${employee.employee.username}. Please verify your email address by clicking on the following link: 
                        ${this.configService.get<string>("BASE_URL")}auth/verify-email/${emailVerificationToken}`,
             });
-    
-            // Return registered employee
+
+            // Return employee profile
             return employee;
-    
+
         } catch (error) {
+            // Handle error
             this.logger.error(error.message);  
             throw new BadRequestException("An error occurred while registering the user.");
         }
