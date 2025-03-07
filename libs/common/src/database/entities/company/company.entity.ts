@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Benefit } from "./benefit.entity";
 import { Value } from "./value.entity";
 import { Job } from "./job.entity";
@@ -12,6 +12,7 @@ export class Company {
     id: string;
 
     @OneToOne(() => User, (user) => user.company, { onDelete: 'CASCADE' })
+    @JoinColumn()
     user: User;
 
     @Column()
