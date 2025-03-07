@@ -12,9 +12,9 @@ import { USER_SERVICE } from 'utils/constants/user-service.constant';
         options: {
           host: 'localhost',
           port: 3002,
-        }
+        },
       }
-    ])
+    ]),
   ],
   controllers: [UserController],
   providers: [],
