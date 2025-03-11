@@ -44,6 +44,12 @@ export class CompanyRegisterDTO {
 
     @IsArray()
     @ValidateNested({ each: true })
+    @Type(() => JobDTO)
+    @IsOptional()
+    jobs?: JobDTO[];
+
+    @IsArray()
+    @ValidateNested({ each: true })
     @Type(() => BenefitDTO)
     @IsOptional()
     benefits?: BenefitDTO[];
@@ -65,6 +71,32 @@ export class CompanyRegisterDTO {
     @Type(() => SocialDTO)
     @IsOptional()
     socials?: SocialDTO[];
+}
+
+class JobDTO {
+    @IsString()
+    @IsNotEmpty()
+    title: string;
+
+    @IsString()
+    @IsNotEmpty()
+    description: string;
+
+    @IsString()
+    @IsNotEmpty()
+    type: string;
+
+    @IsString()
+    @IsNotEmpty()
+    experienceRequired: string;
+
+    @IsString()
+    @IsNotEmpty()
+    educationRequired: string;
+
+    @IsString()
+    @IsNotEmpty()
+    skillsRequired: string;
 }
 
 class BenefitDTO {
