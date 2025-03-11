@@ -31,6 +31,7 @@ import { Value } from '@app/common/database/entities/company/value.entity';
 import { Social } from '@app/common/database/entities/social.entity';
 import { Experience } from '@app/common/database/entities/employee/experince.entity';
 import { Education } from '@app/common/database/entities/employee/education.entity';
+import { Job } from '@app/common/database/entities/company/job.entity';
 
 @Module({
   imports: [
@@ -43,7 +44,7 @@ import { Education } from '@app/common/database/entities/employee/education.enti
     DatabaseModule,
     UploadfileModule,
     EmailModule,
-    TypeOrmModule.forFeature([ User, Company, Employee, Skill, CareerScope, Benefit, Value, Social, Experience, Education ])
+    TypeOrmModule.forFeature([ User, Company, Employee, Skill, CareerScope, Benefit, Value, Social, Experience, Education, Job ])
   ],
   controllers: [
     RegisterController, 
