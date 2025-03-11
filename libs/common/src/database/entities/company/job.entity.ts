@@ -16,7 +16,7 @@ export class Job {
     description: string;
     
     @Column()
-    type: 'full-time' | 'part-time' | 'temporary' | 'internship';
+    type: string;
     
     @Column()
     experienceRequired: string;
