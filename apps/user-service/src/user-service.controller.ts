@@ -1,13 +1,15 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { UserServiceService } from './user-service.service';
-import { MessagePattern } from '@nestjs/microservices';
+import { MessagePattern, Payload } from '@nestjs/microservices';
+import { USER_SERVICE } from 'utils/constants/user-service.constant';
 
 @Controller()
 export class UserServiceController {
   constructor(private readonly userServiceService: UserServiceService) {}
 
-  @MessagePattern({ cmd: "findAllUsers" })
-  getHello(): string {
-    return this.userServiceService.getHello();
+  @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_AVATAR)
+  async uploadAvatar(@Payload() payload: any) {
+    console.log(payload);
+    return "Hello from user service";
   }
 }

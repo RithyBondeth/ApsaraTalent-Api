@@ -19,6 +19,7 @@ import { Employee } from "@app/common/database/entities/employee/employee.entiry
 import { Company } from "@app/common/database/entities/company/company.entity";
 import { Benefit } from "@app/common/database/entities/company/benefit.entity";
 import { Value } from "@app/common/database/entities/company/value.entity";
+import { Job } from "@app/common/database/entities/company/job.entity";
 @Injectable()
 export class RegisterService {
     constructor(
@@ -28,6 +29,7 @@ export class RegisterService {
         @InjectRepository(Skill) private readonly skillRepository: Repository<Skill>,
         @InjectRepository(Experience) private readonly experienceRepository: Repository<Experience>,
         @InjectRepository(CareerScope) private readonly careerScopeRepository: Repository<CareerScope>,
+        @InjectRepository(Job) private readonly jobRepository: Repository<Job>,
         @InjectRepository(Education) private readonly educationRepository: Repository<Education>,
         @InjectRepository(Social) private readonly socialRepository: Repository<Social>,
         @InjectRepository(Benefit) private readonly benefitRepository: Repository<Benefit>,
@@ -44,7 +46,7 @@ export class RegisterService {
             // Check if a company with this email already exists
             let company = await this.userRepository.findOne({ 
                 where: { email: companyRegisterDTO.email },
-                relations: ['company', 'company.benefits', 'company.values', 'company.careerScopes', 'company.socials'],
+                relations: ['company', 'company.openPositions', 'company.benefits', 'company.values', 'company.careerScopes', 'company.socials'],
             });
     
             // Generate email verification token
@@ -62,6 +64,19 @@ export class RegisterService {
     
             // Save company first to get the ID
             await this.companyRepository.save(newCompany);
+
+            // Create jobs and associate them with company
+            const jobs = companyRegisterDTO.jobs?.map((job) => {
+                return this.jobRepository.create({
+                    title: job.title,
+                    description: job.description,
+                    type: job.type,
+                    experienceRequired: job.experienceRequired,
+                    educationRequired: job.educationRequired,
+                    skillsRequired: job.skillsRequired,
+                    company: newCompany,
+                });
+            }) || [];
     
             // Create benefits and associate them with the company
             const newBenefits = companyRegisterDTO.benefits?.map((benefit) => {
@@ -98,12 +113,14 @@ export class RegisterService {
             }) || [];
     
             // Save benefits, values, career scopes, and socials
+            await this.jobRepository.save(jobs);
             await this.benefitRepository.save(newBenefits);
             await this.valueRepository.save(newValues);
             await this.careerScopeRepository.save(newCareerScopes);
             await this.socialRepository.save(newSocials);
     
             // Update the company entity with the new relations
+            newCompany.openPositions = jobs;
             newCompany.benefits = newBenefits;
             newCompany.values = newValues;
             newCompany.careerScopes = newCareerScopes;
