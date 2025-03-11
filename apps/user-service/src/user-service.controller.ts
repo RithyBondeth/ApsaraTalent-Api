@@ -8,7 +8,8 @@ export class UserServiceController {
   constructor(private readonly userServiceService: UserServiceService) {}
 
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_AVATAR)
-  async uploadAvatar(@Payload() payload: { userId: string; avatar: { originalname: string, mimetype: string, buffer: string } }) {
-    return this.userServiceService.uploadAvatar(payload.userId, payload.avatar);
+  async uploadAvatar(@Payload() payload: any) {
+    console.log(payload);
+    return "Hello from user service";
   }
 }
