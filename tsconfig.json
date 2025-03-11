@@ -24,18 +24,6 @@
       "@app/common/*": [
         "libs/common/src/*"
       ],
-      "@app/minio": [
-        "libs/minio/src"
-      ],
-      "@app/minio/*": [
-        "libs/minio/src/*"
-      ],
-      "@app//common/minio": [
-        "libs/common/minio/src"
-      ],
-      "@app//common/minio/*": [
-        "libs/common/minio/src/*"
-      ]
     }
   }
 }

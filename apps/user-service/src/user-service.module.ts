@@ -3,7 +3,6 @@ import { UserServiceController } from './user-service.controller';
 import { UserServiceService } from './user-service.service';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule, LoggerModule } from '@app/common';
-import { MinioModule } from '@app/common/minio/minio.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '@app/common/database/entities/user.entiry';
 import { Employee } from '@app/common/database/entities/employee/employee.entiry';
@@ -18,7 +17,6 @@ import { Company } from '@app/common/database/entities/company/company.entity';
     DatabaseModule,
     TypeOrmModule.forFeature([ User, Employee, Company ]),
     LoggerModule,
-    MinioModule,
   ],
   controllers: [UserServiceController],
   providers: [UserServiceService],
