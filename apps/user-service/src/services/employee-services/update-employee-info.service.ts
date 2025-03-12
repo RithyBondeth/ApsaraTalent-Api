@@ -78,6 +78,7 @@ export class UpdateEmployeeInfoService {
                 employee: employee,
             };
         } catch (error) {  
+            // Hanle error
             this.logger.error(error.message);  
             throw new BadRequestException("An error occurred while updating the employee's information.");
         }

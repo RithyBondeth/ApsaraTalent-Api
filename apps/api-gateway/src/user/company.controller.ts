@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Param, ParseUUIDPipe, Put } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Param, ParseUUIDPipe, Patch, Put } from "@nestjs/common";
 import { ClientProxy } from "@nestjs/microservices";
 import { firstValueFrom } from "rxjs";
 import { USER_SERVICE } from "utils/constants/user-service.constant";
@@ -22,14 +22,14 @@ export class CompanyController {
         )
     }
 
-    @Put('update-info/:companyId')
+    @Patch('update-info/:companyId')
     async updateCompanyInfo(
-        @Param('companyId') companyId: string,
+        @Param('companyId', ParseUUIDPipe) companyId: string,
         @Body() updateCompanyInfoDTO: any
     ) {
         const payload = { companyId, updateCompanyInfoDTO };
         return firstValueFrom(
-        this.userClient.send(USER_SERVICE.ACTIONS.UPDATE_COMPANY_INFO, payload)
+            this.userClient.send(USER_SERVICE.ACTIONS.UPDATE_COMPANY_INFO, payload)
         )
     }
 }

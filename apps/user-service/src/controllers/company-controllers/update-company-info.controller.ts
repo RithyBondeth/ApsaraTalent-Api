@@ -10,6 +10,6 @@ export class UpdateCompanyInfoController {
 
     @MessagePattern(USER_SERVICE.ACTIONS.UPDATE_COMPANY_INFO)
     async updateCompanyInfo(@Payload() payload: { updateCompanyInfoDTO: UpdateCompanyInfoDTO, companyId: string }) {
-        this.updateCompanyInfoService.updateCompanyInfo(payload.updateCompanyInfoDTO, payload.companyId);
+        return this.updateCompanyInfoService.updateCompanyInfo(payload.updateCompanyInfoDTO, payload.companyId);
     }
 }

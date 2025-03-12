@@ -29,7 +29,7 @@ export class EmployeeController {
     ) {
         const payload = { employeeId, updateEmployeeInfoDTO };
         return firstValueFrom(
-        this.userClient.send(USER_SERVICE.ACTIONS.UPDATE_EMPLOYEE_INFO, payload)
+            this.userClient.send(USER_SERVICE.ACTIONS.UPDATE_EMPLOYEE_INFO, payload)
         )
     }
 
