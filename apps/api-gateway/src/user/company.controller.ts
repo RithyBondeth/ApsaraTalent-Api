@@ -1,0 +1,48 @@
+import { UploadFileInterceptor } from "@app/common/uploadfile/uploadfile.interceptor";
+import { Body, Controller, Get, Inject, Param, ParseUUIDPipe, Patch, Post, Put, UploadedFile, UploadedFiles, UseInterceptors } from "@nestjs/common";
+import { ClientProxy } from "@nestjs/microservices";
+import { firstValueFrom } from "rxjs";
+import { USER_SERVICE } from "utils/constants/user-service.constant";
+
+@Controller('user/company')
+export class CompanyController {
+    constructor(@Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy) {}
+    
+    @Get('all')
+    async findAll() {
+        return firstValueFrom(
+            this.userClient.send(USER_SERVICE.ACTIONS.FIND_ALL_COMPANY, {})
+        )
+    }
+
+    @Get('one/:companyId')
+    async findOneById(@Param('companyId', ParseUUIDPipe) companyId: string) {
+        const payload = { companyId };  
+        return firstValueFrom(
+            this.userClient.send(USER_SERVICE.ACTIONS.FIND_ONE_COMPANY_BYID, payload)
+        )
+    }
+
+    @Patch('update-info/:companyId')
+    async updateCompanyInfo(
+        @Param('companyId', ParseUUIDPipe) companyId: string,
+        @Body() updateCompanyInfoDTO: any
+    ) {
+        const payload = { companyId, updateCompanyInfoDTO };
+        return firstValueFrom(
+            this.userClient.send(USER_SERVICE.ACTIONS.UPDATE_COMPANY_INFO, payload)
+        )
+    }
+
+    @Post('upload-avatar/:companyId') 
+    @UseInterceptors(new UploadFileInterceptor('avatar', 'company-avatars'))
+    async uploadCompanyAvatar(
+        @Param('companyId', ParseUUIDPipe) companyId: string,
+        @UploadedFile() avatar: Express.Multer.File,
+    ) {
+        const payload = { companyId, avatar };        
+        return firstValueFrom(
+            this.userClient.send(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_AVATAR, payload)
+        )
+    } 
+}
