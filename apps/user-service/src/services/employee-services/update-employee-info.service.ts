@@ -24,82 +24,61 @@ export class UpdateEmployeeInfoService {
 
     async updateEmployeeInfo(updateEmployeeInfoDTO: UpdateEmployeeInfoDTO, employeeId: string) {
         try {
-            // ✅ Find Employee with relations
+            // Find existing employee with relations
             let employee = await this.employeeRepository.findOne({ 
                 where: { id: employeeId }, 
                 relations: ['skills', 'experiences', 'careerScopes', 'socials', 'educations'],
             });
-    
             if (!employee) throw new NotFoundException(`Employee with ID ${employeeId} not found`);
-    
-            // ✅ Update employee's basic fields (if provided)
+
+            // Merge new values into existing fields
             Object.assign(employee, updateEmployeeInfoDTO);
-    
-            // ✅ Update or Add New Skills (Prevent Duplication)
+
+            // Merge and update relations
             if (updateEmployeeInfoDTO.skills) {
-                for (const skillData of updateEmployeeInfoDTO.skills) {
-                    let skill = await this.skillRepository.findOne({ where: { name: skillData.name } });
-    
-                    if (!skill) {
-                        skill = this.skillRepository.create(skillData);
-                        await this.skillRepository.save(skill);
-                    }
-    
-                    if (!employee.skills.some(s => s.name === skill.name)) {
-                        employee.skills.push(skill);
-                    }
-                }
+                const existingSkills = await this.skillRepository.findBy({ employees: { id: employeeId } });
+                const newSkills = updateEmployeeInfoDTO.skills.map(skill => this.skillRepository.create(skill));
+                employee.skills = [...existingSkills, ...newSkills]; // Keep existing skills + add new ones
+                await this.skillRepository.save(newSkills); // Save only new skills
             }
-    
-            // ✅ Update or Add New Experiences (Prevent Duplication)
+
             if (updateEmployeeInfoDTO.experiences) {
-                for (const expData of updateEmployeeInfoDTO.experiences) {
-                    const experience = this.experienceRepository.create({ ...expData, employee });
-                    await this.experienceRepository.save(experience);
-                }
+                const existingExperiences = await this.experienceRepository.findBy({ employee: { id: employeeId } });
+                const newExperiences = updateEmployeeInfoDTO.experiences.map(exp => this.experienceRepository.create(exp));
+                employee.experiences = [...existingExperiences, ...newExperiences];
+                await this.experienceRepository.save(newExperiences);
             }
-    
-            // ✅ Update or Add New Career Scopes (Prevent Duplication)
+
             if (updateEmployeeInfoDTO.careerScopes) {
-                for (const careerScopeData of updateEmployeeInfoDTO.careerScopes) {
-                    let careerScope = await this.careerScopeRepository.findOne({ where: { name: careerScopeData.name } });
-    
-                    if (!careerScope) {
-                        careerScope = this.careerScopeRepository.create(careerScopeData);
-                        await this.careerScopeRepository.save(careerScope);
-                    }
-    
-                    if (!employee.careerScopes.some(cs => cs.name === careerScope.name)) {
-                        employee.careerScopes.push(careerScope);
-                    }
-                }
+                const existingCareerScopes = await this.careerScopeRepository.findBy({ employees: { id: employeeId } });
+                const newCareerScopes = updateEmployeeInfoDTO.careerScopes.map(cs => this.careerScopeRepository.create(cs));
+                employee.careerScopes = [...existingCareerScopes, ...newCareerScopes];
+                await this.careerScopeRepository.save(newCareerScopes);
             }
-    
-            // ✅ Update or Add New Socials (Prevent Duplication)
+
             if (updateEmployeeInfoDTO.socials) {
-                for (const socialData of updateEmployeeInfoDTO.socials) {
-                    const social = this.socialRepository.create({ ...socialData, employee });
-                    await this.socialRepository.save(social);
-                }
+                const existingSocials = await this.socialRepository.findBy({ employee: { id: employeeId } });
+                const newSocials = updateEmployeeInfoDTO.socials.map(social => this.socialRepository.create(social));
+                employee.socials = [...existingSocials, ...newSocials];
+                await this.socialRepository.save(newSocials);
             }
-    
-            // ✅ Update or Add New Educations (Prevent Duplication)
+
             if (updateEmployeeInfoDTO.educations) {
-                for (const eduData of updateEmployeeInfoDTO.educations) {
-                    const education = this.educationRepository.create({ ...eduData, employee });
-                    await this.educationRepository.save(education);
-                }
+                const existingEducations = await this.educationRepository.findBy({ employee: { id: employeeId } });
+                const newEducations = updateEmployeeInfoDTO.educations.map(edu => this.educationRepository.create(edu));
+                employee.educations = [...existingEducations, ...newEducations];
+                await this.educationRepository.save(newEducations);
             }
-    
-            // ✅ Save the updated employee entity
+
+            // Save updated employee entity
             await this.employeeRepository.save(employee);
-    
+
             return {
                 message: "Employee information updated successfully",
-                employee,
+                employee: employee,
             };
         } catch (error) {  
-            this.logger.error(error.message);
+            this.logger.error(error.message);  
             throw new BadRequestException("An error occurred while updating the employee's information.");
         }
     }
