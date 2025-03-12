@@ -5,8 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '@app/common/database/entities/user.entiry';
 import { Employee } from '@app/common/database/entities/employee/employee.entiry';
 import { Company } from '@app/common/database/entities/company/company.entity';
-import { UploadEmployeeAvatarController } from './controllers/employee-controllers/upload-employee-avatar.controller';
-import { UploadEmployeeAvatarService } from './services/employee-services/upload-employee-avatar.service';
+import { ImageEmployeeController } from './controllers/employee-controllers/image-employee.controller';
+import { ImageEmployeeService } from './services/employee-services/image-employee.service';
 import { UserController } from './controllers/user.controller';
 import { UserService } from './services/user.service';
 import { UpdateEmployeeInfoController } from './controllers/employee-controllers/update-employee-info.controller';
@@ -25,6 +25,8 @@ import { FindEmployeeController } from './controllers/employee-controllers/find-
 import { FindEmployeeService } from './services/employee-services/find-employee.service';
 import { FindCompanyController } from './controllers/company-controllers/find-company.controller';
 import { FindCompanyService } from './services/company-services/find-company.service';
+import { ImageCompanyController } from './controllers/company-controllers/image-company.controller';
+import { ImageCompanyService } from './services/company-services/image-company.service';
 
 @Module({
   imports: [
@@ -39,18 +41,20 @@ import { FindCompanyService } from './services/company-services/find-company.ser
   ],
   controllers: [
     UpdateEmployeeInfoController,
-    UploadEmployeeAvatarController, 
+    ImageEmployeeController, 
     UpdateCompanyInfoController,
     FindEmployeeController,
     FindCompanyController,
+    ImageCompanyController,
     UserController
   ],
   providers: [
     UpdateEmployeeInfoService,
-    UploadEmployeeAvatarService, 
+    ImageEmployeeService,
     UpdateCompanyInfoService,
     FindEmployeeService,
     FindCompanyService,
+    ImageCompanyService,
     UserService
   ],
 })

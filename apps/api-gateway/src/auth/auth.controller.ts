@@ -1,6 +1,5 @@
 import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
-import { UploadFileInterceptor } from '@app/common/uploadfile/uploadfile.interceptor';
-import { Body, Controller, HttpCode, HttpStatus, Inject, Param, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Inject, Param, Post, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ThrottlerGuard } from '@app/common/throttler/guards/throttler.guard';
@@ -22,12 +21,8 @@ export class AuthController {
     @Post('register-employee')
     @HttpCode(HttpStatus.CREATED)
     @UseGuards(ThrottlerGuard)
-    @UseInterceptors(new UploadFileInterceptor('avatar', 'employee-avatars'))
-    async employeeRegister(
-        @Body() employeeRegisterDTO: any, 
-        @UploadedFile() avatar: Express.Multer.File,
-    ): Promise<any> {
-        const payload = {...employeeRegisterDTO, avatar};
+    async employeeRegister(@Body() employeeRegisterDTO: any): Promise<any> {
+        const payload = {...employeeRegisterDTO };
         return await firstValueFrom(
             this.authClient.send(AUTH_SERVICE.ACTIONS.REGISTER_EMPLOYEE, payload)
         );

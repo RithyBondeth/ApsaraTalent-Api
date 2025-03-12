@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Inject, Param, ParseUUIDPipe, Patch, Put } from "@nestjs/common";
+import { UploadFileInterceptor } from "@app/common/uploadfile/uploadfile.interceptor";
+import { Body, Controller, Get, Inject, Param, ParseUUIDPipe, Patch, Post, Put, UploadedFile, UploadedFiles, UseInterceptors } from "@nestjs/common";
 import { ClientProxy } from "@nestjs/microservices";
 import { firstValueFrom } from "rxjs";
 import { USER_SERVICE } from "utils/constants/user-service.constant";
@@ -32,4 +33,16 @@ export class CompanyController {
             this.userClient.send(USER_SERVICE.ACTIONS.UPDATE_COMPANY_INFO, payload)
         )
     }
+
+    @Post('upload-avatar/:companyId') 
+    @UseInterceptors(new UploadFileInterceptor('avatar', 'company-avatars'))
+    async uploadCompanyAvatar(
+        @Param('companyId', ParseUUIDPipe) companyId: string,
+        @UploadedFile() avatar: Express.Multer.File,
+    ) {
+        const payload = { companyId, avatar };        
+        return firstValueFrom(
+            this.userClient.send(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_AVATAR, payload)
+        )
+    } 
 }
