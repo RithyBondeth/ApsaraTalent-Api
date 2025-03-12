@@ -1,5 +1,4 @@
-import { UploadFileInterceptor } from '@app/common/uploadfile/uploadfile.interceptor';
-import { BadRequestException, Body, Controller, Get, Inject, Param, ParseUUIDPipe, Post, Put, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Inject, Param, ParseUUIDPipe } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';

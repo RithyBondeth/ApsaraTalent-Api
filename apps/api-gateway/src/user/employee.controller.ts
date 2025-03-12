@@ -37,12 +37,20 @@ export class EmployeeController {
     @UseInterceptors(new UploadFileInterceptor('avatar', 'employee-avatars'))
     async uploadEmployeeAvatar(
         @Param('employeeId', ParseUUIDPipe) employeeId: string,
-        @UploadedFile() avatar: Express.Multer.File
+        @UploadedFile() avatar: Express.Multer.File,
     ) {
-        if (!avatar) throw new BadRequestException('No file uploaded');
+        if(!avatar) throw new BadRequestException('No file uploaded');
         const payload = { employeeId, avatar };
         return firstValueFrom(
-        this.userClient.send(USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_AVATAR, payload)
+            this.userClient.send(USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_AVATAR, payload)
+        )
+    }
+
+    @Post('remove-avatar/:employeeId')
+    async removeEmployeeAvatar(@Param('employeeId', ParseUUIDPipe) employeeId: string) {
+        const payload = { employeeId };
+        return firstValueFrom(
+          this.userClient.send(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_AVATAR, payload)  
         )
     }
 }
