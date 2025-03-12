@@ -1,5 +1,5 @@
 import { UploadFileInterceptor } from "@app/common/uploadfile/uploadfile.interceptor";
-import { BadRequestException, Body, Controller, Get, Inject, Param, ParseUUIDPipe, Post, Put, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Get, Inject, Param, ParseUUIDPipe, Patch, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { ClientProxy } from "@nestjs/microservices";
 import { firstValueFrom } from "rxjs";
 import { USER_SERVICE } from "utils/constants/user-service.constant";
@@ -22,7 +22,7 @@ export class EmployeeController {
         )
     }
 
-    @Put('update-info/:employeeId')
+    @Patch('update-info/:employeeId')
     async updateEmployeeInfon(
         @Param('employeeId', ParseUUIDPipe) employeeId: string,
         @Body() updateEmployeeInfoDTO: any
