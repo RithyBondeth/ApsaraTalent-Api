@@ -66,7 +66,7 @@ export class RegisterService {
             await this.companyRepository.save(newCompany);
 
             // Create jobs and associate them with company
-            const jobs = companyRegisterDTO.jobs?.map((job) => {
+            const newJobs = companyRegisterDTO.jobs?.map((job) => {
                 return this.jobRepository.create({
                     title: job.title,
                     description: job.description,
@@ -113,14 +113,14 @@ export class RegisterService {
             }) || [];
     
             // Save benefits, values, career scopes, and socials
-            await this.jobRepository.save(jobs);
+            await this.jobRepository.save(newJobs);
             await this.benefitRepository.save(newBenefits);
             await this.valueRepository.save(newValues);
             await this.careerScopeRepository.save(newCareerScopes);
             await this.socialRepository.save(newSocials);
     
             // Update the company entity with the new relations
-            newCompany.openPositions = jobs;
+            newCompany.openPositions = newJobs;
             newCompany.benefits = newBenefits;
             newCompany.values = newValues;
             newCompany.careerScopes = newCareerScopes;

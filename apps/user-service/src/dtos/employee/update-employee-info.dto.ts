@@ -1,37 +1,27 @@
 import { EGender } from "@app/common/database/enums/gender.enum";
-import { EUserRole } from "@app/common/database/enums/user-role.enum";
 import { Type } from "class-transformer";
-import { IsArray, IsDate, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsStrongPassword, IsUrl, ValidateNested  } from "class-validator";
+import { IsArray, IsDate, IsEnum, IsNumber, IsOptional, IsString, IsUrl, ValidateNested  } from "class-validator";
 
-export class EmployeeRegisterDTO {
-    @IsEmail()
-    @IsNotEmpty()
-    email: string;
-    
-    @IsStrongPassword()
-    @IsNotEmpty()
-    password: string;
-
-    // Employee 
+export class UpdateEmployeeInfoDTO {
     @IsString()
-    @IsNotEmpty()
-    firstname: string;
+    @IsOptional()
+    firstname?: string;
 
     @IsString()
-    @IsNotEmpty()
-    lastname: string;
+    @IsOptional()
+    lastname?: string;
 
     @IsString()
-    @IsNotEmpty()
-    username: string;
+    @IsOptional()
+    username?: string;
 
     @IsEnum(EGender)
     @IsOptional()
     gender?: EGender;
 
     @IsString()
-    @IsNotEmpty()
-    job: string;
+    @IsOptional()
+    job?: string;
 
     @IsNumber()
     @IsOptional()
@@ -47,8 +37,8 @@ export class EmployeeRegisterDTO {
     description?: string;
 
     @IsString()
-    @IsNotEmpty()
-    location: string;
+    @IsOptional()
+    location?: string;
 
     @IsString()
     @IsOptional()
@@ -87,8 +77,8 @@ export class EmployeeRegisterDTO {
 
 class SkillDto {
     @IsString()
-    @IsNotEmpty()
-    name: string;
+    @IsOptional()
+    name?: string;
 
     @IsString()
     @IsOptional()
@@ -97,28 +87,28 @@ class SkillDto {
 
 class ExperienceDto {
     @IsString()
-    @IsNotEmpty()
-    title: string;
+    @IsOptional()
+    title?: string;
 
     @IsString()
-    @IsNotEmpty()
-    description: string;
+    @IsOptional()
+    description?: string;
 
     @IsDate()
     @Type(() => Date)
-    @IsNotEmpty()
-    startDate: Date;
+    @IsOptional()
+    startDate?: Date;
    
     @IsDate()
     @Type(() => Date)
-    @IsNotEmpty()
-    endDate: Date;
+    @IsOptional()
+    endDate?: Date;
 }
 
 class CareerScopeDto {
     @IsString()
-    @IsNotEmpty()
-    name: string;
+    @IsOptional()
+    name?: string;
 
     @IsString()
     @IsOptional()
