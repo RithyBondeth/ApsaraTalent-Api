@@ -2,6 +2,9 @@ import { Module } from '@nestjs/common';
 import { UserController } from './user.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { UploadfileModule } from '@app/common';
+import { EmployeeController } from './employee.controller';
+import { CompanyController } from './company.controller';
 
 @Module({
   imports: [
@@ -15,8 +18,9 @@ import { USER_SERVICE } from 'utils/constants/user-service.constant';
         },
       }
     ]),
+    UploadfileModule,
   ],
-  controllers: [UserController],
+  controllers: [UserController, EmployeeController, CompanyController],
   providers: [],
 })
 export class UserModule {}
