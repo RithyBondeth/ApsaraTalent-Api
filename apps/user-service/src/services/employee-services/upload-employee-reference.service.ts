@@ -45,6 +45,31 @@ export class UploadEmployeeReferenceService {
         }
     }
 
+    async removeEmployeeResume(employeeId: string) {
+        try {
+            const employee = await this.employeeRepository.findOne({
+                where: { id: employeeId }
+            });
+            if(!employee) throw new NotFoundException(`There is no employee with ID ${employeeId}.`)
+            
+            if(employee.resume) {
+                const oldResumeFilename = path.basename(employee.resume);
+                const oldResumePath = path.join(process.cwd(), 'storage/resumes', oldResumeFilename);  
+                UploadfileService.deleteFile(oldResumePath, 'Old Resume File');
+            }
+
+            employee.resume = null;
+            
+            await this.employeeRepository.save(employee);
+
+            return { message: "Employee's resume was successfully deleted." };
+        } catch (error) {
+            // Handle error
+            this.logger.error(error.message);  
+            throw new BadRequestException("An error occurred while removing the employee's resume.");
+        }
+    }
+
     async uploadEmployeeCoverLetter(employeeId: string, coverLetter: Express.Multer.File) {
         try {
             const employee = await this.employeeRepository.findOne({
@@ -73,6 +98,31 @@ export class UploadEmployeeReferenceService {
            // Handle error
            this.logger.error(error.message);  
            throw new BadRequestException("An error occurred while uploading the employee's cover letter.");
+        }
+    }
+    
+    async removeEmployeeCoverLetter(employeeId: string) {
+        try {
+            const employee = await this.employeeRepository.findOne({
+                where: { id: employeeId }
+            });
+            if(!employee) throw new NotFoundException(`There is no employee with ID ${employeeId}.`)
+           
+            if(employee.coverLetter) {
+                const oldCoverLetterFilename = path.basename(employee.coverLetter);
+                const oldCoverLetterPath = path.join(process.cwd(), 'storage/cover-letters', oldCoverLetterFilename);  
+                UploadfileService.deleteFile(oldCoverLetterPath, 'Old Cover Letter File');
+            }
+            
+            employee.coverLetter = null;
+
+            await this.employeeRepository.save(employee);
+
+            return { message: "Employee's cover letter was successfully deleted." };
+        } catch (error) {
+           // Handle error
+           this.logger.error(error.message);  
+           throw new BadRequestException("An error occurred while removing the employee's cover letter.");
         }
     }
 }

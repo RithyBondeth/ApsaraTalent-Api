@@ -66,6 +66,14 @@ export class EmployeeController {
         )
     }
 
+    @Post('remove-resume/:employeeId')
+    async removeEmployeeResume(@Param('employeeId', ParseUUIDPipe) employeeId: string) {
+        const payload = { employeeId };  
+        return firstValueFrom(
+            this.userClient.send(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_RESUME, payload)
+        )
+    }  
+
     @Post('upload-cover-letter/:employeeId')
     @UseInterceptors(new UploadFileInterceptor('coverLetter', 'cover-letters'))
     async uploadEmployeeCoverLetter(
@@ -75,6 +83,14 @@ export class EmployeeController {
         const payload = { employeeId, coverLetter };
         return firstValueFrom(
             this.userClient.send(USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_COVER_LETTER, payload)
+        )
+    }
+
+    @Post('remove-cover-letter/:employeeId')
+    async removeEmployeeCoverLetter(@Param('employeeId', ParseUUIDPipe) employeeId: string) {
+        const payload = { employeeId };
+        return firstValueFrom(
+            this.userClient.send(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_COVER_LETTER, payload)
         )
     }
 }
