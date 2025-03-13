@@ -12,7 +12,7 @@ export class FindCompanyController {
         return this.findCompanyService.findAll();
     }
 
-    @MessagePattern(USER_SERVICE.ACTIONS.FIND_ONE_COMPANY_BYID)
+    @MessagePattern(USER_SERVICE.ACTIONS.FIND_ONE_COMPANY_BY_ID)
     async findOne(@Payload() payload: { companyId: string }) {
         return this.findCompanyService.findOneById(payload.companyId);
     }

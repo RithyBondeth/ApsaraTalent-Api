@@ -12,7 +12,7 @@ export class UserController {
         return this.userService.findAllUsers();
     }
 
-    @MessagePattern(USER_SERVICE.ACTIONS.FIND_ONE_BYID)  
+    @MessagePattern(USER_SERVICE.ACTIONS.FIND_ONE_BY_ID)  
     async findOneUserByID(@Payload() payload: { userId: string }) {
         return this.userService.findOneUserByID(payload.userId);
     }

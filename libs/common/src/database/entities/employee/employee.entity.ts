@@ -49,6 +49,12 @@ export class Employee {
     @Column()
     phone: string;
 
+    @Column({ nullable: true })
+    resume: string;
+
+    @Column({ nullable: true })
+    coverLetter: string;
+
     @ManyToMany(() => Skill, (skill) => skill.employees)
     @JoinTable()
     skills: Skill[];

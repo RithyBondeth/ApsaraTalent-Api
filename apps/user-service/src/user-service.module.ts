@@ -27,6 +27,8 @@ import { FindCompanyController } from './controllers/company-controllers/find-co
 import { FindCompanyService } from './services/company-services/find-company.service';
 import { ImageCompanyController } from './controllers/company-controllers/image-company.controller';
 import { ImageCompanyService } from './services/company-services/image-company.service';
+import { UploadEmployeeReferenceController } from './controllers/employee-controllers/upload-employee-reference.controller';
+import { UploadEmployeeReferenceService } from './services/employee-services/upload-employee-reference.service';
 
 @Module({
   imports: [
@@ -46,6 +48,7 @@ import { ImageCompanyService } from './services/company-services/image-company.s
     FindEmployeeController,
     FindCompanyController,
     ImageCompanyController,
+    UploadEmployeeReferenceController,
     UserController
   ],
   providers: [
@@ -55,6 +58,7 @@ import { ImageCompanyService } from './services/company-services/image-company.s
     FindEmployeeService,
     FindCompanyService,
     ImageCompanyService,
+    UploadEmployeeReferenceService,
     UserService
   ],
 })

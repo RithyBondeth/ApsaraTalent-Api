@@ -18,12 +18,12 @@ export class EmployeeController {
     async findOneById(@Param('employeeId', ParseUUIDPipe) employeeId: string) {
         const payload = { employeeId };  
         return firstValueFrom(
-            this.userClient.send(USER_SERVICE.ACTIONS.FIND_ONE_EMPLOYEE_BYID, payload)
+            this.userClient.send(USER_SERVICE.ACTIONS.FIND_ONE_EMPLOYEE_BY_ID, payload)
         )
     }
 
     @Patch('update-info/:employeeId')
-    async updateEmployeeInfon(
+    async updateEmployeeInfo(
         @Param('employeeId', ParseUUIDPipe) employeeId: string,
         @Body() updateEmployeeInfoDTO: any
     ) {
@@ -51,6 +51,30 @@ export class EmployeeController {
         const payload = { employeeId };
         return firstValueFrom(
           this.userClient.send(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_AVATAR, payload)  
+        )
+    }
+
+    @Post('upload-resume/:employeeId')
+    @UseInterceptors(new UploadFileInterceptor('resume', 'resumes'))
+    async uploadEmployeeResume(
+        @Param('employeeId', ParseUUIDPipe) employeeId: string,
+        @UploadedFile() resume: Express.Multer.File,
+    ) {
+        const payload = { employeeId, resume };
+        return firstValueFrom(
+            this.userClient.send(USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_RESUME, payload)
+        )
+    }
+
+    @Post('upload-cover-letter/:employeeId')
+    @UseInterceptors(new UploadFileInterceptor('coverLetter', 'cover-letters'))
+    async uploadEmployeeCoverLetter(
+        @Param('employeeId', ParseUUIDPipe) employeeId: string,
+        @UploadedFile() coverLetter: Express.Multer.File,
+    ) {
+        const payload = { employeeId, coverLetter };
+        return firstValueFrom(
+            this.userClient.send(USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_COVER_LETTER, payload)
         )
     }
 }

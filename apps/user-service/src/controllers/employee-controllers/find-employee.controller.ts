@@ -12,7 +12,7 @@ export class FindEmployeeController {
         return this.findEmployeeService.findAll();
     }
 
-    @MessagePattern(USER_SERVICE.ACTIONS.FIND_ONE_EMPLOYEE_BYID)
+    @MessagePattern(USER_SERVICE.ACTIONS.FIND_ONE_EMPLOYEE_BY_ID)
     async findOne(@Payload() payload: { employeeId: string }) {
         return this.findEmployeeService.findOneById(payload.employeeId);
     }
