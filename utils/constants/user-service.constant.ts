@@ -11,6 +11,9 @@ export const USER_SERVICE = {
         FIND_ONE_COMPANY_BYID: { cmd: 'findOneCompanyById' },
         UPLOAD_COMPANY_AVATAR: { cmd: 'uploadCompanyAvatar' }, 
         UPDATE_COMPANY_INFO: { cmd: 'updateCompanyInfo' },
+        REMOVE_COMPANY_AVATAR: { cmd: 'removeCompanyAvatar' },
+        UPLOAD_COMPANY_COVER: { cmd: 'uploadCompanyCover' },
+        REMOVE_COMPANY_COVER: { cmd: 'removeCompanyCover' },
         
         FIND_ALL: { cmd: 'findAll' },
         FIND_ONE_BYID: { cmd: 'findOneById' },

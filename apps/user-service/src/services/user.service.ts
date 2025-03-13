@@ -1,4 +1,4 @@
-import { User } from "@app/common/database/entities/user.entiry";
+import { User } from "@app/common/database/entities/user.entity";
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { PinoLogger } from "nestjs-pino";

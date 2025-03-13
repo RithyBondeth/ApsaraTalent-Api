@@ -1,9 +1,9 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
-import { User } from "../user.entiry";
+import { User } from "../user.entity";
 import { EGender } from "../../enums/gender.enum";
 import { Skill } from "./skill.entity";
 import { Education } from "./education.entity";
-import { Experience } from "./experince.entity";
+import { Experience } from "./experience.entity";
 import { Social } from "../social.entity";
 import { CareerScope } from "../career-scope.entity";
 

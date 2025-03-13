@@ -45,4 +45,53 @@ export class ImageCompanyService {
             throw new BadRequestException("An error occurred while uploading the company's avatar.");
         }
     }
+
+    async removeCompanyAvatar(companyId: string) {
+        try {
+          const company = await this.companyRepository.findOne({
+            where: { id: companyId }
+          });
+          if(!company) throw new NotFoundException(`There's no company with ID ${company}`);
+    
+          if(company.avatar) {
+            const avatarFilename = path.basename(company.avatar);
+            const avatarPath = path.join(process.cwd(), 'storage/company-avatars', avatarFilename);  
+            UploadfileService.deleteFile(avatarPath, 'Avatar Image');
+          }
+          company.avatar = null;
+    
+          await this.companyRepository.save(company);
+    
+          return { message: "Company's avatar was successfully deleted." };
+        } catch (error) {
+          // Handle error
+          this.logger.error(error.message);  
+          throw new BadRequestException("An error occurred while removing the company's avatar.");
+        }
+      }
+
+      async uploadCompanyCover(companyId: string, cover: Express.Multer.File) {
+        try {
+          const company = await this.companyRepository.findOne({ 
+            where: { id: companyId }
+          });
+          if(!company) throw new NotFoundException(`There's no company with ID ${company}`);
+
+          if(company.cover) {
+            const oldCoverFilename = path.basename(company.cover);
+            const oldCoverPath = path.join(process.cwd(), 'storage/company-covers', oldCoverFilename);  
+            UploadfileService.deleteFile(oldCoverPath, 'Old Cover Image');
+          }
+          const coverUrl = this.uploadFileService.getUploadFile('company-covers', cover);
+          company.cover = coverUrl;
+
+          await this.companyRepository.save(company);
+
+          return { message: "Company's cover was successfully set." }
+        } catch (error) {
+          // Handle error
+          this.logger.error(error.message);  
+          throw new BadRequestException("An error occurred while uploading the company's cover.");
+        }
+      }
 }

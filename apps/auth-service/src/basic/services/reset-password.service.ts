@@ -7,7 +7,7 @@ import * as crypto from "crypto";
 import * as bcrypt from "bcrypt";
 import { ResetPasswordResponseDTO } from "../dtos/reset-password-response.dto";
 import { SALT_ROUNDS } from "utils/constants/password.constant";
-import { User } from "@app/common/database/entities/user.entiry";
+import { User } from "@app/common/database/entities/user.entity";
 
 @Injectable()
 export class ResetPasswordService {

@@ -4,7 +4,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { PinoLogger } from "nestjs-pino";
 import { Repository } from "typeorm";
 import { VerifyEmailResponseDTO } from "../dtos/verify-email-response.dto";
-import { User } from "@app/common/database/entities/user.entiry";
+import { User } from "@app/common/database/entities/user.entity";
 
 @Injectable()
 export class VerifyEmailService {

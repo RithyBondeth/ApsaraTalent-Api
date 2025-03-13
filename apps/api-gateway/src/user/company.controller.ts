@@ -45,4 +45,24 @@ export class CompanyController {
             this.userClient.send(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_AVATAR, payload)
         )
     } 
+
+    @Post('remove-avatar/:companyId')
+    async removeCompanyAvatar(@Param('companyId', ParseUUIDPipe) companyId: string,) {
+        const payload = { companyId };
+        return firstValueFrom(
+            this.userClient.send(USER_SERVICE.ACTIONS.REMOVE_COMPANY_AVATAR, payload)
+        )
+    }
+
+    @Post('upload-cover/:companyId')
+    @UseInterceptors(new UploadFileInterceptor('cover', 'company-covers'))
+    async uploadCompanyCover(
+        @Param('companyId', ParseUUIDPipe) companyId: string,
+        @UploadedFile() cover: Express.Multer.File,
+    ) {
+        const payload = { cover, companyId };
+        return firstValueFrom(
+            this.userClient.send(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_COVER, payload)   
+        )
+    }
 }
