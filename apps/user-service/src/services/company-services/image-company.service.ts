@@ -94,4 +94,29 @@ export class ImageCompanyService {
           throw new BadRequestException("An error occurred while uploading the company's cover.");
         }
       }
+
+      async removeCompanyCover(companyId: string) {
+        try {
+          const company = await this.companyRepository.findOne({ 
+            where: { id: companyId }
+          });
+          if(!company) throw new NotFoundException(`There's no company with ID ${company}`);
+
+          if(company.cover) {
+            const oldCoverFilename = path.basename(company.cover);
+            const oldCoverPath = path.join(process.cwd(), 'storage/company-covers', oldCoverFilename);  
+            UploadfileService.deleteFile(oldCoverPath, 'Old Cover Image');
+          }
+
+          company.cover = null;
+
+          await this.companyRepository.save(company);
+
+          return { message: "Company's cover was successfully deleted." };
+        } catch (error) {
+          // Handle error
+          this.logger.error(error.message);  
+          throw new BadRequestException("An error occurred while removing the company's cover.");
+        }
+      }
 }

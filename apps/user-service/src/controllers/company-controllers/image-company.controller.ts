@@ -21,4 +21,9 @@ export class ImageCompanyController {
     async uploadCompanyCover(@Payload() payload: { companyId: string, cover: Express.Multer.File }) {
         return this.imageCompanyService.uploadCompanyCover(payload.companyId, payload.cover);
     }
+
+    @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_COMPANY_COVER)
+    async removeCompanyCover(@Payload() payload: { companyId: string }) {
+        return this.imageCompanyService.removeCompanyCover(payload.companyId);
+    }
 }
