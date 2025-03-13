@@ -65,4 +65,12 @@ export class CompanyController {
             this.userClient.send(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_COVER, payload)   
         )
     }
+
+    @Post('remove-cover/:companyId')
+    async removeCompanyCover(@Param('companyId', ParseUUIDPipe) companyId: string) {
+        const payload = { companyId };
+        return firstValueFrom(
+            this.userClient.send(USER_SERVICE.ACTIONS.REMOVE_COMPANY_COVER, payload)
+        )
+    }
 }
