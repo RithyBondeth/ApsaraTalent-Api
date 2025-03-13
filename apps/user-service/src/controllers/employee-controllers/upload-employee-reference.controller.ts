@@ -12,9 +12,18 @@ export class UploadEmployeeReferenceController {
         return this.uploadEmployeeReferenceService.uploadEmployeeResume(payload.employeeId, payload.resume); 
     }
 
+    @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_RESUME) 
+    async removeEmployeeResume(@Payload() payload: { employeeId: string }) {
+        return this.uploadEmployeeReferenceService.removeEmployeeResume(payload.employeeId);
+    }
+
     @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_COVER_LETTER)
     async uploadEmployeeCoverLetter(@Payload() payload: { employeeId: string, coverLetter: Express.Multer.File }) {
-        console.log('Inside Employee CoverLetter');
         return this.uploadEmployeeReferenceService.uploadEmployeeCoverLetter(payload.employeeId, payload.coverLetter);
+    }
+
+    @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_COVER_LETTER) 
+    async removeEmployeeCoverLetter(@Payload() payload: { employeeId: string }) {
+        return this.uploadEmployeeReferenceService.removeEmployeeCoverLetter(payload.employeeId);
     }
 }
