@@ -2,7 +2,7 @@ import { BeforeInsert, Column, CreateDateColumn, Entity, OneToOne, PrimaryGenera
 import { SALT_ROUNDS } from "utils/constants/password.constant";
 import * as bcrypt from 'bcrypt';
 import { EUserRole } from "../enums/user-role.enum";
-import { Employee } from "./employee/employee.entiry";
+import { Employee } from "./employee/employee.entity";
 import { Company } from "./company/company.entity";
 
 @Entity()

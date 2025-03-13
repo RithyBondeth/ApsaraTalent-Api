@@ -5,7 +5,7 @@ import { Repository } from "typeorm";
 import { RefreshTokenDTO } from "../dtos/refresh-token.dto";
 import { JwtService } from "@app/common/jwt/jwt.service";
 import { RefreshTokenResponseDTO } from "../dtos/refresh-token-response.dto";
-import { User } from "@app/common/database/entities/user.entiry";
+import { User } from "@app/common/database/entities/user.entity";
 
 @Injectable()
 export class RefreshTokenService {

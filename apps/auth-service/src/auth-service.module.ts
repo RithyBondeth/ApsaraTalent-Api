@@ -21,15 +21,15 @@ import { ResetPasswordController } from './basic/controllers/reset-password.cont
 import { VerifyEmailController } from './basic/controllers/verify-email.controller';
 import { RefreshTokenController } from './basic/controllers/refresh-token.controller';
 import { GoogleAuthService } from './socials/services/google-auth.service';
-import { User } from '@app/common/database/entities/user.entiry';
+import { User } from '@app/common/database/entities/user.entity';
 import { Company } from '@app/common/database/entities/company/company.entity';
-import { Employee } from '@app/common/database/entities/employee/employee.entiry';
+import { Employee } from '@app/common/database/entities/employee/employee.entity';
 import { Skill } from '@app/common/database/entities/employee/skill.entity';
 import { CareerScope } from '@app/common/database/entities/career-scope.entity';
 import { Benefit } from '@app/common/database/entities/company/benefit.entity';
 import { Value } from '@app/common/database/entities/company/value.entity';
 import { Social } from '@app/common/database/entities/social.entity';
-import { Experience } from '@app/common/database/entities/employee/experince.entity';
+import { Experience } from '@app/common/database/entities/employee/experience.entity';
 import { Education } from '@app/common/database/entities/employee/education.entity';
 import { Job } from '@app/common/database/entities/company/job.entity';
 
