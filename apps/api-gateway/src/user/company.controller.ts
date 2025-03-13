@@ -19,7 +19,7 @@ export class CompanyController {
     async findOneById(@Param('companyId', ParseUUIDPipe) companyId: string) {
         const payload = { companyId };  
         return firstValueFrom(
-            this.userClient.send(USER_SERVICE.ACTIONS.FIND_ONE_COMPANY_BYID, payload)
+            this.userClient.send(USER_SERVICE.ACTIONS.FIND_ONE_COMPANY_BY_ID, payload)
         )
     }
 
