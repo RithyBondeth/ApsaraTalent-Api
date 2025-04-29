@@ -3,6 +3,7 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { InjectRepository } from "@nestjs/typeorm";
 import { PinoLogger } from "nestjs-pino";
 import { Repository } from "typeorm";
+import { UserPaginationDTO } from "../../dtos/user-pagination.dto";
 
 @Injectable()
 export class FindCompanyService {
@@ -11,9 +12,13 @@ export class FindCompanyService {
         private readonly logger: PinoLogger,
     ) {}
  
-    async findAll() {
+    async findAll(pagination: UserPaginationDTO) {
        try {
-            const companies = await this.companyRepository.find({ relations: [ 'openPositions', 'benefits', 'values', 'careerScopes', 'socials' ] });
+            const companies = await this.companyRepository.find({ 
+                relations: [ 'openPositions', 'benefits', 'values', 'careerScopes', 'socials', 'images' ],
+                skip: pagination?.skip || 0,
+                take: pagination?.limit || 10, 
+            });
             if(!companies) throw new NotFoundException('There are no companies available');
 
             return companies;

@@ -1,4 +1,5 @@
 import { Company } from "@app/common/database/entities/company/company.entity";
+import { Image } from "@app/common/database/entities/company/image.entity";
 import { UploadfileService } from "@app/common/uploadfile/uploadfile.service";
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -10,6 +11,7 @@ import { Repository } from "typeorm";
 export class ImageCompanyService {
     constructor(
         @InjectRepository(Company) private readonly companyRepository: Repository<Company>,
+        @InjectRepository(Image) private readonly imageRepository: Repository<Image>,
         private readonly uploadFileService: UploadfileService,
         private readonly logger: PinoLogger,
     ) {}
@@ -118,5 +120,29 @@ export class ImageCompanyService {
           this.logger.error(error.message);  
           throw new BadRequestException("An error occurred while removing the company's cover.");
         }
+      }
+
+      async uploadCompanyImage(companyId: string, images: Express.Multer.File[]) {
+        try {
+          const company = await this.companyRepository.findOne({
+            where: { id: companyId }
+          });
+          if(!company) throw new NotFoundException(`There's no company with ID ${company}`);
+
+          const imageUrls = images.map((image) => this.uploadFileService.getUploadFile('company-images', image));
+          const companyImages = imageUrls.map((imageUrl) => this.imageRepository.create({
+            company: company,
+            image: imageUrl 
+          }));
+
+          await this.imageRepository.save(companyImages);
+          await this.companyRepository.save(company);
+          
+          return { message: "Company's images was successfully set." }
+        } catch (error) {
+          // Handle error
+          this.logger.error(error.message);  
+          throw new BadRequestException("An error occurred while uploading the company's images.");
+        }       
       }
 }

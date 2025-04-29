@@ -29,6 +29,7 @@ import { ImageCompanyController } from './controllers/company-controllers/image-
 import { ImageCompanyService } from './services/company-services/image-company.service';
 import { UploadEmployeeReferenceController } from './controllers/employee-controllers/upload-employee-reference.controller';
 import { UploadEmployeeReferenceService } from './services/employee-services/upload-employee-reference.service';
+import { Image } from '@app/common/database/entities/company/image.entity';
 
 @Module({
   imports: [
@@ -37,7 +38,7 @@ import { UploadEmployeeReferenceService } from './services/employee-services/upl
       envFilePath: './apps/user-service/.env',
     }),
     DatabaseModule,
-    TypeOrmModule.forFeature([ User, Company, Employee, Skill, CareerScope, Benefit, Value, Social, Experience, Education, Job ]),
+    TypeOrmModule.forFeature([ User, Company, Employee, Skill, CareerScope, Benefit, Value, Social, Experience, Education, Job, Image ]),
     LoggerModule,
     UploadfileModule,
   ],
