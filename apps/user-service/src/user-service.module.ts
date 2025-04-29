@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule, LoggerModule, UploadfileModule } from '@app/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from '@app/common/database/entities/user.entiry';
-import { Employee } from '@app/common/database/entities/employee/employee.entiry';
+import { User } from '@app/common/database/entities/user.entity';
+import { Employee } from '@app/common/database/entities/employee/employee.entity';
 import { Company } from '@app/common/database/entities/company/company.entity';
 import { ImageEmployeeController } from './controllers/employee-controllers/image-employee.controller';
 import { ImageEmployeeService } from './services/employee-services/image-employee.service';
@@ -16,7 +16,7 @@ import { CareerScope } from '@app/common/database/entities/career-scope.entity';
 import { Benefit } from '@app/common/database/entities/company/benefit.entity';
 import { Value } from '@app/common/database/entities/company/value.entity';
 import { Social } from '@app/common/database/entities/social.entity';
-import { Experience } from '@app/common/database/entities/employee/experince.entity';
+import { Experience } from '@app/common/database/entities/employee/experience.entity';
 import { Education } from '@app/common/database/entities/employee/education.entity';
 import { Job } from '@app/common/database/entities/company/job.entity';
 import { UpdateCompanyInfoController } from './controllers/company-controllers/update-company-info.controller';
@@ -27,6 +27,9 @@ import { FindCompanyController } from './controllers/company-controllers/find-co
 import { FindCompanyService } from './services/company-services/find-company.service';
 import { ImageCompanyController } from './controllers/company-controllers/image-company.controller';
 import { ImageCompanyService } from './services/company-services/image-company.service';
+import { UploadEmployeeReferenceController } from './controllers/employee-controllers/upload-employee-reference.controller';
+import { UploadEmployeeReferenceService } from './services/employee-services/upload-employee-reference.service';
+import { Image } from '@app/common/database/entities/company/image.entity';
 
 @Module({
   imports: [
@@ -35,7 +38,7 @@ import { ImageCompanyService } from './services/company-services/image-company.s
       envFilePath: './apps/user-service/.env',
     }),
     DatabaseModule,
-    TypeOrmModule.forFeature([ User, Company, Employee, Skill, CareerScope, Benefit, Value, Social, Experience, Education, Job ]),
+    TypeOrmModule.forFeature([ User, Company, Employee, Skill, CareerScope, Benefit, Value, Social, Experience, Education, Job, Image ]),
     LoggerModule,
     UploadfileModule,
   ],
@@ -46,6 +49,7 @@ import { ImageCompanyService } from './services/company-services/image-company.s
     FindEmployeeController,
     FindCompanyController,
     ImageCompanyController,
+    UploadEmployeeReferenceController,
     UserController
   ],
   providers: [
@@ -55,6 +59,7 @@ import { ImageCompanyService } from './services/company-services/image-company.s
     FindEmployeeService,
     FindCompanyService,
     ImageCompanyService,
+    UploadEmployeeReferenceService,
     UserService
   ],
 })

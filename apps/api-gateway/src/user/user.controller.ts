@@ -18,7 +18,7 @@ export class UserController {
   async findOneUserById(@Param('userId', ParseUUIDPipe) userId: string) {
     const payload = { userId };
     return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.FIND_ONE_BYID, payload)
+      this.userClient.send(USER_SERVICE.ACTIONS.FIND_ONE_BY_ID, payload)
     )
   }
 }

@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import { Employee } from "./employee/employee.entiry";
-import { User } from "./user.entiry";
+import { Employee } from "./employee/employee.entity";
+import { User } from "./user.entity";
 
 @Entity()
 export class Message {

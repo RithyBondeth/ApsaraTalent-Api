@@ -18,11 +18,18 @@ export class CompanyRegisterDTO {
     @IsNotEmpty()
     description: string;
 
+    @IsString()
+    @IsNotEmpty()
+    phone: string;
+
     @IsOptional()
     avatar?: Express.Multer.File;
 
     @IsOptional()
     cover?: Express.Multer.File;
+
+    @IsOptional()
+    images?: Express.Multer.File[];
 
     @IsString()
     @IsNotEmpty()

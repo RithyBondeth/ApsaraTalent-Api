@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { UpdateEmployeeInfoDTO } from "../../dtos/employee/update-employee-info.dto";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Employee } from "@app/common/database/entities/employee/employee.entiry";
+import { Employee } from "@app/common/database/entities/employee/employee.entity";
 import { Repository } from "typeorm";
 import { PinoLogger } from "nestjs-pino";
 import { Skill } from "@app/common/database/entities/employee/skill.entity";
-import { Experience } from "@app/common/database/entities/employee/experince.entity";
+import { Experience } from "@app/common/database/entities/employee/experience.entity";
 import { CareerScope } from "@app/common/database/entities/career-scope.entity";
 import { Social } from "@app/common/database/entities/social.entity";
 import { Education } from "@app/common/database/entities/employee/education.entity";
@@ -78,7 +78,7 @@ export class UpdateEmployeeInfoService {
                 employee: employee,
             };
         } catch (error) {  
-            // Hanle error
+            // Handle error
             this.logger.error(error.message);  
             throw new BadRequestException("An error occurred while updating the employee's information.");
         }

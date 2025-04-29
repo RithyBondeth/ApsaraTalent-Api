@@ -1,4 +1,4 @@
-import { Employee } from '@app/common/database/entities/employee/employee.entiry';
+import { Employee } from '@app/common/database/entities/employee/employee.entity';
 import { UploadfileService } from '@app/common/uploadfile/uploadfile.service';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';

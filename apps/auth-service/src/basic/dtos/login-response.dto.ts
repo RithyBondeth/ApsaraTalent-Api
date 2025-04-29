@@ -1,4 +1,4 @@
-import { User } from "@app/common/database/entities/user.entiry";
+import { User } from "@app/common/database/entities/user.entity";
 
 export class LoginResponseDTO {
     message: string;

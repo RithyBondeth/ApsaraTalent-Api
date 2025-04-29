@@ -2,9 +2,10 @@ import { Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, On
 import { Benefit } from "./benefit.entity";
 import { Value } from "./value.entity";
 import { Job } from "./job.entity";
-import { User } from "../user.entiry";
+import { User } from "../user.entity";
 import { Social } from "../social.entity";
 import { CareerScope } from "../career-scope.entity";
+import { Image } from "./image.entity";
 
 @Entity()
 export class Company {
@@ -20,12 +21,18 @@ export class Company {
 
     @Column('text')
     description: string;
+
+    @Column({ nullable: true })
+    phone: string;
     
     @Column({ nullable: true })
     avatar: string;
 
     @Column({ nullable: true })
     cover: string;
+
+    @OneToMany(() => Image, (image) => image.company, { cascade: true })
+    images: Image[];
 
     @Column()
     companySize: number;
