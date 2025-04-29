@@ -24,7 +24,7 @@ export class User {
     
     @Column({ nullable: true }) //Optional for social login and OTP Login
     password: string;
-    
+   
     @BeforeInsert()
     async hashPassword() {
         if(this.password) 

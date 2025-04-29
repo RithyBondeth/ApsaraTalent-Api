@@ -56,6 +56,7 @@ export class RegisterService {
             const newCompany = this.companyRepository.create({
                 name: companyRegisterDTO.name,
                 description: companyRegisterDTO.description,
+                phone: companyRegisterDTO.phone,
                 industry: companyRegisterDTO.industry,
                 location: companyRegisterDTO.location,
                 companySize: companyRegisterDTO.companySize,

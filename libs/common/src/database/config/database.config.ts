@@ -13,10 +13,11 @@ import { Skill } from "../entities/employee/skill.entity";
 import { Benefit } from "../entities/company/benefit.entity";
 import { Job } from "../entities/company/job.entity";
 import { Value } from "../entities/company/value.entity";
+import { Image } from "../entities/company/image.entity";
 
 export const databaseConfig = async (configService: ConfigService): Promise<PostgresConnectionOptions> => ({
     type: 'postgres',
     url: configService.get<string>('DATABASE_URL'),
     synchronize: configService.get<boolean>('DATABASE_SYNCHRONIZE'),
-    entities: [User, Employee, Company, Social, Message, JobMatching, CareerScope, Education, Experience, Skill, Benefit, Job, Value],
+    entities: [User, Employee, Company, Social, Message, JobMatching, CareerScope, Education, Experience, Skill, Benefit, Job, Value, Image],
 });

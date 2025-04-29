@@ -18,7 +18,8 @@ export const USER_SERVICE = {
         REMOVE_COMPANY_AVATAR: { cmd: 'removeCompanyAvatar' },
         UPLOAD_COMPANY_COVER: { cmd: 'uploadCompanyCover' },
         REMOVE_COMPANY_COVER: { cmd: 'removeCompanyCover' },
-        
+        UPLOAD_COMPANY_IMAGES: { cmd: 'uploadCompanyImage' },
+
         FIND_ALL: { cmd: 'findAll' },
         FIND_ONE_BY_ID: { cmd: 'findOneById' },
         FIND_ONE_BY_NAME: { cmd: 'findOneByName' },
