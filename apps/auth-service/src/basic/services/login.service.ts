@@ -7,7 +7,7 @@ import { JwtService } from "@app/common/jwt/jwt.service";
 import { IPayload } from "@app/common/jwt/interfaces/payload.interface";
 import { LoginResponseDTO } from "../dtos/login-response.dto";
 import { PinoLogger } from "nestjs-pino";
-import { User } from "@app/common/database/entities/user.entiry";
+import { User } from "@app/common/database/entities/user.entity";
 
 @Injectable()
 export class LoginService {

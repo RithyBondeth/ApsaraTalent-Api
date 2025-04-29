@@ -6,16 +6,16 @@ import { ConfigService } from "@nestjs/config";
 import { PinoLogger } from "nestjs-pino";
 import { JwtService } from "@app/common/jwt/jwt.service";
 import { EmailService } from "@app/common/email/email.service";
-import { User } from "@app/common/database/entities/user.entiry";
+import { User } from "@app/common/database/entities/user.entity";
 import { CompanyRegisterDTO } from "../dtos/company-register.dto";
 import { EmployeeRegisterDTO } from "../dtos/employee-register.dto";
 import { EUserRole } from "@app/common/database/enums/user-role.enum";
 import { Skill } from "@app/common/database/entities/employee/skill.entity";
-import { Experience } from "@app/common/database/entities/employee/experince.entity";
+import { Experience } from "@app/common/database/entities/employee/experience.entity";
 import { CareerScope } from "@app/common/database/entities/career-scope.entity";
 import { Education } from "@app/common/database/entities/employee/education.entity";
 import { Social } from "@app/common/database/entities/social.entity";
-import { Employee } from "@app/common/database/entities/employee/employee.entiry";
+import { Employee } from "@app/common/database/entities/employee/employee.entity";
 import { Company } from "@app/common/database/entities/company/company.entity";
 import { Benefit } from "@app/common/database/entities/company/benefit.entity";
 import { Value } from "@app/common/database/entities/company/value.entity";
@@ -56,6 +56,7 @@ export class RegisterService {
             const newCompany = this.companyRepository.create({
                 name: companyRegisterDTO.name,
                 description: companyRegisterDTO.description,
+                phone: companyRegisterDTO.phone,
                 industry: companyRegisterDTO.industry,
                 location: companyRegisterDTO.location,
                 companySize: companyRegisterDTO.companySize,

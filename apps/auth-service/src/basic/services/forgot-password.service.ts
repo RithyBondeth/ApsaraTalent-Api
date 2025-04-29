@@ -6,7 +6,7 @@ import { ForgotPasswordDTO } from "../dtos/forgot-password.dto";
 import { PinoLogger } from "nestjs-pino";
 import * as crypto from "crypto";
 import { ForgotPasswordResponseDTO } from "../dtos/forgot-password-response.dto";
-import { User } from "@app/common/database/entities/user.entiry";
+import { User } from "@app/common/database/entities/user.entity";
 
 @Injectable()
 export class ForgotPasswordService {

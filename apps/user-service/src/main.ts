@@ -30,6 +30,6 @@ async function bootstrap() {
   app.useLogger(logger);
 
   await app.listen();
-  logger.log('User service is runing on port ', process.env.USER_SERVICE_PORT);
+  logger.log('User service is running on port ', process.env.USER_SERVICE_PORT);
 }
 bootstrap();
