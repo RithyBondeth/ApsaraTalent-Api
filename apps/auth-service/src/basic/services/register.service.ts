@@ -285,10 +285,10 @@ export class RegisterService {
             // Return employee profile
             return new UserResponseDTO({
                 ...employee,
-                company: employee.company ? {
+                company: employee.company ? new CompanyResponseDTO({
                     ...employee.company,
                     openPositions: employee.company.openPositions?.map((job) => new JobPositionDTO(job))
-                } : undefined
+                }) : undefined
             });
         } catch (error) {
             // Handle error
