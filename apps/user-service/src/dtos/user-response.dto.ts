@@ -222,6 +222,11 @@ export class CompanyResponseDTO {
     @IsOptional()
     benefits?: ValuesAndBenefitsDTO[];
 
+    @Expose()
+    get availableTimes(): string[] {
+    return [...new Set(this.openPositions?.map(job => job.type) || [])];
+    }
+
     @IsArray()
     @Type(() => CareerScopesDTO)
     @ValidateNested({ each: true })
