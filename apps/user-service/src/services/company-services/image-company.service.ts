@@ -145,4 +145,26 @@ export class ImageCompanyService {
           throw new BadRequestException("An error occurred while uploading the company's images.");
         }       
       }
+
+      async removeCompanyImage(imageId: string) {
+        try {
+          const image = await this.imageRepository.findOne({ 
+            where: { id: imageId }
+          });
+          if(!image) throw new NotFoundException(`There's no image with ID ${image}`);
+
+           // Delete file from disk
+          const filename = path.basename(image.image); // get the file name from URL
+          const filePath = path.join(process.cwd(), 'storage/company-images', filename);
+          UploadfileService.deleteFile(filePath, 'Company Image');
+
+          await this.imageRepository.delete({ id: imageId });
+
+          return { message: "Company's image was successfully removed." }
+        } catch (error) {
+           // Handle error
+           this.logger.error(error.message);  
+           throw new BadRequestException("An error occurred while removing the company's images.");
+        }
+      }
 }

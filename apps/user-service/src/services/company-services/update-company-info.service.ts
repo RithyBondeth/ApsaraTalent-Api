@@ -9,6 +9,7 @@ import { Job } from "@app/common/database/entities/company/job.entity";
 import { CareerScope } from "@app/common/database/entities/career-scope.entity";
 import { Social } from "@app/common/database/entities/social.entity";
 import { PinoLogger } from "nestjs-pino";
+import { CompanyResponseDTO, JobPositionDTO } from "../../dtos/user-response.dto";
 
 @Injectable()
 export class UpdateCompanyInfoService {
@@ -22,7 +23,7 @@ export class UpdateCompanyInfoService {
         private readonly logger: PinoLogger,
     ) {}
 
-    async updateCompanyInfo(updateCompanyInfoDTO: UpdateCompanyInfoDTO, companyId: string) {
+    async updateCompanyInfo(updateCompanyInfoDTO: UpdateCompanyInfoDTO, companyId: string): Promise<{ message: string, company: CompanyResponseDTO }> {
         try {
             // Find existing company with relations
             let company = await this.companyRepository.findOne({ 
@@ -74,7 +75,10 @@ export class UpdateCompanyInfoService {
 
             return {
                 message: "Company information updated successfully",
-                company: company,
+                company: new CompanyResponseDTO({
+                    ...company,
+                    openPositions: company.openPositions?.map((job) => new JobPositionDTO(job))
+                }),
             };           
         } catch (error) {
             // Handle error  

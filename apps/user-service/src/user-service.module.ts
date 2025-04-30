@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule, LoggerModule, UploadfileModule } from '@app/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -30,6 +30,7 @@ import { ImageCompanyService } from './services/company-services/image-company.s
 import { UploadEmployeeReferenceController } from './controllers/employee-controllers/upload-employee-reference.controller';
 import { UploadEmployeeReferenceService } from './services/employee-services/upload-employee-reference.service';
 import { Image } from '@app/common/database/entities/company/image.entity';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -60,7 +61,12 @@ import { Image } from '@app/common/database/entities/company/image.entity';
     FindCompanyService,
     ImageCompanyService,
     UploadEmployeeReferenceService,
-    UserService
+    UserService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ClassSerializerInterceptor,
+     
+    }
   ],
 })
 export class UserServiceModule {}

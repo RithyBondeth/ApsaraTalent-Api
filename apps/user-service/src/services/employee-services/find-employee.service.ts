@@ -4,6 +4,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { PinoLogger } from "nestjs-pino";
 import { Repository } from "typeorm";
 import { UserPaginationDTO } from "../../dtos/user-pagination.dto";
+import { EmployeeResponseDTO } from "../../dtos/user-response.dto";
 
 @Injectable()
 export class FindEmployeeService {
@@ -12,7 +13,7 @@ export class FindEmployeeService {
         private readonly logger: PinoLogger,
     ) {}
 
-    async findAll(pagination: UserPaginationDTO) {
+    async findAll(pagination: UserPaginationDTO): Promise<EmployeeResponseDTO[]> {
        try {
             const employees = await this.employeeRepository.find({ 
                 relations: ['skills', 'careerScopes', 'experiences', 'socials', 'educations'],
@@ -21,7 +22,7 @@ export class FindEmployeeService {
             });
             if(!employees) throw new NotFoundException('There are no employee available');
 
-            return employees;
+            return employees.map((emp) => new EmployeeResponseDTO(emp));
        } catch (error) {
             //Handle error
             this.logger.error(error.message);
@@ -29,14 +30,14 @@ export class FindEmployeeService {
        }
     }
 
-    async findOneById(employeeId: string) {
+    async findOneById(employeeId: string): Promise<EmployeeResponseDTO> {
         try {  
             const employee = await this.employeeRepository.findOne({
                 where: { id: employeeId },
                 relations: ['skills', 'careerScopes', 'experiences', 'socials', 'educations']
             });
 
-            return employee;
+            return new EmployeeResponseDTO(employee);
         } catch (error) {
             //Handle error
             this.logger.error(error.message);

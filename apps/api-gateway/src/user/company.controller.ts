@@ -1,6 +1,6 @@
 import { UploadFileInterceptor } from "@app/common/uploadfile/uploadfile.interceptor";
 import { UploadFilesInterceptor } from "@app/common/uploadfile/uploadfiles.interceptor";
-import { Body, Controller, Get, Inject, Param, ParseUUIDPipe, Patch, Post, Query, UploadedFile, UploadedFiles, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Inject, Param, ParseUUIDPipe, Patch, Post, Query, UploadedFile, UploadedFiles, UseInterceptors } from "@nestjs/common";
 import { ClientProxy } from "@nestjs/microservices";
 import { firstValueFrom } from "rxjs";
 import { USER_SERVICE } from "utils/constants/user-service.constant";
@@ -86,5 +86,13 @@ export class CompanyController {
         return firstValueFrom(
             this.userClient.send(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_IMAGES, payload)
         )              
+    }
+
+    @Delete('remove-images/:imageId')
+    async removeCompanyImage(@Param('imageId', ParseUUIDPipe) imageId: string) {
+        const payload = { imageId };
+        return firstValueFrom(
+            this.userClient.send(USER_SERVICE.ACTIONS.REMOVE_COMPANY_IMAGES, payload)
+        );
     }
 }

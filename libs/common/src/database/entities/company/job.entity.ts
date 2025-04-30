@@ -27,6 +27,12 @@ export class Job {
     @Column()
     skillsRequired: string;
 
+    @Column({ nullable: true })
+    salary: string;
+    
+    @Column({ nullable: true })
+    expireDate: Date;
+
     @CreateDateColumn()
     createdAt: Date;   
 }
