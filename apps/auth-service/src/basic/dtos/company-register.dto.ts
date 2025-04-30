@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsArray, IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, IsStrongPassword, ValidateNested } from "class-validator";
+import { IsArray, IsDate, IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, IsStrongPassword, ValidateNested } from "class-validator";
 
 export class CompanyRegisterDTO {
     @IsEmail()
@@ -104,6 +104,15 @@ class JobDTO {
     @IsString()
     @IsNotEmpty()
     skillsRequired: string;
+
+    @IsString()
+    @IsNotEmpty()
+    salary: string;
+
+    @IsDate()
+    @Type(() => Date)
+    @IsNotEmpty()
+    expireDate: Date;
 }
 
 class BenefitDTO {
