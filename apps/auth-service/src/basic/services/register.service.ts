@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { UploadfileService } from "@app/common/uploadfile/uploadfile.service";
 import { ConfigService } from "@nestjs/config";
 import { PinoLogger } from "nestjs-pino";
 import { JwtService } from "@app/common/jwt/jwt.service";
@@ -34,7 +33,6 @@ export class RegisterService {
         @InjectRepository(Social) private readonly socialRepository: Repository<Social>,
         @InjectRepository(Benefit) private readonly benefitRepository: Repository<Benefit>,
         @InjectRepository(Value) private readonly valueRepository: Repository<Value>,
-        private readonly uploadFileService: UploadfileService,
         private readonly configService: ConfigService,
         private readonly jwtService: JwtService,
         private readonly emailService: EmailService,
@@ -75,6 +73,8 @@ export class RegisterService {
                     experienceRequired: job.experienceRequired,
                     educationRequired: job.educationRequired,
                     skillsRequired: job.skillsRequired,
+                    salary: job.salary,
+                    expireDate: job.expireDate,
                     company: newCompany,
                 });
             }) || [];

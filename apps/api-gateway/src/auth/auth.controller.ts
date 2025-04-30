@@ -28,7 +28,6 @@ export class AuthController {
         );
     }
 
-    
     @Post('login')
     @HttpCode(HttpStatus.OK)
     @UseGuards(ThrottlerGuard)

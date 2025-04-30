@@ -5,7 +5,7 @@ import { Logger } from 'nestjs-pino';
 async function bootstrap() {
   const app = await NestFactory.create(ApiGatewayModule);
   app.enableCors();
-  
+
   //Logger Setup
   const logger = app.get(Logger);
   app.useLogger(logger);
