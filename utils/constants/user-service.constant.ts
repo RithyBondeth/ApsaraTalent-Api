@@ -19,6 +19,7 @@ export const USER_SERVICE = {
         UPLOAD_COMPANY_COVER: { cmd: 'uploadCompanyCover' },
         REMOVE_COMPANY_COVER: { cmd: 'removeCompanyCover' },
         UPLOAD_COMPANY_IMAGES: { cmd: 'uploadCompanyImage' },
+        REMOVE_COMPANY_IMAGES: { cmd: 'removeCompanyImage' },
 
         FIND_ALL: { cmd: 'findAll' },
         FIND_ONE_BY_ID: { cmd: 'findOneById' },

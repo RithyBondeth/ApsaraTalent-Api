@@ -31,4 +31,9 @@ export class ImageCompanyController {
     async uploadCompanyImage(@Payload() payload: { companyId: string, images: Express.Multer.File[] }) {
         return this.imageCompanyService.uploadCompanyImage(payload.companyId, payload.images);
     }
+
+    @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_COMPANY_IMAGES) 
+    async removeCompanyImage(@Payload() payload: { imageId: string }) {
+        return this.imageCompanyService.removeCompanyImage(payload.imageId);
+    }
 }

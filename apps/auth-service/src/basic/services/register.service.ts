@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { UploadfileService } from "@app/common/uploadfile/uploadfile.service";
 import { ConfigService } from "@nestjs/config";
 import { PinoLogger } from "nestjs-pino";
 import { JwtService } from "@app/common/jwt/jwt.service";
@@ -20,6 +19,7 @@ import { Company } from "@app/common/database/entities/company/company.entity";
 import { Benefit } from "@app/common/database/entities/company/benefit.entity";
 import { Value } from "@app/common/database/entities/company/value.entity";
 import { Job } from "@app/common/database/entities/company/job.entity";
+import { CompanyResponseDTO, JobPositionDTO, UserResponseDTO } from "apps/user-service/src/dtos/user-response.dto";
 @Injectable()
 export class RegisterService {
     constructor(
@@ -34,14 +34,13 @@ export class RegisterService {
         @InjectRepository(Social) private readonly socialRepository: Repository<Social>,
         @InjectRepository(Benefit) private readonly benefitRepository: Repository<Benefit>,
         @InjectRepository(Value) private readonly valueRepository: Repository<Value>,
-        private readonly uploadFileService: UploadfileService,
         private readonly configService: ConfigService,
         private readonly jwtService: JwtService,
         private readonly emailService: EmailService,
         private readonly logger: PinoLogger
     ) {}
 
-    async companyRegister(companyRegisterDTO: CompanyRegisterDTO) {        
+    async companyRegister(companyRegisterDTO: CompanyRegisterDTO): Promise<UserResponseDTO> {        
         try {
             // Check if a company with this email already exists
             let company = await this.userRepository.findOne({ 
@@ -75,6 +74,8 @@ export class RegisterService {
                     experienceRequired: job.experienceRequired,
                     educationRequired: job.educationRequired,
                     skillsRequired: job.skillsRequired,
+                    salary: job.salary,
+                    expireDate: job.expireDate,
                     company: newCompany,
                 });
             }) || [];
@@ -152,7 +153,13 @@ export class RegisterService {
             });
     
             // Return company profile
-            return company;
+            return new UserResponseDTO({
+                ...company,
+                company: new CompanyResponseDTO({
+                    ...company.company,
+                    openPositions: company.company.openPositions?.map((job) => new JobPositionDTO(job))
+                })
+            });
 
         } catch (error) {
             // Handle error
@@ -161,7 +168,7 @@ export class RegisterService {
         }
     }
 
-    async employeeRegitser(employeeRegisterDTO: EmployeeRegisterDTO) {
+    async employeeRegitser(employeeRegisterDTO: EmployeeRegisterDTO): Promise<UserResponseDTO> {
         try {
             // Check if employee with this email already exists
             let employee = await this.userRepository.findOne({
@@ -199,7 +206,7 @@ export class RegisterService {
                 });
             }) || [];
     
-            // Create skills and associdate them with the employee
+            // Create skills and related them with the employee
             const newSkills = employeeRegisterDTO.skills?.map((skill) => {
                 return this.skillRepository.create({
                     name: skill.name,
@@ -208,8 +215,8 @@ export class RegisterService {
                 });
             }) || [];
 
-            // Create experinces and associdate them with the employee
-            const newExperinces = employeeRegisterDTO.experiences?.map((exp) => {
+            // Create experiences and related them with the employee
+            const newExperiences = employeeRegisterDTO.experiences?.map((exp) => {
                 return this.experienceRepository.create({
                     title: exp.title,
                     description: exp.description,
@@ -219,7 +226,7 @@ export class RegisterService {
                 });
             }) || [];
 
-            // Create careerScopes and associdate them with the employee
+            // Create careerScopes and related them with the employee
             const newCareerScopes = employeeRegisterDTO.careerScopes?.map((csp) => {
                 return this.careerScopeRepository.create({
                     name: csp.name,
@@ -228,7 +235,7 @@ export class RegisterService {
                 });
             }) || [];
 
-            // Create socials and associdate them with the employee
+            // Create socials and related them with the employee
             const newSocials = employeeRegisterDTO.socials?.map((social) => {
                 return this.socialRepository.create({
                     platform: social.platform,
@@ -240,14 +247,14 @@ export class RegisterService {
             // Save educations, skills, experiences, career scopes, and socials
             await this.educationRepository.save(newEducations);
             await this.skillRepository.save(newSkills);
-            await this.experienceRepository.save(newExperinces);
+            await this.experienceRepository.save(newExperiences);
             await this.careerScopeRepository.save(newCareerScopes);
             await this.socialRepository.save(newSocials);
 
             // Update the employee entity with the new relations
             newEmployee.educations = newEducations;
             newEmployee.skills = newSkills;
-            newEmployee.experiences = newExperinces;
+            newEmployee.experiences = newExperiences;
             newEmployee.careerScopes = newCareerScopes;
             newEmployee.socials = newSocials;
 
@@ -276,8 +283,13 @@ export class RegisterService {
             });
 
             // Return employee profile
-            return employee;
-
+            return new UserResponseDTO({
+                ...employee,
+                company: employee.company ? {
+                    ...employee.company,
+                    openPositions: employee.company.openPositions?.map((job) => new JobPositionDTO(job))
+                } : undefined
+            });
         } catch (error) {
             // Handle error
             this.logger.error(error.message);  
