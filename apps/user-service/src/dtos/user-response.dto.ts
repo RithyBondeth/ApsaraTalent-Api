@@ -1,4 +1,3 @@
-import { Employee } from "@app/common/database/entities/employee/employee.entity";
 import { EGender } from "@app/common/database/enums/gender.enum";
 import { EUserRole } from "@app/common/database/enums/user-role.enum";
 import { Exclude, Expose, Transform, Type } from "class-transformer";
@@ -224,7 +223,7 @@ export class CompanyResponseDTO {
 
     @Expose()
     get availableTimes(): string[] {
-    return [...new Set(this.openPositions?.map(job => job.type) || [])];
+        return [...new Set(this.openPositions?.map(job => job.type)) || []];
     }
 
     @IsArray()
