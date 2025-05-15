@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { LoginDTO } from "../dtos/login.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -8,6 +8,7 @@ import { IPayload } from "@app/common/jwt/interfaces/payload.interface";
 import { LoginResponseDTO } from "../dtos/login-response.dto";
 import { PinoLogger } from "nestjs-pino";
 import { User } from "@app/common/database/entities/user.entity";
+import { RpcException } from "@nestjs/microservices";
 
 @Injectable()
 export class LoginService {
@@ -22,13 +23,15 @@ export class LoginService {
             //Find the user by their email address
             const user = await this.userRepository.findOne({ where: { email: loginDTO.email } });
 
+            if (!user) throw new RpcException({ message: "There's no user with this email address", statusCode: 401 });
+
             //Compare password
             const validPassword: boolean = await bcrypt.compare(loginDTO.password, user.password); 
 
-            if(!user || !validPassword) throw new UnauthorizedException('Invalid Credentials');
+            if(!validPassword) throw new RpcException({ message: "Incorrect password", statusCode: 401 });
 
             //Check email verification
-            if(!user.isEmailVerified) throw new UnauthorizedException('Please verify your email first');
+            if(!user.isEmailVerified) throw new RpcException({ message: 'Please verify your email first', statusCode: 403 });
 
             //Generate tokens
             const payload: IPayload = {
@@ -53,8 +56,11 @@ export class LoginService {
                 user: user,
             });
         } catch (error) {
-            this.logger.error(error.message);
-            throw new BadRequestException('An error occurred while login.');
+            this.logger.error(error?.message || 'Login failed');
+            // If it's already an RpcException, rethrow it
+            if (error instanceof RpcException) throw error;
+            // Otherwise, wrap unexpected errors in RpcException
+            throw new RpcException({ message: 'An error occurred during login', statusCode: 500 });
         }
     }
 }

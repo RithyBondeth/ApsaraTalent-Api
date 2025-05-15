@@ -4,7 +4,11 @@ import { Logger } from 'nestjs-pino';
 
 async function bootstrap() {
   const app = await NestFactory.create(ApiGatewayModule);
-  app.enableCors();
+  app.enableCors({
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true, // If need to allow cookies
+  })
 
   //Logger Setup
   const logger = app.get(Logger);
