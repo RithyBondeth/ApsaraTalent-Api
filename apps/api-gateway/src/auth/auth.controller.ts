@@ -1,7 +1,7 @@
 import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
-import { Body, Controller, HttpCode, HttpStatus, Inject, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpException, HttpStatus, Inject, Param, Post, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { catchError, firstValueFrom, throwError } from 'rxjs';
 import { ThrottlerGuard } from '@app/common/throttler/guards/throttler.guard';
 
 @Controller('auth')
@@ -32,10 +32,9 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @UseGuards(ThrottlerGuard)
     async login(@Body() loginDTO: any): Promise<any> {
-        const payload = { ...loginDTO };
         return await firstValueFrom(
-            this.authClient.send(AUTH_SERVICE.ACTIONS.LOGIN, payload)
-        )
+            this.authClient.send(AUTH_SERVICE.ACTIONS.LOGIN, loginDTO)
+          );
     }
 
     @Post('forgot-password')
