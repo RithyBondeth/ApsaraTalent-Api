@@ -32,6 +32,8 @@ export class ForgotPasswordService {
             user.resetPasswordExpires = expireDateToken;
             await this.userRepository.save(user);
 
+            console.log("reset token: ", resetToken);
+
             //Send reset password token to user email address
             await this.emailService.sendEmail({
                 to: user.email,

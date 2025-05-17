@@ -8,6 +8,7 @@ import * as bcrypt from "bcrypt";
 import { ResetPasswordResponseDTO } from "../dtos/reset-password-response.dto";
 import { SALT_ROUNDS } from "utils/constants/password.constant";
 import { User } from "@app/common/database/entities/user.entity";
+import { RpcException } from "@nestjs/microservices";
 
 @Injectable()
 export class ResetPasswordService {
@@ -20,7 +21,7 @@ export class ResetPasswordService {
         try {
             //Check if new password and confirm password are valid
             const isMatchedPassword = resetPasswordDTO.newPassword === resetPasswordDTO.confirmPassword;
-            if(!isMatchedPassword) throw new UnauthorizedException('Password do not match');
+            if(!isMatchedPassword) throw new RpcException({ message: "Password do not matches", statusCode: 401 });
             
             //Hashed the reset token
             const hashedToken = crypto.createHash('sha256').update(resetPasswordDTO.token).digest('hex');
@@ -32,7 +33,7 @@ export class ResetPasswordService {
                     resetPasswordExpires: MoreThan(new Date()),
                 }
             });
-            if(!user) throw new UnauthorizedException('Invalid token or expires token');
+            if(!user) throw new RpcException({ message: "Invalid token or expires token", statusCode: 401 });
 
             //Set user new password and save user into the database
             user.password = await bcrypt.hash(resetPasswordDTO.newPassword, SALT_ROUNDS);
@@ -44,7 +45,7 @@ export class ResetPasswordService {
             return new ResetPasswordResponseDTO('You password was updated successfully');
         } catch (error) {
             this.logger.error(error.message);
-            throw new BadRequestException('An error occurred while user resetting password.');
+            throw new RpcException({ message: "An error occurred while user resetting password.", statusCode: 500 });
         }  
     }  
 }
