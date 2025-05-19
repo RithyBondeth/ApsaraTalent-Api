@@ -5,6 +5,7 @@ import { PinoLogger } from "nestjs-pino";
 import { Repository } from "typeorm";
 import { UserPaginationDTO } from "../../dtos/user-pagination.dto";
 import { EmployeeResponseDTO } from "../../dtos/user-response.dto";
+import { RpcException } from "@nestjs/microservices";
 
 @Injectable()
 export class FindEmployeeService {
@@ -20,13 +21,13 @@ export class FindEmployeeService {
                 skip: pagination?.skip || 0,
                 take: pagination?.limit || 10,
             });
-            if(!employees) throw new NotFoundException('There are no employee available');
+            if(!employees) throw new RpcException({ message: 'There are no employees available', statusCode: 401 });
 
             return employees.map((emp) => new EmployeeResponseDTO(emp));
        } catch (error) {
             //Handle error
             this.logger.error(error.message);
-            throw new BadRequestException("An error occurred while fetching all of the employees");
+            throw new RpcException({ message: 'An error occurred while fetching all of the employees', statusCode: 500 });
        }
     }
 
@@ -41,7 +42,7 @@ export class FindEmployeeService {
         } catch (error) {
             //Handle error
             this.logger.error(error.message);
-            throw new BadRequestException("An error occurred while fetching an employee");
+            throw new RpcException({ message: 'An error occurred while fetching an employee', statusCode: 500 });
         }
     }
 

@@ -25,6 +25,7 @@ import {
   UserResponseDTO,
 } from 'apps/user-service/src/dtos/user-response.dto';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
+import { RpcException } from '@nestjs/microservices';
 @Injectable()
 export class RegisterService {
   constructor(
@@ -73,6 +74,8 @@ export class RegisterService {
           'company.socials',
         ],
       });
+
+      if(!company) throw new RpcException({ message: "There is no company with this ID.", statusCode: 401 });
 
       // Generate email verification token
       const emailVerificationToken =
@@ -215,9 +218,7 @@ export class RegisterService {
     } catch (error) {
       // Handle error
       this.logger.error(error.message);
-      throw new BadRequestException(
-        'An error occurred while registering the user.',
-      );
+      throw new RpcException({ message: "An error occurred while registering the user.", statusCode: 500 });
     }
   }
 
@@ -240,6 +241,8 @@ export class RegisterService {
           'employee.educations',
         ],
       });
+
+      if(!employee) throw new RpcException({ message: "There is no employee with this ID.", statusCode: 401 });
 
       // Generate email verification token
       const emailVerificationToken =
@@ -387,9 +390,7 @@ export class RegisterService {
     } catch (error) {
       // Handle error
       this.logger.error(error.message);
-      throw new BadRequestException(
-        'An error occurred while registering the user.',
-      );
+      throw new RpcException({ message: "An error occurred while registering the user.", statusCode: 500 });
     }
   }
 }

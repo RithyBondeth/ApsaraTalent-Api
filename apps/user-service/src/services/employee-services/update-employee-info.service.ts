@@ -14,6 +14,7 @@ import { CareerScope } from '@app/common/database/entities/career-scope.entity';
 import { Social } from '@app/common/database/entities/social.entity';
 import { Education } from '@app/common/database/entities/employee/education.entity';
 import { EmployeeResponseDTO } from '../../dtos/user-response.dto';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class UpdateEmployeeInfoService {
@@ -49,8 +50,7 @@ export class UpdateEmployeeInfoService {
           'educations',
         ],
       });
-      if (!employee)
-        throw new NotFoundException(`Employee with ID ${employeeId} not found`);
+      if (!employee) throw new RpcException({ message: "There is no employee with this ID.", statusCode: 401 });
 
       // Merge new values into existing fields
       Object.assign(employee, updateEmployeeInfoDTO);
@@ -121,9 +121,7 @@ export class UpdateEmployeeInfoService {
     } catch (error) {
       // Handle error
       this.logger.error(error.message);
-      throw new BadRequestException(
-        "An error occurred while updating the employee's information.",
-      );
+      throw new RpcException({ message: "An error occurred while updating the employee's information.", statusCode: 500 });
     }
   }
 }
