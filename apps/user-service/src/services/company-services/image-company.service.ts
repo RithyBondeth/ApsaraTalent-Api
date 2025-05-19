@@ -2,6 +2,7 @@ import { Company } from "@app/common/database/entities/company/company.entity";
 import { Image } from "@app/common/database/entities/company/image.entity";
 import { UploadfileService } from "@app/common/uploadfile/uploadfile.service";
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { RpcException } from "@nestjs/microservices";
 import { InjectRepository } from "@nestjs/typeorm";
 import { PinoLogger } from "nestjs-pino";
 import * as path from "path";
@@ -25,8 +26,8 @@ export class ImageCompanyService {
             if(!company) {
                 const avatarPath = path.join(process.cwd(), 'storage/company-avatars', avatar.filename); 
                 UploadfileService.deleteFile(avatarPath, 'Avatar Image'); 
-                
-                throw new NotFoundException(`There's no company with ID ${companyId}`);
+
+                throw new RpcException({ message: "There is no company with this ID", statusCode: 401 });
             }
 
             if(company.avatar) {
@@ -44,7 +45,7 @@ export class ImageCompanyService {
         } catch (error) {
              // Handle error
             this.logger.error(error.message);  
-            throw new BadRequestException("An error occurred while uploading the company's avatar.");
+            throw new RpcException({ message: "An error occurred while uploading the company's avatar.", statusCode: 500 });
         }
     }
 
@@ -53,7 +54,7 @@ export class ImageCompanyService {
           const company = await this.companyRepository.findOne({
             where: { id: companyId }
           });
-          if(!company) throw new NotFoundException(`There's no company with ID ${company}`);
+          if(!company) throw new RpcException({ message: "There is no company with this ID", statusCode: 401 });
     
           if(company.avatar) {
             const avatarFilename = path.basename(company.avatar);
@@ -68,7 +69,7 @@ export class ImageCompanyService {
         } catch (error) {
           // Handle error
           this.logger.error(error.message);  
-          throw new BadRequestException("An error occurred while removing the company's avatar.");
+          throw new RpcException({ message: "An error occurred while removing the company's avatar.", statusCode: 500 });
         }
       }
 
@@ -77,7 +78,7 @@ export class ImageCompanyService {
           const company = await this.companyRepository.findOne({ 
             where: { id: companyId }
           });
-          if(!company) throw new NotFoundException(`There's no company with ID ${company}`);
+          if(!company) throw new RpcException({ message: "There is no company with this ID", statusCode: 401 });
 
           if(company.cover) {
             const oldCoverFilename = path.basename(company.cover);
@@ -93,7 +94,7 @@ export class ImageCompanyService {
         } catch (error) {
           // Handle error
           this.logger.error(error.message);  
-          throw new BadRequestException("An error occurred while uploading the company's cover.");
+          throw new RpcException({ message: "An error occurred while uploading the company's cover.", statusCode: 500 });
         }
       }
 
@@ -102,7 +103,7 @@ export class ImageCompanyService {
           const company = await this.companyRepository.findOne({ 
             where: { id: companyId }
           });
-          if(!company) throw new NotFoundException(`There's no company with ID ${company}`);
+          if(!company) throw new RpcException({ message: "There is no company with this ID", statusCode: 401 });
 
           if(company.cover) {
             const oldCoverFilename = path.basename(company.cover);
@@ -118,7 +119,7 @@ export class ImageCompanyService {
         } catch (error) {
           // Handle error
           this.logger.error(error.message);  
-          throw new BadRequestException("An error occurred while removing the company's cover.");
+          throw new RpcException({ message: "An error occurred while removing the company's cover.", statusCode: 500 });
         }
       }
 
@@ -127,7 +128,7 @@ export class ImageCompanyService {
           const company = await this.companyRepository.findOne({
             where: { id: companyId }
           });
-          if(!company) throw new NotFoundException(`There's no company with ID ${company}`);
+          if(!company) throw new RpcException({ message: "There is no company with this ID", statusCode: 401 });
 
           const imageUrls = images.map((image) => this.uploadFileService.getUploadFile('company-images', image));
           const companyImages = imageUrls.map((imageUrl) => this.imageRepository.create({
@@ -142,7 +143,7 @@ export class ImageCompanyService {
         } catch (error) {
           // Handle error
           this.logger.error(error.message);  
-          throw new BadRequestException("An error occurred while uploading the company's images.");
+          throw new RpcException({ message: "An error occurred while uploading the company's images.", statusCode: 500 });
         }       
       }
 
@@ -151,7 +152,7 @@ export class ImageCompanyService {
           const image = await this.imageRepository.findOne({ 
             where: { id: imageId }
           });
-          if(!image) throw new NotFoundException(`There's no image with ID ${image}`);
+          if(!image) throw new RpcException({ message: "There's no image with ID", statusCode: 401 });
 
            // Delete file from disk
           const filename = path.basename(image.image); // get the file name from URL
@@ -163,8 +164,8 @@ export class ImageCompanyService {
           return { message: "Company's image was successfully removed." }
         } catch (error) {
            // Handle error
-           this.logger.error(error.message);  
-           throw new BadRequestException("An error occurred while removing the company's images.");
+           this.logger.error(error.message); 
+           throw new RpcException({ message: "An error occurred while removing the company's images.", statusCode: 500 });
         }
       }
 }

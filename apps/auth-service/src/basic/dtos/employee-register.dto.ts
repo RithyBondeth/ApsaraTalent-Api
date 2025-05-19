@@ -1,5 +1,4 @@
 import { EGender } from "@app/common/database/enums/gender.enum";
-import { EUserRole } from "@app/common/database/enums/user-role.enum";
 import { Type } from "class-transformer";
 import { IsArray, IsDate, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsStrongPassword, IsUrl, ValidateNested  } from "class-validator";
 
