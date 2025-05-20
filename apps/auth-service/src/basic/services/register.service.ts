@@ -75,8 +75,6 @@ export class RegisterService {
         ],
       });
 
-      if(!company) throw new RpcException({ message: "There is no company with this ID.", statusCode: 401 });
-
       // Generate email verification token
       const emailVerificationToken =
         await this.jwtService.generateEmailVerificationToken(
@@ -241,8 +239,6 @@ export class RegisterService {
           'employee.educations',
         ],
       });
-
-      if(!employee) throw new RpcException({ message: "There is no employee with this ID.", statusCode: 401 });
 
       // Generate email verification token
       const emailVerificationToken =
