@@ -19,7 +19,7 @@ export class User {
     @OneToOne(() => Company, (company) => company.user)
     company: Company;
 
-    @Column({ unique: true })
+    @Column({ unique: true, nullable: true })
     email: string;
     
     @Column({ nullable: true }) //Optional for social login and OTP Login
