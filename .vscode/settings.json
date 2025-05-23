@@ -4,6 +4,8 @@
         "dtos",
         "firstname",
         "lastname",
+        "Plasate",
+        "Plasgate",
         "Regitser"
     ]
 }

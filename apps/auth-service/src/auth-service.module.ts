@@ -32,6 +32,9 @@ import { Social } from '@app/common/database/entities/social.entity';
 import { Experience } from '@app/common/database/entities/employee/experience.entity';
 import { Education } from '@app/common/database/entities/employee/education.entity';
 import { Job } from '@app/common/database/entities/company/job.entity';
+import { LoginOTPController } from './basic/controllers/login-otp.controller';
+import { LoginOTPService } from './basic/services/login-otp.service';
+import { MessageModule } from '@app/common/message/message.module';
 
 @Module({
   imports: [
@@ -44,6 +47,7 @@ import { Job } from '@app/common/database/entities/company/job.entity';
     DatabaseModule,
     UploadfileModule,
     EmailModule,
+    MessageModule,
     TypeOrmModule.forFeature([ User, Company, Employee, Skill, CareerScope, Benefit, Value, Social, Experience, Education, Job ])
   ],
   controllers: [
@@ -54,6 +58,7 @@ import { Job } from '@app/common/database/entities/company/job.entity';
     RefreshTokenController,
     VerifyEmailController,
     GoogleAuthController,
+    LoginOTPController,
   ],
   providers: [
     RegisterService,
@@ -63,6 +68,7 @@ import { Job } from '@app/common/database/entities/company/job.entity';
     RefreshTokenService,
     VerifyEmailService,
     GoogleAuthService,
+    LoginOTPService,
     {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor,

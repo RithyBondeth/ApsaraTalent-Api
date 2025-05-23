@@ -1,7 +1,7 @@
 import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
-import { Body, Controller, HttpCode, HttpException, HttpStatus, Inject, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Inject, Param, Post, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { catchError, firstValueFrom, throwError } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { ThrottlerGuard } from '@app/common/throttler/guards/throttler.guard';
 
 @Controller('auth')
@@ -35,6 +35,24 @@ export class AuthController {
         return await firstValueFrom(
             this.authClient.send(AUTH_SERVICE.ACTIONS.LOGIN, loginDTO)
           );
+    }
+
+    @Post('login-otp')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(ThrottlerGuard)
+    async loginOTP(@Body() loginOtpDTO: any): Promise<any> {
+        return await firstValueFrom(
+            this.authClient.send(AUTH_SERVICE.ACTIONS.LOGIN_OTP, loginOtpDTO)
+        );
+    }
+
+    @Post('verify-otp')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(ThrottlerGuard)
+    async verifyOTP(@Body() verifyOtpDTO: any): Promise<any> {
+        return firstValueFrom(
+            this.authClient.send(AUTH_SERVICE.ACTIONS.VERIFY_OTP, verifyOtpDTO)
+        );
     }
 
     @Post('forgot-password')
