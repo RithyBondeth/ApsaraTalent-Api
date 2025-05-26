@@ -36,7 +36,7 @@ export class LoginService {
             //Generate tokens
             const payload: IPayload = {
                 id: user.id,    
-                email: user.email,
+                info: user.email,
                 role: user.role,
             };
             const [accessToken, refreshToken] = await Promise.all([
