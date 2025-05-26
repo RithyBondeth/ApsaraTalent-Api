@@ -190,7 +190,7 @@ export class RegisterService {
       // Generate Tokens
       const payload: IPayload = {
         id: company.id,
-        email: company.email,
+        info: company.email,
         role: company.role,
       };
       const [accessToken, refreshToken] = await Promise.all([
@@ -357,7 +357,7 @@ export class RegisterService {
       // Generate Tokens
       const payload: IPayload = {
         id: employee.id,
-        email: employee.email,
+        info: employee.email,
         role: employee.role,
       };
 

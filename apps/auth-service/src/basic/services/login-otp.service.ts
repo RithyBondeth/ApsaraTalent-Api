@@ -7,6 +7,7 @@ import { RpcException } from '@nestjs/microservices';
 import { PinoLogger } from 'nestjs-pino';
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
 import { MessageService } from '@app/common/message/message.service';
+import { VerifyOtpDTO } from '../dtos/verify-otp.dto';
 
 @Injectable()
 export class LoginOTPService {
@@ -38,4 +39,20 @@ export class LoginOTPService {
         throw new RpcException({ message: 'An error occurred during login otp.', statusCode: 500 });
     }
   }
+
+  async verifyOtp(verifyOtpDTO: VerifyOtpDTO) {
+      const user = await this.userRepo.findOne({
+        where: { otpCode: verifyOtpDTO.otp, phone: verifyOtpDTO.phone },
+        order: { createdAt: 'DESC' },
+      });
+
+      if(!user) throw new RpcException({ message: "Invalid Credential", statusCode: 401 });
+      if(user.otpCodeExpires < new Date()) throw new RpcException({ message: "OTP expired", statusCode: 401 });
+  
+      user.otpCode = null;
+      user.otpCodeExpires = null;
+      await this.userRepo.save(user);
+
+      
+    }
 }

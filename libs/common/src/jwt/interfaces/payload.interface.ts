@@ -1,6 +1,6 @@
 export interface IPayload {
     id: string;
-    email: string;
+    info: string; // Can be email or phone number
     role: string;
     exp?: number;
     iat?: number;
