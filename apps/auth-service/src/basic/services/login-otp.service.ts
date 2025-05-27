@@ -39,6 +39,8 @@ export class LoginOTPService {
       await this.userRepo.save(user);
 
       await this.messageService.sendOtp(loginOtpDTO.phone, otpCode);
+      
+      this.logger.debug(`Generated OTP ${otpCode} for ${loginOtpDTO.phone}`)
       return { message: `OTP sent successfully to ${loginOtpDTO.phone}` };
     } catch (error) {
       this.logger.error(error?.message || 'Login OTP failed.');
@@ -91,7 +93,7 @@ export class LoginOTPService {
       this.logger.error(error.message);
       throw new RpcException({
         message:
-          'An error occurred while registering the user with phone number.',
+          'An error occurred while verifying otp.',
         statusCode: 500,
       });
     }

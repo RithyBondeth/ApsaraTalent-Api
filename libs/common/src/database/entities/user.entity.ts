@@ -43,6 +43,9 @@ export class User {
     @Column({ nullable: true }) // For push notifications services
     pushNotificationToken: string;
 
+    @Column({ default: false })
+    profileCompleted: boolean;
+    
     // Auth related fields
     @Column({ nullable: true })
     resetPasswordToken: string;

@@ -34,7 +34,7 @@ export class RefreshTokenService {
             const [accessToken, refreshToken] = await Promise.all([
                 this.jwtService.generateToken({
                     id: user.id,
-                    email: user.email,
+                    info: user.email,
                     role: user.role,
                 }),
                 this.jwtService.generateRefreshToken(user.id),
