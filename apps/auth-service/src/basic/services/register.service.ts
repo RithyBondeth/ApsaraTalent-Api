@@ -174,6 +174,7 @@ export class RegisterService {
         company: newCompany,
         isEmailVerified: false,
         emailVerificationToken: emailVerificationToken,
+        profileCompleted: true,
       });
 
       // Save user role company in database
@@ -341,6 +342,7 @@ export class RegisterService {
         employee: newEmployee,
         isEmailVerified: false,
         emailVerificationToken: emailVerificationToken,
+        profileCompleted: true,
       });
 
       // Save user role employee in database
