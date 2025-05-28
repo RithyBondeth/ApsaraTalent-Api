@@ -64,7 +64,9 @@ export class RegisterService {
     try {
       // Check if a company with this email already exists
       let company = await this.userRepository.findOne({
-        where: { email: companyRegisterDTO.email },
+        where: companyRegisterDTO.authEmail
+          ? { email: companyRegisterDTO.email }
+          : { phone: companyRegisterDTO.phone },
         relations: [
           'company',
           'company.openPositions',
@@ -78,7 +80,9 @@ export class RegisterService {
       // Generate email verification token
       const emailVerificationToken =
         await this.jwtService.generateEmailVerificationToken(
-          companyRegisterDTO.email,
+          companyRegisterDTO.authEmail
+            ? companyRegisterDTO.email
+            : companyRegisterDTO.phone,
         );
 
       // Create company entity
@@ -173,7 +177,9 @@ export class RegisterService {
         password: companyRegisterDTO.password,
         company: newCompany,
         isEmailVerified: false,
-        emailVerificationToken: emailVerificationToken,
+        emailVerificationToken: companyRegisterDTO.authEmail
+          ? emailVerificationToken
+          : null,
         profileCompleted: true,
       });
 
@@ -181,17 +187,19 @@ export class RegisterService {
       await this.userRepository.save(company);
 
       // Send verification email
-      await this.emailService.sendEmail({
-        to: company.email,
-        subject: 'Apsara Talent - Verify Your Email Address',
-        text: `Hello, ${company.company.name}. Please verify your email address by clicking on the following link: 
-                       ${this.configService.get<string>('BASE_URL')}auth/verify-email/${emailVerificationToken}`,
-      });
+      if(companyRegisterDTO.authEmail) {
+        await this.emailService.sendEmail({
+          to: company.email,
+          subject: 'Apsara Talent - Verify Your Email Address',
+          text: `Hello, ${company.company.name}. Please verify your email address by clicking on the following link: 
+                         ${this.configService.get<string>('BASE_URL')}auth/verify-email/${emailVerificationToken}`,
+        });
+      }
 
       // Generate Tokens
       const payload: IPayload = {
         id: company.id,
-        info: company.email,
+        info: companyRegisterDTO.authEmail ? company.email : company.phone,
         role: company.role,
       };
       const [accessToken, refreshToken] = await Promise.all([
@@ -217,7 +225,10 @@ export class RegisterService {
     } catch (error) {
       // Handle error
       this.logger.error(error.message);
-      throw new RpcException({ message: "An error occurred while registering the user.", statusCode: 500 });
+      throw new RpcException({
+        message: 'An error occurred while registering the user.',
+        statusCode: 500,
+      });
     }
   }
 
@@ -230,7 +241,9 @@ export class RegisterService {
     try {
       // Check if employee with this email already exists
       let employee = await this.userRepository.findOne({
-        where: { email: employeeRegisterDTO.email },
+        where: employeeRegisterDTO.authEmail
+          ? { email: employeeRegisterDTO.email }
+          : { phone: employeeRegisterDTO.phone },
         relations: [
           'employee',
           'employee.skills',
@@ -244,7 +257,9 @@ export class RegisterService {
       // Generate email verification token
       const emailVerificationToken =
         await this.jwtService.generateEmailVerificationToken(
-          employeeRegisterDTO.email,
+          employeeRegisterDTO.authEmail
+            ? employeeRegisterDTO.email
+            : employeeRegisterDTO.phone,
         );
 
       // Create employee entity
@@ -340,8 +355,10 @@ export class RegisterService {
         email: employeeRegisterDTO.email,
         password: employeeRegisterDTO.password,
         employee: newEmployee,
-        isEmailVerified: false,
-        emailVerificationToken: emailVerificationToken,
+        isEmailVerified: employeeRegisterDTO.authEmail ? false : true,
+        emailVerificationToken: employeeRegisterDTO.authEmail
+          ? emailVerificationToken
+          : null,
         profileCompleted: true,
       });
 
@@ -349,17 +366,18 @@ export class RegisterService {
       await this.userRepository.save(employee);
 
       // Send verification email
-      await this.emailService.sendEmail({
-        to: employee.email,
-        subject: 'Apsara Talent - Verify Your Email Address',
-        text: `Hello, ${employee.employee.username}. Please verify your email address by clicking on the following link: 
-                       ${this.configService.get<string>('BASE_URL')}auth/verify-email/${emailVerificationToken}`,
-      });
+      if (employeeRegisterDTO.authEmail)
+        await this.emailService.sendEmail({
+          to: employee.email,
+          subject: 'Apsara Talent - Verify Your Email Address',
+          text: `Hello, ${employee.employee.username}. Please verify your email address by clicking on the following link: 
+                        ${this.configService.get<string>('BASE_URL')}auth/verify-email/${emailVerificationToken}`,
+        });
 
       // Generate Tokens
       const payload: IPayload = {
         id: employee.id,
-        info: employee.email,
+        info: employeeRegisterDTO.authEmail ? employee.email : employee.phone,
         role: employee.role,
       };
 
@@ -388,7 +406,10 @@ export class RegisterService {
     } catch (error) {
       // Handle error
       this.logger.error(error.message);
-      throw new RpcException({ message: "An error occurred while registering the user.", statusCode: 500 });
+      throw new RpcException({
+        message: 'An error occurred while registering the user.',
+        statusCode: 500,
+      });
     }
   }
 }

@@ -31,7 +31,7 @@ export class LoginOTPService {
       if (!user)
         user = this.userRepo.create({
           phone: loginOtpDTO.phone,
-          role: EUserRole.EMPLOYEE,
+          role: EUserRole.NONE,
         });
 
       user.otpCode = otpCode;
@@ -39,9 +39,12 @@ export class LoginOTPService {
       await this.userRepo.save(user);
 
       await this.messageService.sendOtp(loginOtpDTO.phone, otpCode);
-      
-      this.logger.debug(`Generated OTP ${otpCode} for ${loginOtpDTO.phone}`)
-      return { message: `OTP sent successfully to ${loginOtpDTO.phone}` };
+
+      console.log(`Generated OTP ${otpCode} for ${loginOtpDTO.phone}`)
+      return { 
+        message: `OTP sent successfully to ${loginOtpDTO.phone}`,
+        isSuccess: true,
+      };
     } catch (error) {
       this.logger.error(error?.message || 'Login OTP failed.');
       if (error instanceof RpcException) throw error;
