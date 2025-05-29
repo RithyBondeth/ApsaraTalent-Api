@@ -87,7 +87,7 @@ export class LoginOTPService {
       ]);
 
       return {
-        message: `Signup as ${user.role} successfully.`,
+        message: 'Your OTP code is correct.',
         accessToken: accessToken,
         refreshToken: refreshToken,
         user: user

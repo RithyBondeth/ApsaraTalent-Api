@@ -77,6 +77,12 @@ export class RegisterService {
         ],
       });
 
+      if (company)
+        throw new RpcException({
+          message: 'This credential already registered!',
+          statusCode: 401,
+        });
+
       // Generate email verification token
       const emailVerificationToken =
         await this.jwtService.generateEmailVerificationToken(
@@ -187,7 +193,7 @@ export class RegisterService {
       await this.userRepository.save(company);
 
       // Send verification email
-      if(companyRegisterDTO.authEmail) {
+      if (companyRegisterDTO.authEmail) {
         await this.emailService.sendEmail({
           to: company.email,
           subject: 'Apsara Talent - Verify Your Email Address',
@@ -209,7 +215,9 @@ export class RegisterService {
 
       // Return company profile
       return {
-        message: 'Signup as company successfully.',
+        message: companyRegisterDTO.authEmail
+          ? 'Signup as company successfully. Please verify your email before login.'
+          : 'Signup as company successfully.',
         accessToken: accessToken,
         refreshToken: refreshToken,
         user: new UserResponseDTO({
@@ -253,6 +261,12 @@ export class RegisterService {
           'employee.educations',
         ],
       });
+
+      if (employee)
+        throw new RpcException({
+          message: 'This credential already registered!',
+          statusCode: 401,
+        });
 
       // Generate email verification token
       const emailVerificationToken =
@@ -388,7 +402,9 @@ export class RegisterService {
 
       // Return employee profile
       return {
-        message: 'Signup as employee successfully.',
+        message: employeeRegisterDTO.authEmail
+          ? 'Signup as employee successfully. Please verify your email before login.'
+          : 'Signup as employee successfully.',
         accessToken: accessToken,
         refreshToken: refreshToken,
         user: new UserResponseDTO({

@@ -5,6 +5,7 @@ import { PinoLogger } from "nestjs-pino";
 import { Repository } from "typeorm";
 import { VerifyEmailResponseDTO } from "../dtos/verify-email-response.dto";
 import { User } from "@app/common/database/entities/user.entity";
+import { RpcException } from "@nestjs/microservices";
 
 @Injectable()
 export class VerifyEmailService {
@@ -24,7 +25,7 @@ export class VerifyEmailService {
                     email: decoded.email,
                 } 
             });
-            if(!user) throw new UnauthorizedException('Invalid Credentials');
+            if(!user) throw new RpcException({ message: "Invalid Credential", statusCode: 401 });
 
             //Set email verification to true and email verification token to null
             user.isEmailVerified = true;
@@ -36,7 +37,7 @@ export class VerifyEmailService {
             return new VerifyEmailResponseDTO('Your email was verified successfully. Now you can login');
         } catch (error) {
             this.logger.error(error.message);
-            throw new BadRequestException('An error occurred while verifying email');
+            throw new RpcException({ message: 'An error occurred while verifying email', statusCode: 500 });
         }
     }  
 }
