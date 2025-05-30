@@ -1,4 +1,6 @@
-import { Controller, Get, Inject, Param, ParseUUIDPipe } from '@nestjs/common';
+import { TUser, User } from '@app/common/decorators/user.decorator';
+import { UserInterceptor } from '@app/common/interceptors/user.interceptor';
+import { Controller, Get, Inject, Param, ParseUUIDPipe, UseInterceptors } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
@@ -20,5 +22,15 @@ export class UserController {
     return firstValueFrom(
       this.userClient.send(USER_SERVICE.ACTIONS.FIND_ONE_BY_ID, payload)
     )
+  } 
+
+  @UseInterceptors(UserInterceptor)
+  @Get('current-user')
+  async getCurrentUser(@User() user: TUser) {
+    const userID = user.sub;
+    const payload = { userID };
+    return firstValueFrom(
+      this.userClient.send(USER_SERVICE.ACTIONS.GET_CURRENT_USER, payload)
+    );
   }
 }

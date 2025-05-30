@@ -17,4 +17,9 @@ export class UserController {
     async findOneUserByID(@Payload() payload: { userId: string }): Promise<UserResponseDTO> {
         return this.userService.findOneUserByID(payload.userId);
     }
+
+    @MessagePattern(USER_SERVICE.ACTIONS.GET_CURRENT_USER)
+    async getCurrentUser(@Payload() payload: { userId: string }) {
+        return this.userService.findOneUserByID(payload.userId);
+    }
 }
