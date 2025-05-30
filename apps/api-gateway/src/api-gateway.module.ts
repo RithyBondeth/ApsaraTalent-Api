@@ -9,6 +9,7 @@ import * as path from 'path';
 import { TerminusModule } from '@nestjs/terminus';
 import { ResumeBuilderModule } from './resume-builder/resume-builder.module';
 import { UserModule } from './user/user.module';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -28,6 +29,12 @@ import { UserModule } from './user/user.module';
     UserModule,
   ],
   controllers: [HealthController],
-  providers: [],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ClassSerializerInterceptor,
+     
+    }
+  ],
 })
 export class ApiGatewayModule {}
