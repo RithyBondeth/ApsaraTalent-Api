@@ -1,5 +1,5 @@
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
-import { LoggerModule } from '@app/common';
+import { JwtModule, LoggerModule } from '@app/common';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { UploadfileModule } from '@app/common/uploadfile/uploadfile.module';
@@ -10,6 +10,7 @@ import { TerminusModule } from '@nestjs/terminus';
 import { ResumeBuilderModule } from './resume-builder/resume-builder.module';
 import { UserModule } from './user/user.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
       serveRoot: '/storage',
     }),
     UserModule,
+    JwtModule
   ],
   controllers: [HealthController],
   providers: [
