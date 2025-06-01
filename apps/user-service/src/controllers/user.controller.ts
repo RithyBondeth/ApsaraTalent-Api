@@ -19,7 +19,7 @@ export class UserController {
     }
 
     @MessagePattern(USER_SERVICE.ACTIONS.GET_CURRENT_USER)
-    async getCurrentUser(@Payload() payload: { userId: string }) {
-        return this.userService.findOneUserByID(payload.userId);
+    async getCurrentUser(@Payload() payload: { userID: string }) {
+        return this.userService.findOneUserByID(payload.userID);
     }
 }

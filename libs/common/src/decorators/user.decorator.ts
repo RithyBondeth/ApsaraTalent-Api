@@ -8,7 +8,7 @@ export type TUser = {
     email?: string;
     password?: string;
     role: EUserRole;
-    sub: string;
+    id: string;
     iat: number;
     exp: number;
 }

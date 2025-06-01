@@ -27,7 +27,7 @@ export class UserController {
   @UseInterceptors(UserInterceptor)
   @Get('current-user')
   async getCurrentUser(@User() user: TUser) {
-    const userID = user.sub;
+    const userID = user.id;
     const payload = { userID };
     return firstValueFrom(
       this.userClient.send(USER_SERVICE.ACTIONS.GET_CURRENT_USER, payload)
