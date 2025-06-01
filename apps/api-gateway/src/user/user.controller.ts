@@ -1,11 +1,13 @@
 import { TUser, User } from '@app/common/decorators/user.decorator';
+import { AuthGuard } from '@app/common/guards/auth.guard';
 import { UserInterceptor } from '@app/common/interceptors/user.interceptor';
-import { Controller, Get, Inject, Param, ParseUUIDPipe, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Inject, Param, ParseUUIDPipe, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 
 @Controller('user')
+@UseGuards(AuthGuard)
 export class UserController {
   constructor(@Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy) {}
 
