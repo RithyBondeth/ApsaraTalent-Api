@@ -10,7 +10,6 @@ import { TerminusModule } from '@nestjs/terminus';
 import { ResumeBuilderModule } from './resume-builder/resume-builder.module';
 import { UserModule } from './user/user.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
   imports: [
