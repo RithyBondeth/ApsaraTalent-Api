@@ -27,7 +27,8 @@
     "start:api": "nest start api-gateway",
     "start:auth": "nest start auth-service",
     "start:users": "nest start user-service",
-    "start:resume": "nest start resume-builder-service"
+    "start:resume": "nest start resume-builder-service",
+    "start:chat": "nest start chat-service"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.13.4",
@@ -78,6 +79,7 @@
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
     "sharp": "^0.33.5",
+    "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "twilio": "^5.6.1",
     "typeorm": "^0.3.20"
