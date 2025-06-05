@@ -63,6 +63,15 @@
       "compilerOptions": {
         "tsConfigPath": "apps/resume-builder-service/tsconfig.app.json"
       }
+    },
+    "chat-service": {
+      "type": "application",
+      "root": "apps/chat-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/chat-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/chat-service/tsconfig.app.json"
+      }
     }
   }
 }
