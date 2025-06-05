@@ -10,6 +10,7 @@ import { TerminusModule } from '@nestjs/terminus';
 import { ResumeBuilderModule } from './resume-builder/resume-builder.module';
 import { UserModule } from './user/user.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -27,7 +28,8 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
       serveRoot: '/storage',
     }),
     UserModule,
-    JwtModule
+    JwtModule,
+    ChatModule
   ],
   controllers: [HealthController],
   providers: [

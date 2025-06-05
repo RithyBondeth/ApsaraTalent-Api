@@ -13,7 +13,7 @@ import { ForgotPasswordService } from './basic/services/forgot-password.service'
 import { ResetPasswordService } from './basic/services/reset-password.service';
 import { RefreshTokenService } from './basic/services/refresh-token.service';
 import { VerifyEmailService } from './basic/services/verify-email.service';
-import { GoogleAuthController } from './socials/controllers/google-auth.controlle';
+import { GoogleAuthController } from './socials/controllers/google-auth.controller';
 import { RegisterController } from './basic/controllers/register.controller';
 import { LoginController } from './basic/controllers/login.controller';
 import { ForgotPasswordController } from './basic/controllers/forgot-password.controller';

@@ -7,17 +7,21 @@ import { EmployeeController } from './employee.controller';
 import { CompanyController } from './company.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '@app/common/database/entities/user.entity';
+import { ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    ClientsModule.register([
+    ClientsModule.registerAsync([
       {
         name: USER_SERVICE.NAME,
-        transport: Transport.TCP,
-        options: {
-          host: 'localhost',
-          port: 3002,
-        },
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: configService.get<string>('USER_SERVICE_HOST'),
+            port: configService.get<number>('USER_SERVICE_PORT'),
+          },
+        }),
+        inject: [ConfigService],
       }
     ]),
     DatabaseModule,
