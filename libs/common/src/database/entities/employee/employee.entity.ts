@@ -16,13 +16,13 @@ export class Employee {
     @JoinColumn()
     user: User;
 
-    @Column()
+    @Column({ nullable: true })
     firstname: string;
 
-    @Column()
+    @Column({ nullable: true })
     lastname: string;
     
-    @Column()
+    @Column({ nullable: true })
     username: string;
 
     @Column({ type: 'enum', enum: EGender, default: EGender.OTHER })
@@ -43,7 +43,7 @@ export class Employee {
     @Column('text')
     description: string;
 
-    @Column()
+    @Column({ nullable: true })
     location: string;   
 
     @Column()

@@ -5,6 +5,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { PinoLogger } from "nestjs-pino";
 import { Repository } from "typeorm";
 import * as path from "path";
+import { RpcException } from "@nestjs/microservices";
 
 @Injectable()
 export class UploadEmployeeReferenceService {
@@ -23,7 +24,7 @@ export class UploadEmployeeReferenceService {
                 const resumePath = path.join(process.cwd(), 'storage/employee-avatars', resume.filename); 
                 UploadfileService.deleteFile(resumePath, 'Resume File'); 
 
-                throw new NotFoundException(`There is no employee with ID ${employeeId}.`);
+                throw new RpcException({ message: "There is no employee with this ID.", statusCode: 401 });
             }
             
             if(employee.resume) {
@@ -40,8 +41,8 @@ export class UploadEmployeeReferenceService {
             return { message: "Employee's resume was successfully set." }
         } catch (error) {  
             // Handle error
-            this.logger.error(error.message);  
-            throw new BadRequestException("An error occurred while uploading the employee's resume.");
+            this.logger.error(error.message);
+            throw new RpcException({ message: "An error occurred while uploading the employee's resume.", statusCode: 500 }); 
         }
     }
 
@@ -50,7 +51,7 @@ export class UploadEmployeeReferenceService {
             const employee = await this.employeeRepository.findOne({
                 where: { id: employeeId }
             });
-            if(!employee) throw new NotFoundException(`There is no employee with ID ${employeeId}.`)
+            if(!employee) throw new RpcException({ message: "There is no employee with this ID.", statusCode: 401 });
             
             if(employee.resume) {
                 const oldResumeFilename = path.basename(employee.resume);
@@ -66,7 +67,7 @@ export class UploadEmployeeReferenceService {
         } catch (error) {
             // Handle error
             this.logger.error(error.message);  
-            throw new BadRequestException("An error occurred while removing the employee's resume.");
+            throw new RpcException({ message: "An error occurred while removing the employee's resume.", statusCode: 500 });
         }
     }
 
@@ -79,7 +80,7 @@ export class UploadEmployeeReferenceService {
                 const coverLetterPath = path.join(process.cwd(), 'storage/cover-letters', coverLetter.filename); 
                 UploadfileService.deleteFile(coverLetterPath, 'Cover Letter File'); 
 
-                throw new NotFoundException(`There is no employee with ID ${employeeId}.`);
+                throw new RpcException({ message: "There is no employee with this ID.", statusCode: 401 });
             }
             
             if(employee.coverLetter) {
@@ -97,7 +98,7 @@ export class UploadEmployeeReferenceService {
         } catch (error) {
            // Handle error
            this.logger.error(error.message);  
-           throw new BadRequestException("An error occurred while uploading the employee's cover letter.");
+           throw new RpcException({ message: "An error occurred while uploading the employee's cover letter.", statusCode: 500 });
         }
     }
     
@@ -106,7 +107,7 @@ export class UploadEmployeeReferenceService {
             const employee = await this.employeeRepository.findOne({
                 where: { id: employeeId }
             });
-            if(!employee) throw new NotFoundException(`There is no employee with ID ${employeeId}.`)
+            if(!employee) throw new RpcException({ message: "There is no employee with this ID.", statusCode: 401 });
            
             if(employee.coverLetter) {
                 const oldCoverLetterFilename = path.basename(employee.coverLetter);
@@ -122,7 +123,7 @@ export class UploadEmployeeReferenceService {
         } catch (error) {
            // Handle error
            this.logger.error(error.message);  
-           throw new BadRequestException("An error occurred while removing the employee's cover letter.");
+           throw new RpcException({ message: "An error occurred while removing the employee's cover letter.", statusCode: 500 });
         }
     }
 }

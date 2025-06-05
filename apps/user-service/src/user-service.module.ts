@@ -1,6 +1,6 @@
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { DatabaseModule, LoggerModule, UploadfileModule } from '@app/common';
+import { DatabaseModule, JwtModule, LoggerModule, UploadfileModule } from '@app/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '@app/common/database/entities/user.entity';
 import { Employee } from '@app/common/database/entities/employee/employee.entity';
@@ -42,6 +42,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
     TypeOrmModule.forFeature([ User, Company, Employee, Skill, CareerScope, Benefit, Value, Social, Experience, Education, Job, Image ]),
     LoggerModule,
     UploadfileModule,
+    JwtModule,
   ],
   controllers: [
     UpdateEmployeeInfoController,

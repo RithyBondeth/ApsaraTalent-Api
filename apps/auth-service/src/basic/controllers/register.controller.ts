@@ -11,12 +11,22 @@ export class RegisterController {
     constructor(private readonly registerService: RegisterService) {}
 
     @MessagePattern(AUTH_SERVICE.ACTIONS.REGISTER_COMPANY)
-    async registerCompany(@Payload() registerCompany: CompanyRegisterDTO): Promise<UserResponseDTO> {
+    async registerCompany(@Payload() registerCompany: CompanyRegisterDTO): Promise<{
+        message: string;
+        accessToken: string;
+        refreshToken: string;
+        user: UserResponseDTO;
+    }> {
         return this.registerService.companyRegister(registerCompany);
     }
 
     @MessagePattern(AUTH_SERVICE.ACTIONS.REGISTER_EMPLOYEE) 
-    async registerEmployee(@Payload() registerEmployeeDto: EmployeeRegisterDTO): Promise<UserResponseDTO> {
+    async registerEmployee(@Payload() registerEmployeeDto: EmployeeRegisterDTO): Promise<{
+        message: string;
+        accessToken: string;
+        refreshToken: string;
+        user: UserResponseDTO;
+    }> {
         return this.registerService.employeeRegitser(registerEmployeeDto);
     }
 }

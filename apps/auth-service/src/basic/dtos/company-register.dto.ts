@@ -1,17 +1,21 @@
 import { Type } from "class-transformer";
-import { IsArray, IsDate, IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, IsStrongPassword, ValidateNested } from "class-validator";
+import { IsArray, IsBoolean, IsDate, IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, IsStrongPassword, ValidateNested } from "class-validator";
 
 export class CompanyRegisterDTO {
-    @IsEmail()
+    @IsBoolean()
     @IsNotEmpty()
+    authEmail?: boolean;
+    
+    @IsEmail()
+    @IsOptional()
     email: string;
 
     @IsStrongPassword()
-    @IsNotEmpty()
+    @IsOptional()
     password: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     name: string;
 
     @IsString()
@@ -19,7 +23,7 @@ export class CompanyRegisterDTO {
     description: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     phone: string;
 
     @IsOptional()
@@ -36,7 +40,7 @@ export class CompanyRegisterDTO {
     industry: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     location: string;
 
     @IsNumber()

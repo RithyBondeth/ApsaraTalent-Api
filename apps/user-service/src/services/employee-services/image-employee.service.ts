@@ -1,6 +1,7 @@
 import { Employee } from '@app/common/database/entities/employee/employee.entity';
 import { UploadfileService } from '@app/common/uploadfile/uploadfile.service';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import * as path from 'path';
@@ -24,7 +25,7 @@ export class ImageEmployeeService {
         const avatarPath = path.join(process.cwd(), 'storage/employee-avatars', avatar.filename); 
         UploadfileService.deleteFile(avatarPath, 'Avatar Image'); 
         
-        throw new NotFoundException(`There's no employee with ID ${employeeId}`);
+        throw new RpcException({ message: "There is no employee with this ID.", statusCode: 401 });
       }
 
       if(employee.avatar) {
@@ -42,7 +43,7 @@ export class ImageEmployeeService {
     } catch (error) {
         // Handle error
         this.logger.error(error.message);  
-        throw new BadRequestException("An error occurred while uploading the employee's avatar.");
+        throw new RpcException({ message: "An error occurred while uploading the employee's avatar.", statusCode: 500 });
     }
   }
 
@@ -51,7 +52,7 @@ export class ImageEmployeeService {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId }
       });
-      if(!employee) throw new NotFoundException(`There's no employee with ID ${employeeId}`);
+      if(!employee) throw new RpcException({ message: "There is no employee with this ID.", statusCode: 401 });
 
       if(employee.avatar) {
         const avatarFilename = path.basename(employee.avatar);
@@ -66,7 +67,7 @@ export class ImageEmployeeService {
     } catch (error) {
       // Handle error
       this.logger.error(error.message);  
-      throw new BadRequestException("An error occurred while removing the employee's avatar.");
+      throw new RpcException({ message: "An error occurred while removing the employee's avatar.", statusCode: 500 });
     }
   }
 }

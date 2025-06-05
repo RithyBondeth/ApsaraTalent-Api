@@ -24,5 +24,6 @@ export const USER_SERVICE = {
         FIND_ALL: { cmd: 'findAll' },
         FIND_ONE_BY_ID: { cmd: 'findOneById' },
         FIND_ONE_BY_NAME: { cmd: 'findOneByName' },
+        GET_CURRENT_USER: { cmd: 'getCurrentUser' }
     }
 }

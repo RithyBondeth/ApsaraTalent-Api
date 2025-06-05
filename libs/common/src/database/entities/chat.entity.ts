@@ -1,23 +1,32 @@
 import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import { Employee } from "./employee/employee.entity";
 import { User } from "./user.entity";
+import { JobMatching } from "./job-matching.entity";
 
 @Entity()
-export class Message {
+export class Chat {
     @PrimaryGeneratedColumn('uuid')
     id: string;
     
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
-    user: User;
+    sender: User;
     
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     receiver: User;
 
+    @ManyToOne(() => JobMatching, { nullable: true, onDelete: 'CASCADE' })
+    jobMatching: JobMatching;
+
     @Column('text')
-    message: string;
+    content: string;
 
     @Column({ default: false })
     isRead: boolean;
+
+    @Column({ nullable: true })
+    attachment: string;
+
+    @Column({ type: 'enum', enum: ['text', 'image', 'document'], default: 'text' })
+    messageType: string;
 
     @CreateDateColumn()
     sentAt: Date;

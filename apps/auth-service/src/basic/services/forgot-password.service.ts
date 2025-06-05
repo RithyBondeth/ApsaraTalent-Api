@@ -1,5 +1,5 @@
 import { EmailService } from "@app/common/email/email.service";
-import { BadRequestException, Injectable, UnauthorizedException } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { ForgotPasswordDTO } from "../dtos/forgot-password.dto";
@@ -7,6 +7,7 @@ import { PinoLogger } from "nestjs-pino";
 import * as crypto from "crypto";
 import { ForgotPasswordResponseDTO } from "../dtos/forgot-password-response.dto";
 import { User } from "@app/common/database/entities/user.entity";
+import { RpcException } from "@nestjs/microservices";
 
 @Injectable()
 export class ForgotPasswordService {
@@ -20,7 +21,7 @@ export class ForgotPasswordService {
         try {
             //Find the user by their email address
             const user = await this.userRepository.findOne({ where: { email: forgotPasswordDTO.email } });
-            if(!user) throw new UnauthorizedException('Invalid credentials (Email not found)');
+            if(!user) throw new RpcException({ message: "Invalid credentials (Email not found)", statusCode: 401 });
 
             //Generate a reset password token and expiry date
             const resetToken = crypto.randomBytes(20).toString('hex');
@@ -30,6 +31,8 @@ export class ForgotPasswordService {
             user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
             user.resetPasswordExpires = expireDateToken;
             await this.userRepository.save(user);
+
+            console.log("reset token: ", resetToken);
 
             //Send reset password token to user email address
             await this.emailService.sendEmail({
@@ -41,8 +44,9 @@ export class ForgotPasswordService {
             //Return message
             return new ForgotPasswordResponseDTO(`Reset password token was sent successfully to ${user.email}`);
         } catch (error) {
-            this.logger.error(error.message);
-            throw new BadRequestException('An error occurred while user forgetting the password.');
+            this.logger.error(error?.message || 'Forgot password failed');
+            if (error instanceof RpcException) throw error;
+            throw new RpcException({ message: "An error occurred while forgetting the password.", statusCode: 500 });
         }
     }
 }

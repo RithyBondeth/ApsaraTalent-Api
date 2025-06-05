@@ -4,17 +4,21 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
 import { ThrottlerModule } from '@app/common';
 import { GoogleController } from './socials/controllers/google.controller';
+import { ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    ClientsModule.register([
+    ClientsModule.registerAsync([
       {
         name: AUTH_SERVICE.NAME,
-        transport: Transport.TCP,
-        options: {
-          host: 'localhost',
-          port: 3001,
-        },
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: configService.get<string>('AUTH_SERVICE_HOST'),
+            port: configService.get<number>('AUTH_SERVICE_PORT'),
+          },
+        }),
+        inject: [ConfigService]
       }
     ]),
     ThrottlerModule,

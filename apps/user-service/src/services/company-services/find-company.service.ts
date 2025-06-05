@@ -5,6 +5,7 @@ import { PinoLogger } from "nestjs-pino";
 import { Repository } from "typeorm";
 import { UserPaginationDTO } from "../../dtos/user-pagination.dto";
 import { CompanyResponseDTO, JobPositionDTO } from "../../dtos/user-response.dto";
+import { RpcException } from "@nestjs/microservices";
 
 @Injectable()
 export class FindCompanyService {
@@ -20,7 +21,7 @@ export class FindCompanyService {
                 skip: pagination?.skip || 0,
                 take: pagination?.limit || 10, 
             });
-            if(!companies) throw new NotFoundException('There are no companies available');
+            if(!companies) throw new RpcException({ message: "There are no companies available.", statusCode: 401 });
 
             return companies.map((company) => {
                 const transformedCompany = {
@@ -32,7 +33,7 @@ export class FindCompanyService {
        } catch (error) {
             //Handle error
             this.logger.error(error.message);
-            throw new BadRequestException("An error occurred while fetching all of the companies");
+            throw new RpcException({ message: "An error occurred while fetching all of the companies.", statusCode: 500 });
        }
     }
 
@@ -50,7 +51,7 @@ export class FindCompanyService {
         } catch (error){
             //Handle error
             this.logger.error(error.message);
-            throw new BadRequestException("An error occurred while fetching a company");
+            throw new RpcException({ message: "An error occurred while fetching a company.", statusCode: 500 });
         }
     }
 }

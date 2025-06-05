@@ -1,36 +1,39 @@
 import { EGender } from "@app/common/database/enums/gender.enum";
-import { EUserRole } from "@app/common/database/enums/user-role.enum";
 import { Type } from "class-transformer";
-import { IsArray, IsDate, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsStrongPassword, IsUrl, ValidateNested  } from "class-validator";
+import { IsArray, IsBoolean, IsDate, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsStrongPassword, IsUrl, ValidateNested  } from "class-validator";
 
 export class EmployeeRegisterDTO {
-    @IsEmail()
+    @IsBoolean()
     @IsNotEmpty()
-    email: string;
+    authEmail?: boolean;
+
+    @IsEmail()
+    @IsOptional()
+    email?: string;
     
     @IsStrongPassword()
-    @IsNotEmpty()
+    @IsOptional()
     password: string;
 
     // Employee 
     @IsString()
-    @IsNotEmpty()
-    firstname: string;
+    @IsOptional()
+    firstname?: string;
 
     @IsString()
-    @IsNotEmpty()
-    lastname: string;
+    @IsOptional()
+    lastname?: string;
 
     @IsString()
-    @IsNotEmpty()
-    username: string;
+    @IsOptional()
+    username?: string;
 
     @IsEnum(EGender)
     @IsOptional()
     gender?: EGender;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     job: string;
 
     @IsNumber()
@@ -47,7 +50,7 @@ export class EmployeeRegisterDTO {
     description?: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     location: string;
 
     @IsString()
