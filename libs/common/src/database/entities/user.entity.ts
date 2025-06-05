@@ -19,7 +19,7 @@ export class User {
     @OneToOne(() => Company, (company) => company.user)
     company: Company;
 
-    @Column({ unique: true })
+    @Column({ unique: true, nullable: true })
     email: string;
     
     @Column({ nullable: true }) //Optional for social login and OTP Login
@@ -43,6 +43,9 @@ export class User {
     @Column({ nullable: true }) // For push notifications services
     pushNotificationToken: string;
 
+    @Column({ default: false })
+    profileCompleted: boolean;
+    
     // Auth related fields
     @Column({ nullable: true })
     resetPasswordToken: string;

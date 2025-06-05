@@ -10,6 +10,7 @@ import { CareerScope } from "@app/common/database/entities/career-scope.entity";
 import { Social } from "@app/common/database/entities/social.entity";
 import { PinoLogger } from "nestjs-pino";
 import { CompanyResponseDTO, JobPositionDTO } from "../../dtos/user-response.dto";
+import { RpcException } from "@nestjs/microservices";
 
 @Injectable()
 export class UpdateCompanyInfoService {
@@ -30,6 +31,8 @@ export class UpdateCompanyInfoService {
                 where: { id: companyId },
                 relations: ['benefits', 'values', 'openPositions', 'careerScopes', 'socials'],
             });
+
+            if(!company) throw new RpcException({ message: "There is no company with this ID.", statusCode: 401 });
 
             // Merge new values into existing fields
             Object.assign(company, updateCompanyInfoDTO);
@@ -83,7 +86,7 @@ export class UpdateCompanyInfoService {
         } catch (error) {
             // Handle error  
             this.logger.error(error.message);  
-            throw new BadRequestException("An error occurred while updating the company's information.");
+            throw new RpcException({ message: "An error occurred while updating the company's information.", statusCode: 500 });
         }
     }  
 }
