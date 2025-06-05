@@ -1,25 +1,23 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { RESUME_BUILDER_SERVICE } from 'utils/constants/resume-builder-service';
-import { ResumeBuilderController } from './resume-builder.controller';
+import { CHAT_SERVICE } from 'utils/constants/chat-service.constant';
 import { ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
     ClientsModule.registerAsync([
       {
-        name: RESUME_BUILDER_SERVICE.NAME,
+        name: CHAT_SERVICE.NAME,
         useFactory: (configService: ConfigService) => ({
           transport: Transport.TCP,
           options: {
-            host: configService.get<string>('RESUME_SERVICE_HOST'),
-            port: configService.get<number>('RESUME_SERVICE_PORT'),
+            host: configService.get<string>('CHAT_SERVICE_PORT'),
+            port: configService.get<number>('CHAT_SERVICE_PORT'),
           },
         }),
         inject: [ConfigService],
       },
     ]),
   ],
-  controllers: [ResumeBuilderController],
 })
-export class ResumeBuilderModule {}
+export class ChatModule {}

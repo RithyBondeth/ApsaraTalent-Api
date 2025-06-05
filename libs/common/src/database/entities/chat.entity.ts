@@ -3,7 +3,7 @@ import { User } from "./user.entity";
 import { JobMatching } from "./job-matching.entity";
 
 @Entity()
-export class Message {
+export class Chat {
     @PrimaryGeneratedColumn('uuid')
     id: string;
     

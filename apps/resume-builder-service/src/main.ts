@@ -8,8 +8,8 @@ async function bootstrap() {
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(ResumeBuilderServiceModule, {
     transport: Transport.TCP,
     options: {
-      host: 'localhost',
-      port: 3003,
+      host: process.env.RESUME_SERVICE_HOST,
+      port: Number(process.env.RESUME_SERVICE_PORT),
     },
   });
   
