@@ -1,5 +1,5 @@
 import { Exclude, Expose, Type } from "class-transformer";
-import { IsDate, IsString } from "class-validator";
+import { IsNumber, IsString } from "class-validator";
 import { formatDateToDDMMYYYY } from "utils/functions/date-formatter";
 
 export class CompanyInJobResponseDTO {
@@ -21,7 +21,7 @@ export class CompanyInJobResponseDTO {
     @Exclude()
     cover: string;
 
-    @Exclude()
+    @IsNumber()
     companySize: number;
 
     @IsString()
