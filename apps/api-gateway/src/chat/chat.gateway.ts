@@ -1,6 +1,6 @@
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
-import { Inject, Logger, UseFilters } from '@nestjs/common';
+import { Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
   OnGatewayConnection,
@@ -11,12 +11,12 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { CHAT_SERVICE } from '../../../../utils/constants/chat-service.constant';
-import { USER_SERVICE } from '../../../../utils/constants/user-service.constant';
 import { firstValueFrom } from 'rxjs';
 import { TChatPayload } from '@app/common/interfaces/chat.interface';
 
 @WebSocketGateway({
   port: parseInt(process.env.CHAT_SERVICE_PORT),
+  namespace: '/chat',
   cors: {
     origin: ['*'],
     credentials: true,
@@ -30,12 +30,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private jwtService: JwtService,
     @Inject(CHAT_SERVICE.NAME) private chatServiceClient: ClientProxy,
-    @Inject(USER_SERVICE.NAME) private userServiceClient: ClientProxy,
   ) {}
 
   async handleConnection(client: Socket) {
     try {
-      const token = client.handshake.auth.token;
+      const token = client.handshake.auth.token || client.handshake.headers?.authorization?.split(' ')[1];
       if (!token) {
         throw new Error('No token provided');
       }
