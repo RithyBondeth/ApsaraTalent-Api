@@ -15,8 +15,8 @@ import { Job } from '@app/common/database/entities/company/job.entity';
       isGlobal: true,
       envFilePath: './apps/job-service/.env',
     }),
-    LoggerModule,
     DatabaseModule,
+    LoggerModule,
     TypeOrmModule.forFeature([ User, Company, Employee, Job ])
   ],
   controllers: [JobServiceController],
