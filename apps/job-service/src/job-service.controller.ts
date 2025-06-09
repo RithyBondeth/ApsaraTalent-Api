@@ -1,8 +1,9 @@
 import { Controller } from '@nestjs/common';
 import { JobServiceService } from './job-service.service';
-import { MessagePattern } from '@nestjs/microservices';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { JOB_SERVICE } from 'utils/constants/job-service.constant';
 import { JobResponseDTO } from './dtos/job-response.dto';
+import { SearchJobDto } from './dtos/job-search.dto';
 
 @Controller()
 export class JobServiceController {
@@ -11,5 +12,10 @@ export class JobServiceController {
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_ALL_JOBS)
   findAllJobs(): Promise<JobResponseDTO[]> {
     return this.jobServiceService.findAllJobs();
+  }
+
+  @MessagePattern(JOB_SERVICE.ACTIONS.SEARCH_JOBS)
+  searchJobs(@Payload() searchJobDTO: SearchJobDto): Promise<JobResponseDTO[]> {
+    return this.jobServiceService.searchJobs(searchJobDTO);
   }
 }
