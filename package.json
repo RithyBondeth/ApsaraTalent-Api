@@ -24,11 +24,13 @@
     "start:dev:users": "nest start user-service --watch",
     "start:dev:resume": "nest start resume-builder-service --watch",
     "start:dev:chat": "nest start chat-service --watch",
+    "start:dev:job": "nest start job-service --watch",
     "start:api": "nest start api-gateway",
     "start:auth": "nest start auth-service",
     "start:users": "nest start user-service",
     "start:resume": "nest start resume-builder-service",
-    "start:chat": "nest start chat-service"
+    "start:chat": "nest start chat-service",
+    "start:job": "nest start job-service"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.13.4",

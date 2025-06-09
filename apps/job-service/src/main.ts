@@ -1,7 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { JobServiceModule } from './job-service.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
+import { Logger } from 'nestjs-pino';
 
 async function bootstrap() {
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(JobServiceModule, {
