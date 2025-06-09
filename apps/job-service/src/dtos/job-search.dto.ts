@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import { IsOptional, IsString, IsNumber, IsDateString } from 'class-validator';
 
 export class SearchJobDto {
@@ -8,6 +9,11 @@ export class SearchJobDto {
   @IsOptional()
   @IsString()
   location?: string;
+
+  @IsOptional()
+  @IsString({ each: true })
+  @Transform(({ value }) => Array.isArray(value) ? value : [value])
+  careerScopes?: string[];
 
   @IsOptional()
   @IsNumber()

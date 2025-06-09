@@ -37,6 +37,7 @@ export class JobServiceService {
       const {
         keyword,
         location,
+        careerScopes,
         companySizeMin,
         companySizeMax,
         postedDateFrom,
@@ -48,7 +49,8 @@ export class JobServiceService {
       // Create query builder
       const query = this.jobRepo
         .createQueryBuilder('job')
-        .leftJoinAndSelect('job.company', 'company');
+        .leftJoinAndSelect('job.company', 'company')
+        .leftJoinAndSelect('company.careerScopes', 'careerScope');
 
       // Keyword search (title or description)
       if (keyword) {
@@ -91,6 +93,11 @@ export class JobServiceService {
         query.orderBy(`job.${sortField}`, sortOrder as 'ASC' | 'DESC');
       }
 
+      if (careerScopes && careerScopes.length > 0) {
+        query.andWhere('careerScope.name IN (:...careerScopes)', {
+          careerScopes,
+        });
+      }
       const jobs = await query.getMany();
 
       if (!jobs || jobs.length === 0) {
