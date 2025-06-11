@@ -4,11 +4,11 @@ import { JobServiceService } from './job-service.service';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule, LoggerModule } from '@app/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from '@app/common/decorators/user.decorator';
 import { Company } from '@app/common/database/entities/company/company.entity';
 import { Employee } from '@app/common/database/entities/employee/employee.entity';
 import { Job } from '@app/common/database/entities/company/job.entity';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { User } from '@app/common/database/entities/user.entity';
 
 @Module({
   imports: [

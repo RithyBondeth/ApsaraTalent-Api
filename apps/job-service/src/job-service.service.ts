@@ -16,7 +16,7 @@ export class JobServiceService {
 
   async findAllJobs(): Promise<JobResponseDTO[]> {
     try {
-      const jobs = await this.jobRepo.find({ relations: ['company'] });
+      const jobs = await this.jobRepo.find({ relations: ['company', 'company.user'] });
       if (!jobs)
         throw new RpcException({
           message: "There's no job available.",
@@ -50,7 +50,8 @@ export class JobServiceService {
       const query = this.jobRepo
         .createQueryBuilder('job')
         .leftJoinAndSelect('job.company', 'company')
-        .leftJoinAndSelect('company.careerScopes', 'careerScope');
+        .leftJoinAndSelect('company.careerScopes', 'careerScope')
+        .leftJoinAndSelect('company.user', 'user');
 
       // Keyword search (title or description)
       if (keyword) {
