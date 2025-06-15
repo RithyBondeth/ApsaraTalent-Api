@@ -25,11 +25,11 @@ export class SearchJobDto {
 
   @IsOptional()
   @IsDateString()
-  postedDateFrom?: Date;
+  postedDateFrom?: string;
 
   @IsOptional()
   @IsDateString()
-  postedDateTo?: Date;
+  postedDateTo?: string;
 
   @IsOptional()
   @IsString()

@@ -83,7 +83,7 @@ export class LoginService {
       if (error instanceof RpcException) throw error;
       // Otherwise, wrap unexpected errors in RpcException
       throw new RpcException({
-        message: 'An error occurred during login',
+        message: error.message,
         statusCode: 500,
       });
     }

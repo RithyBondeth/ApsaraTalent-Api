@@ -37,7 +37,7 @@ export class VerifyEmailService {
             return new VerifyEmailResponseDTO('Your email was verified successfully. Now you can login');
         } catch (error) {
             this.logger.error(error.message);
-            throw new RpcException({ message: 'An error occurred while verifying email', statusCode: 500 });
+            throw new RpcException({ message: error.message, statusCode: 500 });
         }
     }  
 }

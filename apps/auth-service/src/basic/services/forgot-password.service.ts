@@ -46,7 +46,7 @@ export class ForgotPasswordService {
         } catch (error) {
             this.logger.error(error?.message || 'Forgot password failed');
             if (error instanceof RpcException) throw error;
-            throw new RpcException({ message: "An error occurred while forgetting the password.", statusCode: 500 });
+            throw new RpcException({ message: error.message, statusCode: 500 });
         }
     }
 }

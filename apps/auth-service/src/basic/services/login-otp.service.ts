@@ -49,7 +49,7 @@ export class LoginOTPService {
       this.logger.error(error?.message || 'Login OTP failed.');
       if (error instanceof RpcException) throw error;
       throw new RpcException({
-        message: 'An error occurred during login otp.',
+        message: error.message,
         statusCode: 500,
       });
     }
