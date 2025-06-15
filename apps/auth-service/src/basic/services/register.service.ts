@@ -234,7 +234,7 @@ export class RegisterService {
       // Handle error
       this.logger.error(error.message);
       throw new RpcException({
-        message: 'An error occurred while registering the user.',
+        message: error.message,
         statusCode: 500,
       });
     }
@@ -423,7 +423,7 @@ export class RegisterService {
       // Handle error
       this.logger.error(error.message);
       throw new RpcException({
-        message: 'An error occurred while registering the user.',
+        message: error.message,
         statusCode: 500,
       });
     }

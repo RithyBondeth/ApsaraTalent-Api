@@ -6,6 +6,7 @@ import { JobResponseDTO } from './dtos/job-response.dto';
 import { RpcException } from '@nestjs/microservices';
 import { PinoLogger } from 'nestjs-pino';
 import { SearchJobDto } from './dtos/job-search.dto';
+import { HttpException, HttpStatus } from '@nestjs/common';
 
 @Injectable()
 export class JobServiceService {
@@ -78,9 +79,15 @@ export class JobServiceService {
 
       // Posted date range filter
       if (postedDateFrom || postedDateTo) {
+        const fromDate = postedDateFrom ? new Date(postedDateFrom) : new Date(0);
+        const toDate = postedDateTo ? new Date(postedDateTo) : new Date();
+
+        console.log('[Date Filter]', { postedDateFrom, postedDateTo });
+        console.log('[Query Params]', { from: fromDate, to: toDate });
+      
         query.andWhere('job.createdAt BETWEEN :from AND :to', {
-          from: postedDateFrom || new Date(0), // Unix epoch as default start
-          to: postedDateTo || new Date(), // Current date as default end
+          from: fromDate,
+          to: toDate,
         });
       }
 
@@ -112,7 +119,7 @@ export class JobServiceService {
     } catch (error) {
       this.logger.error(error.message);
       throw new RpcException({
-        message: 'An error occurred while searching for jobs.',
+        message: error.message,
         statusCode: 500,
       });
     }
