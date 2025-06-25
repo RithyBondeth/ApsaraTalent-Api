@@ -6,7 +6,21 @@ import { JobResponseDTO } from './dtos/job-response.dto';
 import { RpcException } from '@nestjs/microservices';
 import { PinoLogger } from 'nestjs-pino';
 import { SearchJobDto } from './dtos/job-search.dto';
-import { HttpException, HttpStatus } from '@nestjs/common';
+
+function extractSalaryRange(salaryStr: string | null | undefined): [number, number] {
+  if (!salaryStr) return [0, 0];
+
+  try {
+    const match = salaryStr.match(/(\d[\d,]*)\$?\s*-\s*(\d[\d,]*)\$?/);
+    if (!match) return [0, 0];
+
+    const min = parseInt(match[1].replace(/,/g, ''), 10);
+    const max = parseInt(match[2].replace(/,/g, ''), 10);
+    return [min, max];
+  } catch {
+    return [0, 0];
+  }
+}
 
 @Injectable()
 export class JobServiceService {
@@ -45,76 +59,112 @@ export class JobServiceService {
         postedDateTo,
         sortBy = 'createdAt',
         sortOrder = 'DESC',
+        salaryMin,
+        salaryMax,
+        jobType,
+        experienceRequired,
+        educationRequired,
       } = searchParams;
-
-      // Create query builder
+  
       const query = this.jobRepo
         .createQueryBuilder('job')
         .leftJoinAndSelect('job.company', 'company')
         .leftJoinAndSelect('company.careerScopes', 'careerScope')
         .leftJoinAndSelect('company.user', 'user');
-
-      // Keyword search (title or description)
+  
+      // Keyword
       if (keyword) {
-        query.where(
-          '(job.title LIKE :keyword OR job.description LIKE :keyword)',
-          { keyword: `%${keyword}%` }
-        );
+        query.where('(job.title LIKE :keyword OR job.description LIKE :keyword)', {
+          keyword: `%${keyword}%`,
+        });
       }
-
-      // Location filter
+  
+      // Location
       if (location) {
         query.andWhere('company.location LIKE :location', {
           location: `%${location}%`,
         });
       }
-
-      // Company size range filter
+  
+      // Company size
       if (companySizeMin || companySizeMax) {
         query.andWhere('company.companySize BETWEEN :min AND :max', {
           min: companySizeMin || 0,
           max: companySizeMax || 2147483647,
         });
       }
-
-      // Posted date range filter
+  
+      // Dates
       if (postedDateFrom || postedDateTo) {
         const fromDate = postedDateFrom ? new Date(postedDateFrom) : new Date(0);
         const toDate = postedDateTo ? new Date(postedDateTo) : new Date();
-
-        console.log('[Date Filter]', { postedDateFrom, postedDateTo });
-        console.log('[Query Params]', { from: fromDate, to: toDate });
-      
+  
         query.andWhere('job.createdAt BETWEEN :from AND :to', {
           from: fromDate,
           to: toDate,
         });
       }
-
+  
+      // Job type
+      if (jobType) {
+        query.andWhere('job.type LIKE :type', { 
+          type: `%${jobType}%`
+        });
+      }
+  
+      // Experience
+      if (experienceRequired) {
+        query.andWhere('job.experienceRequired LIKE :experience', {
+          experience: `%${experienceRequired}%`,
+        });
+      }
+  
+      // Education
+      if (educationRequired) {
+        query.andWhere('job.educationRequired LIKE :education', {
+          education: `%${educationRequired}%`,
+        });
+      }
+  
+      // Career scopes
+      if (careerScopes && careerScopes.length > 0) {
+        query.andWhere('careerScope.name IN (:...careerScopes)', { careerScopes });
+      }
+  
       // Sorting
       const validSortFields = ['createdAt', 'title', 'companySize'];
       const sortField = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
-      
+  
       if (sortField === 'companySize') {
         query.orderBy(`company.${sortField}`, sortOrder as 'ASC' | 'DESC');
       } else {
         query.orderBy(`job.${sortField}`, sortOrder as 'ASC' | 'DESC');
       }
+  
+      let jobs = await query.getMany();
 
-      if (careerScopes && careerScopes.length > 0) {
-        query.andWhere('careerScope.name IN (:...careerScopes)', {
-          careerScopes,
+
+      const salaryMinNum = salaryMin ? parseInt(salaryMin as any, 10) : undefined;
+      const salaryMaxNum = salaryMax ? parseInt(salaryMax as any, 10) : undefined;
+      // Post-query salary filtering
+      if (salaryMinNum !== undefined || salaryMaxNum !== undefined) {
+        const min = salaryMinNum || 0;
+        const max = salaryMaxNum || Number.MAX_SAFE_INTEGER;
+      
+        jobs = jobs.filter((job) => {
+          if (!job.salary) return false;
+          const [jobMin, jobMax] = extractSalaryRange(job.salary);
+          return jobMin <= max && jobMax >= min;
         });
       }
-      const jobs = await query.getMany();
-
-      if (!jobs || jobs.length === 0) {
+  
+      if (!jobs.length) {
         throw new RpcException({
           message: 'No jobs found matching your criteria.',
           statusCode: 404,
         });
       }
-
+  
       return jobs.map((job) => new JobResponseDTO(job));
     } catch (error) {
       this.logger.error(error.message);

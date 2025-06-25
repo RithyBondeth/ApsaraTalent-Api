@@ -3,6 +3,7 @@ export const USER_SERVICE = {
     ACTIONS: {
         FIND_ALL_EMPLOYEE: { cmd: 'findAllEmployee' },
         FIND_ONE_EMPLOYEE_BY_ID: { cmd: 'findOneEmployeeById' },
+        SEARCH_EMPLOYEES: { cmd: 'searchEmployees' },
         UPLOAD_EMPLOYEE_AVATAR: { cmd: 'uploadEmployeeAvatar' },
         UPDATE_EMPLOYEE_INFO: { cmd: 'updateEmployeeInfo' },    
         REMOVE_EMPLOYEE_AVATAR: { cmd: 'removeEmployeeAvatar' },

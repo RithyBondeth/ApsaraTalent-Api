@@ -33,6 +33,26 @@ export class SearchJobDto {
 
   @IsOptional()
   @IsString()
+  salaryMin?: number;
+
+  @IsOptional()
+  @IsString()
+  salaryMax?: number;
+
+  @IsOptional()
+  @IsString()
+  jobType?: string;
+
+  @IsOptional()
+  @IsString()
+  experienceRequired?: string;
+
+  @IsOptional()
+  @IsString()
+  educationRequired?: string;
+
+  @IsOptional()
+  @IsString()
   sortBy?: string; // 'createdAt', 'title', or 'companySize'
 
   @IsOptional()
