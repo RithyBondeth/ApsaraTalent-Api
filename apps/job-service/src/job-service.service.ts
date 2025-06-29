@@ -6,20 +6,12 @@ import { JobResponseDTO } from './dtos/job-response.dto';
 import { RpcException } from '@nestjs/microservices';
 import { PinoLogger } from 'nestjs-pino';
 import { SearchJobDto } from './dtos/job-search.dto';
+import { extractSalaryRange } from 'utils/functions/extract-salary-range';
 
-function extractSalaryRange(salaryStr: string | null | undefined): [number, number] {
-  if (!salaryStr) return [0, 0];
-
-  try {
-    const match = salaryStr.match(/(\d[\d,]*)\$?\s*-\s*(\d[\d,]*)\$?/);
-    if (!match) return [0, 0];
-
-    const min = parseInt(match[1].replace(/,/g, ''), 10);
-    const max = parseInt(match[2].replace(/,/g, ''), 10);
-    return [min, max];
-  } catch {
-    return [0, 0];
-  }
+function toNumber(val?: string): number | undefined {
+  if (!val) return undefined;
+  const n = Number(val.toString().replace(/[^\d.]/g, ''));
+  return Number.isFinite(n) ? n : undefined;
 }
 
 @Injectable()
@@ -62,7 +54,8 @@ export class JobServiceService {
         salaryMin,
         salaryMax,
         jobType,
-        experienceRequired,
+        experienceRequiredMin,
+        experienceRequiredMax,
         educationRequired,
       } = searchParams;
   
@@ -112,10 +105,16 @@ export class JobServiceService {
         });
       }
   
-      // Experience
-      if (experienceRequired) {
-        query.andWhere('job.experienceRequired LIKE :experience', {
-          experience: `%${experienceRequired}%`,
+      // Experience range
+      if (experienceRequiredMin !== undefined) {
+        query.andWhere('job.experienceRequired >= :minExp', {
+          minExp: experienceRequiredMin,
+        });
+      }
+
+      if(experienceRequiredMax !== undefined) {
+        query.andWhere('job.experienceRequired <= :maxExp', {
+          maxExp: experienceRequiredMax,
         });
       }
   
@@ -145,14 +144,10 @@ export class JobServiceService {
   
       let jobs = await query.getMany();
 
-
-      const salaryMinNum = salaryMin ? parseInt(salaryMin as any, 10) : undefined;
-      const salaryMaxNum = salaryMax ? parseInt(salaryMax as any, 10) : undefined;
-      console.log(salaryMin, salaryMax);
       // Post-query salary filtering
-      if (salaryMinNum !== undefined || salaryMaxNum !== undefined) {
-        const min = salaryMinNum || 0;
-        const max = salaryMaxNum || Number.MAX_SAFE_INTEGER;
+      if (salaryMin !== undefined || salaryMax !== undefined) {
+        const min = salaryMin ?? 0;
+        const max = salaryMax ?? Number.MAX_SAFE_INTEGER;
       
         jobs = jobs.filter((job) => {
           if (!job.salary) return false;

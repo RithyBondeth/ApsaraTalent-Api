@@ -44,8 +44,12 @@ export class SearchJobDto {
   jobType?: string;
 
   @IsOptional()
-  @IsString()
-  experienceRequired?: string;
+  @IsNumber()
+  experienceRequiredMax?: number;
+
+  @IsOptional()
+  @IsNumber()
+  experienceRequiredMin?: number;
 
   @IsOptional()
   @IsString()
