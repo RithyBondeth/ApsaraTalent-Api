@@ -146,6 +146,7 @@ export class JobServiceService {
 
       const salaryMinNum = salaryMin ? parseInt(salaryMin as any, 10) : undefined;
       const salaryMaxNum = salaryMax ? parseInt(salaryMax as any, 10) : undefined;
+      console.log(salaryMin, salaryMax);
       // Post-query salary filtering
       if (salaryMinNum !== undefined || salaryMaxNum !== undefined) {
         const min = salaryMinNum || 0;
