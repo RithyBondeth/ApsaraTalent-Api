@@ -32,11 +32,11 @@ export class SearchJobDto {
   postedDateTo?: string;
 
   @IsOptional()
-  @IsString()
+  @IsNumber()
   salaryMin?: number;
 
   @IsOptional()
-  @IsString()
+  @IsNumber()
   salaryMax?: number;
 
   @IsOptional()

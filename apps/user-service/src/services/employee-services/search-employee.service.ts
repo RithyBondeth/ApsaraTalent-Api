@@ -78,12 +78,19 @@ export class SearchEmployeeService {
             qb.orderBy(sortField, sortOrder as "ASC" | "DESC");
       
             const employees = await qb.getMany();
-      
-            return employees;
+            
+            if(!employees.length) {
+                throw new RpcException({
+                    message: 'No employees found matching your criteria.',
+                    statusCode: 404,
+                });
+            }
+            
+            return employees.map((emp) => new EmployeeResponseDTO(emp));
           } catch (error) {
             this.logger.error(error, "SearchEmployeeService failed");
             throw new RpcException({
-              message: error.message || "An error occurred while searching employees",
+              message: error.message,
               statusCode: 500,
             });
           }
