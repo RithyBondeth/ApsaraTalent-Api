@@ -121,9 +121,11 @@ export class JobServiceService {
   
       // Education
       if (educationRequired) {
-        query.andWhere('job.educationRequired LIKE :education', {
-          education: `%${educationRequired}%`,
-        });
+        query.andWhere(
+          'LOWER(job.educationRequired) LIKE :education',   // MySQL / SQLite / generic
+          // For PostgreSQL you can shorten to:  'job.educationRequired ILIKE :education'
+          { education: `%${educationRequired.toLowerCase()}%` },
+        );
       }
   
       // Career scopes
