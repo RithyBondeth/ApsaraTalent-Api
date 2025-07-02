@@ -4,6 +4,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { JOB_SERVICE } from 'utils/constants/job-service.constant';
 import { ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@app/common';
+import { JobMatchingController } from './matching.controller';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { ThrottlerModule } from '@app/common';
     ]),
     ThrottlerModule,
   ],
-  controllers: [JobController],
+  controllers: [JobController, JobMatchingController],
   providers: [],
 })
 export class JobModule {}

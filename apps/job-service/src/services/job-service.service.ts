@@ -2,10 +2,10 @@ import { Job } from '@app/common/database/entities/company/job.entity';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { JobResponseDTO } from './dtos/job-response.dto';
+import { JobResponseDTO } from '../dtos/job-response.dto';
 import { RpcException } from '@nestjs/microservices';
 import { PinoLogger } from 'nestjs-pino';
-import { SearchJobDto } from './dtos/job-search.dto';
+import { SearchJobDto } from '../dtos/job-search.dto';
 import { extractSalaryRange } from 'utils/functions/extract-salary-range';
 
 function toNumber(val?: string): number | undefined {
