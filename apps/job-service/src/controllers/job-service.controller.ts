@@ -1,9 +1,9 @@
 import { Controller } from '@nestjs/common';
-import { JobServiceService } from './job-service.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { JOB_SERVICE } from 'utils/constants/job-service.constant';
-import { JobResponseDTO } from './dtos/job-response.dto';
-import { SearchJobDto } from './dtos/job-search.dto';
+import { JobServiceService } from '../services/job-service.service';
+import { JobResponseDTO } from '../dtos/job-response.dto';
+import { SearchJobDto } from '../dtos/job-search.dto';
 
 @Controller()
 export class JobServiceController {
