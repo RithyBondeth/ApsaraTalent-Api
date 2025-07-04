@@ -31,6 +31,8 @@ import { UploadEmployeeReferenceController } from './controllers/employee-contro
 import { UploadEmployeeReferenceService } from './services/employee-services/upload-employee-reference.service';
 import { Image } from '@app/common/database/entities/company/image.entity';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { SearchEmployeeController } from './controllers/employee-controllers/search-employee.controller';
+import { SearchEmployeeService } from './services/employee-services/search-employee.service';
 
 @Module({
   imports: [
@@ -52,6 +54,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
     FindCompanyController,
     ImageCompanyController,
     UploadEmployeeReferenceController,
+    SearchEmployeeController,
     UserController
   ],
   providers: [
@@ -62,6 +65,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
     FindCompanyService,
     ImageCompanyService,
     UploadEmployeeReferenceService,
+    SearchEmployeeService,
     UserService,
     {
       provide: APP_INTERCEPTOR,

@@ -9,7 +9,9 @@ import { USER_SERVICE } from 'utils/constants/user-service.constant';
 @Controller('user')
 @UseGuards(AuthGuard)
 export class UserController {
-  constructor(@Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy) {}
+  constructor(
+    @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
+  ) {}
 
   @Get('all')
   async findAllUsers() {

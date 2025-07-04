@@ -11,6 +11,7 @@ import { ResumeBuilderModule } from './resume-builder/resume-builder.module';
 import { UserModule } from './user/user.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ChatModule } from './chat/chat.module';
+import { JobModule } from './job/job.module';
 
 @Module({
   imports: [
@@ -29,7 +30,8 @@ import { ChatModule } from './chat/chat.module';
     }),
     UserModule,
     JwtModule,
-    ChatModule
+    ChatModule,
+    JobModule
   ],
   controllers: [HealthController],
   providers: [
