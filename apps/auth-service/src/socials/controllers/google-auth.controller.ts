@@ -12,11 +12,13 @@ export class GoogleAuthController implements IGoogleAuthController {
 
     @MessagePattern(AUTH_SERVICE.ACTIONS.GOOGLE_AUTH)
     async googleAuth(@Payload() googleData: GoogleAuthDTO) {
+        console.log("Auth Service: Google Callback");
         return this.googleAuthService.googleLogin(googleData);
     }
 
     @MessagePattern(AUTH_SERVICE.ACTIONS.GOOGLE_REGISTER_USER)
     async registerGoogleUser(@Payload() registerGoogleUserDto: RegisterGoogleUserDTO) {
+        console.log("Auth Service: Google Register");
         return this.googleAuthService.registerGoogleUser(registerGoogleUserDto);
     }
 }

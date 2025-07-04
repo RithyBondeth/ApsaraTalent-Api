@@ -5,6 +5,8 @@ import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
 import { ThrottlerModule } from '@app/common';
 import { GoogleController } from './socials/controllers/google.controller';
 import { ConfigService } from '@nestjs/config';
+import { PassportModule } from '@nestjs/passport';
+import { GoogleStrategy } from './socials/strategies/google.strategy';
 
 @Module({
   imports: [
@@ -22,11 +24,12 @@ import { ConfigService } from '@nestjs/config';
       }
     ]),
     ThrottlerModule,
+    PassportModule,
   ],
   controllers: [
     AuthController,
     GoogleController
   ],
-  providers: [],
+  providers: [GoogleStrategy],
 })
 export class AuthModule {}
