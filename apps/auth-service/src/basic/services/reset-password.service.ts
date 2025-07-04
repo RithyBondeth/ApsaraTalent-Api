@@ -45,7 +45,7 @@ export class ResetPasswordService {
             return new ResetPasswordResponseDTO('You password was updated successfully');
         } catch (error) {
             this.logger.error(error.message);
-            throw new RpcException({ message: "An error occurred while user resetting password.", statusCode: 500 });
+            throw new RpcException({ message: error.message, statusCode: 500 });
         }  
     }  
 }

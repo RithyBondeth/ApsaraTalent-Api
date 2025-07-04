@@ -88,4 +88,11 @@ export class UserService {
       throw new BadRequestException('An error occurred while fetching a user.');
     }
   }
+
+  async getUserByIdForChat(id: string) {
+    return this.userRepository.findOne({ 
+      where: { id },
+      select: ['id', 'email', 'role']
+    });
+  }
 }

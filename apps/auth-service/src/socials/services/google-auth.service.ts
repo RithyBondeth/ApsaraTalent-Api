@@ -39,27 +39,16 @@ export class GoogleAuthService {
             if (!user) {
                 // If user does not exist, return data for frontend role selection
                 return {
+                    message: "Successfully Logged in with Google",
                     newUser: true,
                     email: googleData.email,
                     firstname: googleData.firstName,
                     lastname: googleData.lastName,
                     picture: googleData.picture,
+                    accessToken: null,
+                    refreshToken: null,
                     provider: 'google',
                 };
-            }
-
-            // Check if user is an Employee or Company
-            let userProfile = null;
-            if (user.role === EUserRole.EMPLOYEE) {
-                userProfile = await this.employeeRepository.findOne({ 
-                    where: { user }, 
-                    relations: ['skills', 'careerScopes', 'socials']
-                });
-            } else if (user.role === EUserRole.COMPANY) {
-                userProfile = await this.companyRepository.findOne({ 
-                    where: { user }, 
-                    relations: ['benefits', 'values', 'careerScopes', 'socials'] 
-                });
             }
 
             // Generate JWT tokens
@@ -76,10 +65,14 @@ export class GoogleAuthService {
 
             return {
                 message: "Successfully Logged in with Google",
+                newUser: false,
+                email: null,
+                firstname: null,
+                lastname: null,
+                picture: null,
+                provider: null,
                 accessToken,
                 refreshToken,
-                user,
-                profile: userProfile
             };
         } catch (error) {
             this.logger.error('Google login error:', {

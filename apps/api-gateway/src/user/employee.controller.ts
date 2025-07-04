@@ -94,4 +94,11 @@ export class EmployeeController {
             this.userClient.send(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_COVER_LETTER, payload)
         )
     }
+
+    @Get('search-employee')
+    async searchEmployee(@Query() searchEmployeeQuery: any) {
+        return firstValueFrom(
+            this.userClient.send(USER_SERVICE.ACTIONS.SEARCH_EMPLOYEES, searchEmployeeQuery)
+       );
+    } 
 }
