@@ -35,6 +35,8 @@ import { Job } from '@app/common/database/entities/company/job.entity';
 import { LoginOTPController } from './basic/controllers/login-otp.controller';
 import { LoginOTPService } from './basic/services/login-otp.service';
 import { MessageModule } from '@app/common/message/message.module';
+import { LinkedInAuthService } from './socials/services/linkedin-auth.service';
+import { LinkedInAuthController } from './socials/controllers/linkedin-auth.controller';
 
 @Module({
   imports: [
@@ -58,6 +60,7 @@ import { MessageModule } from '@app/common/message/message.module';
     RefreshTokenController,
     VerifyEmailController,
     GoogleAuthController,
+    LinkedInAuthController,
     LoginOTPController,
   ],
   providers: [
@@ -68,6 +71,7 @@ import { MessageModule } from '@app/common/message/message.module';
     RefreshTokenService,
     VerifyEmailService,
     GoogleAuthService,
+    LinkedInAuthService,
     LoginOTPService,
     {
       provide: APP_INTERCEPTOR,

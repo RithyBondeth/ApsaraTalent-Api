@@ -7,6 +7,9 @@ import { GoogleController } from './socials/controllers/google.controller';
 import { ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { GoogleStrategy } from './socials/strategies/google.strategy';
+import { LinkedInController } from './socials/controllers/linkedin.controller';
+import { LinkedInStrategy } from './socials/strategies/linkedin-strategy';
+import { GithubController } from './socials/controllers/github.controller';
 
 @Module({
   imports: [
@@ -28,8 +31,10 @@ import { GoogleStrategy } from './socials/strategies/google.strategy';
   ],
   controllers: [
     AuthController,
-    GoogleController
+    GoogleController,
+    LinkedInController,
+    GithubController,
   ],
-  providers: [GoogleStrategy],
+  providers: [GoogleStrategy, LinkedInStrategy],
 })
 export class AuthModule {}

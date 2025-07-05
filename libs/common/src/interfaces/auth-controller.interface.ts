@@ -36,5 +36,9 @@ export interface IGoogleAuthController {
 }
 
 export interface ILinkedInAuthController {
-    linkedinAuth(): Promise<any>;
+    linkedInAuth(data?: any): Promise<any>;
+}
+
+export interface IGithubAuthController {
+    githubAuth(data?: any): Promise<any>;
 }

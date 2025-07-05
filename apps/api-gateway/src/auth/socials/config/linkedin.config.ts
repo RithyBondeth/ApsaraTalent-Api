@@ -5,5 +5,5 @@ export const linkedInConfig = (configService: ConfigService): StrategyOption => 
     clientID: configService.get<string>('LINKEDIN_CLIENT_ID'),
     clientSecret: configService.get<string>('LINKEDIN_CLIENT_SECRET'),
     callbackURL: configService.get<string>('LINKEDIN_CALLBACK_URL'),
-    scope: ['r_liteprofile', 'r_emailaddress'],
+    scope: ['openid', 'email', 'profile'],
 });

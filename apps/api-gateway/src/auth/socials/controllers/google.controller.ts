@@ -16,11 +16,13 @@ import { GoogleAuthGuard } from '../guards/google-auth.guard';
 import { firstValueFrom } from 'rxjs';
 import { IGoogleAuthController } from '@app/common/interfaces/auth-controller.interface';
 import { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('social')
 export class GoogleController implements IGoogleAuthController {
   constructor(
     @Inject(AUTH_SERVICE.NAME) private readonly authService: ClientProxy,
+    private readonly configService: ConfigService,
   ) {}
 
   @Get('google/login')
@@ -35,24 +37,7 @@ export class GoogleController implements IGoogleAuthController {
     const result = await firstValueFrom(
       this.authService.send(AUTH_SERVICE.ACTIONS.GOOGLE_AUTH, req.user),
     );
-
-    // Which front-end origin is allowed to receive the message?
-    const FRONTEND_ORIGIN =
-      process.env.FRONTEND_ORIGIN ?? 'http://localhost:4000';
-
-    // const html = `
-    // <!doctype html>
-    // <html>
-    //   <body>
-    //     <script>
-    //       // 🚀 hand data to the opener window
-    //       window.opener &&
-    //       window.opener.postMessage(${JSON.stringify(result)}, "${FRONTEND_ORIGIN}");
-    //       // close the popup
-    //       window.close();
-    //     </script>
-    //   </body>
-    // </html>`;
+    const FRONTEND_ORIGIN = this.configService.get<string>('FRONTED_ORIGIN') ?? 'http://localhost:4000';
 
     const html = `
         <!doctype html>
