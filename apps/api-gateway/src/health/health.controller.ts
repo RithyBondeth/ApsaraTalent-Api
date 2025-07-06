@@ -19,7 +19,7 @@ export class HealthController {
 
   @Get()
   @HealthCheck()
-  check() {
+  checkHealth() {
     return this.health.check([
       () =>
         this.microservice.pingCheck(AUTH_SERVICE.NAME, {

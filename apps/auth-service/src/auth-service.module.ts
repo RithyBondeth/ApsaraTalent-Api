@@ -35,6 +35,12 @@ import { Job } from '@app/common/database/entities/company/job.entity';
 import { LoginOTPController } from './basic/controllers/login-otp.controller';
 import { LoginOTPService } from './basic/services/login-otp.service';
 import { MessageModule } from '@app/common/message/message.module';
+import { LinkedInAuthService } from './socials/services/linkedin-auth.service';
+import { LinkedInAuthController } from './socials/controllers/linkedin-auth.controller';
+import { GithubAuthController } from './socials/controllers/github-auth.controller';
+import { GithubAuthService } from './socials/services/github-auth.service';
+import { FacebookAuthService } from './socials/services/facebook-auth.service';
+import { FacebookAuthController } from './socials/controllers/facebook-auth.controller';
 
 @Module({
   imports: [
@@ -58,6 +64,9 @@ import { MessageModule } from '@app/common/message/message.module';
     RefreshTokenController,
     VerifyEmailController,
     GoogleAuthController,
+    LinkedInAuthController,
+    GithubAuthController,
+    FacebookAuthController,
     LoginOTPController,
   ],
   providers: [
@@ -68,6 +77,9 @@ import { MessageModule } from '@app/common/message/message.module';
     RefreshTokenService,
     VerifyEmailService,
     GoogleAuthService,
+    LinkedInAuthService,
+    GithubAuthService,
+    FacebookAuthService,
     LoginOTPService,
     {
       provide: APP_INTERCEPTOR,

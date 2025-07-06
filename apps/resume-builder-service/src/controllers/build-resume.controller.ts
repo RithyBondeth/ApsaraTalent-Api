@@ -6,7 +6,7 @@ import { BuildResumeDto } from '../dtos/build-resume.dto';
 import { IResumeBuilderController } from '@app/common/interfaces/resume-controller.interface';
 
 @Controller()
-export class BuildeResumeController implements IResumeBuilderController {
+export class BuildResumeController implements IResumeBuilderController {
   constructor(private readonly buildResumeService: BuildResumeService) {}
 
   @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.BUILD_RESUME)

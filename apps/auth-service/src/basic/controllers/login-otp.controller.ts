@@ -4,9 +4,10 @@ import { AUTH_SERVICE } from "utils/constants/auth-service.constant";
 import { LoginOtpDTO } from "../dtos/login-otp.dto";
 import { LoginOTPService } from "../services/login-otp.service";
 import { VerifyOtpDTO } from "../dtos/verify-otp.dto";
+import { IBasicAuthLoginOTPController } from "@app/common/interfaces/auth-controller.interface";
 
 @Controller()
-export class LoginOTPController {
+export class LoginOTPController implements IBasicAuthLoginOTPController {
     constructor(private readonly loginOtpService: LoginOTPService) {} 
     
     @MessagePattern(AUTH_SERVICE.ACTIONS.LOGIN_OTP)

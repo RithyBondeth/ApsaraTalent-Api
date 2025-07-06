@@ -2,9 +2,10 @@ import { Controller } from "@nestjs/common";
 import { ImageCompanyService } from "../../services/company-services/image-company.service";
 import { MessagePattern, Payload } from "@nestjs/microservices";
 import { USER_SERVICE } from "utils/constants/user-service.constant";
+import { IImageCompanyController } from "@app/common/interfaces/company.interface";
 
 @Controller()
-export class ImageCompanyController {
+export class ImageCompanyController implements IImageCompanyController {
     constructor(private readonly imageCompanyService: ImageCompanyService) {}
 
     @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_AVATAR)

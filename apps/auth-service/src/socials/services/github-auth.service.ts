@@ -1,43 +1,40 @@
-import { JwtService } from '@app/common/jwt/jwt.service';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { GithubAuthDTO } from '../dtos/github-auth.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PinoLogger } from 'nestjs-pino';
+import { User } from '@app/common/database/entities/user.entity';
 import { Repository } from 'typeorm';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
-import { User } from '@app/common/database/entities/user.entity';
-import { GoogleAuthDTO } from '../dtos/google-auth.dto';
+import { JwtService } from '@app/common/jwt/jwt.service';
+import { PinoLogger } from 'nestjs-pino';
 
 @Injectable()
-export class GoogleAuthService {
+export class GithubAuthService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
     private readonly logger: PinoLogger,
   ) {}
 
-  async googleLogin(googleData: GoogleAuthDTO) {
+  async githubLogin(githubData: GithubAuthDTO) {
     try {
       // Find a user by email
       let user = await this.userRepository.findOne({
-        where: { email: googleData.email },
+        where: { email: githubData.email },
       });
 
       if (!user) {
         // If user does not exist, return data for frontend role selection
         return {
-          message: 'Successfully Logged in with Google',
+          message: 'Successfully Logged in with Github',
           newUser: true,
-          email: googleData.email,
-          firstname: googleData.firstName,
-          lastname: googleData.lastName,
-          picture: googleData.picture,
-          accessToken: null,
-          refreshToken: null,
-          provider: 'google',
+          email: githubData.email,
+          username: githubData.username,
+          picture: githubData.picture,
+          provider: githubData.provider,
         };
       }
 
-      // Generate JWT tokens
+      // Generate JWT Token
       const payload: IPayload = {
         id: user.id,
         info: user.email,
@@ -50,11 +47,10 @@ export class GoogleAuthService {
       ]);
 
       return {
-        message: 'Successfully Logged in with Google',
+        message: 'Successfully Logged in with Github',
         newUser: false,
         email: null,
-        firstname: null,
-        lastname: null,
+        username: null,
         picture: null,
         provider: null,
         accessToken,
@@ -64,10 +60,10 @@ export class GoogleAuthService {
       this.logger.error('Google login error:', {
         error: error.message,
         stack: error.stack,
-        googleId: googleData.id,
-        email: googleData.email,
+        githubId: githubData.id,
+        email: githubData.email,
       });
-      throw new UnauthorizedException('Failed to authenticate with Google');
+      throw new UnauthorizedException('Failed to authenticate with Github');
     }
   }
 }

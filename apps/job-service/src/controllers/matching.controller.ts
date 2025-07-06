@@ -2,9 +2,10 @@ import { Controller } from "@nestjs/common";
 import { MatchingService } from "../services/matching.service";
 import { MessagePattern, Payload } from "@nestjs/microservices";
 import { JOB_SERVICE } from "utils/constants/job-service.constant";
+import { IMatchingController } from "@app/common/interfaces/job-controller.interface";
 
 @Controller()
-export class MatchingController {
+export class MatchingController implements IMatchingController {
     constructor(private readonly matchingService: MatchingService) {}
 
     @MessagePattern(JOB_SERVICE.ACTIONS.EMPLOYEE_LIKES) 

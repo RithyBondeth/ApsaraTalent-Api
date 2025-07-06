@@ -3,9 +3,10 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { UserService } from '../services/user.service';
 import { UserResponseDTO } from '../dtos/user-response.dto';
+import { IUserController } from '@app/common/interfaces/user-controller.interface';
 
 @Controller()
-export class UserController {
+export class UserController implements IUserController {
   constructor(private readonly userService: UserService) {}
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL)
@@ -14,7 +15,7 @@ export class UserController {
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ONE_BY_ID)
-  async findOneUserByID(
+  async findOneUserById(
     @Payload() payload: { userId: string },
   ): Promise<UserResponseDTO> {
     return this.userService.findOneUserByID(payload.userId);
