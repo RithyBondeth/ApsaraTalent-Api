@@ -42,3 +42,7 @@ export interface ILinkedInAuthController {
 export interface IGithubAuthController {
     githubAuth(data?: any): Promise<any>;
 }
+
+export interface IFacebookAuthController {
+    facebookAuth(data?: any): Promise<any>;
+}
