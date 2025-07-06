@@ -37,6 +37,8 @@ import { LoginOTPService } from './basic/services/login-otp.service';
 import { MessageModule } from '@app/common/message/message.module';
 import { LinkedInAuthService } from './socials/services/linkedin-auth.service';
 import { LinkedInAuthController } from './socials/controllers/linkedin-auth.controller';
+import { GithubAuthController } from './socials/controllers/github-auth.controller';
+import { GithubAuthService } from './socials/services/github-auth.service';
 
 @Module({
   imports: [
@@ -61,6 +63,7 @@ import { LinkedInAuthController } from './socials/controllers/linkedin-auth.cont
     VerifyEmailController,
     GoogleAuthController,
     LinkedInAuthController,
+    GithubAuthController,
     LoginOTPController,
   ],
   providers: [
@@ -72,6 +75,7 @@ import { LinkedInAuthController } from './socials/controllers/linkedin-auth.cont
     VerifyEmailService,
     GoogleAuthService,
     LinkedInAuthService,
+    GithubAuthService,
     LoginOTPService,
     {
       provide: APP_INTERCEPTOR,

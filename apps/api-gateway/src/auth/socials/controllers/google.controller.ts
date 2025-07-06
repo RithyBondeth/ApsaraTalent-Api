@@ -37,7 +37,9 @@ export class GoogleController implements IGoogleAuthController {
     const result = await firstValueFrom(
       this.authService.send(AUTH_SERVICE.ACTIONS.GOOGLE_AUTH, req.user),
     );
-    const FRONTEND_ORIGIN = this.configService.get<string>('FRONTED_ORIGIN') ?? 'http://localhost:4000';
+    const FRONTEND_ORIGIN =
+      this.configService.get<string>('FRONTED_ORIGIN') ??
+      'http://localhost:4000';
 
     const html = `
         <!doctype html>
