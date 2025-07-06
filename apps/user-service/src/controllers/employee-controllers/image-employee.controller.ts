@@ -2,9 +2,10 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { ImageEmployeeService } from '../../services/employee-services/image-employee.service';
+import { IImageEmployeeController } from '@app/common/interfaces/employee-controller.interface';
 
 @Controller()
-export class ImageEmployeeController {
+export class ImageEmployeeController implements IImageEmployeeController {
   constructor(private readonly imageEmployeeService: ImageEmployeeService) {}
 
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_AVATAR)

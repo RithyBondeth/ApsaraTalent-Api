@@ -1,3 +1,4 @@
+import { IEmployeeController } from "@app/common/interfaces/employee-controller.interface";
 import { UploadFileInterceptor } from "@app/common/uploadfile/uploadfile.interceptor";
 import { BadRequestException, Body, Controller, Get, Inject, Param, ParseUUIDPipe, Patch, Post, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { ClientProxy } from "@nestjs/microservices";
@@ -5,7 +6,7 @@ import { firstValueFrom } from "rxjs";
 import { USER_SERVICE } from "utils/constants/user-service.constant";
 
 @Controller('user/employee')
-export class EmployeeController {
+export class EmployeeController implements IEmployeeController {
     constructor(@Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy) {}
     @Get('all')
     async findAll(@Query() pagination: any) {

@@ -1,7 +1,3 @@
-export interface IBasicAuthRegisterController {
-    register(body: any, file: Express.Multer.File): Promise<any>;
-}
-
 export interface IBasicAuthLoginController {
     login(body: any): Promise<any>;
 }
@@ -22,13 +18,24 @@ export interface IBasicAuthVerifyEmailController {
     verifyEmail(token: string): Promise<any>;
 }
 
+export interface IBasicAuthRegisterController {
+    registerCompany(data?: any): Promise<any>;
+    registerEmployee(data?: any): Promise<any>;
+}
+
+export interface IBasicAuthLoginOTPController {
+    loginOtp(data?: any): Promise<any>;
+    verifyOtp(data?: any): Promise<any>;
+}
+
 export interface IBasicAuthController extends 
 IBasicAuthRegisterController, 
 IBasicAuthLoginController,
 IBasicAuthForgotPasswordController,
 IBasicAuthResetPasswordController,
 IBasicAuthRefreshTokenController,
-IBasicAuthVerifyEmailController
+IBasicAuthVerifyEmailController,
+IBasicAuthLoginOTPController
 {}
 
 export interface IGoogleAuthController {
