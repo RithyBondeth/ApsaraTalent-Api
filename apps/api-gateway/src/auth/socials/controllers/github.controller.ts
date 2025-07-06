@@ -1,44 +1,43 @@
+import { IGithubAuthController } from '@app/common/interfaces/auth-controller.interface';
 import {
-  Body,
   Controller,
   Get,
   HttpCode,
   HttpStatus,
   Inject,
-  Post,
   Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
-import { GoogleAuthGuard } from '../guards/google-auth.guard';
+import { GithubAuthGuard } from '../guards/github-auth.guard';
 import { firstValueFrom } from 'rxjs';
-import { IGoogleAuthController } from '@app/common/interfaces/auth-controller.interface';
-import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
+import { Response } from 'express';
 
 @Controller('social')
-export class GoogleController implements IGoogleAuthController {
+export class GithubController implements IGithubAuthController {
   constructor(
     @Inject(AUTH_SERVICE.NAME) private readonly authService: ClientProxy,
     private readonly configService: ConfigService,
   ) {}
 
-  @Get('google/login')
+  @Get('github/login')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(GoogleAuthGuard)
-  async googleAuth() {}
+  @UseGuards(GithubAuthGuard)
+  async githubAuth() {}
 
-  @Get('google/callback')
+  @Get('github/callback')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(GoogleAuthGuard)
-  async googleCallback(@Req() req: any, @Res() res: Response) {
+  @UseGuards(GithubAuthGuard)
+  async githubCallback(@Req() req: any, @Res() res: Response) {
     const result = await firstValueFrom(
-      this.authService.send(AUTH_SERVICE.ACTIONS.GOOGLE_AUTH, req.user),
+      this.authService.send(AUTH_SERVICE.ACTIONS.GITHUB_AUTH, req.user),
     );
+
     const FRONTEND_ORIGIN =
-      this.configService.get<string>('FRONTED_ORIGIN') ??
+      this.configService.get<string>('FRONTEND_ORIGIN') ??
       'http://localhost:4000';
 
     const html = `

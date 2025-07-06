@@ -3,9 +3,10 @@ import { UpdateEmployeeInfoService } from "../../services/employee-services/upda
 import { MessagePattern, Payload } from "@nestjs/microservices";
 import { USER_SERVICE } from "utils/constants/user-service.constant";
 import { UpdateEmployeeInfoDTO } from "../../dtos/employee/update-employee-info.dto";
+import { IUpdateEmployeeController } from "@app/common/interfaces/employee-controller.interface";
 
 @Controller()
-export class UpdateEmployeeInfoController {
+export class UpdateEmployeeInfoController implements IUpdateEmployeeController {
     constructor(private readonly updateEmployeeInfoService: UpdateEmployeeInfoService) {}
 
     @MessagePattern(USER_SERVICE.ACTIONS.UPDATE_EMPLOYEE_INFO)

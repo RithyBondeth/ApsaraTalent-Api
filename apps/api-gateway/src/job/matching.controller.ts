@@ -1,10 +1,11 @@
+import { IMatchingController } from "@app/common/interfaces/job-controller.interface";
 import { Controller, Inject, Param, ParseUUIDPipe, Post } from "@nestjs/common";
 import { ClientProxy } from "@nestjs/microservices";
 import { firstValueFrom } from "rxjs";
 import { JOB_SERVICE } from "utils/constants/job-service.constant";
 
 @Controller('match')
-export class JobMatchingController {
+export class JobMatchingController implements IMatchingController {
     constructor(@Inject(JOB_SERVICE.NAME) private readonly jobClient: ClientProxy) {}
 
     @Post('employee/:eid/like/:cid')

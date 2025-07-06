@@ -7,6 +7,12 @@ import { GoogleController } from './socials/controllers/google.controller';
 import { ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { GoogleStrategy } from './socials/strategies/google.strategy';
+import { LinkedInController } from './socials/controllers/linkedin.controller';
+import { LinkedInStrategy } from './socials/strategies/linkedin.strategy';
+import { GithubController } from './socials/controllers/github.controller';
+import { GitHubStrategy } from './socials/strategies/github.strategy';
+import { FacebookController } from './socials/controllers/facebook.controller';
+import { FacebookStrategy } from './socials/strategies/facebook.strategy';
 
 @Module({
   imports: [
@@ -20,16 +26,24 @@ import { GoogleStrategy } from './socials/strategies/google.strategy';
             port: configService.get<number>('AUTH_SERVICE_PORT'),
           },
         }),
-        inject: [ConfigService]
-      }
+        inject: [ConfigService],
+      },
     ]),
     ThrottlerModule,
     PassportModule,
   ],
   controllers: [
     AuthController,
-    GoogleController
+    GoogleController,
+    LinkedInController,
+    GithubController,
+    FacebookController,
   ],
-  providers: [GoogleStrategy],
+  providers: [
+    GoogleStrategy,
+    LinkedInStrategy,
+    GitHubStrategy,
+    FacebookStrategy,
+  ],
 })
 export class AuthModule {}

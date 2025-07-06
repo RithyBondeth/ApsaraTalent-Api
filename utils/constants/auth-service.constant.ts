@@ -13,5 +13,7 @@ export const AUTH_SERVICE = {
         GOOGLE_AUTH: { cmd: 'google-auth' },
         GOOGLE_REGISTER_USER: { cmd: 'google-auth-register' },
         LINKEDIN_AUTH: { cmd: 'linkedin-auth' },
+        GITHUB_AUTH: { cmd: 'github-auth' },
+        FACEBOOK_AUTH: { cmd: 'facebook-auth' },
     }
 }

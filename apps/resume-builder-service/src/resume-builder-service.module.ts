@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { BuildeResumeController } from './controllers/build-resume.controller';
+import { BuildResumeController } from './controllers/build-resume.controller';
 import { BuildResumeService } from './services/build-resume.service';
 import { ImageService } from './services/image.service';
 import { ConfigModule } from '@nestjs/config';
@@ -13,7 +13,7 @@ import { LoggerModule } from '@app/common';
     }),
     LoggerModule,
   ],
-  controllers: [BuildeResumeController],
+  controllers: [BuildResumeController],
   providers: [BuildResumeService, ImageService],
 })
 export class ResumeBuilderServiceModule {}
