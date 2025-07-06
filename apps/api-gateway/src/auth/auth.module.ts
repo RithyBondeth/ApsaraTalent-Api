@@ -11,6 +11,8 @@ import { LinkedInController } from './socials/controllers/linkedin.controller';
 import { LinkedInStrategy } from './socials/strategies/linkedin.strategy';
 import { GithubController } from './socials/controllers/github.controller';
 import { GitHubStrategy } from './socials/strategies/github.strategy';
+import { FacebookController } from './socials/controllers/facebook.controller';
+import { FacebookStrategy } from './socials/strategies/facebook.strategy';
 
 @Module({
   imports: [
@@ -24,8 +26,8 @@ import { GitHubStrategy } from './socials/strategies/github.strategy';
             port: configService.get<number>('AUTH_SERVICE_PORT'),
           },
         }),
-        inject: [ConfigService]
-      }
+        inject: [ConfigService],
+      },
     ]),
     ThrottlerModule,
     PassportModule,
@@ -35,7 +37,13 @@ import { GitHubStrategy } from './socials/strategies/github.strategy';
     GoogleController,
     LinkedInController,
     GithubController,
+    FacebookController,
   ],
-  providers: [GoogleStrategy, LinkedInStrategy, GitHubStrategy],
+  providers: [
+    GoogleStrategy,
+    LinkedInStrategy,
+    GitHubStrategy,
+    FacebookStrategy,
+  ],
 })
 export class AuthModule {}
