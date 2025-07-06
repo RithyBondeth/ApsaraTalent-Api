@@ -12,7 +12,7 @@ export class LinkedInAuthController implements ILinkedInAuthController {
 
     @MessagePattern(AUTH_SERVICE.ACTIONS.LINKEDIN_AUTH)
     async linkedInAuth(@Payload() linkedInData: LinkedInAuthDTO): Promise<LinkedInLoginResponse> {
-        console.log("Auth Service: LinkedIn Callback");
+        console.log("LinkedIn Data: ", linkedInData);
         return this.linkedInService.linkedInLogin(linkedInData);
     }
 }

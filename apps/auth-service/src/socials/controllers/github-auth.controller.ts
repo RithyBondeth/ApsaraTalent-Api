@@ -11,7 +11,6 @@ export class GithubAuthController implements IGithubAuthController {
 
     @MessagePattern(AUTH_SERVICE.ACTIONS.GITHUB_AUTH)
     async githubAuth(@Payload() githubData: GithubAuthDTO) {
-        console.log('GithubData: ', githubData);
         return this.githubAuthService.githubLogin(githubData);
     }
 }

@@ -12,7 +12,6 @@ export class GoogleAuthController implements IGoogleAuthController {
 
     @MessagePattern(AUTH_SERVICE.ACTIONS.GOOGLE_AUTH)
     async googleAuth(@Payload() googleData: GoogleAuthDTO) {
-        console.log("Auth Service: Google Callback");
         return this.googleAuthService.googleLogin(googleData);
     }
 
