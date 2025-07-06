@@ -33,7 +33,7 @@ export class GoogleAuthService {
 
     async googleLogin(googleData: GoogleAuthDTO) {
         try {
-            // Find user by email
+            // Find a user by email
             let user = await this.userRepository.findOne({ where: { email: googleData.email } });
 
             if (!user) {
