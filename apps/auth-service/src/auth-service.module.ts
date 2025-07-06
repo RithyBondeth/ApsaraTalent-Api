@@ -39,6 +39,8 @@ import { LinkedInAuthService } from './socials/services/linkedin-auth.service';
 import { LinkedInAuthController } from './socials/controllers/linkedin-auth.controller';
 import { GithubAuthController } from './socials/controllers/github-auth.controller';
 import { GithubAuthService } from './socials/services/github-auth.service';
+import { FacebookAuthService } from './socials/services/facebook-auth.service';
+import { FacebookAuthController } from './socials/controllers/facebook-auth.controller';
 
 @Module({
   imports: [
@@ -64,6 +66,7 @@ import { GithubAuthService } from './socials/services/github-auth.service';
     GoogleAuthController,
     LinkedInAuthController,
     GithubAuthController,
+    FacebookAuthController,
     LoginOTPController,
   ],
   providers: [
@@ -76,6 +79,7 @@ import { GithubAuthService } from './socials/services/github-auth.service';
     GoogleAuthService,
     LinkedInAuthService,
     GithubAuthService,
+    FacebookAuthService,
     LoginOTPService,
     {
       provide: APP_INTERCEPTOR,
