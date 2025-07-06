@@ -67,12 +67,4 @@ export class GoogleController implements IGoogleAuthController {
     res.setHeader('Content-Type', 'text/html');
     res.send(html);
   }
-
-  @Post('register-google-user')
-  async registerGoogleUser(@Body() registerData: any) {
-    const payload = { ...registerData };
-    return firstValueFrom(
-      this.authService.send(AUTH_SERVICE.ACTIONS.GOOGLE_REGISTER_USER, payload),
-    );
-  }
 }

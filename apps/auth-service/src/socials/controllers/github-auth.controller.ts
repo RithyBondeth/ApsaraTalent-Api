@@ -2,7 +2,7 @@ import { IGithubAuthController } from "@app/common/interfaces/auth-controller.in
 import { Controller } from "@nestjs/common";
 import { MessagePattern, Payload } from "@nestjs/microservices";
 import { AUTH_SERVICE } from "utils/constants/auth-service.constant";
-import { GithubAuthDTO } from "../dtos/github-user.dto";
+import { GithubAuthDTO } from "../dtos/github-auth.dto";
 import { GithubAuthService } from "../services/github-auth.service";
 
 @Controller()

@@ -4,9 +4,10 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { UserPaginationDTO } from '../../dtos/user-pagination.dto';
 import { CompanyResponseDTO } from '../../dtos/user-response.dto';
+import { IFindCompanyController } from '@app/common/interfaces/company.interface';
 
 @Controller()
-export class FindCompanyController {
+export class FindCompanyController implements IFindCompanyController {
   constructor(private readonly findCompanyService: FindCompanyService) {}
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_COMPANY)

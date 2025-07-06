@@ -12,9 +12,10 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ThrottlerGuard } from '@app/common/throttler/guards/throttler.guard';
+import { IBasicAuthController } from '@app/common/interfaces/auth-controller.interface';
 
 @Controller('auth')
-export class AuthController {
+export class AuthController implements IBasicAuthController {
   constructor(
     @Inject(AUTH_SERVICE.NAME) private readonly authClient: ClientProxy,
   ) {}
@@ -22,7 +23,7 @@ export class AuthController {
   @Post('register-company')
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(ThrottlerGuard)
-  async companyRegister(@Body() companyRegisterDTO: any): Promise<any> {
+  async registerCompany(@Body() companyRegisterDTO: any): Promise<any> {
     const payload = { ...companyRegisterDTO };
     return await firstValueFrom(
       this.authClient.send(AUTH_SERVICE.ACTIONS.REGISTER_COMPANY, payload),
@@ -32,7 +33,7 @@ export class AuthController {
   @Post('register-employee')
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(ThrottlerGuard)
-  async employeeRegister(@Body() employeeRegisterDTO: any): Promise<any> {
+  async registerEmployee(@Body() employeeRegisterDTO: any): Promise<any> {
     const payload = { ...employeeRegisterDTO };
     return await firstValueFrom(
       this.authClient.send(AUTH_SERVICE.ACTIONS.REGISTER_EMPLOYEE, payload),
@@ -53,7 +54,7 @@ export class AuthController {
   @Post('login-otp')
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
-  async loginOTP(@Body() loginOtpDTO: any): Promise<any> {
+  async loginOtp(@Body() loginOtpDTO: any): Promise<any> {
     return await firstValueFrom(
       this.authClient.send(AUTH_SERVICE.ACTIONS.LOGIN_OTP, loginOtpDTO),
     );
@@ -62,7 +63,7 @@ export class AuthController {
   @Post('verify-otp')
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
-  async verifyOTP(@Body() verifyOtpDTO: any): Promise<any> {
+  async verifyOtp(@Body() verifyOtpDTO: any): Promise<any> {
     return firstValueFrom(
       this.authClient.send(AUTH_SERVICE.ACTIONS.VERIFY_OTP, verifyOtpDTO),
     );

@@ -4,9 +4,10 @@ import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { UpdateCompanyInfoService } from '../../services/company-services/update-company-info.service';
 import { UpdateCompanyInfoDTO } from '../../dtos/company/update-company-info.dto';
 import { CompanyResponseDTO } from '../../dtos/user-response.dto';
+import { IUpdateCompanyInfoController } from '@app/common/interfaces/company.interface';
 
 @Controller()
-export class UpdateCompanyInfoController {
+export class UpdateCompanyInfoController implements IUpdateCompanyInfoController {
   constructor(
     private readonly updateCompanyInfoService: UpdateCompanyInfoService,
   ) {}

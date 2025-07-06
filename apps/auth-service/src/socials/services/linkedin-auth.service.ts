@@ -2,10 +2,9 @@ import { IPayload } from "@app/common/jwt/interfaces/payload.interface";
 import { JwtService } from "@app/common/jwt/jwt.service";
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { LinkedInAuthDTO } from "../dtos/linkedin-user.dto";
+import { LinkedInAuthDTO } from "../dtos/linkedin-auth.dto";
 import { Repository } from "typeorm";
 import { User } from "@app/common/database/entities/user.entity";
-import { LinkedInLoginResponse } from "../dtos/linkedin-response.dto";
 
 @Injectable()
 export class LinkedInAuthService {
@@ -14,7 +13,7 @@ export class LinkedInAuthService {
     private readonly jwt: JwtService,
   ) {}
 
-  async linkedInLogin(linkedInData: LinkedInAuthDTO): Promise<LinkedInLoginResponse> {
+  async linkedInLogin(linkedInData: LinkedInAuthDTO) {
     try {
       let user = await this.users.findOne({ where: { email: linkedInData.email } });
   
