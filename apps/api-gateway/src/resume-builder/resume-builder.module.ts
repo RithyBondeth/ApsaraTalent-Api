@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { RESUME_BUILDER_SERVICE } from 'utils/constants/resume-builder-service';
-import { ResumeBuilderController } from './resume-builder.controller';
 import { ConfigService } from '@nestjs/config';
+import { ResumeBuilderController } from './controllers/resume-builder.controller';
+import { ResumeTemplateController } from './controllers/resume-template.controller';
+import { UploadfileModule } from '@app/common';
 
 @Module({
   imports: [
@@ -19,7 +21,8 @@ import { ConfigService } from '@nestjs/config';
         inject: [ConfigService],
       },
     ]),
+    UploadfileModule,
   ],
-  controllers: [ResumeBuilderController],
+  controllers: [ResumeBuilderController, ResumeTemplateController],
 })
 export class ResumeBuilderModule {}

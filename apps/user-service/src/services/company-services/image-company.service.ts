@@ -1,7 +1,7 @@
 import { Company } from "@app/common/database/entities/company/company.entity";
 import { Image } from "@app/common/database/entities/company/image.entity";
 import { UploadfileService } from "@app/common/uploadfile/uploadfile.service";
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { RpcException } from "@nestjs/microservices";
 import { InjectRepository } from "@nestjs/typeorm";
 import { PinoLogger } from "nestjs-pino";

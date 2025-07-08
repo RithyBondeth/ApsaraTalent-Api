@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { JobController } from './job.controller';
+import { JobController } from './controllers/job.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { JOB_SERVICE } from 'utils/constants/job-service.constant';
 import { ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@app/common';
-import { JobMatchingController } from './matching.controller';
+import { JobMatchingController } from './controllers/matching.controller';
 
 @Module({
   imports: [

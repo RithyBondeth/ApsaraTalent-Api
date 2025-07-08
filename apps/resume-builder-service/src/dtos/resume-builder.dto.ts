@@ -47,7 +47,7 @@ export class ExperienceDto {
   achievements: string[];
 }
 
-export class BuildResumeDto {
+export class BuildResumeDTO {
   @ValidateNested()
   @Type(() => PersonalInfoDto)
   personalInfo: PersonalInfoDto;
