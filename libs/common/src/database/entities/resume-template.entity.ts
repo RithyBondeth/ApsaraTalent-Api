@@ -14,7 +14,7 @@ export class ResumeTemplate {
     @Column()
     description: string;
 
-    @Column({ nullable: true })
+    @Column({ type: 'double precision', nullable: true })
     price: number;
 
     @Column({ default: false })

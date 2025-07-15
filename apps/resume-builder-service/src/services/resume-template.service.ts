@@ -67,7 +67,7 @@ export class ResumeTemplateService {
         title: createResumeTemplateDTO.title,
         description: createResumeTemplateDTO.description,
         price: Number(createResumeTemplateDTO.price) || 0,
-        isPremium: createResumeTemplateDTO.isPremium ?? false,
+        isPremium: Boolean(createResumeTemplateDTO.isPremium) ?? false,
       });
 
       if (image) {
