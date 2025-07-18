@@ -14,10 +14,11 @@ import { Job } from "../entities/company/job.entity";
 import { Value } from "../entities/company/value.entity";
 import { Image } from "../entities/company/image.entity";
 import { Chat } from "../entities/chat.entity";
+import { ResumeTemplate } from "../entities/resume-template.entity";
 
 export const databaseConfig = async (configService: ConfigService): Promise<PostgresConnectionOptions> => ({
     type: 'postgres',
     url: configService.get<string>('DATABASE_URL'),
     synchronize: configService.get<boolean>('DATABASE_SYNCHRONIZE'),
-    entities: [User, Employee, Company, Social, Chat, JobMatching, CareerScope, Education, Experience, Skill, Benefit, Job, Value, Image],
+    entities: [User, Employee, Company, Social, Chat, JobMatching, CareerScope, Education, Experience, Skill, Benefit, Job, Value, Image, ResumeTemplate],
 });
