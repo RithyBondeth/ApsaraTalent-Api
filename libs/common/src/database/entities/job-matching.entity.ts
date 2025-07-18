@@ -21,7 +21,7 @@ export class JobMatching {
     companyLiked: boolean;
 
     @Column({ default: false })
-    matched: boolean;
+    isMatched: boolean;
 
     @CreateDateColumn()
     createdAt: Date;

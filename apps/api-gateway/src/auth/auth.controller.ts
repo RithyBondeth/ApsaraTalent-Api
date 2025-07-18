@@ -2,6 +2,7 @@ import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Inject,

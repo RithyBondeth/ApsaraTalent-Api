@@ -4,6 +4,6 @@ export interface IJobController {
 }
 
 export interface IMatchingController {
-    employeeLikes(empId: string, cmpId: string): Promise<any>;
-    companyLikes(cmpId: string, empId: string): Promise<any>;
+    employeeLikes(data?: any): Promise<any>;
+    companyLikes(data?: any): Promise<any>;
 }

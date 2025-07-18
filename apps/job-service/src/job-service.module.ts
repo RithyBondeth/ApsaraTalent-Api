@@ -12,6 +12,7 @@ import { JobServiceController } from './controllers/job-service.controller';
 import { MessageModule } from '@app/common/message/message.module';
 import { MatchingController } from './controllers/matching.controller';
 import { MatchingService } from './services/matching.service';
+import { JobMatching } from '@app/common/database/entities/job-matching.entity';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { MatchingService } from './services/matching.service';
     DatabaseModule,
     LoggerModule,
     MessageModule,
-    TypeOrmModule.forFeature([User, Company, Employee, Job]),
+    TypeOrmModule.forFeature([User, Company, Employee, Job, JobMatching]),
   ],
   controllers: [JobServiceController, MatchingController],
   providers: [
