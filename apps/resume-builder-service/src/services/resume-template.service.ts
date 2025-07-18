@@ -6,6 +6,7 @@ import { CreateResumeTemplateDTO } from '../dtos/create-resume-template.dto';
 import { UploadfileService } from '@app/common/uploadfile/uploadfile.service';
 import { PinoLogger } from 'nestjs-pino';
 import { RpcException } from '@nestjs/microservices';
+import { SearchTemplateDTO } from '../dtos/search-resume-template.dto';
 
 @Injectable()
 export class ResumeTemplateService {
@@ -86,6 +87,51 @@ export class ResumeTemplateService {
       this.logger.error(error.message);
       throw new RpcException({
         message: "An error occurred while creating the resume's template.",
+        statusCode: 500,
+      });
+    }
+  }
+
+  async searchResumeTemplate(searchTemplateDTO: SearchTemplateDTO): Promise<any> {
+    try {
+      const query = this.resumeTemplateRepository.createQueryBuilder("resume");
+  
+      let whereUsed = false;
+  
+      if (searchTemplateDTO.title) {
+        query.where("resume.title LIKE :title", {
+          title: `%${searchTemplateDTO.title}%`,
+        });
+        whereUsed = true;
+      }
+  
+      if (typeof searchTemplateDTO.isPremium !== "undefined") {
+        const isPremiumBool = String(searchTemplateDTO.isPremium).toLowerCase() === "true";
+        if (whereUsed) {
+          query.andWhere("resume.isPremium = :isPremium", {
+            isPremium: isPremiumBool,
+          });
+        } else {
+          query.where("resume.isPremium = :isPremium", {
+            isPremium: isPremiumBool,
+          });
+        }
+      }
+  
+      const templates = await query.getMany();
+  
+      if (!templates.length) {
+        throw new RpcException({
+          message: "No templates found matching your criteria.",
+          statusCode: 404,
+        });
+      }
+  
+      return templates;
+    } catch (error) {
+      this.logger.error(error.message);
+      throw new RpcException({
+        message: error.message,
         statusCode: 500,
       });
     }

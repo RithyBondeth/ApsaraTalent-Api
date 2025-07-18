@@ -4,6 +4,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { RESUME_BUILDER_SERVICE } from 'utils/constants/resume-builder-service';
 import { CreateResumeTemplateDTO } from '../dtos/create-resume-template.dto';
 import { IResumeTemplateController } from '@app/common/interfaces/resume-controller.interface';
+import { SearchTemplateDTO } from '../dtos/search-resume-template.dto';
 
 @Controller()
 export class ResumeTemplateController implements IResumeTemplateController {
@@ -31,5 +32,10 @@ export class ResumeTemplateController implements IResumeTemplateController {
       payload.createResumeTemplateDTO,
       payload.image,
     );
+  }
+
+  @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.SEARCH_RESUME_TEMPLATE)
+  async searchResumeTemplate(@Payload() searchTemplateDTO: SearchTemplateDTO): Promise<any> {
+      return this.resumeTemplateService.searchResumeTemplate(searchTemplateDTO);
   }
 }

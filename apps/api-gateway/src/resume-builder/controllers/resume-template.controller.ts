@@ -8,6 +8,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -55,6 +56,16 @@ export class ResumeTemplateController implements IResumeTemplateController {
       this.resumeBuilderClient.send(
         RESUME_BUILDER_SERVICE.ACTIONS.CREATE_RESUME_TEMPLATE,
         payload,
+      ),
+    );
+  }
+
+  @Get('search')
+  async searchResumeTemplate(@Query() searchTemplateQuery: any): Promise<any> {
+    return firstValueFrom(
+      this.resumeBuilderClient.send(
+        RESUME_BUILDER_SERVICE.ACTIONS.SEARCH_RESUME_TEMPLATE,
+        searchTemplateQuery,
       ),
     );
   }
