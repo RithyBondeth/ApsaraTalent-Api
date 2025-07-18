@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { BuildResumeDto } from '../dtos/build-resume.dto';
+import { BuildResumeDTO } from '../dtos/resume-builder.dto';
 import OpenAI from 'openai';
 import * as puppeteer from 'puppeteer';
 import { ConfigService } from '@nestjs/config';
@@ -7,7 +7,7 @@ import { ImageService } from './image.service';
 import { PinoLogger } from 'nestjs-pino';
 
 @Injectable()
-export class BuildResumeService {
+export class ResumeBuilderService {
   private readonly logger: PinoLogger;
   private openAI: OpenAI;
 
@@ -21,7 +21,7 @@ export class BuildResumeService {
     });
   }
 
-  async buildResume(buildResumeDTO: BuildResumeDto): Promise<any> {
+  async buildResume(buildResumeDTO: BuildResumeDTO): Promise<any> {
     try {
         // Process profile picture if provided
         if(buildResumeDTO.personalInfo.profilePicture) {
@@ -41,7 +41,7 @@ export class BuildResumeService {
     }
   }
 
-  private async generateHTMLContent(buildResumeDTO: BuildResumeDto): Promise<string> {
+  private async generateHTMLContent(buildResumeDTO: BuildResumeDTO): Promise<string> {
       const completion = await this.openAI.chat.completions.create({
         model: 'gpt-3.5-turbo',
         temperature: 0.7,
@@ -64,7 +64,7 @@ export class BuildResumeService {
       return completion.choices[0].message.content;
   }
   
-  private createPrompt(buildResumeDTO: BuildResumeDto): string {
+  private createPrompt(buildResumeDTO: BuildResumeDTO): string {
     return `Create a professional resume with this information:
 
       Personal Information:

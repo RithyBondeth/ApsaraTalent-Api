@@ -18,7 +18,7 @@ export class FindCompanyController implements IFindCompanyController {
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ONE_COMPANY_BY_ID)
-  async findOne(
+  async findOneById(
     @Payload() payload: { companyId: string },
   ): Promise<CompanyResponseDTO> {
     return this.findCompanyService.findOneById(payload.companyId);

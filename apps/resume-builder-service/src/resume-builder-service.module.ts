@@ -1,9 +1,13 @@
 import { Module } from '@nestjs/common';
-import { BuildResumeController } from './controllers/build-resume.controller';
-import { BuildResumeService } from './services/build-resume.service';
+import { ResumeBuilderController } from './controllers/resume-builder.controller';
+import { ResumeBuilderService } from './services/resume-builder.service';
 import { ImageService } from './services/image.service';
 import { ConfigModule } from '@nestjs/config';
-import { LoggerModule } from '@app/common';
+import { DatabaseModule, LoggerModule, UploadfileModule } from '@app/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ResumeTemplate } from '@app/common/database/entities/resume-template.entity';
+import { ResumeTemplateService } from './services/resume-template.service';
+import { ResumeTemplateController } from './controllers/resume-template.controller';
 
 @Module({
   imports: [
@@ -12,8 +16,11 @@ import { LoggerModule } from '@app/common';
       envFilePath: './apps/resume-builder-service/.env',
     }),
     LoggerModule,
+    DatabaseModule,
+    UploadfileModule,
+    TypeOrmModule.forFeature([ ResumeTemplate ]),
   ],
-  controllers: [BuildResumeController],
-  providers: [BuildResumeService, ImageService],
+  controllers: [ResumeBuilderController, ResumeTemplateController],
+  providers: [ResumeBuilderService, ImageService, ResumeTemplateService],
 })
 export class ResumeBuilderServiceModule {}

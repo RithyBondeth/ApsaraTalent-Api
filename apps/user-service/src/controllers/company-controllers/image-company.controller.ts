@@ -29,7 +29,7 @@ export class ImageCompanyController implements IImageCompanyController {
     }
 
     @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_IMAGES)
-    async uploadCompanyImage(@Payload() payload: { companyId: string, images: Express.Multer.File[] }) {
+    async uploadCompanyImages(@Payload() payload: { companyId: string, images: Express.Multer.File[] }) {
         return this.imageCompanyService.uploadCompanyImage(payload.companyId, payload.images);
     }
 
