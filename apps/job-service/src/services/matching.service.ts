@@ -7,6 +7,8 @@ import { Employee } from '@app/common/database/entities/employee/employee.entity
 import { Company } from '@app/common/database/entities/company/company.entity';
 import { MessageService } from '@app/common/message/message.service';
 import { RpcException } from '@nestjs/microservices';
+import { Logger } from 'nestjs-pino';
+import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
 
 @Injectable()
 export class MatchingService {
@@ -18,6 +20,7 @@ export class MatchingService {
     @InjectRepository(Company)
     private readonly companyRepo: Repository<Company>,
     private readonly messageService: MessageService,
+    private readonly logger: Logger,
   ) {}
 
   async employeeLikes(matchDto: MatchDto): Promise<any> {
@@ -118,5 +121,59 @@ export class MatchingService {
     }
 
     return await this.jobMatchingRepo.save(match);
+  }
+
+  async findCurrentEmployeeLiked(eid: string): Promise<UserResponseDTO[]> {
+    try {
+      const employeeLiked = await this.jobMatchingRepo.find({
+        where: {
+          employee: { id: eid },
+          employeeLiked: true,
+        },
+      });
+
+      if (!employeeLiked)
+        throw new RpcException({
+          message: 'Employee Liked not found',
+          statusCode: 401,
+        });
+
+      return employeeLiked.map(
+        (empLiked) => new UserResponseDTO(empLiked.company),
+      );
+    } catch (error) {
+      this.logger.error(error.message);
+      throw new RpcException({
+        message: 'An error occurred while fetching the employee liked.',
+        statusCode: 500,
+      });
+    }
+  }
+
+  async findCurrentCompanyLiked(cid: string): Promise<UserResponseDTO[]> {
+    try {
+      const companyLiked = await this.jobMatchingRepo.find({
+        where: {
+          company: { id: cid },
+          companyLiked: true,
+        },
+      });
+
+      if (!companyLiked)
+        throw new RpcException({
+          message: 'Company Liked not found',
+          statusCode: 401,
+        });
+
+      return companyLiked.map(
+        (cmpLiked) => new UserResponseDTO(cmpLiked.employee),
+      );
+    } catch (error) {
+      this.logger.error(error.message);
+      throw new RpcException({
+        message: 'An error occurred while fetching the company liked.',
+        statusCode: 500,
+      });
+    }
   }
 }

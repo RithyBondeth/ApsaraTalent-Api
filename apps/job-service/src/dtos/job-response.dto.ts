@@ -1,6 +1,6 @@
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
 import { Exclude, Expose, Type, Transform } from 'class-transformer';
-import { IsNumber, IsString } from 'class-validator';
+import { IsBoolean, IsNumber, IsString } from 'class-validator';
 import { formatDateToDDMMYYYY } from 'utils/functions/date-formatter';
 
 export class UserInJobResponseDTO {
@@ -174,6 +174,9 @@ export class JobResponseDTO {
 
   @Type(() => CompanyInJobResponseDTO)
   company: CompanyInJobResponseDTO;
+
+  @IsBoolean()
+  isHide: boolean;
 
   constructor(partial: Partial<JobResponseDTO>) {
     return Object.assign(this, partial);
