@@ -72,6 +72,9 @@ export class Employee {
     @OneToMany(() => Social, (social) => social.employee, { cascade: true })
     socials: Social[];
 
+    @Column({ type: 'boolean', default: false })
+    isHide: boolean;
+
     @CreateDateColumn()
     createdAt: Date;
 }
