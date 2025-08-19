@@ -14,9 +14,9 @@ export class ResumeBuilderService {
   constructor(
     private readonly configService: ConfigService,
     private readonly imageService: ImageService,
-    private readonly logger: PinoLogger, // ✅ Injected properly
+    private readonly logger: PinoLogger,
   ) {
-    this.logger.setContext(ResumeBuilderService.name); // Optional context
+    this.logger.setContext(ResumeBuilderService.name);
     this.openAI = new OpenAI({
       apiKey: this.configService.get<string>('OPENAI_API_KEY'),
     });
@@ -25,78 +25,104 @@ export class ResumeBuilderService {
   async buildResume(buildResumeDTO: BuildResumeDTO): Promise<any> {
     try {
       if (buildResumeDTO.personalInfo.profilePicture) {
-        buildResumeDTO.personalInfo.profilePicture = await this.imageService.optimizeProfilePicture(
-          buildResumeDTO.personalInfo.profilePicture,
-        );
+        buildResumeDTO.personalInfo.profilePicture =
+          await this.imageService.optimizeProfilePicture(
+            buildResumeDTO.personalInfo.profilePicture,
+          );
       }
 
       const htmlContent = await this.generateHTMLContent(buildResumeDTO);
       const pdfBuffer = await this.pdfGenerator(htmlContent);
-return {
-  filename: 'resume.pdf',
-  mimeType: 'application/pdf',
-  data: pdfBuffer.toString('base64'), // encode buffer
-};
+
+      return {
+        filename: 'resume.pdf',
+        mimeType: 'application/pdf',
+        data: pdfBuffer.toString('base64'),
+      };
     } catch (error) {
-      this.logger.error(`Resume generation failed: ${error?.message ?? 'Unknown error'}`);
-      throw new RpcException(error?.message ?? 'Resume generation failed');
+      this.logger.error({ err: error }, 'Resume generation failed');
+      throw new RpcException(
+        error instanceof Error ? error.message : 'Resume generation failed',
+      );
     }
   }
 
-  private async generateHTMLContent(buildResumeDTO: BuildResumeDTO): Promise<string> {
-    const completion = await this.openAI.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      temperature: 0.7,
-      messages: [
-        {
-          role: 'system',
-          content: `You are an expert resume designer...`,
-        },
-        {
-          role: 'user',
-          content: this.createPrompt(buildResumeDTO),
-        },
-      ],
-    });
+  private async generateHTMLContent(
+    buildResumeDTO: BuildResumeDTO,
+  ): Promise<string> {
+    try {
+      // Map custom keywords to core layout styles
+      const templateMap: Record<string, string> = {
+        modern:
+          'Clean layout with sans-serif fonts, color highlights, two-column design',
+        classic:
+          'Formal layout with serif fonts, black and white, structured sections',
+        creative:
+          'Colorful design with asymmetric layout, bold icons, and playful fonts',
+        minimalist: 'Very clean layout with whitespace and typography emphasis',
+        timeline: 'Vertical timeline style for experience and education',
+        bold: 'High-contrast colors, large headings, confident layout',
+        compact: 'Single-column layout, tight spacing, minimal decoration',
+        elegant: 'Slim fonts, soft colors, premium-feel layout',
+        colorful: 'Vibrant color blocks, iconography, modern look',
+        professional: 'Conservative, polished, job-market ready layout',
+        corporate: 'Blue theme, rigid grid, clean branding, executive style',
+        dark: 'Dark background, light text, modern UI style',
+      };
 
-    return completion.choices[0].message.content;
+      const templateStyle =
+        templateMap[buildResumeDTO.template] ?? templateMap['modern'];
+
+      const completion = await this.openAI.chat.completions.create({
+        model: 'gpt-4o',
+        temperature: 0.7,
+        messages: [
+          {
+            role: 'system',
+            content: `
+              You are a professional resume designer and frontend developer.
+
+              Generate a complete HTML5 resume layout using embedded CSS that reflects the following style:
+              "${templateStyle}"
+
+              Requirements:
+              - Use semantic HTML tags: <html>, <head>, <body>, <header>, <section>, etc.
+              - Embed all styles using <style> in <head>
+              - Use clean, readable fonts and responsive layout
+              - Profile picture should appear circular (if provided)
+              - Include: Personal Info, Contact, Social Links, Work Experience, Skills, Education
+              - Optimize layout and spacing for PDF (A4 size)
+              - Return only valid HTML (no Markdown, no backticks)
+              `.trim(),
+          },
+          {
+            role: 'user',
+            content: JSON.stringify(buildResumeDTO, null, 2),
+          },
+        ],
+      });
+
+      const content = completion.choices?.[0]?.message?.content;
+      if (!content || !content.includes('<html')) {
+        throw new Error('OpenAI did not return valid HTML');
+      }
+
+      const cleanedHTML = content
+        .replace(/^```html\s*/i, '')
+        .replace(/```$/, '')
+        .trim();
+
+      return cleanedHTML;
+    } catch (error) {
+      this.logger.error(
+        { err: error },
+        'Error generating resume content with OpenAI',
+      );
+      throw new Error('Failed to generate resume content');
+    }
   }
 
-  private createPrompt(buildResumeDTO: BuildResumeDTO): string {
-    return `Create a professional resume with this information:
-
-    Personal Information:
-    - Name: ${buildResumeDTO.personalInfo.fullName}
-    - Email: ${buildResumeDTO.personalInfo.email}
-    - Phone: ${buildResumeDTO.personalInfo.phone || 'N/A'}
-    - Location: ${buildResumeDTO.personalInfo.location || 'N/A'}
-    - LinkedIn: ${buildResumeDTO.personalInfo.linkedin || 'N/A'}
-    ${buildResumeDTO.personalInfo.profilePicture ? `- Profile Picture: ${buildResumeDTO.personalInfo.profilePicture}` : ''}
-
-    Experience:
-    ${buildResumeDTO.experience.map(exp => `
-    - Company: ${exp.company}
-      Position: ${exp.position}
-      Duration: ${exp.startDate} - ${exp.endDate || 'Present'}
-      Description: ${exp.description}
-      Achievements: ${exp.achievements.map(ach => `  - ${ach}`).join('\n')}`).join('\n')}
-
-    Skills:
-    ${buildResumeDTO.skills.join(', ')}
-
-    ${buildResumeDTO.education ? `Education: ${buildResumeDTO.education}` : ''}
-
-    Requirements:
-    1. Use a modern, clean design
-    2. Include a circular profile picture frame
-    3. Use professional fonts and colors
-    4. Create proper spacing and layout
-    5. Optimize for PDF output
-    6. Include subtle animations or hover effects
-    7. Use semantic HTML structure`;
-  }
-
-  async pdfGenerator(html: string): Promise<Buffer> {
+  private async pdfGenerator(html: string): Promise<Buffer> {
     const browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox'],
