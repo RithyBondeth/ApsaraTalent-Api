@@ -8,5 +8,7 @@ export const JOB_SERVICE = {
         COMPANY_LIKES: { cmd: 'companyLikes' },
         FIND_CURRENT_EMPLOYEE_LIKED: { cmd: 'findCurrentEmployeeLiked' },
         FIND_CURRENT_COMPANY_LIKED: { cmd: 'findCurrentCompanyLiked' },
+        FIND_CURRENT_EMPLOYEE_MATCHING: { cmd: 'findCurrentEmployeeMatching' },
+        FIND_CURRENT_COMPANY_MATCHING: { cmd: 'findCurrentCompanyMatching' },
     }
 }
