@@ -64,4 +64,30 @@ export class JobMatchingController implements IMatchingController {
       ),
     );
   }
+
+  @Get('current-employee-matching/:eid')
+  async findCurrentEmployeeMatching(
+    @Param('eid', ParseUUIDPipe) eid: string,
+  ): Promise<any> {
+    const payload = { eid };
+    return firstValueFrom(
+      this.jobClient.send(
+        JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_MATCHING,
+        payload
+      )
+    );
+  }
+
+  @Get('current-company-matching/:cid')
+  async findCurrentCompanyMatching(
+    @Param('cid', ParseUUIDPipe) cid: string,
+  ): Promise<any> {
+    const payload = { cid };
+    return firstValueFrom(
+      this.jobClient.send(
+        JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_MATCHING,
+        payload
+      )
+    );
+  }
 }
