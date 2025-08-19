@@ -5,6 +5,10 @@ export const JOB_SERVICE = {
         SEARCH_JOBS: { cmd: 'searchJobs' },
         FIND_ONE_JOB: { cmd: 'findOneJob' },
         EMPLOYEE_LIKES: { cmd: 'employeeLikes' },
-        COMPANY_LIKES: { cmd: 'companyLikes' }, 
+        COMPANY_LIKES: { cmd: 'companyLikes' },
+        FIND_CURRENT_EMPLOYEE_LIKED: { cmd: 'findCurrentEmployeeLiked' },
+        FIND_CURRENT_COMPANY_LIKED: { cmd: 'findCurrentCompanyLiked' },
+        FIND_CURRENT_EMPLOYEE_MATCHING: { cmd: 'findCurrentEmployeeMatching' },
+        FIND_CURRENT_COMPANY_MATCHING: { cmd: 'findCurrentCompanyMatching' },
     }
 }

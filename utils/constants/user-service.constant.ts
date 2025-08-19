@@ -25,6 +25,11 @@ export const USER_SERVICE = {
         FIND_ALL: { cmd: 'findAll' },
         FIND_ONE_BY_ID: { cmd: 'findOneById' },
         FIND_ONE_BY_NAME: { cmd: 'findOneByName' },
-        GET_CURRENT_USER: { cmd: 'getCurrentUser' }
+        GET_CURRENT_USER: { cmd: 'getCurrentUser' },
+
+        ADD_EMPLOYEE_TO_FAVORITE: { cmd: 'addEmployeeToFavorite' },
+        ADD_COMPANY_TO_FAVORITE: { cmd: 'addCompanyToFavorite' },
+        FIND_ALL_EMPLOYEE_FAVORITE: { cmd: 'findAllEmployeeFavorite' },
+        FIND_ALL_COMPANY_FAVORITE: { cmd: 'findAllCompanyFavorite' },
     }
 }

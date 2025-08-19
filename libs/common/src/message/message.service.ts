@@ -5,7 +5,7 @@ import * as Twilio from 'twilio';
 @Injectable()
 export class MessageService {
   private twilioClient: Twilio.Twilio;
-  private readonly logger: Logger;
+  private readonly logger: Logger = new Logger(MessageService.name);
 
   constructor(private configService: ConfigService) {
     this.twilioClient = Twilio(
@@ -36,9 +36,7 @@ export class MessageService {
     companyName: string,
     employeeName: string,
   ) {
-    if (!employeePhone || !companyPhone) {
-      throw new Error('Missing phone number for employee or company');
-    }
+    if (!employeePhone || !companyPhone) throw new Error('Missing phone number for employee or company');
 
     const employeeMsg = `🎉 Match! ${companyName} likes you back. Open the app to chat.`;
     const companyMsg = `🎉 Match! ${employeeName} likes your company.`;

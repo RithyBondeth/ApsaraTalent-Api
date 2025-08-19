@@ -2,7 +2,7 @@ import { TUser, User } from '@app/common/decorators/user.decorator';
 import { AuthGuard } from '@app/common/guards/auth.guard';
 import { UserInterceptor } from '@app/common/interceptors/user.interceptor';
 import { IUserController } from '@app/common/interfaces/user-controller.interface';
-import { Controller, Get, Inject, Param, ParseUUIDPipe, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Inject, Param, ParseUUIDPipe, Post, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
@@ -36,6 +36,49 @@ export class UserController implements IUserController {
     const payload = { userID };
     return firstValueFrom(
       this.userClient.send(USER_SERVICE.ACTIONS.GET_CURRENT_USER, payload)
+    );
+  }
+
+  @Post('employee/:eid/favorite/company/:cid')
+  async employeeFavoriteCompany(
+    @Param('eid', ParseUUIDPipe) eid: string,
+    @Param('cid', ParseUUIDPipe) cid: string,
+  ) {
+    const payload = { eid, cid };
+    console.log("Employee Fav")
+    return firstValueFrom(
+      this.userClient.send(USER_SERVICE.ACTIONS.ADD_COMPANY_TO_FAVORITE, payload)
+    );
+  }
+
+  @Post('company/:cid/favorite/employee/:eid')
+  async companyFavoriteEmployee(
+    @Param('cid', ParseUUIDPipe) cid: string,
+    @Param('eid', ParseUUIDPipe) eid: string,
+  ) {
+    const payload = { cid, eid };
+    return firstValueFrom(
+      this.userClient.send(USER_SERVICE.ACTIONS.ADD_EMPLOYEE_TO_FAVORITE, payload)
+    );
+  }
+
+  @Get('employee/all-favorites/:eid')
+  async findAllEmployeeFavorite(
+    @Param('eid', ParseUUIDPipe) eid: string,
+  ) {
+    const payload = { eid };
+    return firstValueFrom(
+      this.userClient.send(USER_SERVICE.ACTIONS.FIND_ALL_EMPLOYEE_FAVORITE, payload)
+    );
+  }
+
+  @Get('company/all-favorites/:cid')
+  async findAllCompanyFavorite(
+    @Param('cid', ParseUUIDPipe) cid: string,
+  ) {
+    const payload = { cid };
+    return firstValueFrom(
+      this.userClient.send(USER_SERVICE.ACTIONS.FIND_ALL_COMPANY_FAVORITE, payload)
     );
   }
 }
