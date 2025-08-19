@@ -123,7 +123,9 @@ export class UserService {
       company: { id: cid },
     });
 
-    return this.empFavoriteCmp.save(favorite);
+    await this.empFavoriteCmp.save(favorite);
+
+    return { message: 'Successfully added employee to favorite' };
   }
 
   async companyFavoriteEmployee(cid: string, eid: string) {
@@ -142,12 +144,15 @@ export class UserService {
       company: { id: cid },
     });
 
-    return this.cmpFavoriteEmp.save(favorite);
+    await this.cmpFavoriteEmp.save(favorite);
+
+    return { message: 'Successfully added company to favorite' };
   }
 
   async findAllEmployeeFavorites(eid: string) {
     const allFavorites = await this.empFavoriteCmp.find({ 
-      where: { employee: { id: eid } }
+      where: { employee: { id: eid } },
+      relations: ['company.openPositions'],
     });
 
     if(!allFavorites) 
@@ -158,7 +163,8 @@ export class UserService {
 
   async findAllCompanyFavorites(cid: string) {
     const allFavorites = await this.cmpFavoriteEmp.find({ 
-      where: { company: { id: cid } }
+      where: { company: { id: cid } },
+      relations: ['employee.skills']
     });
 
     if(!allFavorites) 
