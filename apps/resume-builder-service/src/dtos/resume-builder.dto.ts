@@ -1,4 +1,12 @@
-import { IsString, IsEmail, IsOptional, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  IsOptional,
+  IsArray,
+  ValidateNested,
+  IsIn,
+  IsObject,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class PersonalInfoDto {
@@ -18,11 +26,15 @@ export class PersonalInfoDto {
 
   @IsString()
   @IsOptional()
-  linkedin?: string;
+  job?: string;
 
   @IsString()
   @IsOptional()
   profilePicture?: string;
+
+  @IsObject()
+  @IsOptional()
+  socials?: { [platform: string]: string };
 }
 
 export class ExperienceDto {
@@ -63,4 +75,33 @@ export class BuildResumeDTO {
   @IsString()
   @IsOptional()
   education?: string;
+
+  @IsString()
+  @IsIn([
+    'modern',
+    'classic',
+    'creative',
+    'minimalist',
+    'timeline',
+    'bold',
+    'compact',
+    'elegant',
+    'colorful',
+    'professional',
+    'corporate',
+    'dark',
+  ])
+  template:
+    | 'modern'
+    | 'classic'
+    | 'creative'
+    | 'minimalist'
+    | 'timeline'
+    | 'bold'
+    | 'compact'
+    | 'elegant'
+    | 'colorful'
+    | 'professional'
+    | 'corporate'
+    | 'dark';
 }

@@ -6,6 +6,7 @@ import { Education } from "./education.entity";
 import { Experience } from "./experience.entity";
 import { Social } from "../social.entity";
 import { CareerScope } from "../career-scope.entity";
+import { EmployeeFavoriteCompany } from "./favorite-company.entity";
 
 @Entity()
 export class Employee {
@@ -71,6 +72,12 @@ export class Employee {
 
     @OneToMany(() => Social, (social) => social.employee, { cascade: true })
     socials: Social[];
+
+    @Column({ type: 'boolean', default: false })
+    isHide: boolean;
+
+    @OneToMany(() => EmployeeFavoriteCompany, (empFavoriteCmp) => empFavoriteCmp.employee)
+    favorites: EmployeeFavoriteCompany[];
 
     @CreateDateColumn()
     createdAt: Date;

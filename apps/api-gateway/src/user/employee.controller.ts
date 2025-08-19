@@ -95,7 +95,7 @@ export class EmployeeController implements IEmployeeController {
             this.userClient.send(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_COVER_LETTER, payload)
         )
     }
-
+    
     @Get('search-employee')
     async searchEmployee(@Query() searchEmployeeQuery: any) {
         return firstValueFrom(

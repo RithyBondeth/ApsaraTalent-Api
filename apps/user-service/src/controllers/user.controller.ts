@@ -26,6 +26,26 @@ export class UserController implements IUserController {
     return this.userService.findOneUserByID(payload.userID);
   }
 
+  @MessagePattern(USER_SERVICE.ACTIONS.ADD_COMPANY_TO_FAVORITE) 
+  async employeeFavoriteCompany(@Payload() payload: { eid: string, cid: string }) {
+    return this.userService.employeeFavoriteCompany(payload.eid, payload.cid);
+  }
+
+  @MessagePattern(USER_SERVICE.ACTIONS.ADD_EMPLOYEE_TO_FAVORITE) 
+  async companyFavoriteEmployee(@Payload() payload: { eid: string, cid: string }) {
+    return this.userService.companyFavoriteEmployee(payload.cid, payload.eid);
+  }
+
+  @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_EMPLOYEE_FAVORITE) 
+  async findAllEmployeeFavorite(@Payload() payload: { eid: string }) {
+    return this.userService.findAllEmployeeFavorites(payload.eid);
+  }
+
+  @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_COMPANY_FAVORITE) 
+  async findAllCompanyFavorite(@Payload() payload: { cid: string }) {
+    return this.userService.findAllCompanyFavorites(payload.cid);
+  }
+
   @MessagePattern('getUserByIdForChat')
   async getUserById(id: string) {
     return this.userService.getUserByIdForChat(id);
