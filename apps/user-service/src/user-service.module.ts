@@ -1,6 +1,11 @@
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { DatabaseModule, JwtModule, LoggerModule, UploadfileModule } from '@app/common';
+import {
+  DatabaseModule,
+  JwtModule,
+  LoggerModule,
+  UploadfileModule,
+} from '@app/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '@app/common/database/entities/user.entity';
 import { Employee } from '@app/common/database/entities/employee/employee.entity';
@@ -33,6 +38,8 @@ import { Image } from '@app/common/database/entities/company/image.entity';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { SearchEmployeeController } from './controllers/employee-controllers/search-employee.controller';
 import { SearchEmployeeService } from './services/employee-services/search-employee.service';
+import { EmployeeFavoriteCompany } from '@app/common/database/entities/employee/favorite-company.entity';
+import { CompanyFavoriteEmployee } from '@app/common/database/entities/company/favorite-employee.entity';
 
 @Module({
   imports: [
@@ -41,21 +48,36 @@ import { SearchEmployeeService } from './services/employee-services/search-emplo
       envFilePath: './apps/user-service/.env',
     }),
     DatabaseModule,
-    TypeOrmModule.forFeature([ User, Company, Employee, Skill, CareerScope, Benefit, Value, Social, Experience, Education, Job, Image ]),
+    TypeOrmModule.forFeature([
+      User,
+      Company,
+      Employee,
+      Skill,
+      CareerScope,
+      Benefit,
+      Value,
+      Social,
+      Experience,
+      Education,
+      Job,
+      Image,
+      EmployeeFavoriteCompany,
+      CompanyFavoriteEmployee,
+    ]),
     LoggerModule,
     UploadfileModule,
     JwtModule,
   ],
   controllers: [
     UpdateEmployeeInfoController,
-    ImageEmployeeController, 
+    ImageEmployeeController,
     UpdateCompanyInfoController,
     FindEmployeeController,
     FindCompanyController,
     ImageCompanyController,
     UploadEmployeeReferenceController,
     SearchEmployeeController,
-    UserController
+    UserController,
   ],
   providers: [
     UpdateEmployeeInfoService,
@@ -70,8 +92,7 @@ import { SearchEmployeeService } from './services/employee-services/search-emplo
     {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor,
-     
-    }
+    },
   ],
 })
 export class UserServiceModule {}
