@@ -234,6 +234,7 @@ export class MatchingService {
           employee: { id: eid },
           isMatched: true,
         },
+        relations: ['company.openPositions']
       });
 
       if (!currentEmployeeMatching)
@@ -261,6 +262,7 @@ export class MatchingService {
           company: { id: cid },
           isMatched: true,
         },
+        relations: ['employee.skills']
       });
 
       if (!currentCompanyMatching)

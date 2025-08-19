@@ -6,6 +6,7 @@ import { User } from "../user.entity";
 import { Social } from "../social.entity";
 import { CareerScope } from "../career-scope.entity";
 import { Image } from "./image.entity";
+import { CompanyFavoriteEmployee } from "./favorite-employee.entity";
 
 @Entity()
 export class Company {
@@ -60,6 +61,9 @@ export class Company {
     @ManyToMany(() => CareerScope, (careerScope) => careerScope.companies)
     @JoinTable()
     careerScopes: CareerScope[];
+
+    @OneToMany(() => CompanyFavoriteEmployee, (cmpFavoriteEmp) => cmpFavoriteEmp.company)
+    favorites: CompanyFavoriteEmployee[];    
 
     @OneToMany(() => Social, (social) => social.company, { cascade: true })
     socials: Social[];  
