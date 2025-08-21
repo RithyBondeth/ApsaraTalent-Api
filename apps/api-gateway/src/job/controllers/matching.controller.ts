@@ -1,3 +1,4 @@
+import { AuthGuard } from '@app/common/guards/auth.guard';
 import { IMatchingController } from '@app/common/interfaces/job-controller.interface';
 import {
   Controller,
@@ -6,12 +7,14 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { JOB_SERVICE } from 'utils/constants/job-service.constant';
 
 @Controller('match')
+@UseGuards(AuthGuard)
 export class JobMatchingController implements IMatchingController {
   constructor(
     @Inject(JOB_SERVICE.NAME) private readonly jobClient: ClientProxy,

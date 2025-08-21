@@ -4,7 +4,9 @@ import { RESUME_BUILDER_SERVICE } from 'utils/constants/resume-builder-service';
 import { ConfigService } from '@nestjs/config';
 import { ResumeBuilderController } from './controllers/resume-builder.controller';
 import { ResumeTemplateController } from './controllers/resume-template.controller';
-import { UploadfileModule } from '@app/common';
+import { JwtModule, UploadfileModule } from '@app/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from '@app/common/database/entities/user.entity';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { UploadfileModule } from '@app/common';
       },
     ]),
     UploadfileModule,
+    JwtModule,
+    TypeOrmModule.forFeature([User])
   ],
   controllers: [ResumeBuilderController, ResumeTemplateController],
 })

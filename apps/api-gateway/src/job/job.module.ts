@@ -3,8 +3,10 @@ import { JobController } from './controllers/job.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { JOB_SERVICE } from 'utils/constants/job-service.constant';
 import { ConfigService } from '@nestjs/config';
-import { ThrottlerModule } from '@app/common';
+import { JwtModule, ThrottlerModule } from '@app/common';
 import { JobMatchingController } from './controllers/matching.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from '@app/common/database/entities/user.entity';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { JobMatchingController } from './controllers/matching.controller';
       }
     ]),
     ThrottlerModule,
+    JwtModule,
+    TypeOrmModule.forFeature([User])
   ],
   controllers: [JobController, JobMatchingController],
   providers: [],

@@ -20,7 +20,7 @@ export class LoginOTPService {
     private readonly logger: PinoLogger,
   ) {}
 
-  async loginOtp(loginOtpDTO: LoginOtpDTO) {
+  async loginOtp(loginOtpDTO: LoginOtpDTO): Promise<any> {
     try {
       const otpCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6 Digit
       const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 min
@@ -40,8 +40,8 @@ export class LoginOTPService {
 
       await this.messageService.sendOtp(loginOtpDTO.phone, otpCode);
 
-      console.log(`Generated OTP ${otpCode} for ${loginOtpDTO.phone}`)
-      return { 
+      console.log(`Generated OTP ${otpCode} for ${loginOtpDTO.phone}`);
+      return {
         message: `OTP sent successfully to ${loginOtpDTO.phone}`,
         isSuccess: true,
       };
@@ -55,7 +55,7 @@ export class LoginOTPService {
     }
   }
 
-  async verifyOtp(verifyOtpDTO: VerifyOtpDTO) {
+  async verifyOtp(verifyOtpDTO: VerifyOtpDTO): Promise<any> {
     try {
       const user = await this.userRepo.findOne({
         where: { otpCode: verifyOtpDTO.otp, phone: verifyOtpDTO.phone },
@@ -90,13 +90,12 @@ export class LoginOTPService {
         message: 'Your OTP code is correct.',
         accessToken: accessToken,
         refreshToken: refreshToken,
-        user: user
+        user: user,
       };
     } catch (error) {
       this.logger.error(error.message);
       throw new RpcException({
-        message:
-          'An error occurred while verifying otp.',
+        message: 'An error occurred while verifying otp.',
         statusCode: 500,
       });
     }
