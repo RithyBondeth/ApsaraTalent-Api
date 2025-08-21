@@ -26,7 +26,7 @@ export class FindCompanyService {
             return companies.map((company) => {
                 const transformedCompany = {
                     ...company,
-                    openPositions: company.openPositions?.map((job) => new JobPositionDTO(job))
+                    openPositions: company.openPositions?.map((job) => new JobPositionDTO(job)) ?? []
                 };
                 return new CompanyResponseDTO(transformedCompany);
             });
@@ -38,6 +38,7 @@ export class FindCompanyService {
     }
 
     async findOneById(companyId: string): Promise<CompanyResponseDTO> {
+        console.log("tested");
         try {  
             const company = await this.companyRepository.findOne({ 
                 where: { id: companyId },
@@ -46,7 +47,7 @@ export class FindCompanyService {
             
             return new CompanyResponseDTO({
                 ...company,
-                openPositions: company.openPositions?.map((job) => new JobPositionDTO(job))
+                openPositions: company.openPositions?.map((job) => new JobPositionDTO(job)) ?? []
             });
         } catch (error){
             //Handle error
