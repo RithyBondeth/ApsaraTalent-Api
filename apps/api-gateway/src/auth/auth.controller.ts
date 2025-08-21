@@ -2,18 +2,19 @@ import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
 import {
   Body,
   Controller,
-  Get,
   HttpCode,
   HttpStatus,
   Inject,
   Param,
   Post,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ThrottlerGuard } from '@app/common/throttler/guards/throttler.guard';
 import { IBasicAuthController } from '@app/common/interfaces/auth-controller.interface';
+import { Response } from 'express';
 
 @Controller('auth')
 export class AuthController implements IBasicAuthController {
@@ -44,12 +45,39 @@ export class AuthController implements IBasicAuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
-  async login(@Body() loginDTO: any): Promise<any> {
+  async login(
+    @Body() loginDTO: any,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<any> {
     const payload = { ...loginDTO };
-    console.log(payload);
-    return await firstValueFrom(
+
+    const { accessToken, refreshToken, user, message } = await firstValueFrom(
       this.authClient.send(AUTH_SERVICE.ACTIONS.LOGIN, payload),
     );
+
+    // Set HTTP-only cookies
+    res.cookie('auth-token', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    });
+
+    res.cookie('refresh-token', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
+    });
+
+    return {
+      message,
+      refreshToken,
+      accessToken,
+      user,
+    };
   }
 
   @Post('login-otp')
@@ -64,10 +92,36 @@ export class AuthController implements IBasicAuthController {
   @Post('verify-otp')
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
-  async verifyOtp(@Body() verifyOtpDTO: any): Promise<any> {
-    return firstValueFrom(
+  async verifyOtp(
+    @Body() verifyOtpDTO: any,
+    @Res() res: Response,
+  ): Promise<any> {
+    const { accessToken, refreshToken, user, message } = await firstValueFrom(
       this.authClient.send(AUTH_SERVICE.ACTIONS.VERIFY_OTP, verifyOtpDTO),
     );
+
+    res.cookie('auth-token', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    });
+
+    res.cookie('refresh-token', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
+    });
+
+    return {
+      message,
+      refreshToken,
+      accessToken,
+      user,
+    };
   }
 
   @Post('forgot-password')
@@ -96,11 +150,37 @@ export class AuthController implements IBasicAuthController {
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
-  async refreshToken(@Body() refreshTokenDTO: any): Promise<any> {
+  async refreshToken(
+    @Body() refreshTokenDTO: any,
+    @Res() res: Response,
+  ): Promise<any> {
     const payload = { ...refreshTokenDTO };
-    return await firstValueFrom(
+    const { accessToken, refreshToken, user, message } = await firstValueFrom(
       this.authClient.send(AUTH_SERVICE.ACTIONS.REFRESH_TOKEN, payload),
     );
+
+    res.cookie('auth-token', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    });
+
+    res.cookie('refresh-token', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
+    });
+
+    return {
+      message,
+      refreshToken,
+      accessToken,
+      user,
+    };
   }
 
   @Post('verify-email/:emailVerificationToken')

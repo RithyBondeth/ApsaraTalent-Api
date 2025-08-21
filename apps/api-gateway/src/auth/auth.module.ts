@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
-import { ThrottlerModule } from '@app/common';
+import { JwtModule, ThrottlerModule } from '@app/common';
 import { GoogleController } from './socials/controllers/google.controller';
 import { ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
@@ -13,6 +13,8 @@ import { GithubController } from './socials/controllers/github.controller';
 import { GitHubStrategy } from './socials/strategies/github.strategy';
 import { FacebookController } from './socials/controllers/facebook.controller';
 import { FacebookStrategy } from './socials/strategies/facebook.strategy';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from '@app/common/database/entities/user.entity';
 
 @Module({
   imports: [
@@ -31,6 +33,8 @@ import { FacebookStrategy } from './socials/strategies/facebook.strategy';
     ]),
     ThrottlerModule,
     PassportModule,
+    JwtModule,
+    TypeOrmModule.forFeature([User])
   ],
   controllers: [
     AuthController,

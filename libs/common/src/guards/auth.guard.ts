@@ -15,8 +15,8 @@ export class AuthGuard implements CanActivate {
     
     async canActivate(context: ExecutionContext) {
         const request = context.switchToHttp().getRequest();
-        const token = request?.headers?.authorization?.split("Bearer ")[1];
-
+        const token = request.cookies?.['auth-token'] || request.headers?.authorization?.split('Bearer ')[1]; 
+        
         if (!token) {
             throw new RpcException("There's no token");
         }

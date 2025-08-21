@@ -31,10 +31,11 @@ export class LoginService {
           : { phone: loginDTO.identifier },
       });
 
-      if (!user) throw new RpcException({
-        message: `There's no user with this ${isEmail ? 'email address' : 'phone number'}`,
-        statusCode: 401,
-      });
+      if (!user)
+        throw new RpcException({
+          message: `There's no user with this ${isEmail ? 'email address' : 'phone number'}`,
+          statusCode: 401,
+        });
 
       //Compare password
       const validPassword: boolean = await bcrypt.compare(

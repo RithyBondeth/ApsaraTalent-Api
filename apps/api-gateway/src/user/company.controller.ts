@@ -1,3 +1,4 @@
+import { AuthGuard } from '@app/common/guards/auth.guard';
 import { ICompanyController } from '@app/common/interfaces/company.interface';
 import { UploadFileInterceptor } from '@app/common/uploadfile/uploadfile.interceptor';
 import { UploadFilesInterceptor } from '@app/common/uploadfile/uploadfiles.interceptor';
@@ -14,6 +15,7 @@ import {
   Query,
   UploadedFile,
   UploadedFiles,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -21,6 +23,7 @@ import { firstValueFrom } from 'rxjs';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 
 @Controller('user/company')
+@UseGuards(AuthGuard)
 export class CompanyController implements ICompanyController {
   constructor(
     @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
