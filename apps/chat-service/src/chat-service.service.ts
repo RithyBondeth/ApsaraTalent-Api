@@ -18,6 +18,29 @@ export class ChatServiceService {
     @Inject(USER_SERVICE.NAME) private readonly userServiceClient: ClientProxy,
   ) {}
 
+  async createOrGetChat(senderId: string, receiverId: string) {
+    const existing = await this.chatRepository.findOne({
+      where: [
+        { sender: { id: senderId }, receiver: { id: receiverId } },
+        { sender: { id: receiverId }, receiver: { id: senderId } },
+      ],
+    });
+  
+    if (existing) {
+      return { chatId: existing.id, alreadyExists: true };
+    }
+  
+    const message = this.chatRepository.create({
+      sender: { id: senderId },
+      receiver: { id: receiverId },
+      content: "👋 Let's chat!", // initial message
+      messageType: 'text',
+    });
+  
+    const saved = await this.chatRepository.save(message);
+    return { chatId: saved.id, alreadyExists: false };
+  }
+
   async createMessage(data: TChatContent): Promise<IChatMessage> {
     try {
       const message = this.chatRepository.create({
