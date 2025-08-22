@@ -198,7 +198,7 @@ export class RegisterService {
           to: company.email,
           subject: 'Apsara Talent - Verify Your Email Address',
           text: `Hello, ${company.company.name}. Please verify your email address by clicking on the following link: 
-                         ${this.configService.get<string>('BASE_URL')}auth/verify-email/${emailVerificationToken}`,
+          ${this.configService.get<string>('CLIENT_URL')}/login/email-verification/${emailVerificationToken}`,
         });
       }
 
@@ -385,7 +385,7 @@ export class RegisterService {
           to: employee.email,
           subject: 'Apsara Talent - Verify Your Email Address',
           text: `Hello, ${employee.employee.username}. Please verify your email address by clicking on the following link: 
-                        ${this.configService.get<string>('BASE_URL')}auth/verify-email/${emailVerificationToken}`,
+          ${this.configService.get<string>('CLIENT_URL')}/login/email-verification/${emailVerificationToken}`,
         });
 
       // Generate Tokens

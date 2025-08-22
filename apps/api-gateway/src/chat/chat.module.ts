@@ -3,6 +3,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { CHAT_SERVICE } from 'utils/constants/chat-service.constant';
 import { ConfigService } from '@nestjs/config';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { ChatController } from './chat.controller';
 
 @Module({
   imports: [
@@ -31,5 +32,6 @@ import { USER_SERVICE } from 'utils/constants/user-service.constant';
       },
     ]),
   ],
+  controllers: [ChatController]
 })
 export class ChatModule {}

@@ -1,10 +1,12 @@
+import { AuthGuard } from '@app/common/guards/auth.guard';
 import { IJobController } from '@app/common/interfaces/job-controller.interface';
-import { Controller, Get, Inject, Query } from '@nestjs/common';
+import { Controller, Get, Inject, Query, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { JOB_SERVICE } from 'utils/constants/job-service.constant';
 
 @Controller('job')
+@UseGuards(AuthGuard)
 export class JobController implements IJobController {
   constructor(@Inject(JOB_SERVICE.NAME) private readonly jobClient: ClientProxy) {}
 

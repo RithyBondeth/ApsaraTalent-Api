@@ -34,6 +34,12 @@ export class GithubAuthService {
         };
       }
 
+      // Update user with githubId if not already set
+      if (!user.githubId && githubData.id) {
+        user.githubId = githubData.id;
+        await this.userRepository.save(user);
+      }
+
       // Generate JWT Token
       const payload: IPayload = {
         id: user.id,

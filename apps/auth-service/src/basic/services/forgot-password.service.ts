@@ -54,26 +54,26 @@ export class ForgotPasswordService {
 
       console.log('reset token: ', resetToken);
 
-      if((user.email && !user.phone) || (user.email && user.phone)) {
+      if ((user.email && !user.phone) || (user.email && user.phone)) {
         //Send reset password token to user email address
         await this.emailService.sendEmail({
-            to: user.email,
-            subject: 'Apsara Talent - Reset Password Token',
-            text: `Hello, ${user.email}. Here is your reset password token: ${resetToken}.`,
+          to: user.email,
+          subject: 'Apsara Talent - Reset Password Token',
+          text: `Hello, ${user.email}. Here is your reset password token: ${resetToken}.`,
         });
 
         return new ForgotPasswordResponseDTO(
-         `Reset password token was sent successfully to ${user.email}`,
+          `Reset password token was sent successfully to ${user.email}`,
         );
-      } 
+      }
 
-      if(!user.email && user.phone) {
+      if (!user.email && user.phone) {
         //Send reset password token to user phone number
         await this.messageService.sendResetToken(user.phone, resetToken);
 
         return new ForgotPasswordResponseDTO(
-            `Reset password token was sent successfully to ${user.phone}`,
-        ); 
+          `Reset password token was sent successfully to ${user.phone}`,
+        );
       }
     } catch (error) {
       this.logger.error(error?.message || 'Forgot password failed');

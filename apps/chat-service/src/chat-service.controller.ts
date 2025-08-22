@@ -7,6 +7,14 @@ import { TChatContent } from '@app/common/interfaces/chat.interface';
 export class ChatServiceController {
   constructor(private readonly chatService: ChatServiceService) {}
 
+  @MessagePattern('createOrGetChat')
+  async createOrGetChat(
+    @Payload() data: { senderId: string; receiverId: string },
+  ) {
+    console.log("Inside Chat Service");
+    return this.chatService.createOrGetChat(data.senderId, data.receiverId);
+  }
+
   @EventPattern('createMessage')
   async createMessage(@Payload() data: TChatContent) {
     return this.chatService.createMessage(data);
