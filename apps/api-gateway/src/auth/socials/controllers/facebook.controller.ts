@@ -41,6 +41,20 @@ export class FacebookController implements IFacebookAuthController {
       this.configService.get<string>('FRONTED_ORIGIN') ??
       'http://localhost:4000';
 
+    res.cookie('auth-token', result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    });
+
+    res.cookie('refresh-token', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
     const html = `
         <!doctype html>
         <html>

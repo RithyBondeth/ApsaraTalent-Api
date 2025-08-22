@@ -37,6 +37,12 @@ export class FacebookAuthService {
         };
       }
 
+      // Update user with facebookId if not already set
+      if (!user.facebookId && facebookData.id) {
+        user.facebookId = facebookData.id;
+        await this.userRepository.save(user);
+      }
+
       // Generate JWT tokens
       const payload: IPayload = {
         id: user.id,

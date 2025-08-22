@@ -1,3 +1,4 @@
+import { AuthGuard } from '@app/common/guards/auth.guard';
 import { IResumeBuilderController } from '@app/common/interfaces/resume-controller.interface';
 import {
   Body,
@@ -6,12 +7,14 @@ import {
   HttpStatus,
   Inject,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { RESUME_BUILDER_SERVICE } from 'utils/constants/resume-builder-service';
 
 @Controller('resume')
+@UseGuards(AuthGuard)
 export class ResumeBuilderController implements IResumeBuilderController {
   constructor(
     @Inject(RESUME_BUILDER_SERVICE.NAME)

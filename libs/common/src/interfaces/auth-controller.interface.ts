@@ -1,5 +1,5 @@
 export interface IBasicAuthLoginController {
-    login(body: any): Promise<any>;
+    login(body: any, data?: any): Promise<any>;
 }
 
 export interface IBasicAuthForgotPasswordController {
@@ -11,7 +11,7 @@ export interface IBasicAuthResetPasswordController {
 }
 
 export interface IBasicAuthRefreshTokenController {
-    refreshToken(body: any): Promise<any>;
+    refreshToken(body: any, data?: any): Promise<any>;
 }
 
 export interface IBasicAuthVerifyEmailController {
@@ -25,7 +25,7 @@ export interface IBasicAuthRegisterController {
 
 export interface IBasicAuthLoginOTPController {
     loginOtp(data?: any): Promise<any>;
-    verifyOtp(data?: any): Promise<any>;
+    verifyOtp(data1?: any, data2?: any): Promise<any>;
 }
 
 export interface IBasicAuthController extends 
