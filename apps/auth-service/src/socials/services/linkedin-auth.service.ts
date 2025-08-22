@@ -30,6 +30,12 @@ export class LinkedInAuthService {
           provider: 'linkedin',
         };
       }
+
+      // Update user with linkedinId if not already set
+      if (!user.linkedinId && linkedInData.id) {
+        user.linkedinId = linkedInData.id;
+        await this.users.save(user);
+      }
   
       const payload: IPayload = { id: user.id, info: user.email, role: user.role };
       const [accessToken, refreshToken] = await Promise.all([
