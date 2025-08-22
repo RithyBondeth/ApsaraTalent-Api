@@ -7,7 +7,7 @@ async function bootstrap() {
   const app = await NestFactory.create(ApiGatewayModule);
 
   app.use(cookieParser());
-
+  
   app.enableCors({
     origin: process.env.FRONTEND_ORIGIN || 'http://localhost:4000',
     allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control'],
