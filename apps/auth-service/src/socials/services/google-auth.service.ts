@@ -37,6 +37,12 @@ export class GoogleAuthService {
         };
       }
 
+      // Update user with googleId if not already set
+      if (!user.googleId && googleData.id) {
+        user.googleId = googleData.id;
+        await this.userRepository.save(user);
+      }
+
       // Generate JWT tokens
       const payload: IPayload = {
         id: user.id,
