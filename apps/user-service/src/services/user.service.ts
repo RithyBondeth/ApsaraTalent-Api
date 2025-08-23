@@ -9,6 +9,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import {
   CompanyResponseDTO,
+  EmployeeResponseDTO,
   JobPositionDTO,
   UserResponseDTO,
 } from '../dtos/user-response.dto';
@@ -51,6 +52,7 @@ export class UserService {
         (user) =>
           new UserResponseDTO({
             ...user,
+            employee: user.employee ? new EmployeeResponseDTO(user.employee) : undefined,
             company: new CompanyResponseDTO({
               ...user.company,
               openPositions: user.company?.openPositions?.map(
@@ -93,6 +95,7 @@ export class UserService {
 
       return new UserResponseDTO({
         ...user,
+        employee: user.employee ? new EmployeeResponseDTO(user.employee) : undefined,
         company: new CompanyResponseDTO({
           ...user.company,
           openPositions: user.company?.openPositions?.map(
