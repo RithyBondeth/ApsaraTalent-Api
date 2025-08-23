@@ -160,8 +160,21 @@ export class UserService {
 
     if(!allFavorites) 
       throw new RpcException({ statusCode: 401, message: 'There are no favorites' }); 
-      
-    return allFavorites;
+    
+    const allFavoritesWithUsersId = await Promise.all(
+      allFavorites.map(async (favorite) => {
+        const user = await this.userRepository.findOne({
+          where: {
+            company: {
+              id: favorite.company.id,
+            }
+          }
+        });
+        return { ...favorite, userId: user.id }
+      })
+    );
+
+    return allFavoritesWithUsersId;
   }
 
   async findAllCompanyFavorites(cid: string) {
@@ -172,14 +185,20 @@ export class UserService {
 
     if(!allFavorites) 
       throw new RpcException({ statusCode: 401, message: 'There are no favorites' }); 
-      
-    return allFavorites;
-  }
 
-  async getUserByIdForChat(id: string) {
-    return this.userRepository.findOne({
-      where: { id },
-      select: ['id', 'email', 'role'],
-    });
+    const allFavoritesWithUserId = await Promise.all(
+      allFavorites.map(async (favorite) => {
+        const user = await this.userRepository.findOne({
+          where: {
+            employee: {
+              id: favorite.employee.id,
+            }
+          }
+        });
+        return { ...favorite, userId: user.id }
+      })
+    )
+      
+    return allFavoritesWithUserId;
   }
 }

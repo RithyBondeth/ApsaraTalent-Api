@@ -108,7 +108,7 @@ export class SearchEmployeeService {
               },
             },
           });
-          return { employee: emp, userId: user?.id };
+          return { employee: emp, userId: user.id };
         }),
       );
 
