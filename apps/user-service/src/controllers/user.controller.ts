@@ -45,9 +45,4 @@ export class UserController implements IUserController {
   async findAllCompanyFavorite(@Payload() payload: { cid: string }) {
     return this.userService.findAllCompanyFavorites(payload.cid);
   }
-
-  @MessagePattern('getUserByIdForChat')
-  async getUserById(id: string) {
-    return this.userService.getUserByIdForChat(id);
-  }
 }
