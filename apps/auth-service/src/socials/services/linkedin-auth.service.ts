@@ -39,8 +39,6 @@ export class LinkedInAuthService {
       user.lastLoginMethod = ELoginMethod.LINKEDIN;
       user.lastLoginAt = new Date();
       await this.users.save(user);
-
-      console.log("LinkedIn Login: ", user);
   
       const payload: IPayload = { id: user.id, info: user.email, role: user.role };
       const [accessToken, refreshToken] = await Promise.all([
@@ -51,6 +49,8 @@ export class LinkedInAuthService {
       return {
         message: 'Successfully logged in with LinkedIn',
         newUser: false,
+        lastLoginMethod: user.lastLoginMethod,
+        lastLoginAt: user.lastLoginAt,
         accessToken,
         refreshToken,
       };
