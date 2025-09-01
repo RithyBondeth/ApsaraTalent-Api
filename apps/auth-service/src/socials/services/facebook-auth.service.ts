@@ -46,8 +46,6 @@ export class FacebookAuthService {
       user.lastLoginAt = new Date();
       await this.userRepository.save(user);
 
-      console.log("Facebook Login: ", user);
-
       // Generate JWT tokens
       const payload: IPayload = {
         id: user.id,
@@ -68,6 +66,8 @@ export class FacebookAuthService {
         lastname: null,
         picture: null,
         provider: null,
+        lastLoginMethod: user.lastLoginMethod,
+        lastLoginAt: user.lastLoginAt,
         accessToken,
         refreshToken,
       };
