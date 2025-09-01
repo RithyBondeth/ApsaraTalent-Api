@@ -94,7 +94,7 @@ export class AuthController implements IBasicAuthController {
   @UseGuards(ThrottlerGuard)
   async verifyOtp(
     @Body() verifyOtpDTO: any,
-    @Res() res: Response,
+    @Res({ passthrough: true }) res: Response,
   ): Promise<any> {
     const response = await firstValueFrom(
       this.authClient.send(AUTH_SERVICE.ACTIONS.VERIFY_OTP, verifyOtpDTO),
