@@ -2,6 +2,7 @@ import { BeforeInsert, Column, CreateDateColumn, Entity, OneToOne, PrimaryGenera
 import { SALT_ROUNDS } from "utils/constants/password.constant";
 import * as bcrypt from 'bcrypt';
 import { EUserRole } from "../enums/user-role.enum";
+import { ELoginMethod } from "../enums/login-method.enum";
 import { Employee } from "./employee/employee.entity";
 import { Company } from "./company/company.entity";
 
@@ -80,6 +81,12 @@ export class User {
 
     @Column({ nullable: true })
     githubId: string;  
+
+    @Column({ type: 'enum', enum: ELoginMethod, nullable: true })
+    lastLoginMethod: ELoginMethod;
+
+    @Column({ nullable: true })
+    lastLoginAt: Date;
 
     @CreateDateColumn()
     createdAt: Date; 

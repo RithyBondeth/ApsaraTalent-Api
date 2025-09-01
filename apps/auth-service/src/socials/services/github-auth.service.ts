@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { GithubAuthDTO } from '../dtos/github-auth.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '@app/common/database/entities/user.entity';
+import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { Repository } from 'typeorm';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
@@ -34,11 +35,15 @@ export class GithubAuthService {
         };
       }
 
-      // Update user with githubId if not already set
+      // Update user with githubId and login tracking
       if (!user.githubId && githubData.id) {
         user.githubId = githubData.id;
-        await this.userRepository.save(user);
       }
+      user.lastLoginMethod = ELoginMethod.GITHUB;
+      user.lastLoginAt = new Date();
+      await this.userRepository.save(user);
+
+      console.log("Github Login: ", user);
 
       // Generate JWT Token
       const payload: IPayload = {
