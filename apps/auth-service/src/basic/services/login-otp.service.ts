@@ -64,8 +64,7 @@ export class LoginOTPService {
           phone: verifyOtpDTO.phone,
         },
       });
-      console.log('Verity Otp user: ', user);
-
+  
       if (!user)
         throw new RpcException({
           message: 'Invalid Credential',
@@ -91,19 +90,31 @@ export class LoginOTPService {
       // Update user record
       user.otpCode = null;
       user.otpCodeExpires = null;
+      user.refreshToken = refreshToken;
       user.lastLoginMethod = ELoginMethod.PHONE_OTP;
       user.lastLoginAt = new Date();
 
+      // Save user updates
+      await this.userRepo.save(user);
+      
       return {
-        message: 'Your OTP code is correct.',
-        accessToken: accessToken,
-        refreshToken: refreshToken,
-        user: { id: user.id },
+        message: 'OTP verified successfully',
+        isSuccess: true,
+        accessToken,
+        refreshToken,
+        user: {
+          id: user.id,
+          phone: user.phone,
+          role: user.role,
+          lastLoginMethod: user.lastLoginMethod,
+          lastLoginAt: user.lastLoginAt,
+        },
       };
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(error?.message || 'Verify OTP failed.');
+      if (error instanceof RpcException) throw error;
       throw new RpcException({
-        message: 'An error occurred while verifying otp.',
+        message: error.message,
         statusCode: 500,
       });
     }

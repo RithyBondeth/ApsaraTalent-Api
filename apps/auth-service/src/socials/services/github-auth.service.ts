@@ -43,8 +43,6 @@ export class GithubAuthService {
       user.lastLoginAt = new Date();
       await this.userRepository.save(user);
 
-      console.log("Github Login: ", user);
-
       // Generate JWT Token
       const payload: IPayload = {
         id: user.id,
@@ -64,6 +62,8 @@ export class GithubAuthService {
         username: null,
         picture: null,
         provider: null,
+        lastLoginMethod: user.lastLoginMethod,
+        lastLoginAt: user.lastLoginAt,
         accessToken,
         refreshToken,
       };
