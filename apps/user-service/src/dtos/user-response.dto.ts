@@ -5,6 +5,8 @@ import { IsArray, IsBoolean, IsDate, IsEmail, IsEnum, IsNumber, IsOptional, IsPo
 import { formatDateToDDMMYYYY } from "utils/functions/date-formatter";
 
 export class EmployeeResponseDTO {
+    userId: string;
+
     @IsString()
     id: string;
 

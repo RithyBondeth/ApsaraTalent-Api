@@ -5,6 +5,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { LinkedInAuthDTO } from "../dtos/linkedin-auth.dto";
 import { Repository } from "typeorm";
 import { User } from "@app/common/database/entities/user.entity";
+import { ELoginMethod } from "@app/common/database/enums/login-method.enum";
 
 @Injectable()
 export class LinkedInAuthService {
@@ -31,11 +32,15 @@ export class LinkedInAuthService {
         };
       }
 
-      // Update user with linkedinId if not already set
+      // Update user with linkedinId and login tracking
       if (!user.linkedinId && linkedInData.id) {
         user.linkedinId = linkedInData.id;
-        await this.users.save(user);
       }
+      user.lastLoginMethod = ELoginMethod.LINKEDIN;
+      user.lastLoginAt = new Date();
+      await this.users.save(user);
+
+      console.log("LinkedIn Login: ", user);
   
       const payload: IPayload = { id: user.id, info: user.email, role: user.role };
       const [accessToken, refreshToken] = await Promise.all([

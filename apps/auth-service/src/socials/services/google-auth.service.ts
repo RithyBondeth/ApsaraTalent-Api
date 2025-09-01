@@ -5,6 +5,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { User } from '@app/common/database/entities/user.entity';
+import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { GoogleAuthDTO } from '../dtos/google-auth.dto';
 
 @Injectable()
@@ -37,11 +38,15 @@ export class GoogleAuthService {
         };
       }
 
-      // Update user with googleId if not already set
+      // Update user with googleId and login tracking if not already set
       if (!user.googleId && googleData.id) {
         user.googleId = googleData.id;
-        await this.userRepository.save(user);
       }
+      user.lastLoginMethod = ELoginMethod.GOOGLE;
+      user.lastLoginAt = new Date();
+      await this.userRepository.save(user);
+
+      console.log("Google Login: ", user);
 
       // Generate JWT tokens
       const payload: IPayload = {

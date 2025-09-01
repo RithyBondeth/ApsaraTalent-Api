@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { FacebookAuthDTO } from '../dtos/facebook-auth.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '@app/common/database/entities/user.entity';
+import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { Repository } from 'typeorm';
 import { JwtService } from '@app/common/jwt/jwt.service';
 import { PinoLogger } from 'nestjs-pino';
@@ -37,11 +38,15 @@ export class FacebookAuthService {
         };
       }
 
-      // Update user with facebookId if not already set
+      // Update user with facebookId and login tracking
       if (!user.facebookId && facebookData.id) {
         user.facebookId = facebookData.id;
-        await this.userRepository.save(user);
       }
+      user.lastLoginMethod = ELoginMethod.FACEBOOK;
+      user.lastLoginAt = new Date();
+      await this.userRepository.save(user);
+
+      console.log("Facebook Login: ", user);
 
       // Generate JWT tokens
       const payload: IPayload = {

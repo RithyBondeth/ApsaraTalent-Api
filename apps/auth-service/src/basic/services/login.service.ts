@@ -8,6 +8,7 @@ import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { LoginResponseDTO } from '../dtos/login-response.dto';
 import { PinoLogger } from 'nestjs-pino';
 import { User } from '@app/common/database/entities/user.entity';
+import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { RpcException } from '@nestjs/microservices';
 import { checkEmail } from 'utils/functions/check-email';
 
@@ -67,9 +68,13 @@ export class LoginService {
         this.jwtService.generateRefreshToken(user.id),
       ]);
 
-      //Save refresh token to use
+      //Save refresh token and update login tracking
       user.refreshToken = refreshToken;
+      user.lastLoginMethod = ELoginMethod.EMAIL_PASSWORD;
+      user.lastLoginAt = new Date();
       await this.userRepository.save(user);
+
+      console.log("Email/Number Login: ", user);
 
       //Return token and user details
       return new LoginResponseDTO({
