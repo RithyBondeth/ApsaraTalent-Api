@@ -38,7 +38,6 @@ export class FindCompanyService {
     }
 
     async findOneById(companyId: string): Promise<CompanyResponseDTO> {
-        console.log("tested");
         try {  
             const company = await this.companyRepository.findOne({ 
                 where: { id: companyId },

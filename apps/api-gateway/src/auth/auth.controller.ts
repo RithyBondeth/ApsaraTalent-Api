@@ -11,7 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, timeout } from 'rxjs';
 import { ThrottlerGuard } from '@app/common/throttler/guards/throttler.guard';
 import { IBasicAuthController } from '@app/common/interfaces/auth-controller.interface';
 import { Response } from 'express';
@@ -96,9 +96,11 @@ export class AuthController implements IBasicAuthController {
     @Body() verifyOtpDTO: any,
     @Res() res: Response,
   ): Promise<any> {
-    const { accessToken, refreshToken, user, message } = await firstValueFrom(
+    const response = await firstValueFrom(
       this.authClient.send(AUTH_SERVICE.ACTIONS.VERIFY_OTP, verifyOtpDTO),
     );
+
+    const { accessToken, refreshToken, user, message } = response;
 
     res.cookie('auth-token', accessToken, {
       httpOnly: true,

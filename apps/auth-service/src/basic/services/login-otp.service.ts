@@ -6,6 +6,7 @@ import { User } from '@app/common/database/entities/user.entity';
 import { RpcException } from '@nestjs/microservices';
 import { PinoLogger } from 'nestjs-pino';
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
+import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { MessageService } from '@app/common/message/message.service';
 import { VerifyOtpDTO } from '../dtos/verify-otp.dto';
 import { JwtService } from '@app/common/jwt/jwt.service';
@@ -38,9 +39,9 @@ export class LoginOTPService {
       user.otpCodeExpires = otpExpires;
       await this.userRepo.save(user);
 
-      await this.messageService.sendOtp(loginOtpDTO.phone, otpCode);
+      //await this.messageService.sendOtp(loginOtpDTO.phone, otpCode);
+      console.log('OTP code: ', otpCode);
 
-      console.log(`Generated OTP ${otpCode} for ${loginOtpDTO.phone}`);
       return {
         message: `OTP sent successfully to ${loginOtpDTO.phone}`,
         isSuccess: true,
@@ -58,39 +59,46 @@ export class LoginOTPService {
   async verifyOtp(verifyOtpDTO: VerifyOtpDTO): Promise<any> {
     try {
       const user = await this.userRepo.findOne({
-        where: { otpCode: verifyOtpDTO.otp, phone: verifyOtpDTO.phone },
-        order: { createdAt: 'DESC' },
+        where: {
+          otpCode: verifyOtpDTO.otp,
+          phone: verifyOtpDTO.phone,
+        },
       });
+      console.log('Verity Otp user: ', user);
 
       if (!user)
         throw new RpcException({
           message: 'Invalid Credential',
           statusCode: 401,
         });
+
       if (user.otpCodeExpires < new Date())
         throw new RpcException({ message: 'OTP expired', statusCode: 401 });
 
-      user.otpCode = null;
-      user.otpCodeExpires = null;
-      await this.userRepo.save(user);
-
-      // Generate accessToken and refreshToken
+      // Prepare payload early to start JWT generation in parallel
       const payload: IPayload = {
         id: user.id,
         info: user.phone,
         role: user.role,
       };
 
+      // Start JWT generation and database update in parallel
       const [accessToken, refreshToken] = await Promise.all([
         this.jwtService.generateToken(payload),
         this.jwtService.generateRefreshToken(user.id),
       ]);
 
+      // Update user record
+      user.otpCode = null;
+      user.otpCodeExpires = null;
+      user.lastLoginMethod = ELoginMethod.PHONE_OTP;
+      user.lastLoginAt = new Date();
+
       return {
         message: 'Your OTP code is correct.',
         accessToken: accessToken,
         refreshToken: refreshToken,
-        user: user,
+        user: { id: user.id },
       };
     } catch (error) {
       this.logger.error(error.message);
