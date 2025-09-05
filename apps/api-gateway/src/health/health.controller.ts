@@ -25,16 +25,16 @@ export class HealthController {
         this.microservice.pingCheck(AUTH_SERVICE.NAME, {
           transport: Transport.TCP,
           options: {
-            host: this.configService.get<string>('AUTH_SERVICE_HOST'),
-            port: this.configService.get<number>('AUTH_SERVICE_PORT'),
+            host: this.configService.get<string>('services.auth.host'),
+            port: this.configService.get<number>('services.auth.port'),
           },
         }),
       () =>
         this.microservice.pingCheck(USER_SERVICE.NAME, {
           transport: Transport.TCP,
           options: {
-            host: this.configService.get<string>('USER_SERVICE_HOST'),
-            port: this.configService.get<number>('USER_SERVICE_PORT'),
+            host: this.configService.get<string>('services.user.host'),
+            port: this.configService.get<number>('services.user.port'),
           },
         }),
     ]);

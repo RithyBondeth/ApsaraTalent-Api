@@ -2,14 +2,17 @@ import { NestFactory } from '@nestjs/core';
 import { ApiGatewayModule } from './api-gateway.module';
 import { Logger } from 'nestjs-pino';
 import * as cookieParser from 'cookie-parser';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(ApiGatewayModule);
 
   app.use(cookieParser());
   
+  const configService = app.get(ConfigService);
+  
   app.enableCors({
-    origin: process.env.FRONTEND_ORIGIN || 'http://localhost:4000',
+    origin: configService.get('frontend.origin'),
     allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
@@ -20,7 +23,8 @@ async function bootstrap() {
   app.useLogger(logger);
 
   await app.startAllMicroservices();
-  await app.listen(process.env.API_GATEWAY_PORT);
-  logger.log("Api gateway is running on port " + process.env.API_GATEWAY_PORT);
+  const port = configService.get('services.apiGateway.port');
+  await app.listen(port);
+  logger.log(`Api gateway is running on port ${port}`);
 }
 bootstrap();

@@ -3,16 +3,19 @@ import { UserServiceModule } from './user-service.module';
 import { Logger } from 'nestjs-pino';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   // Microservices setup
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(UserServiceModule, {
     transport: Transport.TCP,
     options: {
-      host: process.env.USER_SERVICE_HOST,
-      port: Number(process.env.USER_SERVICE_PORT),
+      host: '0.0.0.0',
+      port: 3002,
     }
   });
+
+  const configService = app.get(ConfigService);
 
   // Pipe Validation Setup
   app.useGlobalPipes(new ValidationPipe({
@@ -30,6 +33,6 @@ async function bootstrap() {
   app.useLogger(logger);
 
   await app.listen();
-  logger.log('User service is running on port ', process.env.USER_SERVICE_PORT);
+  logger.log('User service is running on port ', configService.get('USER_SERVICE_PORT'));
 }
 bootstrap();

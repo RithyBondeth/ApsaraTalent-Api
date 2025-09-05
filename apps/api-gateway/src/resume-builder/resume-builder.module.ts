@@ -16,8 +16,8 @@ import { User } from '@app/common/database/entities/user.entity';
         useFactory: (configService: ConfigService) => ({
           transport: Transport.TCP,
           options: {
-            host: configService.get<string>('RESUME_SERVICE_HOST'),
-            port: configService.get<number>('RESUME_SERVICE_PORT'),
+            host: configService.get<string>('services.resume.host'),
+            port: configService.get<number>('services.resume.port'),
           },
         }),
         inject: [ConfigService],

@@ -1,6 +1,6 @@
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { JobServiceService } from './services/job-service.service';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule } from '@app/common/config';
 import { DatabaseModule, LoggerModule } from '@app/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Company } from '@app/common/database/entities/company/company.entity';
@@ -16,10 +16,7 @@ import { JobMatching } from '@app/common/database/entities/job-matching.entity';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: './apps/job-service/.env',
-    }),
+    ConfigModule,
     DatabaseModule,
     LoggerModule,
     MessageModule,
