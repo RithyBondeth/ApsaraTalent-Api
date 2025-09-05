@@ -36,11 +36,24 @@ lerna-debug.log*
 !.vscode/extensions.json
 
 # dotenv environment variable files
-.env
+.env.local
 .env.development.local
 .env.test.local
 .env.production.local
-.env.local
+.env.staging.local
+
+# Keep .env and environment-specific files tracked
+# .env (development template - tracked)
+# .env.production (production template - tracked)
+# .env.example (example template - tracked)
+
+# Storage directory
+storage/
+uploads/
+
+# Old environment files (to be removed)
+apps/*/.env
+libs/.env
 
 # temp directory
 .temp

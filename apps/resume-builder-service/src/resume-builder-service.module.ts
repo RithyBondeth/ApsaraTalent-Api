@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ResumeBuilderController } from './controllers/resume-builder.controller';
 import { ResumeBuilderService } from './services/resume-builder.service';
 import { ImageService } from './services/image.service';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule } from '@app/common/config';
 import { DatabaseModule, LoggerModule, UploadfileModule } from '@app/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ResumeTemplate } from '@app/common/database/entities/resume-template.entity';
@@ -11,10 +11,7 @@ import { ResumeTemplateController } from './controllers/resume-template.controll
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: './apps/resume-builder-service/.env',
-    }),
+    ConfigModule,
     LoggerModule,
     DatabaseModule,
     UploadfileModule,

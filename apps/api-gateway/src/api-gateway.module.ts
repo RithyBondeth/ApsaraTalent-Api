@@ -1,6 +1,6 @@
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { JwtModule, LoggerModule } from '@app/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule } from '@app/common/config';
 import { AuthModule } from './auth/auth.module';
 import { UploadfileModule } from '@app/common/uploadfile/uploadfile.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
@@ -15,10 +15,7 @@ import { JobModule } from './job/job.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ 
-      isGlobal: true,
-      envFilePath: './apps/api-gateway/.env',
-    }), 
+    ConfigModule, 
     LoggerModule, 
     AuthModule, 
     UploadfileModule, 

@@ -1,6 +1,7 @@
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
 import { Inject, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import {
   OnGatewayConnection,
@@ -15,7 +16,9 @@ import { firstValueFrom } from 'rxjs';
 import { TChatPayload } from '@app/common/interfaces/chat.interface';
 
 @WebSocketGateway({
-  port: parseInt(process.env.CHAT_SERVICE_PORT),
+  // Note: WebSocketGateway decorator requires static values at compile time
+  // Using process.env here as ConfigService is not available in decorators
+  port: parseInt(process.env.CHAT_SERVICE_PORT || '3005'),
   namespace: '/chat',
   cors: {
     origin: ['*'],
@@ -29,6 +32,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   constructor(
     private jwtService: JwtService,
+    private configService: ConfigService,
     @Inject(CHAT_SERVICE.NAME) private chatServiceClient: ClientProxy,
   ) {}
 
