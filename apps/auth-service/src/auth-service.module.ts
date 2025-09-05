@@ -1,5 +1,5 @@
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule } from '@app/common/config';
 import { LoggerModule } from '@app/common';
 import { DatabaseModule } from '@app/common/database/database.module';
 import { RegisterService } from './basic/services/register.service';
@@ -44,10 +44,7 @@ import { FacebookAuthController } from './socials/controllers/facebook-auth.cont
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-        isGlobal: true,
-        envFilePath: './apps/auth-service/.env',
-    }),
+    ConfigModule,
     LoggerModule,
     JwtModule,
     DatabaseModule,

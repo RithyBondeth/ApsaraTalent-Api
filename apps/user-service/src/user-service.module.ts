@@ -1,5 +1,5 @@
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule } from '@app/common/config';
 import {
   DatabaseModule,
   JwtModule,
@@ -43,10 +43,7 @@ import { CompanyFavoriteEmployee } from '@app/common/database/entities/company/f
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: './apps/user-service/.env',
-    }),
+    ConfigModule,
     DatabaseModule,
     TypeOrmModule.forFeature([
       User,
