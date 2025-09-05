@@ -13,8 +13,8 @@ import { ChatController } from './chat.controller';
         useFactory: (config: ConfigService) => ({
           transport: Transport.TCP,
           options: {
-            host: config.get('USER_SERVICE_HOST'),
-            port: config.get('USER_SERVICE_PORT'),
+            host: config.get('services.user.host'),
+            port: config.get('services.user.port'),
           },
         }),
         inject: [ConfigService],
@@ -24,8 +24,8 @@ import { ChatController } from './chat.controller';
         useFactory: (configService: ConfigService) => ({
           transport: Transport.TCP,
           options: {
-            host: configService.get<string>('CHAT_SERVICE_HOST'),
-            port: configService.get<number>('CHAT_SERVICE_PORT'),
+            host: configService.get<string>('services.chat.host'),
+            port: configService.get<number>('services.chat.port'),
           },
         }),
         inject: [ConfigService],
