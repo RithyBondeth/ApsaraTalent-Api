@@ -21,6 +21,7 @@ import { Value } from '@app/common/database/entities/company/value.entity';
 import { Job } from '@app/common/database/entities/company/job.entity';
 import {
   CompanyResponseDTO,
+  EmployeeResponseDTO,
   JobPositionDTO,
   UserResponseDTO,
 } from 'apps/user-service/src/dtos/user-response.dto';
@@ -222,6 +223,10 @@ export class RegisterService {
         refreshToken: refreshToken,
         user: new UserResponseDTO({
           ...company,
+          employee: company.employee ? new EmployeeResponseDTO({
+            ...company.employee,
+            userId: company.id,
+          }) : undefined,
           company: new CompanyResponseDTO({
             ...company.company,
             openPositions: company.company.openPositions?.map(
@@ -409,6 +414,10 @@ export class RegisterService {
         refreshToken: refreshToken,
         user: new UserResponseDTO({
           ...employee,
+          employee: new EmployeeResponseDTO({
+            ...employee.employee,
+            userId: employee.id,
+          }),
           company: employee.company
             ? new CompanyResponseDTO({
                 ...employee.company,

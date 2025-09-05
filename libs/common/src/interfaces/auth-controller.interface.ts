@@ -1,31 +1,31 @@
 export interface IBasicAuthLoginController {
-    login(body: any, data?: any): Promise<any>;
+    login(loginDTO: any, res: any): Promise<any>;
 }
 
 export interface IBasicAuthForgotPasswordController {
-    forgotPassword(body: any): Promise<any>;
+    forgotPassword(forgotPasswordDTO: any): Promise<any>;
 }
 
 export interface IBasicAuthResetPasswordController {
-    resetPassword(body: any, token: string): Promise<any>;
+    resetPassword(resetPasswordDTO: any, token: string): Promise<any>;
 }
 
 export interface IBasicAuthRefreshTokenController {
-    refreshToken(body: any, data?: any): Promise<any>;
+    refreshToken(refreshTokenDTO: any, res: any): Promise<any>;
 }
 
 export interface IBasicAuthVerifyEmailController {
-    verifyEmail(token: string): Promise<any>;
+    verifyEmail(emailVerificationToken: string): Promise<any>;
 }
 
 export interface IBasicAuthRegisterController {
-    registerCompany(data?: any): Promise<any>;
-    registerEmployee(data?: any): Promise<any>;
+    registerCompany(companyRegisterDTO: any): Promise<any>;
+    registerEmployee(employeeRegisterDTO: any): Promise<any>;
 }
 
 export interface IBasicAuthLoginOTPController {
-    loginOtp(data?: any): Promise<any>;
-    verifyOtp(data1?: any, data2?: any): Promise<any>;
+    loginOtp(loginOtpDTO: any): Promise<any>;
+    verifyOtp(verifyOtpDTO: any, res: any): Promise<any>;
 }
 
 export interface IBasicAuthController extends 
@@ -39,17 +39,21 @@ IBasicAuthLoginOTPController
 {}
 
 export interface IGoogleAuthController {
-    googleAuth(data?: any): Promise<any>;
+    googleAuth(): Promise<any>;
+    googleCallback(req: any, res: any): Promise<any>;
 }
 
 export interface ILinkedInAuthController {
-    linkedInAuth(data?: any): Promise<any>;
+    linkedInAuth(): Promise<any>;
+    linkedInCallback(req: any, res: any): Promise<any>;
 }
 
 export interface IGithubAuthController {
-    githubAuth(data?: any): Promise<any>;
+    githubAuth(): Promise<any>;
+    githubCallback(req: any, res: any): Promise<any>;
 }
 
 export interface IFacebookAuthController {
-    facebookAuth(data?: any): Promise<any>;
+    facebookAuth(): Promise<any>;
+    facebookCallback(req: any, res: any): Promise<any>;
 }
