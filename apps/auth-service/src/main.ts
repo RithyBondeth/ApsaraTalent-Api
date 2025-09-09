@@ -6,16 +6,17 @@ import { Logger } from 'nestjs-pino';
 import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
-  // Microservices setup
+  const appContext = await NestFactory.createApplicationContext(AuthServiceModule);
+  const configService = appContext.get(ConfigService);
+  
+  // Microservices setup with env variables
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(AuthServiceModule, {
     transport: Transport.TCP,
     options: {
-      host: 'localhost', // Will be configurable later
-      port: 3001, // Will be configurable later
+      host: configService.get('services.auth.host', 'localhost'),
+      port: configService.get('services.auth.port', 3001),
     }
   });
-  
-  const configService = app.get(ConfigService);
   
   // Pipe Validation Setup
   app.useGlobalPipes(new ValidationPipe({
@@ -33,7 +34,10 @@ async function bootstrap() {
   app.useLogger(logger);
 
   await app.listen();
-  const port = configService.get('services.auth.port');
+  const port = configService.get('services.auth.port', 3001);
   logger.log(`Auth service is running on port ${port}`);
+  
+  // Close the app context
+  await appContext.close();
 }
 bootstrap();
