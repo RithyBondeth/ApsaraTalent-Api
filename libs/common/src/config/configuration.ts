@@ -68,6 +68,10 @@ export default () => ({
       port: parseInt(process.env.JOB_SERVICE_PORT) || 3005,
       host: process.env.JOB_SERVICE_HOST || 'localhost',
     },
+    payment: {
+      port: parseInt(process.env.PAYMENT_SERVICE_PORT) || 3006,
+      host: process.env.PAYMENT_SERVICE_HOST || 'localhost', 
+    }
   },
 
   // Redis Configuration
