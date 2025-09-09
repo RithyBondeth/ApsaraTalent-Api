@@ -33,6 +33,8 @@ async function bootstrap() {
   app.useLogger(logger);
 
   await app.listen();
-  logger.log('User service is running on port ', configService.get('USER_SERVICE_PORT'));
+  const port = configService.get('services.user.port');
+  logger.log(`User service is running on port ${port}`);
+  
 }
 bootstrap();

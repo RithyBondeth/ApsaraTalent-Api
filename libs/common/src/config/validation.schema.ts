@@ -43,6 +43,8 @@ export const validationSchema = Joi.object({
   CHAT_SERVICE_HOST: Joi.string().default('localhost'),
   JOB_SERVICE_PORT: Joi.number().port().default(3005),
   JOB_SERVICE_HOST: Joi.string().default('localhost'),
+  PAYMENT_SERVICE_PORT: Joi.number().port().default(3006),
+  PAYMENT_SERVICE_HOST: Joi.string().default('localhost'),
 
   // Redis
   REDIS_WEBSOCKET_HOST: Joi.string().default('localhost'),

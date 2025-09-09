@@ -1,22 +1,20 @@
 import { NestFactory } from '@nestjs/core';
-import { AuthServiceModule } from './auth-service.module';
+import { PaymentServiceModule } from './payment-service.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { ValidationPipe } from '@nestjs/common';
-import { Logger } from 'nestjs-pino';
 import { ConfigService } from '@nestjs/config';
+import { Logger, ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
-  // Microservices setup
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(AuthServiceModule, {
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(PaymentServiceModule, {
     transport: Transport.TCP,
     options: {
-      host: 'localhost', // Will be configurable later
-      port: 3001, // Will be configurable later
-    }
+      host: 'localhost',
+      port: 3006,
+    },
   });
-  
+
   const configService = app.get(ConfigService);
-  
+
   // Pipe Validation Setup
   app.useGlobalPipes(new ValidationPipe({
     transform: true,
@@ -33,7 +31,7 @@ async function bootstrap() {
   app.useLogger(logger);
 
   await app.listen();
-  const port = configService.get('services.auth.port');
-  logger.log(`Auth service is running on port ${port}`);
+  const port = configService.get('services.payment.port');
+  logger.log(`Payment service is running on port ${port}`);
 }
 bootstrap();
