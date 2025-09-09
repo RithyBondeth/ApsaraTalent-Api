@@ -6,15 +6,16 @@ import { Logger } from 'nestjs-pino';
 import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
+  const appContext = await NestFactory.createApplicationContext(ChatServiceModule);
+  const configService = appContext.get(ConfigService);
+  
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(ChatServiceModule, {
     transport: Transport.TCP,
     options: {
-      host: '0.0.0.0',
-      port: 3004,
+      host: configService.get('services.chat.host', 'localhost'),
+      port: configService.get('services.chat.port', 3004),
     }
   });
-
-  const configService = app.get(ConfigService);
 
   // Pipe Validation Setup
   app.useGlobalPipes(new ValidationPipe({
@@ -32,6 +33,10 @@ async function bootstrap() {
   app.useLogger(logger);
 
   await app.listen();
-  logger.log('Chat service is running on port ', configService.get('CHAT_SERVICE_PORT'));
+  const port = configService.get('services.chat.port', 3004);
+  logger.log(`Chat service is running on port ${port}`);
+  
+  // Close the app context
+  await appContext.close();
 }
 bootstrap();

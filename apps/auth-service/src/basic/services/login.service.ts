@@ -74,8 +74,6 @@ export class LoginService {
       user.lastLoginAt = new Date();
       await this.userRepository.save(user);
 
-      console.log("Email/Number Login: ", user);
-
       //Return token and user details
       return new LoginResponseDTO({
         message: 'Successfully Logged in',

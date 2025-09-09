@@ -6,16 +6,17 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
+  const appContext = await NestFactory.createApplicationContext(UserServiceModule);
+  const configService = appContext.get(ConfigService);
+  
   // Microservices setup
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(UserServiceModule, {
     transport: Transport.TCP,
     options: {
-      host: '0.0.0.0',
-      port: 3002,
+      host: configService.get('services.user.host', 'localhost'),
+      port: configService.get('services.user.port', 3002),
     }
   });
-
-  const configService = app.get(ConfigService);
 
   // Pipe Validation Setup
   app.useGlobalPipes(new ValidationPipe({
@@ -33,8 +34,10 @@ async function bootstrap() {
   app.useLogger(logger);
 
   await app.listen();
-  const port = configService.get('services.user.port');
+  const port = configService.get('services.user.port', 3002);
   logger.log(`User service is running on port ${port}`);
   
+  // Close the app context
+  await appContext.close();
 }
 bootstrap();
