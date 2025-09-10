@@ -1,31 +1,39 @@
-import { Body, Controller, Get, Inject, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { PAYMENT_SERVICE } from 'utils/constants/payment-service.constant';
 
-@Controller('payment/bakong')
+@Controller('bakong')
 export class PaymentController {
   constructor(
     @Inject(PAYMENT_SERVICE.NAME) private readonly paymentClient: ClientProxy,
   ) {}
 
-  @Post('individual/generate')
+  @Post('generate-individual-khqr')
   async generateIndividualQr(
     @Body() generateIndividualQrDTO: any,
   ): Promise<any> {
     return firstValueFrom(
       this.paymentClient.send(
-        PAYMENT_SERVICE.ACTIONS.INDIVIDUAL_GENERATE,
+        PAYMENT_SERVICE.ACTIONS.GENERATE_INDIVIDUAL_KHQR,
         generateIndividualQrDTO,
       ),
     );
   }
 
-  @Post('merchant/generate')
+  @Post('generate-merchant-khqr')
   async generateMerchantQr(@Body() generateMerchantQrDTO: any): Promise<any> {
     return firstValueFrom(
       this.paymentClient.send(
-        PAYMENT_SERVICE.ACTIONS.MERCHANT_GENERATE,
+        PAYMENT_SERVICE.ACTIONS.GENERATE_MERCHANT_KHQR,
         generateMerchantQrDTO,
       ),
     );
@@ -51,10 +59,71 @@ export class PaymentController {
     );
   }
 
-  @Get('qr-image/:qrString')
-  async getQrImage(@Param('qrString') qrString: string): Promise<any> {
+  @Post('generate-qr-image')
+  async generateQRImage(
+    @Body() body: { qrString: string; width?: number; margin?: number },
+    @Query('format') format: 'base64' | 'url' = 'base64',
+  ): Promise<any> {
+    const payload = { body, format };
     return firstValueFrom(
-      this.paymentClient.send(PAYMENT_SERVICE.ACTIONS.GET_QR_IMAGE, qrString),
+      this.paymentClient.send(PAYMENT_SERVICE.ACTIONS.KHQR_GENERATE, payload),
+    );
+  }
+
+  @Post('deep-link')
+  async generateDeepLink(@Body() deepLinkDto: any): Promise<any> {
+    return firstValueFrom(
+      this.paymentClient.send(PAYMENT_SERVICE.ACTIONS.DEEP_LINK, deepLinkDto),
+    );
+  }
+
+  @Post('payment/check-status')
+  async checkPaymentStatus(@Body() checkPaymentStatusDTO: any): Promise<any> {
+    return firstValueFrom(
+      this.paymentClient.send(
+        PAYMENT_SERVICE.ACTIONS.CHECK_PAYMENT_STATUS,
+        checkPaymentStatusDTO,
+      ),
+    );
+  }
+
+  @Post('payment/check-bulk-status')
+  async checkPaymentBulkStatus(
+    @Body() checkPaymentBulkStatusDTO: any,
+  ): Promise<any> {
+    return firstValueFrom(
+      this.paymentClient.send(
+        PAYMENT_SERVICE.ACTIONS.CHECK_PAYMENT_BULK_STATUS,
+        checkPaymentBulkStatusDTO,
+      ),
+    );
+  }
+
+  @Get('payment-info/:md5Hash')
+  async getPaymentInfo(@Param('md5Hash') md5Hash: string): Promise<any> {
+    return firstValueFrom(
+      this.paymentClient.send(
+        PAYMENT_SERVICE.ACTIONS.GET_PAYMENT_INFO,
+        md5Hash,
+      ),
+    );
+  }
+
+  @Get('khqr-info/:qrString')
+  async getKHQRInfo(@Param('qrString') qrString: string): Promise<any> {
+    const decodedQRString = decodeURIComponent(qrString);
+    return firstValueFrom(
+      this.paymentClient.send(
+        PAYMENT_SERVICE.ACTIONS.GET_KHQR_INFO,
+        decodedQRString,
+      ),
+    );
+  }
+
+  @Post('generate-md5')
+  async generateMd5Hash(@Body() body: { data: string }): Promise<any> {
+    return firstValueFrom(
+      this.paymentClient.send(PAYMENT_SERVICE.ACTIONS.GENERATE_MD5_HASH, body),
     );
   }
 }
