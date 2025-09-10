@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { ResumeTemplateService } from '../services/resume-template.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { RESUME_BUILDER_SERVICE } from 'utils/constants/resume-builder-service';
+import { RESUME_BUILDER_SERVICE } from 'utils/constants/resume-builder-service.constant';
 import { CreateResumeTemplateDTO } from '../dtos/create-resume-template.dto';
 import { IResumeTemplateController } from '@app/common/interfaces/resume-controller.interface';
 import { SearchTemplateDTO } from '../dtos/search-resume-template.dto';

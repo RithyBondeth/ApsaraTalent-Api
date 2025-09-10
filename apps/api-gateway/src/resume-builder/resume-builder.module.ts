@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { RESUME_BUILDER_SERVICE } from 'utils/constants/resume-builder-service';
+import { RESUME_BUILDER_SERVICE } from 'utils/constants/resume-builder-service.constant';
 import { ConfigService } from '@nestjs/config';
 import { ResumeBuilderController } from './controllers/resume-builder.controller';
 import { ResumeTemplateController } from './controllers/resume-template.controller';
