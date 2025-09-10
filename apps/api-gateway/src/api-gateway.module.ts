@@ -12,6 +12,7 @@ import { UserModule } from './user/user.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ChatModule } from './chat/chat.module';
 import { JobModule } from './job/job.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -28,7 +29,8 @@ import { JobModule } from './job/job.module';
     UserModule,
     JwtModule,
     ChatModule,
-    JobModule
+    JobModule,
+    PaymentModule
   ],
   controllers: [HealthController],
   providers: [
