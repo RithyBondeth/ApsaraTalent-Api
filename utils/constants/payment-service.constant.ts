@@ -1,10 +1,16 @@
 export const PAYMENT_SERVICE = {
     NAME: 'PAYMENT_SERVICE',
     ACTIONS: {
-        INDIVIDUAL_GENERATE: { cmd: 'individual-generate' },
-        MERCHANT_GENERATE: { cmd: 'merchant-generate' },
+        GENERATE_INDIVIDUAL_KHQR: { cmd: 'generate-individual-khqr' },
+        GENERATE_MERCHANT_KHQR: { cmd: 'generate-merchant-khqr' },
         VERIFY_KHQR: { cmd: 'verify-khqr' },
         DECODE_KHQR: { cmd: 'decode-khqr' },
-        GET_QR_IMAGE: { cmd: 'qr-image' },
+        KHQR_GENERATE: { cmd: 'khqr-generate' },
+        DEEP_LINK: { cmd: 'deep-link' },
+        CHECK_PAYMENT_STATUS: { cmd: 'check-payment-status' },
+        CHECK_PAYMENT_BULK_STATUS: { cmd: 'check-payment-bulk-status' },
+        GET_PAYMENT_INFO: { cmd: 'get-payment-information' },
+        GET_KHQR_INFO: { cmd: 'get-khqr-information' },
+        GENERATE_MD5_HASH: { cmd: 'generate-md5' },
     }
 }
