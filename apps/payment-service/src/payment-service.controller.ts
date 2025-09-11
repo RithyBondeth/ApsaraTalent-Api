@@ -1,6 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { PaymentServiceService } from './payment-service.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import { RateLimit } from './decorators/rate-limit.decorator';
 import { PAYMENT_SERVICE } from 'utils/constants/payment-service.constant';
 import { GenerateIndividualKhqrDTO } from './dtos/generate-individual-khqr.dto';
 import { GenerateMerchantKhqrDTO } from './dtos/generate-merchant-khqr.dto';
@@ -15,6 +16,7 @@ export class PaymentServiceController {
   constructor(private readonly paymentServiceService: PaymentServiceService) {}
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.GENERATE_INDIVIDUAL_KHQR)
+  @RateLimit(50) // Lower limit for QR generation
   async generateIndividualKHQR(
     @Payload() generateIndividualKhqrDTO: GenerateIndividualKhqrDTO,
   ): Promise<any> {
@@ -24,6 +26,7 @@ export class PaymentServiceController {
   }
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.GENERATE_MERCHANT_KHQR)
+  @RateLimit(50) // Lower limit for QR generation
   async generateMerchantKhqrDTO(
     @Payload() generateMerchantKhqrDTO: GenerateMerchantKhqrDTO,
   ): Promise<any> {

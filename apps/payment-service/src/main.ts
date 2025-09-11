@@ -33,7 +33,10 @@ async function bootstrap() {
   app.useLogger(logger);
 
   await app.listen();
-  const port = configService.get('services.payment.port');
+  const port = configService.get('services.payment.port', 3006);
   logger.log(`Payment service is running on port ${port}`);
+  
+  // Close the app context
+  await appContext.close();
 }
 bootstrap();
