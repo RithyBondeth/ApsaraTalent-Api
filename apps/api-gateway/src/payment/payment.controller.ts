@@ -70,10 +70,13 @@ export class PaymentController {
     );
   }
 
-  @Post('deep-link')
-  async generateDeepLink(@Body() deepLinkDto: any): Promise<any> {
+  @Post('generate-deep-link')
+  async generateDeepLink(@Body() generateDeepLinkDto: any): Promise<any> {
     return firstValueFrom(
-      this.paymentClient.send(PAYMENT_SERVICE.ACTIONS.DEEP_LINK, deepLinkDto),
+      this.paymentClient.send(
+        PAYMENT_SERVICE.ACTIONS.GENERATE_DEEP_LINK,
+        generateDeepLinkDto,
+      ),
     );
   }
 
