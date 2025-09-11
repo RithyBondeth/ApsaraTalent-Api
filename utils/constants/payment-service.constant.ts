@@ -6,7 +6,7 @@ export const PAYMENT_SERVICE = {
         VERIFY_KHQR: { cmd: 'verify-khqr' },
         DECODE_KHQR: { cmd: 'decode-khqr' },
         KHQR_GENERATE: { cmd: 'khqr-generate' },
-        DEEP_LINK: { cmd: 'deep-link' },
+        GENERATE_DEEP_LINK: { cmd: 'generate-deep-link' },
         CHECK_PAYMENT_STATUS: { cmd: 'check-payment-status' },
         CHECK_PAYMENT_BULK_STATUS: { cmd: 'check-payment-bulk-status' },
         GET_PAYMENT_INFO: { cmd: 'get-payment-information' },
