@@ -20,8 +20,17 @@ import {
   BakongConfigurationException,
   BakongQRValidationException,
 } from './exceptions/bakong.exceptions';
-import { Payment, PaymentType, PaymentStatus } from '@app/common/database/entities/payment/payment.entity';
-import { PaymentTransaction, TransactionStatus, TransactionType, Currency } from '@app/common/database/entities/payment/payment-transaction.entity';
+import {
+  Payment,
+  PaymentType,
+  PaymentStatus,
+} from '@app/common/database/entities/payment/payment.entity';
+import {
+  PaymentTransaction,
+  TransactionStatus,
+  TransactionType,
+  Currency,
+} from '@app/common/database/entities/payment/payment-transaction.entity';
 
 @Injectable()
 export class PaymentServiceService {
@@ -37,9 +46,11 @@ export class PaymentServiceService {
     private readonly transactionRepository: Repository<PaymentTransaction>,
   ) {
     this.bakongConfig = this.configService.get('bakong');
-    
+
     if (!this.bakongConfig?.developerToken) {
-      throw new BakongConfigurationException('Bakong developer token is required');
+      throw new BakongConfigurationException(
+        'Bakong developer token is required',
+      );
     }
 
     this.httpClient = axios.create({
@@ -47,7 +58,7 @@ export class PaymentServiceService {
       timeout: this.bakongConfig.apiTimeout,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.bakongConfig.developerToken}`,
+        Authorization: `Bearer ${this.bakongConfig.developerToken}`,
       },
     });
   }
@@ -55,15 +66,19 @@ export class PaymentServiceService {
     generateIndividualKhqrDTO: GenerateIndividualKhqrDTO,
   ): Promise<any> {
     try {
-      this.logger.log('Generating individual KHQR code', { merchantName: generateIndividualKhqrDTO.merchantName });
-      
+      this.logger.log('Generating individual KHQR code', {
+        merchantName: generateIndividualKhqrDTO.merchantName,
+      });
+
       const payload = {
         qr_type: 'individual',
         bakong_account_id: generateIndividualKhqrDTO.bakongAccountId,
         merchant_name: generateIndividualKhqrDTO.merchantName,
         merchant_city: generateIndividualKhqrDTO.merchantCity,
         amount: generateIndividualKhqrDTO.amount,
-        currency: generateIndividualKhqrDTO.currency || BAKONG_CONSTANTS.DEFAULTS.CURRENCY,
+        currency:
+          generateIndividualKhqrDTO.currency ||
+          BAKONG_CONSTANTS.DEFAULTS.CURRENCY,
         bill_number: generateIndividualKhqrDTO.billNumber,
         mobile_number: generateIndividualKhqrDTO.mobileNumber,
         store_label: generateIndividualKhqrDTO.storeLabel,
@@ -72,18 +87,25 @@ export class PaymentServiceService {
       };
 
       // Remove undefined fields
-      Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
+      Object.keys(payload).forEach(
+        (key) => payload[key] === undefined && delete payload[key],
+      );
 
-      const response = await this.httpClient.post('/v1/generate_individual_khqr', payload);
-      
+      const response = await this.httpClient.post(
+        '/v1/generate_individual_khqr',
+        payload,
+      );
+
       if (response.data?.response_code === '00') {
         const qrString = response.data.qr_string;
         const md5Hash = this.generateMD5Hash(qrString);
         const qrImage = await this.generateQRImage(qrString);
-        const expiresAt = generateIndividualKhqrDTO.expirationMinutes 
-          ? new Date(Date.now() + generateIndividualKhqrDTO.expirationMinutes * 60000)
+        const expiresAt = generateIndividualKhqrDTO.expirationMinutes
+          ? new Date(
+              Date.now() + generateIndividualKhqrDTO.expirationMinutes * 60000,
+            )
           : null;
-        
+
         // Save payment to database
         const payment = this.paymentRepository.create({
           md5Hash,
@@ -95,7 +117,8 @@ export class PaymentServiceService {
           merchantName: generateIndividualKhqrDTO.merchantName,
           merchantCity: generateIndividualKhqrDTO.merchantCity,
           amount: generateIndividualKhqrDTO.amount,
-          currency: (generateIndividualKhqrDTO.currency as Currency) || Currency.KHR,
+          currency:
+            (generateIndividualKhqrDTO.currency as Currency) || Currency.KHR,
           billNumber: generateIndividualKhqrDTO.billNumber,
           mobileNumber: generateIndividualKhqrDTO.mobileNumber,
           storeLabel: generateIndividualKhqrDTO.storeLabel,
@@ -105,7 +128,7 @@ export class PaymentServiceService {
         });
 
         const savedPayment = await this.paymentRepository.save(payment);
-        
+
         return {
           success: true,
           paymentId: savedPayment.id,
@@ -118,7 +141,7 @@ export class PaymentServiceService {
       } else {
         throw new BakongQRGenerationException(
           response.data?.error_message || 'Failed to generate individual KHQR',
-          response.data
+          response.data,
         );
       }
     } catch (error) {
@@ -134,15 +157,19 @@ export class PaymentServiceService {
     generateMerchantKhqrDTO: GenerateMerchantKhqrDTO,
   ): Promise<any> {
     try {
-      this.logger.log('Generating merchant KHQR code', { merchantName: generateMerchantKhqrDTO.merchantName });
-      
+      this.logger.log('Generating merchant KHQR code', {
+        merchantName: generateMerchantKhqrDTO.merchantName,
+      });
+
       const payload = {
         qr_type: 'merchant',
         bakong_account_id: generateMerchantKhqrDTO.bakongAccountId,
         merchant_name: generateMerchantKhqrDTO.merchantName,
         merchant_city: generateMerchantKhqrDTO.merchantCity,
         amount: generateMerchantKhqrDTO.amount,
-        currency: generateMerchantKhqrDTO.currency || BAKONG_CONSTANTS.DEFAULTS.CURRENCY,
+        currency:
+          generateMerchantKhqrDTO.currency ||
+          BAKONG_CONSTANTS.DEFAULTS.CURRENCY,
         bill_number: generateMerchantKhqrDTO.billNumber,
         mobile_number: generateMerchantKhqrDTO.mobileNumber,
         store_label: generateMerchantKhqrDTO.storeLabel,
@@ -152,15 +179,20 @@ export class PaymentServiceService {
       };
 
       // Remove undefined fields
-      Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
+      Object.keys(payload).forEach(
+        (key) => payload[key] === undefined && delete payload[key],
+      );
 
-      const response = await this.httpClient.post('/v1/generate_merchant_khqr', payload);
-      
+      const response = await this.httpClient.post(
+        '/v1/generate_merchant_khqr',
+        payload,
+      );
+
       if (response.data?.response_code === '00') {
         const qrString = response.data.qr_string;
         const md5Hash = this.generateMD5Hash(qrString);
         const qrImage = await this.generateQRImage(qrString);
-        
+
         // Save merchant payment to database
         const payment = this.paymentRepository.create({
           md5Hash,
@@ -172,7 +204,8 @@ export class PaymentServiceService {
           merchantName: generateMerchantKhqrDTO.merchantName,
           merchantCity: generateMerchantKhqrDTO.merchantCity,
           amount: generateMerchantKhqrDTO.amount,
-          currency: (generateMerchantKhqrDTO.currency as Currency) || Currency.KHR,
+          currency:
+            (generateMerchantKhqrDTO.currency as Currency) || Currency.KHR,
           billNumber: generateMerchantKhqrDTO.billNumber,
           mobileNumber: generateMerchantKhqrDTO.mobileNumber,
           storeLabel: generateMerchantKhqrDTO.storeLabel,
@@ -183,7 +216,7 @@ export class PaymentServiceService {
         });
 
         const savedPayment = await this.paymentRepository.save(payment);
-        
+
         return {
           success: true,
           paymentId: savedPayment.id,
@@ -195,7 +228,7 @@ export class PaymentServiceService {
       } else {
         throw new BakongQRGenerationException(
           response.data?.error_message || 'Failed to generate merchant KHQR',
-          response.data
+          response.data,
         );
       }
     } catch (error) {
@@ -210,11 +243,11 @@ export class PaymentServiceService {
   async verifyKhqr(verifyKhqrDTO: VerifyKhqrDTO): Promise<any> {
     try {
       this.logger.log('Verifying KHQR code');
-      
+
       const response = await this.httpClient.post('/v1/verify_khqr', {
         qr_string: verifyKhqrDTO.qrString,
       });
-      
+
       if (response.data?.response_code === '00') {
         return {
           success: true,
@@ -226,7 +259,9 @@ export class PaymentServiceService {
         return {
           success: false,
           isValid: false,
-          message: response.data?.error_message || BAKONG_CONSTANTS.MESSAGES.ERROR.INVALID_QR,
+          message:
+            response.data?.error_message ||
+            BAKONG_CONSTANTS.MESSAGES.ERROR.INVALID_QR,
         };
       }
     } catch (error) {
@@ -238,11 +273,11 @@ export class PaymentServiceService {
   async decodeKhqr(decodeKhqrDTO: DecodeKhqrDTO): Promise<any> {
     try {
       this.logger.log('Decoding KHQR code');
-      
+
       const response = await this.httpClient.post('/v1/decode_khqr', {
         qr_string: decodeKhqrDTO.qrString,
       });
-      
+
       if (response.data?.response_code === '00') {
         return {
           success: true,
@@ -261,7 +296,7 @@ export class PaymentServiceService {
         };
       } else {
         throw new BakongQRValidationException(
-          response.data?.error_message || 'Failed to decode KHQR'
+          response.data?.error_message || 'Failed to decode KHQR',
         );
       }
     } catch (error) {
@@ -278,14 +313,14 @@ export class PaymentServiceService {
   ): Promise<any> {
     try {
       this.logger.log('Generating payment deep link');
-      
+
       const response = await this.httpClient.post('/v1/generate_deeplink', {
         qr_string: generateDeepLinkDTO.qrString,
         callback_url: generateDeepLinkDTO.callback,
         app_name: generateDeepLinkDTO.appName,
         app_icon_url: generateDeepLinkDTO.appIconUrl,
       });
-      
+
       if (response.data?.response_code === '00') {
         return {
           success: true,
@@ -296,7 +331,7 @@ export class PaymentServiceService {
         };
       } else {
         throw new BakongQRGenerationException(
-          response.data?.error_message || 'Failed to generate deep link'
+          response.data?.error_message || 'Failed to generate deep link',
         );
       }
     } catch (error) {
@@ -312,8 +347,10 @@ export class PaymentServiceService {
     checkPaymentStatusDTO: CheckPaymentStatusDTO,
   ): Promise<any> {
     try {
-      this.logger.log('Checking payment status', { md5Hash: checkPaymentStatusDTO.md5Hash.substring(0, 8) + '...' });
-      
+      this.logger.log('Checking payment status', {
+        md5Hash: checkPaymentStatusDTO.md5Hash.substring(0, 8) + '...',
+      });
+
       // First, check our database for the payment
       const payment = await this.paymentRepository.findOne({
         where: { md5Hash: checkPaymentStatusDTO.md5Hash },
@@ -327,7 +364,7 @@ export class PaymentServiceService {
       // If payment status is already PAID, return from database
       if (payment.status === PaymentStatus.PAID) {
         const latestTransaction = payment.transactions
-          .filter(t => t.status === TransactionStatus.SUCCESS)
+          .filter((t) => t.status === TransactionStatus.SUCCESS)
           .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
 
         return {
@@ -338,10 +375,12 @@ export class PaymentServiceService {
           amount: payment.amount,
           currency: payment.currency,
           paidAt: latestTransaction?.paidAt,
-          payerInfo: latestTransaction ? {
-            name: latestTransaction.payerName,
-            phone: latestTransaction.payerPhone,
-          } : null,
+          payerInfo: latestTransaction
+            ? {
+                name: latestTransaction.payerName,
+                phone: latestTransaction.payerPhone,
+              }
+            : null,
           message: BAKONG_CONSTANTS.MESSAGES.SUCCESS.PAYMENT_FOUND,
         };
       }
@@ -350,15 +389,15 @@ export class PaymentServiceService {
       const response = await this.httpClient.post('/v1/check_payment_status', {
         md5_hash: checkPaymentStatusDTO.md5Hash,
       });
-      
+
       if (response.data?.response_code === '00') {
         const paymentData = response.data.payment_data;
-        
+
         // Update payment status in database
         if (paymentData.status === 'paid') {
           await this.updatePaymentStatus(payment, paymentData);
         }
-        
+
         return {
           success: true,
           paymentId: payment.id,
@@ -379,7 +418,7 @@ export class PaymentServiceService {
           payment.status = PaymentStatus.EXPIRED;
           await this.paymentRepository.save(payment);
         }
-        
+
         return {
           success: false,
           paymentId: payment.id,
@@ -402,12 +441,17 @@ export class PaymentServiceService {
     checkPaymentBulkStatusDTO: CheckPaymentBulkStatusDTO,
   ): Promise<any> {
     try {
-      this.logger.log('Checking bulk payment status', { count: checkPaymentBulkStatusDTO.md5Hashes.length });
-      
-      const response = await this.httpClient.post('/v1/check_payment_bulk_status', {
-        md5_hashes: checkPaymentBulkStatusDTO.md5Hashes,
+      this.logger.log('Checking bulk payment status', {
+        count: checkPaymentBulkStatusDTO.md5Hashes.length,
       });
-      
+
+      const response = await this.httpClient.post(
+        '/v1/check_payment_bulk_status',
+        {
+          md5_hashes: checkPaymentBulkStatusDTO.md5Hashes,
+        },
+      );
+
       if (response.data?.response_code === '00') {
         const results = response.data.payments.map((payment: any) => ({
           md5Hash: payment.md5_hash,
@@ -416,27 +460,29 @@ export class PaymentServiceService {
           amount: payment.amount,
           currency: payment.currency,
           paidAt: payment.paid_at,
-          payerInfo: payment.payer_name ? {
-            name: payment.payer_name,
-            phone: payment.payer_phone,
-          } : null,
+          payerInfo: payment.payer_name
+            ? {
+                name: payment.payer_name,
+                phone: payment.payer_phone,
+              }
+            : null,
         }));
-        
+
         return {
           success: true,
           totalChecked: checkPaymentBulkStatusDTO.md5Hashes.length,
           payments: results,
           summary: {
-            paid: results.filter(p => p.status === 'paid').length,
-            pending: results.filter(p => p.status === 'pending').length,
-            expired: results.filter(p => p.status === 'expired').length,
-            failed: results.filter(p => p.status === 'failed').length,
+            paid: results.filter((p) => p.status === 'paid').length,
+            pending: results.filter((p) => p.status === 'pending').length,
+            expired: results.filter((p) => p.status === 'expired').length,
+            failed: results.filter((p) => p.status === 'failed').length,
           },
           message: BAKONG_CONSTANTS.MESSAGES.SUCCESS.BULK_CHECK_COMPLETED,
         };
       } else {
         throw new BakongApiConnectionException(
-          response.data?.error_message || 'Failed to check bulk payment status'
+          response.data?.error_message || 'Failed to check bulk payment status',
         );
       }
     } catch (error) {
@@ -449,7 +495,10 @@ export class PaymentServiceService {
     return CryptoJS.MD5(qrString).toString();
   }
 
-  private async updatePaymentStatus(payment: Payment, paymentData: any): Promise<void> {
+  private async updatePaymentStatus(
+    payment: Payment,
+    paymentData: any,
+  ): Promise<void> {
     try {
       // Update payment status
       payment.status = PaymentStatus.PAID;
@@ -467,7 +516,9 @@ export class PaymentServiceService {
         payerPhone: paymentData.payer_phone,
         payerBankCode: paymentData.payer_bank_code,
         payerAccountId: paymentData.payer_account_id,
-        paidAt: paymentData.paid_at ? new Date(paymentData.paid_at) : new Date(),
+        paidAt: paymentData.paid_at
+          ? new Date(paymentData.paid_at)
+          : new Date(),
         confirmedAt: new Date(),
         bakongResponse: paymentData,
         referenceNumber: paymentData.reference_number,
@@ -497,7 +548,7 @@ export class PaymentServiceService {
           light: BAKONG_CONSTANTS.DEFAULTS.QR_LIGHT_COLOR,
         },
       });
-      
+
       return qrImageBase64;
     } catch (error) {
       this.logger.error('Failed to generate QR image', error.stack);
