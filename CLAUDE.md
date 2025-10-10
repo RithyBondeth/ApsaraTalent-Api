@@ -23,6 +23,7 @@ npm run start:dev:users    # User Service
 npm run start:dev:resume   # Resume Builder Service
 npm run start:dev:chat     # Chat Service
 npm run start:dev:job      # Job Service
+npm run start:dev:payment  # Payment Service
 
 # Start individual services in production mode
 npm run start:api
@@ -31,6 +32,7 @@ npm run start:users
 npm run start:resume
 npm run start:chat
 npm run start:job
+npm run start:payment
 ```
 
 ### Testing
@@ -68,6 +70,7 @@ The application follows a microservices architecture with the following services
 - **Job Service** (`apps/job-service`): Handles job postings and job matching algorithms
 - **Resume Builder Service** (`apps/resume-builder-service`): Manages resume creation and templates
 - **Chat Service** (`apps/chat-service`): Real-time messaging between users
+- **Payment Service** (`apps/payment-service`): Handles payment processing and billing
 
 ### Shared Libraries
 - **Common Library** (`libs/common`): Shared utilities, database entities, guards, interceptors, and services used across all microservices
@@ -97,12 +100,22 @@ The application uses PostgreSQL with TypeORM as the ORM. Key entities include:
 
 The application uses environment variables managed through ConfigModule. Configuration files are located in `libs/.env`.
 
-Key environment variables:
+### Service Configuration
+All services use environment variables for host and port configuration:
+- `services.apiGateway.port`: API Gateway port
+- `services.auth.host` / `services.auth.port`: Auth Service configuration
+- `services.user.host` / `services.user.port`: User Service configuration
+- `services.resume.host` / `services.resume.port`: Resume Service configuration
+- `services.chat.host` / `services.chat.port`: Chat Service configuration
+- `services.job.host` / `services.job.port`: Job Service configuration
+- `services.payment.host` / `services.payment.port`: Payment Service configuration
+
+### Database and Core Configuration
 - `DATABASE_URL`: PostgreSQL connection string
 - `DATABASE_SYNCHRONIZE`: TypeORM synchronization setting
-- `API_GATEWAY_PORT`: Port for the API Gateway
 - `SESSION_SECRET`: Session management secret
-- Social OAuth credentials for various providers
+- Social OAuth credentials for various providers (Google, Facebook, LinkedIn, GitHub)
+- `frontend.origin`: CORS configuration for frontend
 
 ## File Upload System
 
@@ -147,6 +160,19 @@ Tests are configured with Jest and use the following patterns:
 - Coverage reports generated in `./coverage` directory
 - Module aliases configured for `@app/common` imports
 
+## Microservice Communication
+
+### Transport Layer
+- **Protocol**: TCP-based communication between microservices
+- **Service Discovery**: Environment variable-based host/port configuration
+- **API Gateway**: HTTP REST endpoints that proxy to internal TCP services
+- **Real-time**: WebSocket connections via Socket.IO for chat functionality
+
+### Error Handling
+- Use `RpcException` for microservice-to-microservice communication errors
+- HTTP exceptions for API Gateway responses
+- Centralized error handling through NestJS exception filters
+
 ## Common Development Tasks
 
 When working with this codebase:
@@ -156,3 +182,5 @@ When working with this codebase:
 4. Implement proper error handling using NestJS exception filters
 5. Use TypeORM decorators consistently for entity definitions
 6. Maintain the microservices separation of concerns
+7. Configure service host/port through environment variables in main.ts files
+8. Import Logger from 'nestjs-pino' for consistent logging across services

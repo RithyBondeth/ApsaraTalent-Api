@@ -17,6 +17,8 @@ import { Chat } from '../entities/chat.entity';
 import { ResumeTemplate } from '../entities/resume-template.entity';
 import { CompanyFavoriteEmployee } from '../entities/company/favorite-employee.entity';
 import { EmployeeFavoriteCompany } from '../entities/employee/favorite-company.entity';
+import { Payment } from '../entities/payment/payment.entity';
+import { PaymentTransaction } from '../entities/payment/payment-transaction.entity';
 
 export const databaseConfig = async (
   configService: ConfigService,
@@ -42,5 +44,7 @@ export const databaseConfig = async (
     ResumeTemplate,
     CompanyFavoriteEmployee,
     EmployeeFavoriteCompany,
+    Payment,
+    PaymentTransaction,
   ],
 });
