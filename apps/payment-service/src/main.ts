@@ -1,23 +1,22 @@
 import { NestFactory } from '@nestjs/core';
-import { AuthServiceModule } from './auth-service.module';
+import { PaymentServiceModule } from './payment-service.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
-import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
-  const appContext = await NestFactory.createApplicationContext(AuthServiceModule);
+  const appContext = await NestFactory.createApplicationContext(PaymentServiceModule);
   const configService = appContext.get(ConfigService);
   
-  // Microservices setup with env variables
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(AuthServiceModule, {
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(PaymentServiceModule, {
     transport: Transport.TCP,
     options: {
-      host: configService.get('services.auth.host', 'localhost'),
-      port: configService.get('services.auth.port', 3001),
-    }
+      host: configService.get('services.payment.host', 'localhost'),
+      port: configService.get('services.payment.port', 3006),
+    },
   });
-  
+
   // Pipe Validation Setup
   app.useGlobalPipes(new ValidationPipe({
     transform: true,
@@ -34,8 +33,8 @@ async function bootstrap() {
   app.useLogger(logger);
 
   await app.listen();
-  const port = configService.get('services.auth.port', 3001);
-  logger.log(`Auth service is running on port ${port}`);
+  const port = configService.get('services.payment.port', 3006);
+  logger.log(`Payment service is running on port ${port}`);
   
   // Close the app context
   await appContext.close();

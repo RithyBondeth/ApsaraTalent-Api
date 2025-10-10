@@ -51,12 +51,24 @@ import { FacebookAuthController } from './socials/controllers/facebook-auth.cont
     UploadfileModule,
     EmailModule,
     MessageModule,
-    TypeOrmModule.forFeature([ User, Company, Employee, Skill, CareerScope, Benefit, Value, Social, Experience, Education, Job ])
+    TypeOrmModule.forFeature([
+      User,
+      Company,
+      Employee,
+      Skill,
+      CareerScope,
+      Benefit,
+      Value,
+      Social,
+      Experience,
+      Education,
+      Job,
+    ]),
   ],
   controllers: [
-    RegisterController, 
-    LoginController, 
-    ForgotPasswordController, 
+    RegisterController,
+    LoginController,
+    ForgotPasswordController,
     ResetPasswordController,
     RefreshTokenController,
     VerifyEmailController,
@@ -81,7 +93,7 @@ import { FacebookAuthController } from './socials/controllers/facebook-auth.cont
     {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor,
-    }
+    },
   ],
 })
 export class AuthServiceModule {}

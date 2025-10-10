@@ -2,19 +2,20 @@ import { NestFactory } from '@nestjs/core';
 import { ResumeBuilderServiceModule } from './resume-builder-service.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ValidationPipe } from '@nestjs/common';
-import { Logger } from 'nestjs-pino/Logger';
+import { Logger } from 'nestjs-pino';
 import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
+  const appContext = await NestFactory.createApplicationContext(ResumeBuilderServiceModule);
+  const configService = appContext.get(ConfigService);
+  
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(ResumeBuilderServiceModule, {
     transport: Transport.TCP,
     options: {
-      host: '0.0.0.0',
-      port: 3003,
+      host: configService.get('services.resume.host', 'localhost'),
+      port: configService.get('services.resume.port', 3003),
     },
   });
-
-  const configService = app.get(ConfigService);
   
     // Pipe Validation Setup
     app.useGlobalPipes(new ValidationPipe({
@@ -32,7 +33,10 @@ async function bootstrap() {
     app.useLogger(logger);
   
     await app.listen();
-    const port = configService.get('services.resume.port');
+    const port = configService.get('services.resume.port', 3003);
     logger.log(`Resume service is running on port ${port}`);
+    
+    // Close the app context
+    await appContext.close();
 }
 bootstrap();

@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { RESUME_BUILDER_SERVICE } from 'utils/constants/resume-builder-service';
+import { RESUME_BUILDER_SERVICE } from 'utils/constants/resume-builder-service.constant';
 
 @Controller('resume')
 @UseGuards(AuthGuard)
