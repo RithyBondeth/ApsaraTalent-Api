@@ -1,3 +1,4 @@
+import { Company } from '@app/common/database/entities/company/company.entity';
 import { Job } from '@app/common/database/entities/company/job.entity';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
@@ -14,19 +15,22 @@ export class OpenPositionService {
 
   async removeOpenPosition(companyId: string, opId: string): Promise<any> {
     try {
-      const job = await this.jobRepository.findOne({
+      const removedJob = await this.jobRepository.findOne({
         where: { id: opId, company: { id: companyId } },
       });
 
-      if (!job)
+      if (!removedJob)
         throw new RpcException({
           statusCode: 401,
           message: "There's no open position with this id",
         });
 
-      await this.jobRepository.delete(job);
+      this.jobRepository.remove(removedJob);
+      await this.jobRepository.save(removedJob);
 
-      return { message: `${job.title} position was removed successfully` };
+      return {
+        message: `${removedJob.title} position was removed successfully`,
+      };
     } catch (error) {
       // Handle error
       this.logger.error(error.message);
