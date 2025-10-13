@@ -91,7 +91,9 @@ export class UpdateCompanyInfoService {
             });
 
             if (existingJob) {
-              Object.assign(existingJob, jobDto);
+              // Remove id from jobDto to avoid conflicts
+              const { id, ...updateData } = jobDto;
+              Object.assign(existingJob, updateData);
               const saved = await this.jobRepository.save(existingJob);
               updatedJobs.push(saved);
             }
