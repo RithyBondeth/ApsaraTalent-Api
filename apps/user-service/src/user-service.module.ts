@@ -40,6 +40,8 @@ import { SearchEmployeeController } from './controllers/employee-controllers/sea
 import { SearchEmployeeService } from './services/employee-services/search-employee.service';
 import { EmployeeFavoriteCompany } from '@app/common/database/entities/employee/favorite-company.entity';
 import { CompanyFavoriteEmployee } from '@app/common/database/entities/company/favorite-employee.entity';
+import { OpenPositionController } from './controllers/company-controllers/open-position.controller';
+import { OpenPositionService } from './services/company-services/open-position.service';
 
 @Module({
   imports: [
@@ -75,6 +77,7 @@ import { CompanyFavoriteEmployee } from '@app/common/database/entities/company/f
     UploadEmployeeReferenceController,
     SearchEmployeeController,
     UserController,
+    OpenPositionController,
   ],
   providers: [
     UpdateEmployeeInfoService,
@@ -86,6 +89,7 @@ import { CompanyFavoriteEmployee } from '@app/common/database/entities/company/f
     UploadEmployeeReferenceService,
     SearchEmployeeService,
     UserService,
+    OpenPositionService,
     {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor,
