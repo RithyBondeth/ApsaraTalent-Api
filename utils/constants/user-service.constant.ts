@@ -21,6 +21,7 @@ export const USER_SERVICE = {
         REMOVE_COMPANY_COVER: { cmd: 'removeCompanyCover' },
         UPLOAD_COMPANY_IMAGES: { cmd: 'uploadCompanyImage' },
         REMOVE_COMPANY_IMAGES: { cmd: 'removeCompanyImage' },
+        REMOVE_OPEN_POSITION: { cmd: 'removeOpenPosition' },
 
         FIND_ALL: { cmd: 'findAll' },
         FIND_ONE_BY_ID: { cmd: 'findOneById' },

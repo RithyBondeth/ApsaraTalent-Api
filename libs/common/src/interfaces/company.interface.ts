@@ -16,7 +16,12 @@ export interface IUpdateCompanyInfoController {
   updateCompanyInfo(data?: any, body?: any): Promise<any>;
 }
 
+export interface IOpenPositionController {
+  removeOpenPosition(data?: any, body?: any): Promise<any>;
+}
+
 export interface ICompanyController
   extends IFindCompanyController,
     IImageCompanyController,
-    IUpdateCompanyInfoController {}
+    IUpdateCompanyInfoController,
+    IOpenPositionController {}
