@@ -85,7 +85,7 @@ export class UpdateCompanyInfoService {
         const updatedJobs = [];
 
         for (const jobDto of updateCompanyInfoDTO.jobs) {
-          if (jobDto.id) {
+          if (jobDto.id !== null && jobDto.id !== '') {
             const existingJob = await this.jobRepository.findOne({
               where: { id: jobDto.id, company: { id: companyId } },
             });
@@ -97,7 +97,8 @@ export class UpdateCompanyInfoService {
               const saved = await this.jobRepository.save(existingJob);
               updatedJobs.push(saved);
             }
-          } else {
+          }
+          if ((jobDto.id === '' || jobDto.id === null)) {
             const newJob = this.jobRepository.create({
               ...jobDto,
               company,
@@ -107,8 +108,8 @@ export class UpdateCompanyInfoService {
           }
         }
 
-        if(updateCompanyInfoDTO.jobIdsToDelete?.length > 0) {
-            await this.jobRepository.delete(updateCompanyInfoDTO.jobIdsToDelete);   
+        if (updateCompanyInfoDTO.jobIdsToDelete?.length > 0) {
+          await this.jobRepository.delete(updateCompanyInfoDTO.jobIdsToDelete);
         }
 
         // Refresh to get current state

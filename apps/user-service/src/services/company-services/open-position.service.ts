@@ -1,4 +1,3 @@
-import { Company } from '@app/common/database/entities/company/company.entity';
 import { Job } from '@app/common/database/entities/company/job.entity';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
@@ -22,14 +21,14 @@ export class OpenPositionService {
       if (!removedJob)
         throw new RpcException({
           statusCode: 401,
-          message: "There's no open position with this id",
+          message: "There's no open position with this id.",
         });
 
       this.jobRepository.remove(removedJob);
       await this.jobRepository.save(removedJob);
 
       return {
-        message: `${removedJob.title} position was removed successfully`,
+        message: `${removedJob.title} position was removed successfully.`,
       };
     } catch (error) {
       // Handle error
