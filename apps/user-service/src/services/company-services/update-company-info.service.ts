@@ -98,7 +98,7 @@ export class UpdateCompanyInfoService {
               updatedJobs.push(saved);
             }
           }
-          if ((jobDto.id === '' || jobDto.id === null)) {
+          if (jobDto.id === undefined) {
             const newJob = this.jobRepository.create({
               ...jobDto,
               company,
