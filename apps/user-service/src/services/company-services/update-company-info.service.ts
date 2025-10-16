@@ -60,25 +60,111 @@ export class UpdateCompanyInfoService {
 
       // Merge and update relations
       if (updateCompanyInfoDTO.benefits) {
-        const existingBenefits = await this.benefitRepository.findBy({
-          companies: { id: companyId },
+        const updatedBenefits = [];
+
+        for (const benefitDto of updateCompanyInfoDTO.benefits) {
+          if (benefitDto.id) {
+            const existingBenefit = await this.benefitRepository.findOne({
+              where: { id: benefitDto.id, companies: { id: companyId } },
+            });
+
+            if (existingBenefit) {
+              const { id, ...updateData } = benefitDto;
+              Object.assign(existingBenefit, updateData);
+              const saved = await this.benefitRepository.save(existingBenefit);
+              updatedBenefits.push(saved);
+            }
+          }
+          if (benefitDto.id === undefined) {
+            const newBenefit = this.benefitRepository.create({
+              ...benefitDto,
+              companies: [company],
+            });
+            const saved = await this.benefitRepository.save(newBenefit);
+            updatedBenefits.push(saved);
+          }
+        }
+
+        if (updateCompanyInfoDTO.benefitIdsToDelete?.length > 0) {
+          // First, remove the relationship from the company
+          const companyWithBenefits = await this.companyRepository.findOne({
+            where: { id: companyId },
+            relations: ['benefits'],
+          });
+
+          // Filter out the benefits to be deleted
+          companyWithBenefits.benefits = companyWithBenefits.benefits.filter(
+            (benefit) =>
+              !updateCompanyInfoDTO.benefitIdsToDelete.includes(benefit.id),
+          );
+
+          // Save the company (this removes the relationship in junction table)
+          await this.companyRepository.save(companyWithBenefits);
+
+          // Now safely delete the benefits
+          for (const benefitIdsToDelete of updateCompanyInfoDTO.benefitIdsToDelete) {
+            await this.benefitRepository.delete(benefitIdsToDelete);
+          }
+        }
+
+        // Refresh to get current state
+        company.benefits = await this.benefitRepository.find({
+          where: { companies: { id: companyId } },
         });
-        const newBenefits = updateCompanyInfoDTO.benefits.map((benefit) =>
-          this.benefitRepository.create(benefit),
-        );
-        company.benefits = [...existingBenefits, ...newBenefits];
-        await this.benefitRepository.save(newBenefits);
       }
 
       if (updateCompanyInfoDTO.values) {
-        const existingValues = await this.valueRepository.findBy({
-          companies: { id: companyId },
+        const updateValues = [];
+
+        for (const valueDto of updateCompanyInfoDTO.values) {
+          if (valueDto.id) {
+            const existingValue = await this.valueRepository.findOne({
+              where: { id: valueDto.id, companies: { id: companyId } },
+            });
+
+            if (existingValue) {
+              const { id, ...updateData } = valueDto;
+              Object.assign(existingValue, updateData);
+              const saved = await this.valueRepository.save(existingValue);
+              updateValues.push(saved);
+            }
+          }
+          if (valueDto.id === undefined) {
+            const newValue = this.valueRepository.create({
+              ...valueDto,
+              companies: [company],
+            });
+            const saved = await this.valueRepository.save(newValue);
+            updateValues.push(saved);
+          }
+        }
+
+        if (updateCompanyInfoDTO.valueIdsToDelete?.length > 0) {
+          // First, remove the relationship from the company
+          const companyWithValues = await this.companyRepository.findOne({
+            where: { id: companyId },
+            relations: ['values'],
+          });
+
+          // Filter out the values to be deleted
+          companyWithValues.values = companyWithValues.values.filter(
+            (value) =>
+              !updateCompanyInfoDTO.valueIdsToDelete.includes(value.id),
+          );
+
+          // Save the company (this removes the relationship in junction table)
+          await this.companyRepository.save(companyWithValues);
+
+          // Now safely delete the values
+          for (const valueIdToDelete of updateCompanyInfoDTO.valueIdsToDelete) {
+            await this.valueRepository.delete(valueIdToDelete);
+          }
+        }
+
+        // Refresh to get current state
+        company.values = await this.valueRepository.find({
+          where: { companies: { id: companyId } },
         });
-        const newValues = updateCompanyInfoDTO.values.map((value) =>
-          this.valueRepository.create(value),
-        );
-        company.values = [...existingValues, ...newValues];
-        await this.valueRepository.save(newValues);
       }
 
       if (updateCompanyInfoDTO.jobs) {
@@ -106,10 +192,6 @@ export class UpdateCompanyInfoService {
             const saved = await this.jobRepository.save(newJob);
             updatedJobs.push(saved);
           }
-        }
-
-        if (updateCompanyInfoDTO.jobIdsToDelete?.length > 0) {
-          await this.jobRepository.delete(updateCompanyInfoDTO.jobIdsToDelete);
         }
 
         // Refresh to get current state
