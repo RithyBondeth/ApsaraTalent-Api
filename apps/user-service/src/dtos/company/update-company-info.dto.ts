@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsArray, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
+import { IsArray, IsNumber, IsOptional, IsPositive, IsString, ValidateNested } from "class-validator";
 
 export class UpdateCompanyInfoDTO {
     @IsString()
@@ -40,9 +40,13 @@ export class UpdateCompanyInfoDTO {
     @IsOptional()
     jobs?: JobDTO[];
 
-    @IsString()
+    @IsArray()
     @IsOptional()
-    jobIdsToDelete?: string;
+    benefitIdsToDelete?: number[];
+
+    @IsArray()
+    @IsOptional()
+    valueIdsToDelete?: number[];
 
     @IsArray()
     @ValidateNested({ each: true })
@@ -100,12 +104,22 @@ class JobDTO {
 }
 
 class BenefitDTO {
+    @IsNumber()
+    @IsPositive()
+    @IsOptional()
+    id?: number;
+
     @IsString()
     @IsOptional()
     label?: string;
 }
 
 class ValueDTO {
+    @IsNumber()
+    @IsPositive()
+    @IsOptional()
+    id?: number;
+
     @IsString()
     @IsOptional()
     label?: string;
