@@ -49,6 +49,10 @@ export class UpdateCompanyInfoDTO {
     valueIdsToDelete?: number[];
 
     @IsArray()
+    @IsOptional()
+    careerScopeIdsToDelete?: string[];
+
+    @IsArray()
     @ValidateNested({ each: true })
     @Type(() => BenefitDTO)
     @IsOptional()
@@ -126,6 +130,10 @@ class ValueDTO {
 }
 
 class CareerScopeDTO {
+    @IsString()
+    @IsOptional()
+    id?: string;
+    
     @IsString()
     @IsOptional()
     name?: string;

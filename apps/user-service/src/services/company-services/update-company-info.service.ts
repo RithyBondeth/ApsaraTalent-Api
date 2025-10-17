@@ -86,25 +86,18 @@ export class UpdateCompanyInfoService {
         }
 
         if (updateCompanyInfoDTO.benefitIdsToDelete?.length > 0) {
-          // First, remove the relationship from the company
           const companyWithBenefits = await this.companyRepository.findOne({
             where: { id: companyId },
             relations: ['benefits'],
           });
-
-          // Filter out the benefits to be deleted
+        
+          // Just unlink — don't delete from table
           companyWithBenefits.benefits = companyWithBenefits.benefits.filter(
             (benefit) =>
               !updateCompanyInfoDTO.benefitIdsToDelete.includes(benefit.id),
           );
-
-          // Save the company (this removes the relationship in junction table)
+        
           await this.companyRepository.save(companyWithBenefits);
-
-          // Now safely delete the benefits
-          for (const benefitIdsToDelete of updateCompanyInfoDTO.benefitIdsToDelete) {
-            await this.benefitRepository.delete(benefitIdsToDelete);
-          }
         }
 
         // Refresh to get current state
@@ -154,11 +147,6 @@ export class UpdateCompanyInfoService {
 
           // Save the company (this removes the relationship in junction table)
           await this.companyRepository.save(companyWithValues);
-
-          // Now safely delete the values
-          for (const valueIdToDelete of updateCompanyInfoDTO.valueIdsToDelete) {
-            await this.valueRepository.delete(valueIdToDelete);
-          }
         }
 
         // Refresh to get current state
@@ -201,14 +189,51 @@ export class UpdateCompanyInfoService {
       }
 
       if (updateCompanyInfoDTO.careerScopes) {
-        const existingCareerScopes = await this.careerScopeRepository.findBy({
-          companies: { id: companyId },
-        });
-        const newCareerScopes = updateCompanyInfoDTO.careerScopes.map((cs) =>
-          this.careerScopeRepository.create(cs),
-        );
-        company.careerScopes = [...existingCareerScopes, ...newCareerScopes];
-        await this.careerScopeRepository.save(newCareerScopes);
+        const updateCareerScopes = [];
+
+        for (const careerScopeDto of updateCompanyInfoDTO.careerScopes) {
+          if (careerScopeDto.id) {
+            const existingCareerScope =
+              await this.careerScopeRepository.findOne({
+                where: { id: careerScopeDto.id, companies: { id: companyId } },
+              });
+
+            if (existingCareerScope) {
+              const { id, ...updateData } = careerScopeDto;
+              Object.assign(existingCareerScope, updateData);
+              const saved =
+                await this.careerScopeRepository.save(existingCareerScope);
+              updateCareerScopes.push(saved);
+            }
+          }
+
+          if (careerScopeDto.id === undefined) {
+            const newCareerScope = this.careerScopeRepository.create({
+              ...careerScopeDto,
+              companies: [company],
+            });
+            const saved = await this.careerScopeRepository.save(newCareerScope);
+            updateCareerScopes.push(saved);
+          }
+        }
+
+        if (updateCompanyInfoDTO.careerScopeIdsToDelete?.length > 0) {
+          // First, remove the relationship from the company
+          const companyWithCareerScopes = await this.companyRepository.findOne({
+            where: { id: companyId },
+            relations: ['careerScopes'],
+          });
+
+          // Filter out the careerScopes to be delete
+          companyWithCareerScopes.careerScopes =
+            companyWithCareerScopes.careerScopes.filter(
+              (cs) =>
+                !updateCompanyInfoDTO.careerScopeIdsToDelete.includes(cs.id),
+            );
+
+          // Save the company (this removes the relationship in junction table)
+          await this.companyRepository.save(companyWithCareerScopes);
+        }
       }
 
       if (updateCompanyInfoDTO.socials) {
