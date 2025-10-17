@@ -185,7 +185,7 @@ export class MatchingService {
       if (!employeeLiked)
         throw new RpcException({
           message: 'Employee Liked not found',
-          statusCode: 401,
+          statusCode: 404,
         });
 
       return employeeLiked.map(
@@ -212,7 +212,7 @@ export class MatchingService {
       if (!companyLiked)
         throw new RpcException({
           message: 'Company Liked not found',
-          statusCode: 401,
+          statusCode: 404,
         });
 
       return companyLiked.map(
@@ -240,7 +240,7 @@ export class MatchingService {
       if (!currentEmployeeMatching)
         throw new RpcException({
           message: 'There is no matching.',
-          statusCode: 401,
+          statusCode: 404,
         });
 
       return currentEmployeeMatching.map(
@@ -268,7 +268,7 @@ export class MatchingService {
       if (!currentCompanyMatching)
         throw new RpcException({
           message: 'There is no matching.',
-          statusCode: 401,
+          statusCode: 404,
         });
 
       return currentCompanyMatching.map(

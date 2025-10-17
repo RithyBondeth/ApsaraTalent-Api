@@ -265,7 +265,7 @@ export class UserService {
       const careerScopes = await this.careerScopeRepository.find();
       if (!careerScopes)
         throw new RpcException({
-          statusCode: 401,
+          statusCode: 404,
           message: 'No career scopes available!',
         });
 

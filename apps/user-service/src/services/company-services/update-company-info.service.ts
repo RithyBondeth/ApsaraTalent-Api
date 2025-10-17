@@ -52,7 +52,7 @@ export class UpdateCompanyInfoService {
       if (!company)
         throw new RpcException({
           message: 'There is no company with this ID.',
-          statusCode: 401,
+          statusCode: 404,
         });
 
       // Merge new values into existing fields

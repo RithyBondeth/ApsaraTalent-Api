@@ -35,7 +35,7 @@ export class FindCompanyService {
       if (!companies)
         throw new RpcException({
           message: 'There are no companies available.',
-          statusCode: 401,
+          statusCode: 404,
         });
 
       return companies.map((company) => {

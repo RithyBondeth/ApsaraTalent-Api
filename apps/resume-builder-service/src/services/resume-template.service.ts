@@ -23,7 +23,7 @@ export class ResumeTemplateService {
       if (!templates)
         throw new RpcException({
           message: 'There are no templates available.',
-          statusCode: 401,
+          statusCode: 404,
         });
 
       return templates;
@@ -45,7 +45,7 @@ export class ResumeTemplateService {
       if (!template)
         throw new RpcException({
           message: 'There are no templates available with this id.',
-          statusCode: 401,
+          statusCode: 404,
         });
 
       return template;
