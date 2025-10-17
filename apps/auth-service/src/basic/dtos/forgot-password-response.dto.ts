@@ -1,10 +1,10 @@
-import { IsString } from "class-validator";
+import { IsString } from 'class-validator';
 
 export class ForgotPasswordResponseDTO {
-    @IsString()
-    message: string;
+  @IsString()
+  message: string;
 
-    constructor(message: string) {
-        this.message = message;
-    }
+  constructor(message: string) {
+    this.message = message;
+  }
 }

@@ -1,4 +1,3 @@
-import { Company } from '@app/common/database/entities/company/company.entity';
 import { Job } from '@app/common/database/entities/company/job.entity';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
@@ -11,8 +10,6 @@ export class OpenPositionService {
   constructor(
     private readonly logger: PinoLogger,
     @InjectRepository(Job) private readonly jobRepository: Repository<Job>,
-    @InjectRepository(Company)
-    private readonly companyRepository: Repository<Company>,
   ) {}
 
   async removeOpenPosition(companyId: string, opId: string): Promise<any> {

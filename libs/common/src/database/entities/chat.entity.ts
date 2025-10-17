@@ -1,33 +1,43 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import { User } from "./user.entity";
-import { JobMatching } from "./job-matching.entity";
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { User } from './user.entity';
+import { JobMatching } from './job-matching.entity';
 
 @Entity()
 export class Chat {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
-    
-    @ManyToOne(() => User, { onDelete: 'CASCADE' })
-    sender: User;
-    
-    @ManyToOne(() => User, { onDelete: 'CASCADE' })
-    receiver: User;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @ManyToOne(() => JobMatching, { nullable: true, onDelete: 'CASCADE' })
-    jobMatching: JobMatching;
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  sender: User;
 
-    @Column('text')
-    content: string;
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  receiver: User;
 
-    @Column({ default: false })
-    isRead: boolean;
+  @ManyToOne(() => JobMatching, { nullable: true, onDelete: 'CASCADE' })
+  jobMatching: JobMatching;
 
-    @Column({ nullable: true })
-    attachment: string;
+  @Column('text')
+  content: string;
 
-    @Column({ type: 'enum', enum: ['text', 'image', 'document'], default: 'text' })
-    messageType: string;
+  @Column({ default: false })
+  isRead: boolean;
 
-    @CreateDateColumn()
-    sentAt: Date;
+  @Column({ nullable: true })
+  attachment: string;
+
+  @Column({
+    type: 'enum',
+    enum: ['text', 'image', 'document'],
+    default: 'text',
+  })
+  messageType: string;
+
+  @CreateDateColumn()
+  sentAt: Date;
 }

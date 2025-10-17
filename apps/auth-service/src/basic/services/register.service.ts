@@ -223,10 +223,12 @@ export class RegisterService {
         refreshToken: refreshToken,
         user: new UserResponseDTO({
           ...company,
-          employee: company.employee ? new EmployeeResponseDTO({
-            ...company.employee,
-            userId: company.id,
-          }) : undefined,
+          employee: company.employee
+            ? new EmployeeResponseDTO({
+                ...company.employee,
+                userId: company.id,
+              })
+            : undefined,
           company: new CompanyResponseDTO({
             ...company.company,
             openPositions: company.company.openPositions?.map(

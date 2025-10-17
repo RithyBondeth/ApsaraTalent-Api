@@ -1,59 +1,58 @@
 export interface IBasicAuthLoginController {
-    login(loginDTO: any, res: any): Promise<any>;
+  login(loginDTO: any, res: any): Promise<any>;
 }
 
 export interface IBasicAuthForgotPasswordController {
-    forgotPassword(forgotPasswordDTO: any): Promise<any>;
+  forgotPassword(forgotPasswordDTO: any): Promise<any>;
 }
 
 export interface IBasicAuthResetPasswordController {
-    resetPassword(resetPasswordDTO: any, token: string): Promise<any>;
+  resetPassword(resetPasswordDTO: any, token: string): Promise<any>;
 }
 
 export interface IBasicAuthRefreshTokenController {
-    refreshToken(refreshTokenDTO: any, res: any): Promise<any>;
+  refreshToken(refreshTokenDTO: any, res: any): Promise<any>;
 }
 
 export interface IBasicAuthVerifyEmailController {
-    verifyEmail(emailVerificationToken: string): Promise<any>;
+  verifyEmail(emailVerificationToken: string): Promise<any>;
 }
 
 export interface IBasicAuthRegisterController {
-    registerCompany(companyRegisterDTO: any): Promise<any>;
-    registerEmployee(employeeRegisterDTO: any): Promise<any>;
+  registerCompany(companyRegisterDTO: any): Promise<any>;
+  registerEmployee(employeeRegisterDTO: any): Promise<any>;
 }
 
 export interface IBasicAuthLoginOTPController {
-    loginOtp(loginOtpDTO: any): Promise<any>;
-    verifyOtp(verifyOtpDTO: any, res: any): Promise<any>;
+  loginOtp(loginOtpDTO: any): Promise<any>;
+  verifyOtp(verifyOtpDTO: any, res: any): Promise<any>;
 }
 
-export interface IBasicAuthController extends 
-IBasicAuthRegisterController, 
-IBasicAuthLoginController,
-IBasicAuthForgotPasswordController,
-IBasicAuthResetPasswordController,
-IBasicAuthRefreshTokenController,
-IBasicAuthVerifyEmailController,
-IBasicAuthLoginOTPController
-{}
+export interface IBasicAuthController
+  extends IBasicAuthRegisterController,
+    IBasicAuthLoginController,
+    IBasicAuthForgotPasswordController,
+    IBasicAuthResetPasswordController,
+    IBasicAuthRefreshTokenController,
+    IBasicAuthVerifyEmailController,
+    IBasicAuthLoginOTPController {}
 
 export interface IGoogleAuthController {
-    googleAuth(): Promise<any>;
-    googleCallback(req: any, res: any): Promise<any>;
+  googleAuth(): Promise<any>;
+  googleCallback(req: any, res: any): Promise<any>;
 }
 
 export interface ILinkedInAuthController {
-    linkedInAuth(): Promise<any>;
-    linkedInCallback(req: any, res: any): Promise<any>;
+  linkedInAuth(): Promise<any>;
+  linkedInCallback(req: any, res: any): Promise<any>;
 }
 
 export interface IGithubAuthController {
-    githubAuth(): Promise<any>;
-    githubCallback(req: any, res: any): Promise<any>;
+  githubAuth(): Promise<any>;
+  githubCallback(req: any, res: any): Promise<any>;
 }
 
 export interface IFacebookAuthController {
-    facebookAuth(): Promise<any>;
-    facebookCallback(req: any, res: any): Promise<any>;
+  facebookAuth(): Promise<any>;
+  facebookCallback(req: any, res: any): Promise<any>;
 }

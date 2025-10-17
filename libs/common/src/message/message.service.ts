@@ -36,7 +36,8 @@ export class MessageService {
     companyName: string,
     employeeName: string,
   ) {
-    if (!employeePhone || !companyPhone) throw new Error('Missing phone number for employee or company');
+    if (!employeePhone || !companyPhone)
+      throw new Error('Missing phone number for employee or company');
 
     const employeeMsg = `🎉 Match! ${companyName} likes you back. Open the app to chat.`;
     const companyMsg = `🎉 Match! ${employeeName} likes your company.`;

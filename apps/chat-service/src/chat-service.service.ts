@@ -25,18 +25,18 @@ export class ChatServiceService {
         { sender: { id: receiverId }, receiver: { id: senderId } },
       ],
     });
-  
+
     if (existing) {
       return { chatId: existing.id, alreadyExists: true };
     }
-  
+
     const message = this.chatRepository.create({
       sender: { id: senderId },
       receiver: { id: receiverId },
       content: "👋 Let's chat!", // initial message
       messageType: 'text',
     });
-  
+
     const saved = await this.chatRepository.save(message);
     return { chatId: saved.id, alreadyExists: false };
   }
@@ -105,7 +105,7 @@ export class ChatServiceService {
       },
       { isRead: true },
     );
-    
+
     if (result.affected === 0) {
       throw new Error('Message not found or user not authorized');
     }
@@ -115,8 +115,8 @@ export class ChatServiceService {
 
   async getUserByIdForChat(userId: string) {
     return await firstValueFrom(
-      this.userServiceClient.send(USER_SERVICE.ACTIONS.FIND_ONE_BY_ID, userId)
-    )
+      this.userServiceClient.send(USER_SERVICE.ACTIONS.FIND_ONE_BY_ID, userId),
+    );
   }
 
   async validateChatUsers(senderId: string, receiverId: string) {
@@ -125,7 +125,11 @@ export class ChatServiceService {
       this.getUserByIdForChat(receiverId),
     ]);
 
-    if (!sender || !receiver) throw new RpcException({ message: 'One or both users not found', statusCode: 400 });
+    if (!sender || !receiver)
+      throw new RpcException({
+        message: 'One or both users not found',
+        statusCode: 400,
+      });
 
     return {
       sender: sender,

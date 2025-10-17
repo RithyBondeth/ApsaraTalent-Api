@@ -35,7 +35,9 @@ export class ResumeTemplateController implements IResumeTemplateController {
   }
 
   @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.SEARCH_RESUME_TEMPLATE)
-  async searchResumeTemplate(@Payload() searchTemplateDTO: SearchTemplateDTO): Promise<any> {
-      return this.resumeTemplateService.searchResumeTemplate(searchTemplateDTO);
+  async searchResumeTemplate(
+    @Payload() searchTemplateDTO: SearchTemplateDTO,
+  ): Promise<any> {
+    return this.resumeTemplateService.searchResumeTemplate(searchTemplateDTO);
   }
 }

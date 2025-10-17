@@ -23,7 +23,9 @@ export class JobServiceService {
 
   async findAllJobs(): Promise<JobResponseDTO[]> {
     try {
-      const jobs = await this.jobRepo.find({ relations: ['company', 'company.user'] });
+      const jobs = await this.jobRepo.find({
+        relations: ['company', 'company.user'],
+      });
       if (!jobs)
         throw new RpcException({
           message: "There's no job available.",
@@ -58,27 +60,30 @@ export class JobServiceService {
         experienceRequiredMax,
         educationRequired,
       } = searchParams;
-  
+
       const query = this.jobRepo
         .createQueryBuilder('job')
         .leftJoinAndSelect('job.company', 'company')
         .leftJoinAndSelect('company.careerScopes', 'careerScope')
         .leftJoinAndSelect('company.user', 'user');
-  
+
       // Keyword
       if (keyword) {
-        query.where('(job.title LIKE :keyword OR job.description LIKE :keyword)', {
-          keyword: `%${keyword}%`,
-        });
+        query.where(
+          '(job.title LIKE :keyword OR job.description LIKE :keyword)',
+          {
+            keyword: `%${keyword}%`,
+          },
+        );
       }
-  
+
       // Location
       if (location) {
         query.andWhere('company.location LIKE :location', {
           location: `%${location}%`,
         });
       }
-  
+
       // Company size
       if (companySizeMin || companySizeMax) {
         query.andWhere('company.companySize BETWEEN :min AND :max', {
@@ -86,25 +91,27 @@ export class JobServiceService {
           max: companySizeMax || 2147483647,
         });
       }
-  
+
       // Dates
       if (postedDateFrom || postedDateTo) {
-        const fromDate = postedDateFrom ? new Date(postedDateFrom) : new Date(0);
+        const fromDate = postedDateFrom
+          ? new Date(postedDateFrom)
+          : new Date(0);
         const toDate = postedDateTo ? new Date(postedDateTo) : new Date();
-  
+
         query.andWhere('job.createdAt BETWEEN :from AND :to', {
           from: fromDate,
           to: toDate,
         });
       }
-  
+
       // Job type
       if (jobType) {
-        query.andWhere('job.type LIKE :type', { 
-          type: `%${jobType}%`
+        query.andWhere('job.type LIKE :type', {
+          type: `%${jobType}%`,
         });
       }
-  
+
       // Experience range
       if (experienceRequiredMin !== undefined) {
         query.andWhere('job.experienceRequired >= :minExp', {
@@ -112,57 +119,59 @@ export class JobServiceService {
         });
       }
 
-      if(experienceRequiredMax !== undefined) {
+      if (experienceRequiredMax !== undefined) {
         query.andWhere('job.experienceRequired <= :maxExp', {
           maxExp: experienceRequiredMax,
         });
       }
-  
+
       // Education
       if (educationRequired) {
         query.andWhere(
-          'LOWER(job.educationRequired) LIKE :education',   // MySQL / SQLite / generic
+          'LOWER(job.educationRequired) LIKE :education', // MySQL / SQLite / generic
           // For PostgreSQL you can shorten to:  'job.educationRequired ILIKE :education'
           { education: `%${educationRequired.toLowerCase()}%` },
         );
       }
-  
+
       // Career scopes
       if (careerScopes && careerScopes.length > 0) {
-        query.andWhere('careerScope.name IN (:...careerScopes)', { careerScopes });
+        query.andWhere('careerScope.name IN (:...careerScopes)', {
+          careerScopes,
+        });
       }
-  
+
       // Sorting
       const validSortFields = ['createdAt', 'title', 'companySize'];
       const sortField = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
-  
+
       if (sortField === 'companySize') {
         query.orderBy(`company.${sortField}`, sortOrder as 'ASC' | 'DESC');
       } else {
         query.orderBy(`job.${sortField}`, sortOrder as 'ASC' | 'DESC');
       }
-  
+
       let jobs = await query.getMany();
 
       // Post-query salary filtering
       if (salaryMin !== undefined || salaryMax !== undefined) {
         const min = salaryMin ?? 0;
         const max = salaryMax ?? Number.MAX_SAFE_INTEGER;
-      
+
         jobs = jobs.filter((job) => {
           if (!job.salary) return false;
           const [jobMin, jobMax] = extractSalaryRange(job.salary);
           return jobMin <= max && jobMax >= min;
         });
       }
-  
+
       if (!jobs.length) {
         throw new RpcException({
           message: 'No jobs found matching your criteria.',
           statusCode: 404,
         });
       }
-  
+
       return jobs.map((job) => new JobResponseDTO(job));
     } catch (error) {
       this.logger.error(error.message);

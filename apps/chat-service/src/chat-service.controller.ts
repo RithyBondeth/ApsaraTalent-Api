@@ -11,7 +11,7 @@ export class ChatServiceController {
   async createOrGetChat(
     @Payload() data: { senderId: string; receiverId: string },
   ) {
-    console.log("Inside Chat Service");
+    console.log('Inside Chat Service');
     return this.chatService.createOrGetChat(data.senderId, data.receiverId);
   }
 

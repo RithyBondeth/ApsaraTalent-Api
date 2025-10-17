@@ -130,7 +130,7 @@ export class CompanyController implements ICompanyController {
   ) {
     const payload = { companyId, opId };
     return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.REMOVE_OPEN_POSITION, payload)
+      this.userClient.send(USER_SERVICE.ACTIONS.REMOVE_OPEN_POSITION, payload),
     );
   }
 }

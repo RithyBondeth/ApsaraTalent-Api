@@ -76,8 +76,8 @@ export class JobMatchingController implements IMatchingController {
     return firstValueFrom(
       this.jobClient.send(
         JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_MATCHING,
-        payload
-      )
+        payload,
+      ),
     );
   }
 
@@ -89,8 +89,8 @@ export class JobMatchingController implements IMatchingController {
     return firstValueFrom(
       this.jobClient.send(
         JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_MATCHING,
-        payload
-      )
+        payload,
+      ),
     );
   }
 }

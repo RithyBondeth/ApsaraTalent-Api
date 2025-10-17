@@ -5,17 +5,17 @@ import { jwtConfig } from './config/jwt.config';
 import { JwtService } from './jwt.service';
 
 @Module({
-    imports: [
-        ConfigModule.forRoot({
-            isGlobal: true,
-            envFilePath: './libs/.env',
-        }),
-        NestJwtModule.registerAsync({
-            inject: [ConfigService],
-            useFactory: jwtConfig,
-        })
-    ],
-    providers: [JwtService],
-    exports: [JwtService]
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: './libs/.env',
+    }),
+    NestJwtModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: jwtConfig,
+    }),
+  ],
+  providers: [JwtService],
+  exports: [JwtService],
 })
 export class JwtModule {}

@@ -25,7 +25,7 @@ import { User } from '@app/common/database/entities/user.entity';
     ]),
     UploadfileModule,
     JwtModule,
-    TypeOrmModule.forFeature([User])
+    TypeOrmModule.forFeature([User]),
   ],
   controllers: [ResumeBuilderController, ResumeTemplateController],
 })

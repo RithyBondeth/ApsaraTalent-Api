@@ -1,38 +1,46 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import { Company } from "./company.entity";
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { Company } from './company.entity';
 
 @Entity()
 export class Job {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @ManyToOne(() => Company, (company) => company.openPositions, { onDelete: 'CASCADE' })
-    company: Company;
+  @ManyToOne(() => Company, (company) => company.openPositions, {
+    onDelete: 'CASCADE',
+  })
+  company: Company;
 
-    @Column()
-    title: string;
+  @Column()
+  title: string;
 
-    @Column('text')
-    description: string;
-    
-    @Column()
-    type: string;
-    
-    @Column()
-    experienceRequired: string;
+  @Column('text')
+  description: string;
 
-    @Column()
-    educationRequired: string;
+  @Column()
+  type: string;
 
-    @Column()
-    skillsRequired: string;
+  @Column()
+  experienceRequired: string;
 
-    @Column({ nullable: true })
-    salary: string;
-    
-    @Column({ nullable: true })
-    expireDate: Date;
+  @Column()
+  educationRequired: string;
 
-    @CreateDateColumn()
-    createdAt: Date;   
+  @Column()
+  skillsRequired: string;
+
+  @Column({ nullable: true })
+  salary: string;
+
+  @Column({ nullable: true })
+  expireDate: Date;
+
+  @CreateDateColumn()
+  createdAt: Date;
 }

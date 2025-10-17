@@ -1,23 +1,25 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import { Employee } from "./employee.entity";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Employee } from './employee.entity';
 
 @Entity()
 export class Experience {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @ManyToOne(() => Employee, (employee) => employee.experiences, { onDelete: 'CASCADE' })
-    employee: Employee;
+  @ManyToOne(() => Employee, (employee) => employee.experiences, {
+    onDelete: 'CASCADE',
+  })
+  employee: Employee;
 
-    @Column()
-    title: string;
+  @Column()
+  title: string;
 
-    @Column()
-    description: string;
+  @Column()
+  description: string;
 
-    @Column()
-    startDate: Date;
+  @Column()
+  startDate: Date;
 
-    @Column({ nullable: true })
-    endDate: Date;
-}   
+  @Column({ nullable: true })
+  endDate: Date;
+}

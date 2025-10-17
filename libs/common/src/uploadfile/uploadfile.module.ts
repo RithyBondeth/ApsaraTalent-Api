@@ -4,12 +4,12 @@ import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ 
+    ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: './libs/.env',
     }),
   ],
   providers: [UploadfileService],
-  exports: [UploadfileService]
+  exports: [UploadfileService],
 })
 export class UploadfileModule {}

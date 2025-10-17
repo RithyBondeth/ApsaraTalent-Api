@@ -1,21 +1,25 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import { Employee } from "./employee/employee.entity";
-import { Company } from "./company/company.entity";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Employee } from './employee/employee.entity';
+import { Company } from './company/company.entity';
 
 @Entity()
 export class Social {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
-    
-    @Column()
-    platform: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column()
-    url: string;
+  @Column()
+  platform: string;
 
-    @ManyToOne(() => Employee, (employee) => employee.socials, { onDelete: 'CASCADE' })
-    employee: Employee;
+  @Column()
+  url: string;
 
-    @ManyToOne(() => Company, (company) => company.socials, { onDelete: 'CASCADE' })
-    company: Company;   
+  @ManyToOne(() => Employee, (employee) => employee.socials, {
+    onDelete: 'CASCADE',
+  })
+  employee: Employee;
+
+  @ManyToOne(() => Company, (company) => company.socials, {
+    onDelete: 'CASCADE',
+  })
+  company: Company;
 }

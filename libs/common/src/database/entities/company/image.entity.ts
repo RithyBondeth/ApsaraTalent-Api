@@ -1,20 +1,29 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
-import { Company } from "./company.entity";
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { Company } from './company.entity';
 
 @Entity()
 export class Image {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
-    
-    @Column({ nullable: true })
-    image: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @ManyToOne(() => Company, (company) => company.images, { onDelete: 'CASCADE' })
-    company: Company;
+  @Column({ nullable: true })
+  image: string;
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @ManyToOne(() => Company, (company) => company.images, {
+    onDelete: 'CASCADE',
+  })
+  company: Company;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }
