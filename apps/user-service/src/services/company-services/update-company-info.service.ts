@@ -90,13 +90,13 @@ export class UpdateCompanyInfoService {
             where: { id: companyId },
             relations: ['benefits'],
           });
-        
+
           // Just unlink — don't delete from table
           companyWithBenefits.benefits = companyWithBenefits.benefits.filter(
             (benefit) =>
               !updateCompanyInfoDTO.benefitIdsToDelete.includes(benefit.id),
           );
-        
+
           await this.companyRepository.save(companyWithBenefits);
         }
 
@@ -237,14 +237,48 @@ export class UpdateCompanyInfoService {
       }
 
       if (updateCompanyInfoDTO.socials) {
-        const existingSocials = await this.socialRepository.findBy({
-          company: { id: companyId },
-        });
-        const newSocials = updateCompanyInfoDTO.socials.map((social) =>
-          this.socialRepository.create(social),
-        );
-        company.socials = [...existingSocials, ...newSocials];
-        await this.socialRepository.save(newSocials);
+        const updateSocials = [];
+
+        for (const socialDto of updateCompanyInfoDTO.socials) {
+          if (socialDto.id) {
+            const existingSocial = await this.socialRepository.findOne({
+              where: { id: socialDto.id, company: { id: companyId } },
+            });
+
+            if (existingSocial) {
+              const { id, ...updateData } = socialDto;
+              Object.assign(existingSocial, updateData);
+              const saved = await this.socialRepository.save(existingSocial);
+              updateSocials.push(saved);
+            }
+          }
+
+          if (socialDto.id === undefined) {
+            const newSocial = this.socialRepository.create({
+              ...socialDto,
+              company: company,
+            });
+            const saved = await this.socialRepository.save(newSocial);
+            updateSocials.push(saved);
+          }
+        }
+
+        if (updateCompanyInfoDTO.socialIdsToDelete?.length > 0) {
+          // First, remove the relationship from the company
+          const companyWithSocials = await this.companyRepository.findOne({
+            where: { id: companyId },
+            relations: ['socials'],
+          });
+
+          // Filter out the social to be delete
+          companyWithSocials.socials = companyWithSocials.socials.filter(
+            (social) =>
+              !updateCompanyInfoDTO.socialIdsToDelete.includes(social.id),
+          );
+
+          // Saved the company (this remove the relationship in junction table)
+          await this.companyRepository.save(companyWithSocials);
+        }
       }
 
       // Save updated company entity

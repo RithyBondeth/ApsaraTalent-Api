@@ -53,6 +53,10 @@ export class UpdateCompanyInfoDTO {
     careerScopeIdsToDelete?: string[];
 
     @IsArray()
+    @IsOptional()
+    socialIdsToDelete?: string[];
+
+    @IsArray()
     @ValidateNested({ each: true })
     @Type(() => BenefitDTO)
     @IsOptional()
@@ -144,6 +148,10 @@ class CareerScopeDTO {
 }
 
 class SocialDTO {
+    @IsString()
+    @IsOptional()
+    id?: string; 
+    
     @IsString()
     @IsOptional()
     platform?: string;
