@@ -213,10 +213,10 @@ export class ImageCompanyService {
     }
   }
 
-  async removeCompanyImage(imageId: string) {
+  async removeCompanyImage(companyId: string, imageId: string) {
     try {
       const image = await this.imageRepository.findOne({
-        where: { id: imageId },
+        where: { id: imageId, company: { id: companyId } },
       });
       if (!image)
         throw new RpcException({

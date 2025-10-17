@@ -18,12 +18,7 @@ import { BakongLoggingInterceptor } from './interceptors/bakong.interceptor';
     ConfigModule,
     LoggerModule,
     DatabaseModule,
-    TypeOrmModule.forFeature([
-      Payment,
-      PaymentTransaction,
-      User,
-      Company,
-    ]),
+    TypeOrmModule.forFeature([Payment, PaymentTransaction, User, Company]),
   ],
   controllers: [PaymentServiceController],
   providers: [

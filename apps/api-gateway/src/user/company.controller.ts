@@ -115,9 +115,12 @@ export class CompanyController implements ICompanyController {
     );
   }
 
-  @Delete('remove-images/:imageId')
-  async removeCompanyImage(@Param('imageId', ParseUUIDPipe) imageId: string) {
-    const payload = { imageId };
+  @Delete('remove-images/:companyId/:imageId')
+  async removeCompanyImage(
+    @Param('companyId', ParseUUIDPipe) companyId: string,
+    @Param('imageId', ParseUUIDPipe) imageId: string,
+  ) {
+    const payload = { companyId, imageId };
     return firstValueFrom(
       this.userClient.send(USER_SERVICE.ACTIONS.REMOVE_COMPANY_IMAGES, payload),
     );

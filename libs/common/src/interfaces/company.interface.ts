@@ -9,7 +9,7 @@ export interface IImageCompanyController {
   uploadCompanyCover(data?: any, file?: any): Promise<any>;
   removeCompanyCover(data?: any): Promise<any>;
   uploadCompanyImages(data?: any, file?: any): Promise<any>;
-  removeCompanyImage(data?: any): Promise<any>;
+  removeCompanyImage(data1?: any, data2?: any): Promise<any>;
 }
 
 export interface IUpdateCompanyInfoController {
