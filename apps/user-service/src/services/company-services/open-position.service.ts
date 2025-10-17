@@ -23,7 +23,7 @@ export class OpenPositionService {
 
       if (!removedJob)
         throw new RpcException({
-          statusCode: 401,
+          statusCode: 404,
           message: "There's no open position with this id.",
         });
 

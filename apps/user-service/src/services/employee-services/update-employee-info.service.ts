@@ -50,7 +50,11 @@ export class UpdateEmployeeInfoService {
           'educations',
         ],
       });
-      if (!employee) throw new RpcException({ message: "There is no employee with this ID.", statusCode: 401 });
+      if (!employee)
+        throw new RpcException({
+          message: 'There is no employee with this ID.',
+          statusCode: 404,
+        });
 
       // Merge new values into existing fields
       Object.assign(employee, updateEmployeeInfoDTO);
@@ -121,7 +125,10 @@ export class UpdateEmployeeInfoService {
     } catch (error) {
       // Handle error
       this.logger.error(error.message);
-      throw new RpcException({ message: "An error occurred while updating the employee's information.", statusCode: 500 });
+      throw new RpcException({
+        message: "An error occurred while updating the employee's information.",
+        statusCode: 500,
+      });
     }
   }
 }

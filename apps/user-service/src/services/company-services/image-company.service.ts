@@ -35,7 +35,7 @@ export class ImageCompanyService {
 
         throw new RpcException({
           message: 'There is no company with this ID',
-          statusCode: 401,
+          statusCode: 404,
         });
       }
 
@@ -76,7 +76,7 @@ export class ImageCompanyService {
       if (!company)
         throw new RpcException({
           message: 'There is no company with this ID',
-          statusCode: 401,
+          statusCode: 404,
         });
 
       if (company.avatar) {
@@ -111,7 +111,7 @@ export class ImageCompanyService {
       if (!company)
         throw new RpcException({
           message: 'There is no company with this ID',
-          statusCode: 401,
+          statusCode: 404,
         });
 
       if (company.cover) {
@@ -150,7 +150,7 @@ export class ImageCompanyService {
       if (!company)
         throw new RpcException({
           message: 'There is no company with this ID',
-          statusCode: 401,
+          statusCode: 404,
         });
 
       if (company.cover) {
@@ -186,7 +186,7 @@ export class ImageCompanyService {
       if (!company)
         throw new RpcException({
           message: 'There is no company with this ID',
-          statusCode: 401,
+          statusCode: 404,
         });
 
       const imageUrls = images.map((image) =>
@@ -221,7 +221,7 @@ export class ImageCompanyService {
       if (!image)
         throw new RpcException({
           message: "There's no image with ID",
-          statusCode: 401,
+          statusCode: 404,
         });
 
       // Delete file from disk
