@@ -1,9 +1,5 @@
 import { User } from '@app/common/database/entities/user.entity';
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
@@ -16,11 +12,14 @@ import {
 import { EmployeeFavoriteCompany } from '@app/common/database/entities/employee/favorite-company.entity';
 import { RpcException } from '@nestjs/microservices';
 import { CompanyFavoriteEmployee } from '@app/common/database/entities/company/favorite-employee.entity';
+import { CareerScope } from '@app/common/database/entities/career-scope.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @InjectRepository(CareerScope)
+    private readonly careerScopeRepository: Repository<CareerScope>,
     @InjectRepository(EmployeeFavoriteCompany)
     private readonly empFavoriteCmp: Repository<EmployeeFavoriteCompany>,
     @InjectRepository(CompanyFavoriteEmployee)
@@ -46,13 +45,19 @@ export class UserService {
           'company.images',
         ],
       });
-      if (!users) throw new NotFoundException('There are no users available');
+      if (!users)
+        throw new RpcException({
+          statusCode: 404,
+          message: 'There are no users available!',
+        });
 
       return users.map(
         (user) =>
           new UserResponseDTO({
             ...user,
-            employee: user.employee ? new EmployeeResponseDTO(user.employee) : undefined,
+            employee: user.employee
+              ? new EmployeeResponseDTO(user.employee)
+              : undefined,
             company: new CompanyResponseDTO({
               ...user.company,
               openPositions: user.company?.openPositions?.map(
@@ -64,9 +69,10 @@ export class UserService {
     } catch (error) {
       //Handle errors
       this.logger.error(error.message);
-      throw new BadRequestException(
-        'An error occurred while fetching all users.',
-      );
+      throw new RpcException({
+        statusCode: 500,
+        message: 'An error occurred while finding all the users.',
+      });
     }
   }
 
@@ -91,11 +97,16 @@ export class UserService {
         ],
       });
       if (!user)
-        throw new NotFoundException(`There is no user with ID ${userId}`);
+        throw new RpcException({
+          statusCode: 404,
+          message: 'There is no user with this id!',
+        });
 
       return new UserResponseDTO({
         ...user,
-        employee: user.employee ? new EmployeeResponseDTO(user.employee) : undefined,
+        employee: user.employee
+          ? new EmployeeResponseDTO(user.employee)
+          : undefined,
         company: new CompanyResponseDTO({
           ...user.company,
           openPositions: user.company?.openPositions?.map(
@@ -106,99 +117,166 @@ export class UserService {
     } catch (error) {
       //Handle errors
       this.logger.error(error.message);
-      throw new BadRequestException('An error occurred while fetching a user.');
+      throw new RpcException({
+        statusCode: 500,
+        message: 'An error occurred while finding user by id.',
+      });
     }
   }
 
   async employeeFavoriteCompany(eid: string, cid: string) {
-    const exists = await this.empFavoriteCmp.findOne({
-      where: {
+    try {
+      const exists = await this.empFavoriteCmp.findOne({
+        where: {
+          employee: { id: eid },
+          company: { id: cid },
+        },
+      });
+
+      if (exists)
+        throw new RpcException({
+          statusCode: 404,
+          message: 'Already favorite!',
+        });
+
+      const favorite = this.empFavoriteCmp.create({
         employee: { id: eid },
         company: { id: cid },
-      },
-    });
+      });
 
-    if (exists)
-      throw new RpcException({ statusCode: 401, message: 'Already favorite' });
+      await this.empFavoriteCmp.save(favorite);
 
-    const favorite = this.empFavoriteCmp.create({
-      employee: { id: eid },
-      company: { id: cid },
-    });
-
-    await this.empFavoriteCmp.save(favorite);
-
-    return { message: 'Successfully added employee to favorite' };
+      return { message: 'Successfully added employee to favorite' };
+    } catch (error) {
+      this.logger.error(error.message);
+      throw new RpcException({
+        statusCode: 500,
+        message: 'An error occurred while favorite company by employee.',
+      });
+    }
   }
 
   async companyFavoriteEmployee(cid: string, eid: string) {
-    const exists = await this.cmpFavoriteEmp.findOne({
-      where: {
+    try {
+      const exists = await this.cmpFavoriteEmp.findOne({
+        where: {
+          employee: { id: eid },
+          company: { id: cid },
+        },
+      });
+
+      if (exists)
+        throw new RpcException({
+          statusCode: 404,
+          message: 'Already favorite',
+        });
+
+      const favorite = this.cmpFavoriteEmp.create({
         employee: { id: eid },
         company: { id: cid },
-      },
-    });
+      });
 
-    if (exists)
-      throw new RpcException({ statusCode: 401, message: 'Already favorite' });
+      await this.cmpFavoriteEmp.save(favorite);
 
-    const favorite = this.cmpFavoriteEmp.create({
-      employee: { id: eid },
-      company: { id: cid },
-    });
-
-    await this.cmpFavoriteEmp.save(favorite);
-
-    return { message: 'Successfully added company to favorite' };
+      return { message: 'Successfully added company to favorite' };
+    } catch (error) {
+      this.logger.error(error.message);
+      throw new RpcException({
+        statusCode: 500,
+        message: 'An error occurred while favorite employee by company.',
+      });
+    }
   }
 
   async findAllEmployeeFavorites(eid: string) {
-    const allFavorites = await this.empFavoriteCmp.find({ 
-      where: { employee: { id: eid } },
-      relations: ['company.openPositions'],
-    });
+    try {
+      const allFavorites = await this.empFavoriteCmp.find({
+        where: { employee: { id: eid } },
+        relations: ['company.openPositions'],
+      });
 
-    if(!allFavorites) 
-      throw new RpcException({ statusCode: 401, message: 'There are no favorites' }); 
-    
-    const allFavoritesWithUsersId = await Promise.all(
-      allFavorites.map(async (favorite) => {
-        const user = await this.userRepository.findOne({
-          where: {
-            company: {
-              id: favorite.company.id,
-            }
-          }
+      if (!allFavorites)
+        throw new RpcException({
+          statusCode: 404,
+          message: 'There are no favorites',
         });
-        return { ...favorite, userId: user.id }
-      })
-    );
 
-    return allFavoritesWithUsersId;
+      const allFavoritesWithUsersId = await Promise.all(
+        allFavorites.map(async (favorite) => {
+          const user = await this.userRepository.findOne({
+            where: {
+              company: {
+                id: favorite.company.id,
+              },
+            },
+          });
+          return { ...favorite, userId: user.id };
+        }),
+      );
+
+      return allFavoritesWithUsersId;
+    } catch (error) {
+      this.logger.error(error.message);
+      throw new RpcException({
+        statusCode: 500,
+        message: 'An error occurred while finding all employee favorites.',
+      });
+    }
   }
 
   async findAllCompanyFavorites(cid: string) {
-    const allFavorites = await this.cmpFavoriteEmp.find({ 
-      where: { company: { id: cid } },
-      relations: ['employee.skills']
-    });
+    try {
+      const allFavorites = await this.cmpFavoriteEmp.find({
+        where: { company: { id: cid } },
+        relations: ['employee.skills'],
+      });
 
-    if(!allFavorites) 
-      throw new RpcException({ statusCode: 401, message: 'There are no favorites' }); 
-
-    const allFavoritesWithUserId = await Promise.all(
-      allFavorites.map(async (favorite) => {
-        const user = await this.userRepository.findOne({
-          where: {
-            employee: {
-              id: favorite.employee.id,
-            }
-          }
+      if (!allFavorites)
+        throw new RpcException({
+          statusCode: 404,
+          message: 'There are no favorites',
         });
-        return { ...favorite, userId: user.id }
-      })
-    )
-      
-    return allFavoritesWithUserId;
+
+      const allFavoritesWithUserId = await Promise.all(
+        allFavorites.map(async (favorite) => {
+          const user = await this.userRepository.findOne({
+            where: {
+              employee: {
+                id: favorite.employee.id,
+              },
+            },
+          });
+          return { ...favorite, userId: user.id };
+        }),
+      );
+
+      return allFavoritesWithUserId;
+    } catch (error) {
+      this.logger.error(error.message);
+      throw new RpcException({
+        statusCode: 500,
+        message: 'An error occurred while finding all company favorites.',
+      });
+    }
+  }
+
+  async findAllCareerScopes(): Promise<Partial<CareerScope[]>> {
+    try {
+      const careerScopes = await this.careerScopeRepository.find();
+      if (!careerScopes)
+        throw new RpcException({
+          statusCode: 401,
+          message: 'No career scopes available!',
+        });
+
+      return careerScopes;
+    } catch (error) {
+      // Handle error
+      this.logger.error(error.message);
+      throw new RpcException({
+        message: 'An error occurred while finding all the career scopes.',
+        statusCode: 500,
+      });
+    }
   }
 }
