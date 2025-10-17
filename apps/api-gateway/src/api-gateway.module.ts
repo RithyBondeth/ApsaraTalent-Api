@@ -16,10 +16,10 @@ import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
-    ConfigModule, 
-    LoggerModule, 
-    AuthModule, 
-    UploadfileModule, 
+    ConfigModule,
+    LoggerModule,
+    AuthModule,
+    UploadfileModule,
     TerminusModule,
     ResumeBuilderModule,
     ServeStaticModule.forRoot({
@@ -30,15 +30,14 @@ import { PaymentModule } from './payment/payment.module';
     JwtModule,
     ChatModule,
     JobModule,
-    PaymentModule
+    PaymentModule,
   ],
   controllers: [HealthController],
   providers: [
     {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor,
-     
-    }
+    },
   ],
 })
 export class ApiGatewayModule {}

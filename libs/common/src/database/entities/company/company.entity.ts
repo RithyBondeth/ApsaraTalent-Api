@@ -1,73 +1,86 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
-import { Benefit } from "./benefit.entity";
-import { Value } from "./value.entity";
-import { Job } from "./job.entity";
-import { User } from "../user.entity";
-import { Social } from "../social.entity";
-import { CareerScope } from "../career-scope.entity";
-import { Image } from "./image.entity";
-import { CompanyFavoriteEmployee } from "./favorite-employee.entity";
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  JoinTable,
+  ManyToMany,
+  OneToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { Benefit } from './benefit.entity';
+import { Value } from './value.entity';
+import { Job } from './job.entity';
+import { User } from '../user.entity';
+import { Social } from '../social.entity';
+import { CareerScope } from '../career-scope.entity';
+import { Image } from './image.entity';
+import { CompanyFavoriteEmployee } from './favorite-employee.entity';
 
 @Entity()
 export class Company {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @OneToOne(() => User, (user) => user.company, { onDelete: 'CASCADE' })
-    @JoinColumn()
-    user: User;
+  @OneToOne(() => User, (user) => user.company, { onDelete: 'CASCADE' })
+  @JoinColumn()
+  user: User;
 
-    @Column()
-    name: string; 
+  @Column()
+  name: string;
 
-    @Column('text')
-    description: string;
+  @Column('text')
+  description: string;
 
-    @Column({ nullable: true })
-    phone: string;
-    
-    @Column({ nullable: true })
-    avatar: string;
+  @Column({ nullable: true })
+  phone: string;
 
-    @Column({ nullable: true })
-    cover: string;
+  @Column({ nullable: true })
+  avatar: string;
 
-    @OneToMany(() => Image, (image) => image.company, { cascade: true })
-    images: Image[];
+  @Column({ nullable: true })
+  cover: string;
 
-    @Column()
-    companySize: number;
+  @OneToMany(() => Image, (image) => image.company, { cascade: true })
+  images: Image[];
 
-    @Column()
-    industry: string;
+  @Column()
+  companySize: number;
 
-    @Column()
-    location: string;
-    
-    @Column()
-    foundedYear: number;
+  @Column()
+  industry: string;
 
-    @OneToMany(() => Job, (job) => job.company, { cascade: true })
-    openPositions: Job[];
+  @Column()
+  location: string;
 
-    @ManyToMany(() => Benefit, (benefit) => benefit.companies)
-    @JoinTable()
-    benefits: Benefit[];
+  @Column()
+  foundedYear: number;
 
-    @ManyToMany(() => Value, (value) => value.companies)
-    @JoinTable()
-    values: Value[];
+  @OneToMany(() => Job, (job) => job.company, { cascade: true })
+  openPositions: Job[];
 
-    @ManyToMany(() => CareerScope, (careerScope) => careerScope.companies)
-    @JoinTable()
-    careerScopes: CareerScope[];
+  @ManyToMany(() => Benefit, (benefit) => benefit.companies)
+  @JoinTable()
+  benefits: Benefit[];
 
-    @OneToMany(() => CompanyFavoriteEmployee, (cmpFavoriteEmp) => cmpFavoriteEmp.company)
-    favorites: CompanyFavoriteEmployee[];    
+  @ManyToMany(() => Value, (value) => value.companies)
+  @JoinTable()
+  values: Value[];
 
-    @OneToMany(() => Social, (social) => social.company, { cascade: true })
-    socials: Social[];  
+  @ManyToMany(() => CareerScope, (careerScope) => careerScope.companies)
+  @JoinTable()
+  careerScopes: CareerScope[];
 
-    @CreateDateColumn()
-    createdAt: Date;
-}   
+  @OneToMany(
+    () => CompanyFavoriteEmployee,
+    (cmpFavoriteEmp) => cmpFavoriteEmp.company,
+  )
+  favorites: CompanyFavoriteEmployee[];
+
+  @OneToMany(() => Social, (social) => social.company, { cascade: true })
+  socials: Social[];
+
+  @CreateDateColumn()
+  createdAt: Date;
+}

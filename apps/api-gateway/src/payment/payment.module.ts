@@ -15,13 +15,13 @@ import { DatabaseModule } from '@app/common';
           options: {
             host: configService.get<string>('services.payment.host'),
             port: configService.get<number>('services.payment.port'),
-          }
+          },
         }),
         inject: [ConfigService],
       },
     ]),
     DatabaseModule,
   ],
-  controllers: [PaymentController]
+  controllers: [PaymentController],
 })
 export class PaymentModule {}

@@ -1,4 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+  Index,
+} from 'typeorm';
 import { User } from '../user.entity';
 import { Company } from '../company/company.entity';
 import { PaymentTransaction, Currency } from './payment-transaction.entity';
@@ -121,7 +131,7 @@ export class Payment {
   company: Company;
 
   // Transactions related to this payment
-  @OneToMany(() => PaymentTransaction, transaction => transaction.payment)
+  @OneToMany(() => PaymentTransaction, (transaction) => transaction.payment)
   transactions: PaymentTransaction[];
 
   // Metadata

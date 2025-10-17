@@ -1,4 +1,10 @@
-import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
+import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  Logger,
+  NestInterceptor,
+} from '@nestjs/common';
 import { catchError, Observable, tap } from 'rxjs';
 
 @Injectable()
@@ -37,10 +43,10 @@ export class BakongLoggingInterceptor implements NestInterceptor {
     if (!data || typeof data !== 'object') return data;
 
     const sanitized = { ...data };
-    
+
     // Remove or mask sensitive fields
     const sensitiveFields = ['developerToken', 'apiKey', 'secret'];
-    sensitiveFields.forEach(field => {
+    sensitiveFields.forEach((field) => {
       if (sanitized[field]) {
         sanitized[field] = '***masked***';
       }
@@ -54,5 +60,3 @@ export class BakongLoggingInterceptor implements NestInterceptor {
     return sanitized;
   }
 }
-
-

@@ -1,4 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from 'typeorm';
 import { Payment } from './payment.entity';
 import { User } from '../user.entity';
 
@@ -39,7 +48,9 @@ export class PaymentTransaction {
   @Column({ name: 'payment_id', type: 'uuid' })
   paymentId: string;
 
-  @ManyToOne(() => Payment, payment => payment.transactions, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Payment, (payment) => payment.transactions, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'payment_id' })
   payment: Payment;
 
@@ -69,20 +80,49 @@ export class PaymentTransaction {
   currency: Currency;
 
   // Fee information
-  @Column({ name: 'fee_amount', type: 'decimal', precision: 15, scale: 2, nullable: true })
+  @Column({
+    name: 'fee_amount',
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    nullable: true,
+  })
   feeAmount: number;
 
-  @Column({ name: 'net_amount', type: 'decimal', precision: 15, scale: 2, nullable: true })
+  @Column({
+    name: 'net_amount',
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    nullable: true,
+  })
   netAmount: number;
 
   // Exchange rate if currency conversion occurred
-  @Column({ name: 'exchange_rate', type: 'decimal', precision: 10, scale: 6, nullable: true })
+  @Column({
+    name: 'exchange_rate',
+    type: 'decimal',
+    precision: 10,
+    scale: 6,
+    nullable: true,
+  })
   exchangeRate: number;
 
-  @Column({ name: 'original_currency', type: 'varchar', length: 3, nullable: true })
+  @Column({
+    name: 'original_currency',
+    type: 'varchar',
+    length: 3,
+    nullable: true,
+  })
   originalCurrency: string;
 
-  @Column({ name: 'original_amount', type: 'decimal', precision: 15, scale: 2, nullable: true })
+  @Column({
+    name: 'original_amount',
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    nullable: true,
+  })
   originalAmount: number;
 
   // Payer information (from Bakong response)

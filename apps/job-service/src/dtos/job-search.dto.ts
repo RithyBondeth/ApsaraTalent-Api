@@ -12,7 +12,7 @@ export class SearchJobDto {
 
   @IsOptional()
   @IsString({ each: true })
-  @Transform(({ value }) => Array.isArray(value) ? value : [value])
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
   careerScopes?: string[];
 
   @IsOptional()

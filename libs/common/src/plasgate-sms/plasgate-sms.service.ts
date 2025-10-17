@@ -6,7 +6,7 @@ import { TPlasgateConfig } from './interface/plasgate-config.interface';
 @Injectable()
 export class PlasgateSmsService {
   constructor(private readonly configService: ConfigService) {}
-  private readonly logger = new Logger(PlasgateSmsService.name); 
+  private readonly logger = new Logger(PlasgateSmsService.name);
 
   async sendSms(phone: string, message: string): Promise<void> {
     const privateKey = this.configService.get<string>('PLAS_GATE_PRIVATE_KEY');
@@ -39,10 +39,11 @@ export class PlasgateSmsService {
       });
 
       this.logger.log(`SMS sent: ${JSON.stringify(response.data)}`);
-      
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        this.logger.error(`Axios error response: ${JSON.stringify(err.response?.data || {}, null, 2)}`);
+        this.logger.error(
+          `Axios error response: ${JSON.stringify(err.response?.data || {}, null, 2)}`,
+        );
       }
       this.logger.error(`SMS failed: ${err.message}`);
       throw err;

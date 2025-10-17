@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UpdateEmployeeInfoDTO } from '../../dtos/employee/update-employee-info.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Employee } from '@app/common/database/entities/employee/employee.entity';

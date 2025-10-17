@@ -14,7 +14,7 @@ import { ConfigService } from '@nestjs/config';
     ConfigModule,
     LoggerModule,
     DatabaseModule,
-    TypeOrmModule.forFeature([ User, Chat ]),
+    TypeOrmModule.forFeature([User, Chat]),
     ClientsModule.registerAsync([
       {
         name: USER_SERVICE.NAME,

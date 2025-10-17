@@ -77,19 +77,51 @@ export const validationSchema = Joi.object({
   BASE_URL: Joi.string().uri().default('http://localhost:3000/'),
 
   // Node Environment
-  NODE_ENV: Joi.string().valid('development', 'production', 'test', 'staging').default('development'),
+  NODE_ENV: Joi.string()
+    .valid('development', 'production', 'test', 'staging')
+    .default('development'),
 
   // OpenAI
   OPENAI_API_KEY: Joi.string().optional(),
 
   // Bakong KHQR Configuration
   BAKONG_DEVELOPER_TOKEN: Joi.string(),
-  BAKONG_API_BASE_URL: Joi.string().uri().default('https://api-bakong.nbc.gov.kh'),
-  BAKONG_API_TIMEOUT: Joi.number().integer().min(5000).max(120000).default(30000),
-  BAKONG_RATE_LIMIT_REQUESTS: Joi.number().integer().min(1).max(1000).default(100),
-  BAKONG_RATE_LIMIT_WINDOW_MS: Joi.number().integer().min(1000).max(3600000).default(60000),
-  BAKONG_QR_IMAGE_DEFAULT_WIDTH: Joi.number().integer().min(100).max(2000).default(300),
-  BAKONG_QR_IMAGE_MAX_WIDTH: Joi.number().integer().min(300).max(5000).default(1000),
-  BAKONG_QR_EXPIRATION_MAX_MINUTES: Joi.number().integer().min(1).max(525600).default(10080), // Max 1 year
-  BAKONG_BULK_PAYMENT_MAX_HASHES: Joi.number().integer().min(1).max(100).default(50),
+  BAKONG_API_BASE_URL: Joi.string()
+    .uri()
+    .default('https://api-bakong.nbc.gov.kh'),
+  BAKONG_API_TIMEOUT: Joi.number()
+    .integer()
+    .min(5000)
+    .max(120000)
+    .default(30000),
+  BAKONG_RATE_LIMIT_REQUESTS: Joi.number()
+    .integer()
+    .min(1)
+    .max(1000)
+    .default(100),
+  BAKONG_RATE_LIMIT_WINDOW_MS: Joi.number()
+    .integer()
+    .min(1000)
+    .max(3600000)
+    .default(60000),
+  BAKONG_QR_IMAGE_DEFAULT_WIDTH: Joi.number()
+    .integer()
+    .min(100)
+    .max(2000)
+    .default(300),
+  BAKONG_QR_IMAGE_MAX_WIDTH: Joi.number()
+    .integer()
+    .min(300)
+    .max(5000)
+    .default(1000),
+  BAKONG_QR_EXPIRATION_MAX_MINUTES: Joi.number()
+    .integer()
+    .min(1)
+    .max(525600)
+    .default(10080), // Max 1 year
+  BAKONG_BULK_PAYMENT_MAX_HASHES: Joi.number()
+    .integer()
+    .min(1)
+    .max(100)
+    .default(50),
 });

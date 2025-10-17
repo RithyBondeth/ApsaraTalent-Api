@@ -1,11 +1,11 @@
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class MatchDto {
-    @IsString()
-    @IsNotEmpty()
-    eid: string;   
+  @IsString()
+  @IsNotEmpty()
+  eid: string;
 
-    @IsString()
-    @IsNotEmpty()
-    cid: string;   
+  @IsString()
+  @IsNotEmpty()
+  cid: string;
 }

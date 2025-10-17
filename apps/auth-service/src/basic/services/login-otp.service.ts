@@ -64,7 +64,7 @@ export class LoginOTPService {
           phone: verifyOtpDTO.phone,
         },
       });
-  
+
       if (!user)
         throw new RpcException({
           message: 'Invalid Credential',
@@ -96,7 +96,7 @@ export class LoginOTPService {
 
       // Save user updates
       await this.userRepo.save(user);
-      
+
       return {
         message: 'OTP verified successfully',
         isSuccess: true,

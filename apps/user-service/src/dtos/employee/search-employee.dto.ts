@@ -1,5 +1,11 @@
-import { Transform } from "class-transformer";
-import { IsEnum, IsNumber, IsOptional, IsString, IsArray } from "class-validator";
+import { Transform } from 'class-transformer';
+import {
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsArray,
+} from 'class-validator';
 
 export class SearchEmployeeDto {
   @IsOptional()
@@ -39,6 +45,6 @@ export class SearchEmployeeDto {
   sortBy?: string; // e.g., createdAt, job
 
   @IsOptional()
-  @IsEnum(["ASC", "DESC"], { message: "sortOrder must be 'ASC' or 'DESC'" })
-  sortOrder?: "ASC" | "DESC";
+  @IsEnum(['ASC', 'DESC'], { message: "sortOrder must be 'ASC' or 'DESC'" })
+  sortOrder?: 'ASC' | 'DESC';
 }

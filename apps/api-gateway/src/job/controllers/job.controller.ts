@@ -8,29 +8,31 @@ import { JOB_SERVICE } from 'utils/constants/job-service.constant';
 @Controller('job')
 @UseGuards(AuthGuard)
 export class JobController implements IJobController {
-  constructor(@Inject(JOB_SERVICE.NAME) private readonly jobClient: ClientProxy) {}
+  constructor(
+    @Inject(JOB_SERVICE.NAME) private readonly jobClient: ClientProxy,
+  ) {}
 
   @Get('all')
   async findAllJobs(): Promise<any> {
     return firstValueFrom(
-      this.jobClient.send(JOB_SERVICE.ACTIONS.FIND_ALL_JOBS, {})
+      this.jobClient.send(JOB_SERVICE.ACTIONS.FIND_ALL_JOBS, {}),
     );
   }
 
   @Get('search')
   async searchJobs(@Query() searchJobQuery: any): Promise<any> {
-    const transformedQuery = { 
+    const transformedQuery = {
       ...searchJobQuery,
-      ...(searchJobQuery.companySizeMin && { 
-        companySizeMin: Number(searchJobQuery.companySizeMin) 
+      ...(searchJobQuery.companySizeMin && {
+        companySizeMin: Number(searchJobQuery.companySizeMin),
       }),
-      ...(searchJobQuery.companySizeMax && { 
-        companySizeMax: Number(searchJobQuery.companySizeMax) 
+      ...(searchJobQuery.companySizeMax && {
+        companySizeMax: Number(searchJobQuery.companySizeMax),
       }),
     };
 
     return firstValueFrom(
-      this.jobClient.send(JOB_SERVICE.ACTIONS.SEARCH_JOBS, transformedQuery)
-    )
+      this.jobClient.send(JOB_SERVICE.ACTIONS.SEARCH_JOBS, transformedQuery),
+    );
   }
 }

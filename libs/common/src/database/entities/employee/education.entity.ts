@@ -1,20 +1,27 @@
-import { Column, Entity, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import { Employee } from "./employee.entity";
+import {
+  Column,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { Employee } from './employee.entity';
 
 @Entity()
 export class Education {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @ManyToOne(() => Employee, (employee) => employee.educations, { onDelete: 'CASCADE' })
-    employee: Employee;
+  @ManyToOne(() => Employee, (employee) => employee.educations, {
+    onDelete: 'CASCADE',
+  })
+  employee: Employee;
 
-    @Column()
-    school: string;
+  @Column()
+  school: string;
 
-    @Column()
-    degree: string;
+  @Column()
+  degree: string;
 
-    @Column()
-    year: string;   
+  @Column()
+  year: string;
 }

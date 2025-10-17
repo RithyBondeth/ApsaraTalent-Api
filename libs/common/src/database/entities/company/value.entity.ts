@@ -1,14 +1,14 @@
-import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from "typeorm";
-import { Company } from "./company.entity";
+import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Company } from './company.entity';
 
 @Entity()
 export class Value {
-    @PrimaryGeneratedColumn()
-    id: number;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column()
-    label: string;
+  @Column()
+  label: string;
 
-    @ManyToMany(() => Company, (company) => company.values)
-    companies: Company[];
+  @ManyToMany(() => Company, (company) => company.values)
+  companies: Company[];
 }

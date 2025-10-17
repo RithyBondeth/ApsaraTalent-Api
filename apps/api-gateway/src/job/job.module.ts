@@ -18,14 +18,14 @@ import { User } from '@app/common/database/entities/user.entity';
           options: {
             host: configService.get<string>('services.job.host'),
             port: configService.get<number>('services.job.port'),
-          }
+          },
         }),
-        inject: [ConfigService]
-      }
+        inject: [ConfigService],
+      },
     ]),
     ThrottlerModule,
     JwtModule,
-    TypeOrmModule.forFeature([User])
+    TypeOrmModule.forFeature([User]),
   ],
   controllers: [JobController, JobMatchingController],
   providers: [],

@@ -6,27 +6,33 @@ import { ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
 
 async function bootstrap() {
-  const appContext = await NestFactory.createApplicationContext(PaymentServiceModule);
+  const appContext =
+    await NestFactory.createApplicationContext(PaymentServiceModule);
   const configService = appContext.get(ConfigService);
-  
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(PaymentServiceModule, {
-    transport: Transport.TCP,
-    options: {
-      host: configService.get('services.payment.host', 'localhost'),
-      port: configService.get('services.payment.port', 3006),
+
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+    PaymentServiceModule,
+    {
+      transport: Transport.TCP,
+      options: {
+        host: configService.get('services.payment.host', 'localhost'),
+        port: configService.get('services.payment.port', 3006),
+      },
     },
-  });
+  );
 
   // Pipe Validation Setup
-  app.useGlobalPipes(new ValidationPipe({
-    transform: true,
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
       transformOptions: {
         enableImplicitConversion: true,
       },
       whitelist: true,
       forbidNonWhitelisted: true,
       enableDebugMessages: true,
-  }));
+    }),
+  );
 
   // Logger setup
   const logger = app.get(Logger);
@@ -35,7 +41,7 @@ async function bootstrap() {
   await app.listen();
   const port = configService.get('services.payment.port', 3006);
   logger.log(`Payment service is running on port ${port}`);
-  
+
   // Close the app context
   await appContext.close();
 }

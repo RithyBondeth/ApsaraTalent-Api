@@ -1,18 +1,18 @@
 import { IsEmail, IsString, IsUrl } from 'class-validator';
 
 export class GoogleAuthDTO {
-    @IsString()
-    id: string;
+  @IsString()
+  id: string;
 
-    @IsEmail()
-    email: string;
+  @IsEmail()
+  email: string;
 
-    @IsString()
-    firstName: string;
+  @IsString()
+  firstName: string;
 
-    @IsString()
-    lastName: string;
+  @IsString()
+  lastName: string;
 
-    @IsUrl()
-    picture: string;
+  @IsUrl()
+  picture: string;
 }

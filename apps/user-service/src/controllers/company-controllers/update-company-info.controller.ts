@@ -7,7 +7,9 @@ import { CompanyResponseDTO } from '../../dtos/user-response.dto';
 import { IUpdateCompanyInfoController } from '@app/common/interfaces/company.interface';
 
 @Controller()
-export class UpdateCompanyInfoController implements IUpdateCompanyInfoController {
+export class UpdateCompanyInfoController
+  implements IUpdateCompanyInfoController
+{
   constructor(
     private readonly updateCompanyInfoService: UpdateCompanyInfoService,
   ) {}

@@ -34,7 +34,7 @@ import { User } from '@app/common/database/entities/user.entity';
     ThrottlerModule,
     PassportModule,
     JwtModule,
-    TypeOrmModule.forFeature([User])
+    TypeOrmModule.forFeature([User]),
   ],
   controllers: [
     AuthController,

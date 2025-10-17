@@ -42,7 +42,7 @@ export class UserInJobResponseDTO {
 
   @Exclude()
   isEmailVerified: boolean;
-  
+
   @Exclude()
   emailVerificationToken: string | null;
 
@@ -155,16 +155,18 @@ export class JobResponseDTO {
   salary: string;
 
   @Exclude()
-  @Transform(({ value }) => value ? value.toISOString() : null)
+  @Transform(({ value }) => (value ? value.toISOString() : null))
   expireDate: Date;
 
   @Expose()
   get deadlineDate(): string | null {
-    return this.expireDate ? formatDateToDDMMYYYY(new Date(this.expireDate)) : null;
+    return this.expireDate
+      ? formatDateToDDMMYYYY(new Date(this.expireDate))
+      : null;
   }
 
   @Exclude()
-  @Transform(({ value }) => value ? value.toISOString() : null)
+  @Transform(({ value }) => (value ? value.toISOString() : null))
   createdAt: Date;
 
   @Expose()

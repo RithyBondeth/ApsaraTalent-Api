@@ -22,12 +22,12 @@ import { ConfigService } from '@nestjs/config';
           },
         }),
         inject: [ConfigService],
-      }
+      },
     ]),
     DatabaseModule,
     UploadfileModule,
     JwtModule,
-    TypeOrmModule.forFeature([User])
+    TypeOrmModule.forFeature([User]),
   ],
   controllers: [UserController, EmployeeController, CompanyController],
   providers: [],

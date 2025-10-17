@@ -92,41 +92,44 @@ export class ResumeTemplateService {
     }
   }
 
-  async searchResumeTemplate(searchTemplateDTO: SearchTemplateDTO): Promise<any> {
+  async searchResumeTemplate(
+    searchTemplateDTO: SearchTemplateDTO,
+  ): Promise<any> {
     try {
-      const query = this.resumeTemplateRepository.createQueryBuilder("resume");
-  
+      const query = this.resumeTemplateRepository.createQueryBuilder('resume');
+
       let whereUsed = false;
-  
+
       if (searchTemplateDTO.title) {
-        query.where("resume.title LIKE :title", {
+        query.where('resume.title LIKE :title', {
           title: `%${searchTemplateDTO.title}%`,
         });
         whereUsed = true;
       }
-  
-      if (typeof searchTemplateDTO.isPremium !== "undefined") {
-        const isPremiumBool = String(searchTemplateDTO.isPremium).toLowerCase() === "true";
+
+      if (typeof searchTemplateDTO.isPremium !== 'undefined') {
+        const isPremiumBool =
+          String(searchTemplateDTO.isPremium).toLowerCase() === 'true';
         if (whereUsed) {
-          query.andWhere("resume.isPremium = :isPremium", {
+          query.andWhere('resume.isPremium = :isPremium', {
             isPremium: isPremiumBool,
           });
         } else {
-          query.where("resume.isPremium = :isPremium", {
+          query.where('resume.isPremium = :isPremium', {
             isPremium: isPremiumBool,
           });
         }
       }
-  
+
       const templates = await query.getMany();
-  
+
       if (!templates.length) {
         throw new RpcException({
-          message: "No templates found matching your criteria.",
+          message: 'No templates found matching your criteria.',
           statusCode: 404,
         });
       }
-  
+
       return templates;
     } catch (error) {
       this.logger.error(error.message);

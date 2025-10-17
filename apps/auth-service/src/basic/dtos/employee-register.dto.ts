@@ -1,153 +1,166 @@
-import { EGender } from "@app/common/database/enums/gender.enum";
-import { Type } from "class-transformer";
-import { IsArray, IsBoolean, IsDate, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsStrongPassword, IsUrl, ValidateNested  } from "class-validator";
+import { EGender } from '@app/common/database/enums/gender.enum';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsBoolean,
+  IsDate,
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsStrongPassword,
+  IsUrl,
+  ValidateNested,
+} from 'class-validator';
 
 export class EmployeeRegisterDTO {
-    @IsBoolean()
-    @IsNotEmpty()
-    authEmail?: boolean;
+  @IsBoolean()
+  @IsNotEmpty()
+  authEmail?: boolean;
 
-    @IsEmail()
-    @IsOptional()
-    email?: string;
-    
-    @IsStrongPassword()
-    @IsOptional()
-    password: string;
+  @IsEmail()
+  @IsOptional()
+  email?: string;
 
-    // Employee 
-    @IsString()
-    @IsOptional()
-    firstname?: string;
+  @IsStrongPassword()
+  @IsOptional()
+  password: string;
 
-    @IsString()
-    @IsOptional()
-    lastname?: string;
+  // Employee
+  @IsString()
+  @IsOptional()
+  firstname?: string;
 
-    @IsString()
-    @IsOptional()
-    username?: string;
+  @IsString()
+  @IsOptional()
+  lastname?: string;
 
-    @IsEnum(EGender)
-    @IsOptional()
-    gender?: EGender;
+  @IsString()
+  @IsOptional()
+  username?: string;
 
-    @IsString()
-    @IsOptional()
-    job: string;
+  @IsEnum(EGender)
+  @IsOptional()
+  gender?: EGender;
 
-    @IsNumber()
-    @IsOptional()
-    @Type(() => Number)
-    yearsOfExperience?: number;
-    
-    @IsString()
-    @IsOptional()
-    availability?: string;
+  @IsString()
+  @IsOptional()
+  job: string;
 
-    @IsString()
-    @IsOptional()
-    description?: string;
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  yearsOfExperience?: number;
 
-    @IsString()
-    @IsOptional()
-    location: string;
+  @IsString()
+  @IsOptional()
+  availability?: string;
 
-    @IsString()
-    @IsOptional()
-    phone?: string;
+  @IsString()
+  @IsOptional()
+  description?: string;
 
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => EducationDto)
-    @IsOptional()
-    educations?: EducationDto[];
+  @IsString()
+  @IsOptional()
+  location: string;
 
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => SkillDto)
-    @IsOptional()
-    skills?: SkillDto[];
+  @IsString()
+  @IsOptional()
+  phone?: string;
 
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => ExperienceDto) 
-    @IsOptional()
-    experiences?: ExperienceDto[];
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => EducationDto)
+  @IsOptional()
+  educations?: EducationDto[];
 
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => CareerScopeDto)
-    @IsOptional()
-    careerScopes?: CareerScopeDto[];
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SkillDto)
+  @IsOptional()
+  skills?: SkillDto[];
 
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => SocialDto)
-    @IsOptional()
-    socials?: SocialDto[];
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ExperienceDto)
+  @IsOptional()
+  experiences?: ExperienceDto[];
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CareerScopeDto)
+  @IsOptional()
+  careerScopes?: CareerScopeDto[];
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SocialDto)
+  @IsOptional()
+  socials?: SocialDto[];
 }
 
 class SkillDto {
-    @IsString()
-    @IsNotEmpty()
-    name: string;
+  @IsString()
+  @IsNotEmpty()
+  name: string;
 
-    @IsString()
-    @IsOptional()
-    description?: string;
+  @IsString()
+  @IsOptional()
+  description?: string;
 }
 
 class ExperienceDto {
-    @IsString()
-    @IsNotEmpty()
-    title: string;
+  @IsString()
+  @IsNotEmpty()
+  title: string;
 
-    @IsString()
-    @IsNotEmpty()
-    description: string;
+  @IsString()
+  @IsNotEmpty()
+  description: string;
 
-    @IsDate()
-    @Type(() => Date)
-    @IsNotEmpty()
-    startDate: Date;
-   
-    @IsDate()
-    @Type(() => Date)
-    @IsNotEmpty()
-    endDate: Date;
+  @IsDate()
+  @Type(() => Date)
+  @IsNotEmpty()
+  startDate: Date;
+
+  @IsDate()
+  @Type(() => Date)
+  @IsNotEmpty()
+  endDate: Date;
 }
 
 class CareerScopeDto {
-    @IsString()
-    @IsNotEmpty()
-    name: string;
+  @IsString()
+  @IsNotEmpty()
+  name: string;
 
-    @IsString()
-    @IsOptional()
-    description?: string;
+  @IsString()
+  @IsOptional()
+  description?: string;
 }
 
 class SocialDto {
-    @IsString() 
-    @IsOptional()
-    platform?: string;
+  @IsString()
+  @IsOptional()
+  platform?: string;
 
-    @IsUrl()
-    @IsOptional()
-    url?: string;
+  @IsUrl()
+  @IsOptional()
+  url?: string;
 }
 
 class EducationDto {
-    @IsString()
-    @IsOptional()
-    school?: string;
+  @IsString()
+  @IsOptional()
+  school?: string;
 
-    @IsString()
-    @IsOptional()
-    degree: string;
-    
-    @IsString()
-    @IsOptional()
-    year: string;
+  @IsString()
+  @IsOptional()
+  degree: string;
+
+  @IsString()
+  @IsOptional()
+  year: string;
 }

@@ -108,7 +108,7 @@ export class UserController implements IUserController {
   @Get('find-all-career-scopes')
   async findAllCareerScopes(): Promise<any> {
     return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.FIND_ALL_CAREER_SCOPES, {})
+      this.userClient.send(USER_SERVICE.ACTIONS.FIND_ALL_CAREER_SCOPES, {}),
     );
   }
 }

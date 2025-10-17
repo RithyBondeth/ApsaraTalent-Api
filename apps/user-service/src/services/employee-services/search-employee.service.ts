@@ -17,7 +17,9 @@ export class SearchEmployeeService {
     private readonly logger: PinoLogger,
   ) {}
 
-  async searchEmployee(query: SearchEmployeeDto): Promise<EmployeeResponseDTO[]> {
+  async searchEmployee(
+    query: SearchEmployeeDto,
+  ): Promise<EmployeeResponseDTO[]> {
     try {
       const qb = this.employeeRepo
         .createQueryBuilder('employee')

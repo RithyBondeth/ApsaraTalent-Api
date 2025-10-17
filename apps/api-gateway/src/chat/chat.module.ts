@@ -32,6 +32,6 @@ import { ChatController } from './chat.controller';
       },
     ]),
   ],
-  controllers: [ChatController]
+  controllers: [ChatController],
 })
 export class ChatModule {}
