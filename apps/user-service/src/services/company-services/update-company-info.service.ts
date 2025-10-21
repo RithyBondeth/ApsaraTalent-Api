@@ -157,22 +157,20 @@ export class UpdateCompanyInfoService {
 
       if (updateCompanyInfoDTO.jobs) {
         const updatedJobs = [];
-
+      
         for (const jobDto of updateCompanyInfoDTO.jobs) {
-          if (jobDto.id !== null && jobDto.id !== '') {
+          if (jobDto.id) {
             const existingJob = await this.jobRepository.findOne({
               where: { id: jobDto.id, company: { id: companyId } },
             });
-
+      
             if (existingJob) {
-              // Remove id from jobDto to avoid conflicts
               const { id, ...updateData } = jobDto;
               Object.assign(existingJob, updateData);
               const saved = await this.jobRepository.save(existingJob);
               updatedJobs.push(saved);
             }
-          }
-          if (jobDto.id === undefined) {
+          } else {
             const newJob = this.jobRepository.create({
               ...jobDto,
               company,
@@ -181,8 +179,7 @@ export class UpdateCompanyInfoService {
             updatedJobs.push(saved);
           }
         }
-
-        // Refresh to get current state
+      
         company.openPositions = await this.jobRepository.find({
           where: { company: { id: companyId } },
         });
