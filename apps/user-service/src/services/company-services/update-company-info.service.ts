@@ -157,13 +157,13 @@ export class UpdateCompanyInfoService {
 
       if (updateCompanyInfoDTO.jobs) {
         const updatedJobs = [];
-      
+
         for (const jobDto of updateCompanyInfoDTO.jobs) {
           if (jobDto.id) {
             const existingJob = await this.jobRepository.findOne({
               where: { id: jobDto.id, company: { id: companyId } },
             });
-      
+
             if (existingJob) {
               const { id, ...updateData } = jobDto;
               Object.assign(existingJob, updateData);
@@ -179,7 +179,7 @@ export class UpdateCompanyInfoService {
             updatedJobs.push(saved);
           }
         }
-      
+
         company.openPositions = await this.jobRepository.find({
           where: { company: { id: companyId } },
         });

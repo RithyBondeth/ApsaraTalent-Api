@@ -26,13 +26,15 @@
     "start:dev:chat": "nest start chat-service --watch",
     "start:dev:job": "nest start job-service --watch",
     "start:dev:payment": "nest start payment-service --watch",
+    "start:dev:notification": "nest start notification-service --watch",
     "start:api": "nest start api-gateway",
     "start:auth": "nest start auth-service",
     "start:users": "nest start user-service",
     "start:resume": "nest start resume-builder-service",
     "start:chat": "nest start chat-service",
     "start:job": "nest start job-service",
-    "start:payment": "nest start payment-service"
+    "start:payment": "nest start payment-service",
+    "start:notification": "nest start notification-service"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.13.4",
