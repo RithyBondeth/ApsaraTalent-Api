@@ -13,6 +13,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ChatModule } from './chat/chat.module';
 import { JobModule } from './job/job.module';
 import { PaymentModule } from './payment/payment.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { PaymentModule } from './payment/payment.module';
     ChatModule,
     JobModule,
     PaymentModule,
+    NotificationModule,
   ],
   controllers: [HealthController],
   providers: [

@@ -115,7 +115,7 @@ class JobDTO {
 
   @IsString()
   @IsOptional()
-  skillsRequired?: string[];
+  skillsRequired?: string;
 }
 
 class BenefitDTO {
