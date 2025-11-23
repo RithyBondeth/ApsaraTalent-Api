@@ -1,10 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as Twilio from 'twilio';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class MessageService {
   private twilioClient: Twilio.Twilio;
+  private emailService: EmailService;
   private readonly logger: Logger = new Logger(MessageService.name);
 
   constructor(private configService: ConfigService) {
@@ -35,6 +37,8 @@ export class MessageService {
     companyPhone: string,
     companyName: string,
     employeeName: string,
+    employeeEmail: string,
+    companyEmail: string,
   ) {
     if (!employeePhone || !companyPhone)
       throw new Error('Missing phone number for employee or company');
@@ -44,16 +48,28 @@ export class MessageService {
 
     try {
       await Promise.all([
-        this.twilioClient.messages.create({
-          from: this.configService.get<string>('TWILIO_PHONE_NUMBER'),
-          to: employeePhone,
-          body: employeeMsg,
+        this.emailService.sendEmail({
+          to: employeeEmail,
+          from: companyEmail,
+          subject: "Matching Notification",
+          text: employeeMsg,
         }),
-        this.twilioClient.messages.create({
-          from: this.configService.get<string>('TWILIO_PHONE_NUMBER'),
-          to: companyPhone,
-          body: companyMsg,
+        this.emailService.sendEmail({
+          to: companyEmail,
+          from: employeeEmail,
+          subject: "Matching Notification",
+          text: companyMsg,
         }),
+        // this.twilioClient.messages.create({
+        //   from: this.configService.get<string>('TWILIO_PHONE_NUMBER'),
+        //   to: employeePhone,
+        //   body: employeeMsg,
+        // }),
+        // this.twilioClient.messages.create({
+        //   from: this.configService.get<string>('TWILIO_PHONE_NUMBER'),
+        //   to: companyPhone,
+        //   body: companyMsg,
+        // }),
       ]);
       this.logger.log('✅ SMS sent to employee and company after match.');
     } catch (err) {

@@ -1,7 +1,7 @@
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { JobServiceService } from './services/job-service.service';
 import { ConfigModule } from '@app/common/config';
-import { DatabaseModule, LoggerModule } from '@app/common';
+import { DatabaseModule, EmailModule, LoggerModule } from '@app/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Company } from '@app/common/database/entities/company/company.entity';
 import { Employee } from '@app/common/database/entities/employee/employee.entity';
@@ -20,6 +20,7 @@ import { JobMatching } from '@app/common/database/entities/job-matching.entity';
     DatabaseModule,
     LoggerModule,
     MessageModule,
+    EmailModule,
     TypeOrmModule.forFeature([User, Company, Employee, Job, JobMatching]),
   ],
   controllers: [JobServiceController, MatchingController],

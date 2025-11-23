@@ -5,10 +5,10 @@ import { JobMatching } from '@app/common/database/entities/job-matching.entity';
 import { Repository } from 'typeorm';
 import { Employee } from '@app/common/database/entities/employee/employee.entity';
 import { Company } from '@app/common/database/entities/company/company.entity';
-import { MessageService } from '@app/common/message/message.service';
 import { RpcException } from '@nestjs/microservices';
 import { Logger } from 'nestjs-pino';
 import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
+import { EmailService } from '@app/common/email/email.service';
 
 @Injectable()
 export class MatchingService {
@@ -19,7 +19,7 @@ export class MatchingService {
     private readonly employeeRepo: Repository<Employee>,
     @InjectRepository(Company)
     private readonly companyRepo: Repository<Company>,
-    private readonly messageService: MessageService,
+    private readonly emailService: EmailService,
     private readonly logger: Logger,
   ) {}
 
@@ -73,14 +73,27 @@ export class MatchingService {
 
       if (becameMatched) {
         try {
-          const employeePhone = employee.user?.phone ?? employee.phone;
-          const companyPhone = company.user?.phone ?? company.phone;
-          await this.messageService.notifyMatch(
-            employeePhone,
-            companyPhone,
-            company.name,
-            `${employee.firstname} ${employee.lastname}`,
-          );
+          // const employeePhone = employee.user?.phone ?? employee.phone;
+          // const companyPhone = company.user?.phone ?? company.phone;
+          const employeeName = employee.username;
+          const employeeEmail = employee.user.email;
+          const companyEmail = company.user.email;
+
+          await this.emailService.sendEmail({
+            from: companyEmail,
+            to: employeeEmail,
+            subject: "Matched Message",
+            text: `🎉 Match! ${employeeName} likes your company.`,
+          });
+          
+          // await this.messageService.notifyMatch(
+          //   employeePhone,
+          //   companyPhone,
+          //   company.name,
+          //   `${employee.firstname} ${employee.lastname}`,
+          //   employeeEmail,
+          //   companyEmail
+          // );
         } catch (notifyError: any) {
           this.logger.warn(
             `Failed to send match notification: ${notifyError?.message || notifyError}`,
@@ -148,14 +161,32 @@ export class MatchingService {
 
       if (becameMatched) {
         try {
-          const employeePhone = employee.user?.phone ?? employee.phone;
-          const companyPhone = company.user?.phone ?? company.phone;
-          await this.messageService.notifyMatch(
-            employeePhone,
-            companyPhone,
-            company.name,
-            `${employee.firstname} ${employee.lastname}`,
-          );
+          // const employeePhone = employee.user?.phone ?? employee.phone;
+          // const companyPhone = company.user?.phone ?? company.phone;
+
+          const companyName = company.name;
+          const companyEmail = company.user.email;
+          const employeeEmail = employee.user.email;  
+          
+          await this.emailService.sendEmail({
+            from: employeeEmail,
+            to: companyEmail,
+            subject: "Apsara Talent - Matched Messages",
+            text: `🎉 Match! ${companyName} likes your profile.`,
+          });
+
+          console.log({
+            from: companyEmail,
+            to: employeeEmail,
+            subject: "Matched Message",
+            text: `🎉 Match! ${companyName} likes your profile.`,
+          })
+          // await this.messageService.notifyMatch(
+          //   employeePhone,
+          //   companyPhone,
+          //   company.name,
+          //   `${employee.firstname} ${employee.lastname}`,
+          // );
         } catch (notifyError: any) {
           this.logger.warn(
             `Failed to send match notification: ${notifyError?.message || notifyError}`,
