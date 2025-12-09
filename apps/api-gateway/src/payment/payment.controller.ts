@@ -7,7 +7,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, Payload } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { PAYMENT_SERVICE } from 'utils/constants/payment-service.constant';
 
@@ -25,18 +25,24 @@ export class PaymentController {
       this.paymentClient.send(
         PAYMENT_SERVICE.ACTIONS.GENERATE_INDIVIDUAL_KHQR,
         generateIndividualQrDTO,
-      ),
+      )
     );
+    // return firstValueFrom(
+    //   this.paymentClient.send(
+    //     PAYMENT_SERVICE.ACTIONS.GENERATE_INDIVIDUAL_KHQR,
+    //     generateIndividualQrDTO,
+    //   ),
+    // );
   }
 
   @Post('generate-merchant-khqr')
   async generateMerchantQr(@Body() generateMerchantQrDTO: any): Promise<any> {
-    return firstValueFrom(
-      this.paymentClient.send(
-        PAYMENT_SERVICE.ACTIONS.GENERATE_MERCHANT_KHQR,
-        generateMerchantQrDTO,
-      ),
-    );
+    // return firstValueFrom(
+    //   this.paymentClient.send(
+    //     PAYMENT_SERVICE.ACTIONS.GENERATE_MERCHANT_KHQR,
+    //     generateMerchantQrDTO,
+    //   ),
+    // );
   }
 
   @Post('verify-khqr')
