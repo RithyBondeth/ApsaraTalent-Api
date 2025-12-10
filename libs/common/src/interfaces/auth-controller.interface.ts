@@ -38,8 +38,8 @@ export interface IBasicAuthController
     IBasicAuthLoginOTPController {}
 
 export interface IGoogleAuthController {
-  googleAuth(): Promise<any>;
-  googleCallback(req: any, res: any): Promise<any>;
+  googleAuth(params?: any): Promise<any>;
+  googleCallback(req: any, res: any, params?: any): Promise<any>;
 }
 
 export interface ILinkedInAuthController {

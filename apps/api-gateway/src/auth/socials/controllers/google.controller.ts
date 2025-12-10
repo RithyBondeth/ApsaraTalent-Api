@@ -8,6 +8,7 @@ import {
   Res,
   UseGuards,
   BadRequestException,
+  Query,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
@@ -27,8 +28,9 @@ export class GoogleController implements IGoogleAuthController {
   @Get('google/login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(GoogleAuthGuard)
-  async googleAuth() {
-    // Passport will handle the redirect
+  async googleAuth(@Query('remember') remember: string) {
+    // Passport automatically redirects to Google
+    // GoogleAuthGuard saves remember flag for callback
   }
 
   @Get('google/callback')
@@ -36,63 +38,67 @@ export class GoogleController implements IGoogleAuthController {
   @UseGuards(GoogleAuthGuard)
   async googleCallback(@Req() req: any, @Res() res: Response) {
     try {
+      const remember = req.remember === true;
+
       const result = await firstValueFrom(
         this.authService.send(AUTH_SERVICE.ACTIONS.GOOGLE_AUTH, req.user).pipe(
-          timeout(10000) // 10 second timeout
-        ),
+          timeout(10000)
+        )
       );
 
       if (!result?.accessToken) {
         throw new BadRequestException('Authentication failed');
       }
 
+      // Determine frontend URL
       const FRONTEND_ORIGIN =
-        this.configService.get<string>('FRONTEND_ORIGIN') ??
-        'http://localhost:4000';
+        this.configService.get('FRONTEND_ORIGIN') ??
+        'http://localhost:5173';
 
-      const isProduction = 
-        this.configService.get<string>('NODE_ENV') === 'production';
+      const isProduction =
+        this.configService.get('NODE_ENV') === 'production';
 
-      // ONLY set cookies here - httpOnly and secure
+      // Cookie expiration based on remember flag
+      const maxAge = remember
+        ? 30 * 24 * 60 * 60 * 1000   // 30 days
+        : 24 * 60 * 60 * 1000;       // 1 day
+
+      // Secure cookie options
       const cookieOptions = {
-        httpOnly: true, // Prevents JavaScript access
+        httpOnly: true,
         secure: isProduction,
-        sameSite: 'lax' as const, // 'lax' is better for OAuth redirects
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        sameSite: 'lax' as const,
+        maxAge,
         path: '/',
       };
 
+      // Set secure cookies
       res.cookie('auth-token', result.accessToken, cookieOptions);
-      
+
       if (result.refreshToken) {
         res.cookie('refresh-token', result.refreshToken, cookieOptions);
       }
 
-      // Store remember preference separately (not httpOnly, so frontend can read it)
-      res.cookie('auth-remember', 'true', {
-        httpOnly: false, // Frontend needs to read this
+      // Store remember flag (frontend needs this)
+      res.cookie('auth-remember', remember ? 'true' : 'false', {
+        httpOnly: false,
         secure: isProduction,
-        sameSite: 'lax' as const,
-        maxAge: 30 * 24 * 60 * 60 * 1000,
+        sameSite: 'lax',
+        maxAge,
         path: '/',
       });
 
-      // ONLY send user info (NO TOKENS) via postMessage
+      // Send user info using postMessage (no tokens)
       const html = `
         <!doctype html>
         <html>
-        <head>
-          <title>Authentication Successful</title>
-        </head>
         <body>
           <script>
             (function () {
               const targetOrigin = "${FRONTEND_ORIGIN}";
-              
-              // Only send user data and flags, NEVER tokens
               const message = {
                 type: 'GOOGLE_AUTH_SUCCESS',
-                newUser: ${result.newUser || false},
+                newUser: ${JSON.stringify(result.newUser)},
                 user: {
                   email: ${JSON.stringify(result.email)},
                   firstname: ${JSON.stringify(result.firstname)},
@@ -107,25 +113,12 @@ export class GoogleController implements IGoogleAuthController {
               
               if (window.opener && !window.opener.closed) {
                 window.opener.postMessage(message, targetOrigin);
-                
-                // Close after a short delay
-                setTimeout(() => {
-                  try {
-                    window.close();
-                  } catch (e) {
-                    console.debug('Could not close popup:', e);
-                  }
-                }, 100);
+                setTimeout(() => window.close(), 100);
               } else {
-                // Fallback: redirect to frontend if no opener
                 window.location.href = targetOrigin + '/feed';
               }
             })();
           </script>
-          <noscript>
-            <p>Authentication successful. Redirecting...</p>
-            <meta http-equiv="refresh" content="0;url=${FRONTEND_ORIGIN}/feed">
-          </noscript>
         </body>
         </html>`;
 
@@ -133,24 +126,21 @@ export class GoogleController implements IGoogleAuthController {
       res.send(html);
     } catch (error) {
       console.error('Google authentication error:', error);
-      
+
       const FRONTEND_ORIGIN =
-        this.configService.get<string>('FRONTEND_ORIGIN') ??
-        'http://localhost:4000';
+        this.configService.get('FRONTEND_ORIGIN') ??
+        'http://localhost:5173';
 
       const errorHtml = `
         <!doctype html>
         <html>
-        <head>
-          <title>Authentication Failed</title>
-        </head>
         <body>
           <script>
             (function () {
               const targetOrigin = "${FRONTEND_ORIGIN}";
               const message = {
                 type: 'GOOGLE_AUTH_ERROR',
-                error: 'Authentication failed. Please try again.'
+                error: 'Authentication failed.'
               };
               
               if (window.opener && !window.opener.closed) {
