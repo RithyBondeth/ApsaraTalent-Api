@@ -43,16 +43,16 @@ export interface IGoogleAuthController {
 }
 
 export interface ILinkedInAuthController {
-  linkedInAuth(): Promise<any>;
+  linkedInAuth(params?: any): Promise<any>;
   linkedInCallback(req: any, res: any): Promise<any>;
 }
 
 export interface IGithubAuthController {
-  githubAuth(): Promise<any>;
+  githubAuth(params?: any): Promise<any>;
   githubCallback(req: any, res: any): Promise<any>;
 }
 
 export interface IFacebookAuthController {
-  facebookAuth(): Promise<any>;
+  facebookAuth(params?: any): Promise<any>;
   facebookCallback(req: any, res: any): Promise<any>;
 }

@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -27,8 +28,9 @@ export class FacebookController implements IFacebookAuthController {
   @Get('facebook/login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(FacebookAuthGuard)
-  async facebookAuth() {
-    // Passport will handle the redirect
+  async facebookAuth(@Query('remember') remember: string) {
+    // Passport automatically redirects to Facebook
+    // FacebookAuthGuard saves remember flag for callback
   }
 
   @Get('facebook/callback')
@@ -36,24 +38,32 @@ export class FacebookController implements IFacebookAuthController {
   @UseGuards(FacebookAuthGuard)
   async facebookCallback(@Req() req: any, @Res() res: Response) {
     try {
+      const remember = req.remember === true;
+
       const result = await firstValueFrom(
         this.authService
           .send(AUTH_SERVICE.ACTIONS.FACEBOOK_AUTH, req.user)
-          .pipe(timeout(10000)), // 10 second timeout
+          .pipe(timeout(10000)),
       );
 
       if (!result?.accessToken) {
         throw new BadRequestException('Facebook authentication failed');
       }
 
+      // Determine frontend URL
       const FRONTEND_ORIGIN =
-        this.configService.get<string>('FRONTEND_ORIGIN') ?? // Fixed typo: was 'FRONTED_ORIGIN'
+        this.configService.get<string>('FRONTEND_ORIGIN') ??
         'http://localhost:4000';
 
       const isProduction =
-        this.configService.get<string>('NODE_ENV') === 'production'; // Fixed typo: was 'NODE_EV'
+        this.configService.get<string>('NODE_ENV') === 'production';
 
-      // ONLY set cookies here - httpOnly and secure
+      // Cookie expiration based on remember flag
+      const maxAge = remember
+        ? 30 * 24 * 60 * 60 * 1000 // 30 days
+        : 24 * 60 * 60 * 1000; // 1 day
+
+      // Secure cookie options
       const cookieOptions = {
         httpOnly: true, // Prevents JavaScript access
         secure: isProduction,
@@ -62,14 +72,15 @@ export class FacebookController implements IFacebookAuthController {
         path: '/',
       };
 
+      // Set secure cookie
       res.cookie('auth-token', result.accessToken, cookieOptions);
 
       if (result.refreshToken) {
         res.cookie('refresh-token', result.refreshToken, cookieOptions);
       }
 
-      // Store remember preference separately (not httpOnly, so frontend can read it)
-      res.cookie('auth-remember', 'true', {
+      // Store remember flag (frontend needs this)
+      res.cookie('auth-remember', remember ? 'true' : 'false', {
         httpOnly: false, // Frontend needs to read this
         secure: isProduction,
         sameSite: 'lax' as const,
@@ -77,7 +88,7 @@ export class FacebookController implements IFacebookAuthController {
         path: '/',
       });
 
-      // ONLY send user info (NO TOKENS) via postMessage
+      // Send user info using postMessage (no tokens)
       const html = `
         <!doctype html>
         <html>
