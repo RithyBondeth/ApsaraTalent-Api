@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -27,8 +28,9 @@ export class GithubController implements IGithubAuthController {
   @Get('github/login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(GithubAuthGuard)
-  async githubAuth() {
-    // Passport will handle the redirect
+  async githubAuth(@Query('remember') remember: string) {
+    // Passport automatically redirects to Github
+    // GithubAuthGuard saves remember flag for callback
   }
 
   @Get('github/callback')
@@ -36,8 +38,7 @@ export class GithubController implements IGithubAuthController {
   @UseGuards(GithubAuthGuard)
   async githubCallback(@Req() req: any, @Res() res: Response) {
     try {
-      // Get remember preference from query parameter (if passed during login)
-      const rememberMe = req.query.remember === 'true';
+      const remember = req.remember === true;
 
       const result = await firstValueFrom(
         this.authService
@@ -57,11 +58,11 @@ export class GithubController implements IGithubAuthController {
         this.configService.get<string>('NODE_ENV') === 'production';
 
       // Set cookie maxAge based on rememberMe
-      const maxAge = rememberMe
+      const maxAge = remember
         ? 30 * 24 * 60 * 60 * 1000 // 30 days
         : 24 * 60 * 60 * 1000; // 1 day
 
-      // ONLY set cookies here - httpOnly and secure
+      // Secure cookie options
       const cookieOptions = {
         httpOnly: true, // Prevents JavaScript access
         secure: isProduction,
@@ -70,14 +71,15 @@ export class GithubController implements IGithubAuthController {
         path: '/',
       };
 
+      // Set secure cookies
       res.cookie('auth-token', result.accessToken, cookieOptions);
 
       if (result.refreshToken) {
         res.cookie('refresh-token', result.refreshToken, cookieOptions);
       }
 
-      // Store remember preference separately (not httpOnly, so frontend can read it)
-      res.cookie('auth-remember', 'true', {
+      // Store remember flag (frontend needs this)
+      res.cookie('auth-remember', remember ? 'true' : 'false', {
         httpOnly: false, // Frontend needs to read this
         secure: isProduction,
         sameSite: 'lax' as const,
@@ -85,7 +87,7 @@ export class GithubController implements IGithubAuthController {
         path: '/',
       });
 
-      // ONLY send user info (NO TOKENS) via postMessage
+     // Send user info using postMessage (no tokens)
       const html = `
         <!doctype html>
         <html>
