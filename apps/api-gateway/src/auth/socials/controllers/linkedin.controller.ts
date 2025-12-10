@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -27,8 +28,9 @@ export class LinkedInController implements ILinkedInAuthController {
   @Get('linkedin/login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(LinkedInAuthGuard)
-  async linkedInAuth() {
-    // Passport will handle the redirect
+  async linkedInAuth(@Query('remember') remember: string) {
+    // Passport automatically redirects to LinkedIn
+    // LinkedInAuthGuard saves remember flag for callback
   }
 
   @Get('linkedin/callback')
@@ -36,8 +38,7 @@ export class LinkedInController implements ILinkedInAuthController {
   @UseGuards(LinkedInAuthGuard)
   async linkedInCallback(@Req() req: any, @Res() res: Response) {
     try {
-      // Get remember preference from query parameter (if passed during login)
-      const rememberMe = req.query.remember === 'true';
+      const remember = req.remember === true;
 
       const linkedDataDTO = {
         id: req.user.id,
@@ -65,12 +66,12 @@ export class LinkedInController implements ILinkedInAuthController {
       const isProduction =
         this.configService.get<string>('NODE_ENV') === 'production';
 
-      // Set cookie maxAge based on rememberMe
-      const maxAge = rememberMe
+      // Cookie expiration based on remember flag
+      const maxAge = remember
         ? 30 * 24 * 60 * 60 * 1000 // 30 days
         : 24 * 60 * 60 * 1000; // 1 day
 
-      // ONLY set cookies here - httpOnly and secure
+      // Secure cookie options
       const cookieOptions = {
         httpOnly: true, // Prevents JavaScript access
         secure: isProduction,
@@ -79,14 +80,15 @@ export class LinkedInController implements ILinkedInAuthController {
         path: '/',
       };
 
+      // Set secure cookies
       res.cookie('auth-token', result.accessToken, cookieOptions);
 
       if (result.refreshToken) {
         res.cookie('refresh-token', result.refreshToken, cookieOptions);
       }
 
-      // Store remember preference separately (not httpOnly, so frontend can read it)
-      res.cookie('auth-remember', 'true', {
+      // Store remember flag (frontend needs this)
+      res.cookie('auth-remember', remember ? 'true' : 'false', {
         httpOnly: false, // Frontend needs to read this
         secure: isProduction,
         sameSite: 'lax' as const,
@@ -94,7 +96,7 @@ export class LinkedInController implements ILinkedInAuthController {
         path: '/',
       });
 
-      // ONLY send user info (NO TOKENS) via postMessage
+      // Send user info using postMessage (no tokens)
       const html = `
         <!doctype html>
         <html>
