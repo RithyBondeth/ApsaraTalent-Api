@@ -38,7 +38,7 @@ export class LinkedInController implements ILinkedInAuthController {
   @UseGuards(LinkedInAuthGuard)
   async linkedInCallback(@Req() req: any, @Res() res: Response) {
     try {
-      const remember = req.remember === true;
+      const remember = req.session.remember;
 
       const linkedDataDTO = {
         id: req.user.id,

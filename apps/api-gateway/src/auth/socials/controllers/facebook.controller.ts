@@ -38,7 +38,7 @@ export class FacebookController implements IFacebookAuthController {
   @UseGuards(FacebookAuthGuard)
   async facebookCallback(@Req() req: any, @Res() res: Response) {
     try {
-      const remember = req.remember === true;
+      const remember = req.session.remember;
 
       const result = await firstValueFrom(
         this.authService
