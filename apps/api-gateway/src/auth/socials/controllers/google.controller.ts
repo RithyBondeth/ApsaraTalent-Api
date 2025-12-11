@@ -38,7 +38,9 @@ export class GoogleController implements IGoogleAuthController {
   @UseGuards(GoogleAuthGuard)
   async googleCallback(@Req() req: any, @Res() res: Response) {
     try {
-      const remember = req.remember === true;
+      console.log("Google Request: ", req.session);
+      const remember = req.session.remember;
+      console.log("Remember: ", remember);
 
       const result = await firstValueFrom(
         this.authService.send(AUTH_SERVICE.ACTIONS.GOOGLE_AUTH, req.user).pipe(
