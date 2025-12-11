@@ -38,7 +38,7 @@ export class GithubController implements IGithubAuthController {
   @UseGuards(GithubAuthGuard)
   async githubCallback(@Req() req: any, @Res() res: Response) {
     try {
-      const remember = req.remember === true;
+      const remember = req.session.remember;
 
       const result = await firstValueFrom(
         this.authService
