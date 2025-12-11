@@ -11,6 +11,9 @@ export const validationSchema = Joi.object({
   JWT_REFRESH_EXPIRES: Joi.string().default('7d'),
   JWT_EMAIL_EXPIRES: Joi.string().default('24h'),
 
+  // SESSION
+  SESSION_SECRET: Joi.string().default('dev_secret_key'),
+
   // Email
   SMTP_HOST: Joi.string().required(),
   SMTP_PORT: Joi.number().port().default(587),

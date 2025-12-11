@@ -13,6 +13,11 @@ export default () => ({
     emailExpiresIn: process.env.JWT_EMAIL_EXPIRES || '24h',
   },
 
+  // Session Configuration
+  session: {
+    session_secret: process.env.SESSION_SECRET,
+  },
+
   // Email Configuration
   email: {
     host: process.env.SMTP_HOST,

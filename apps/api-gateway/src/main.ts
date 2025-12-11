@@ -7,15 +7,15 @@ import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(ApiGatewayModule);
-
   const configService = app.get(ConfigService);
 
+  // Enable Cookie Parser
   app.use(cookieParser());
 
   //Enable Express Session
   app.use(
     session({
-      secret: configService.get<string>('SESSION_SECRET') || 'dev_secret_key',
+      secret: configService.get<string>('session.sessionSecret'),
       resave: false,
       saveUninitialized: true,
       cookie: {
@@ -26,8 +26,9 @@ async function bootstrap() {
     }),
   );
 
+  // Enable Frontend Cors
   app.enableCors({
-    origin: configService.get('frontend.origin'),
+    origin: configService.get<string>('frontend.origin'),
     allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
