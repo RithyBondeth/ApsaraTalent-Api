@@ -6,12 +6,15 @@ import { Repository } from 'typeorm';
 import { UserPaginationDTO } from '../../dtos/user-pagination.dto';
 import { EmployeeResponseDTO } from '../../dtos/user-response.dto';
 import { RpcException } from '@nestjs/microservices';
+import { User } from '@app/common/database/entities/user.entity';
 
 @Injectable()
 export class FindEmployeeService {
   constructor(
     @InjectRepository(Employee)
     private readonly employeeRepository: Repository<Employee>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     private readonly logger: PinoLogger,
   ) {}
 
@@ -47,18 +50,24 @@ export class FindEmployeeService {
 
   async findOneById(employeeId: string): Promise<EmployeeResponseDTO> {
     try {
-      const employee = await this.employeeRepository.findOne({
-        where: { id: employeeId },
+      const user = await this.userRepository.findOne({
+        where: {
+          employee: {
+            id: employeeId,
+          },
+        },
         relations: [
-          'skills',
-          'careerScopes',
-          'experiences',
-          'socials',
-          'educations',
+          'employee.skills',
+          'employee.careerScopes',
+          'employee.experiences',
+          'employee.socials',
+          'employee.educations',
         ],
       });
-
-      return new EmployeeResponseDTO(employee);
+      return new EmployeeResponseDTO({
+        ...user.employee,
+        email: user.email,
+      });
     } catch (error) {
       //Handle error
       this.logger.error(error.message);

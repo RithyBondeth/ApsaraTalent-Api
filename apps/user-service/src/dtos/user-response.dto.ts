@@ -42,6 +42,9 @@ export class EmployeeResponseDTO {
   phone: string;
 
   @IsString()
+  email: string;
+
+  @IsString()
   job: string;
 
   @IsNumber()
@@ -209,6 +212,10 @@ export class CompanyResponseDTO {
   @IsString()
   @IsOptional()
   phone?: string;
+
+  @IsString()
+  @IsOptional()
+  email?: string;
 
   @IsArray()
   @Type(() => ImageDTO)
