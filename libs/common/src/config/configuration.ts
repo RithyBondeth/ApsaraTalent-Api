@@ -15,7 +15,7 @@ export default () => ({
 
   // Session Configuration
   session: {
-    session_secret: process.env.SESSION_SECRET,
+    sessionSecret: process.env.SESSION_SECRET || 'dev_secret_key',
   },
 
   // Email Configuration
