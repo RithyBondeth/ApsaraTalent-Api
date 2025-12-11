@@ -9,12 +9,15 @@ import {
   JobPositionDTO,
 } from '../../dtos/user-response.dto';
 import { RpcException } from '@nestjs/microservices';
+import { User } from '@app/common/database/entities/user.entity';
 
 @Injectable()
 export class FindCompanyService {
   constructor(
     @InjectRepository(Company)
     private readonly companyRepository: Repository<Company>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     private readonly logger: PinoLogger,
   ) {}
 
@@ -58,22 +61,27 @@ export class FindCompanyService {
 
   async findOneById(companyId: string): Promise<CompanyResponseDTO> {
     try {
-      const company = await this.companyRepository.findOne({
-        where: { id: companyId },
+      const user = await this.userRepository.findOne({
+        where: {
+          company: {
+            id: companyId,
+          },
+        },
         relations: [
-          'openPositions',
-          'benefits',
-          'values',
-          'careerScopes',
-          'socials',
-          'images',
+          'company.openPositions',
+          'company.benefits',
+          'company.values',
+          'company.careerScopes',
+          'company.socials',
+          'company.images',
         ],
       });
-
+      
       return new CompanyResponseDTO({
-        ...company,
+        ...user.company,
+        email: user.email,
         openPositions:
-          company.openPositions?.map((job) => new JobPositionDTO(job)) ?? [],
+          user.company.openPositions?.map((job) => new JobPositionDTO(job)) ?? [],
       });
     } catch (error) {
       //Handle error
