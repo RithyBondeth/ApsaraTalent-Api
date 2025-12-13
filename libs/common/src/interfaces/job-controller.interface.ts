@@ -8,4 +8,6 @@ export interface IMatchingController {
   companyLikes(data?: any, id?: any): Promise<any>;
   findCurrentEmployeeLiked(data?: any, id?: any): Promise<any>;
   findCurrentCompanyLiked(data?: any, id?: any): Promise<any>;
+  findCurrentEmployeeMatchingCount(data?: any, id?: any): Promise<any>;
+  findCurrentCompanyMatchingCount(data?: any, id?: any): Promise<any>;
 }

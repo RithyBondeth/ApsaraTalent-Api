@@ -93,4 +93,31 @@ export class JobMatchingController implements IMatchingController {
       ),
     );
   }
+
+  @Get('current-employee-matching-count/:eid')
+  async findCurrentEmployeeMatchingCount(
+    @Param('eid', ParseUUIDPipe) cid: string,
+  ): Promise<any> {
+    const payload = { cid };
+    return firstValueFrom(
+      this.jobClient.send(
+        JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_MATCHING_COUNT,
+        payload
+      )
+    );
+  }
+
+
+  @Get('current-company-matching-count/:cid')
+  async findCurrentCompanyMatchingCount(
+    @Param('cid', ParseUUIDPipe) cid: string
+  ): Promise<any> {
+    const payload = { cid };
+    return firstValueFrom(
+      this.jobClient.send(
+        JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_MATCHING_COUNT,
+        payload
+      )
+    );
+  }
 }
