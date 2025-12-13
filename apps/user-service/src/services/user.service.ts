@@ -260,6 +260,36 @@ export class UserService {
     }
   }
 
+  async countCompanyFavorite(cid: string): Promise<any> {
+    try {
+      const countAllCompanyFavorites = await this.cmpFavoriteEmp.count({
+        where: { company: { id: cid } },
+      });
+      return { totalFavorites: countAllCompanyFavorites };
+    } catch (error) {
+      this.logger.error(error.message);
+      throw new RpcException({
+        statusCode: 500,
+        message: 'An error occurred while counting all company favorites.',
+      });
+    }
+  }
+
+  async countEmployeeFavorite(eid: string): Promise<any> {
+    try {
+      const countAllEmployeeFavorites = await this.empFavoriteCmp.count({
+        where: { employee: { id: eid } },
+      });
+      return { totalFavorites: countAllEmployeeFavorites };
+    } catch (error) {
+      this.logger.error(error.message);
+      throw new RpcException({
+        statusCode: 500,
+        message: 'An error occurred while counting all employee favorites.',
+      });
+    }
+  }
+
   async findAllCareerScopes(): Promise<Partial<CareerScope[]>> {
     try {
       const careerScopes = await this.careerScopeRepository.find();
