@@ -55,6 +55,20 @@ export class UserController implements IUserController {
     return this.userService.findAllCompanyFavorites(payload.cid);
   }
 
+  @MessagePattern(USER_SERVICE.ACTIONS.COUNT_COMPANY_FAVORITE)
+  async countCompanyFavorite(
+    @Payload() payload: { cid: string },
+  ): Promise<any> {
+    return this.userService.countCompanyFavorite(payload.cid);
+  }
+
+  @MessagePattern(USER_SERVICE.ACTIONS.COUNT_EMPLOYEE_FAVORITE)
+  async countEmployeeFavorite(
+    @Payload() payload: { eid: string },
+  ): Promise<any> {
+    return this.userService.countEmployeeFavorite(payload.eid);
+  }
+
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_CAREER_SCOPES)
   async findAllCareerScopes(): Promise<Partial<CareerScope[]>> {
     return this.userService.findAllCareerScopes();

@@ -105,6 +105,32 @@ export class UserController implements IUserController {
     );
   }
 
+  @Get('employee/count-favorite/:eid')
+  async countEmployeeFavorite(
+    @Param('eid', ParseUUIDPipe) eid: string,
+  ): Promise<any> {
+    const payload = { eid };
+    return firstValueFrom(
+      this.userClient.send(
+        USER_SERVICE.ACTIONS.COUNT_EMPLOYEE_FAVORITE,
+        payload,
+      ),
+    );
+  }
+
+  @Get('company/count-favorite/:cid')
+  async countCompanyFavorite(
+    @Param('cid', ParseUUIDPipe) cid: string,
+  ): Promise<any> {
+    const payload = { cid };
+    return firstValueFrom(
+      this.userClient.send(
+        USER_SERVICE.ACTIONS.COUNT_COMPANY_FAVORITE,
+        payload,
+      ),
+    );
+  }
+
   @Get('find-all-career-scopes')
   async findAllCareerScopes(): Promise<any> {
     return firstValueFrom(

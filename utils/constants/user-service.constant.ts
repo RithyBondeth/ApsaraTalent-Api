@@ -32,6 +32,8 @@ export const USER_SERVICE = {
     ADD_COMPANY_TO_FAVORITE: { cmd: 'addCompanyToFavorite' },
     FIND_ALL_EMPLOYEE_FAVORITE: { cmd: 'findAllEmployeeFavorite' },
     FIND_ALL_COMPANY_FAVORITE: { cmd: 'findAllCompanyFavorite' },
+    COUNT_COMPANY_FAVORITE: { cmd: 'countCompanyFavorite' },
+    COUNT_EMPLOYEE_FAVORITE: { cmd: 'countEmployeeFavorite' },
 
     FIND_ALL_CAREER_SCOPES: { cmd: 'findAllCareerScopes' },
   },
