@@ -10,5 +10,7 @@ export const JOB_SERVICE = {
     FIND_CURRENT_COMPANY_LIKED: { cmd: 'findCurrentCompanyLiked' },
     FIND_CURRENT_EMPLOYEE_MATCHING: { cmd: 'findCurrentEmployeeMatching' },
     FIND_CURRENT_COMPANY_MATCHING: { cmd: 'findCurrentCompanyMatching' },
+    FIND_CURRENT_EMPLOYEE_MATCHING_COUNT: { cmd: 'findCurrentEmployeeMatchingCount' },
+    FIND_CURRENT_COMPANY_MATCHING_COUNT: { cmd: 'findCurrentCompanyMatchingCount' },
   },
 };

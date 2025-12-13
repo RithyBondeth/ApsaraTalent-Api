@@ -47,4 +47,18 @@ export class MatchingController implements IMatchingController {
   ): Promise<any> {
     return this.matchingService.findCurrentCompanyMatching(payload.cid);
   }
+
+  @MessagePattern(JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_MATCHING_COUNT)
+  async findCurrentEmployeeMatchingCount(
+    @Payload() payload: { eid: string },
+  ): Promise<any> {
+    return this.matchingService.findCurrentEmployeeMatchingCount(payload.eid);
+  }
+
+  @MessagePattern(JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_MATCHING_COUNT)
+  async findCurrentCompanyMatchingCount(
+    @Payload() payload: { cid: string },
+  ): Promise<any> {
+    return this.matchingService.findCurrentCompanyMatchingCount(payload.cid);
+  }
 }

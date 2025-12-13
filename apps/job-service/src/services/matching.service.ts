@@ -82,10 +82,10 @@ export class MatchingService {
           await this.emailService.sendEmail({
             from: companyEmail,
             to: employeeEmail,
-            subject: "Matched Message",
+            subject: 'Matched Message',
             text: `🎉 Match! ${employeeName} likes your company.`,
           });
-          
+
           // await this.messageService.notifyMatch(
           //   employeePhone,
           //   companyPhone,
@@ -166,21 +166,21 @@ export class MatchingService {
 
           const companyName = company.name;
           const companyEmail = company.user.email;
-          const employeeEmail = employee.user.email;  
-          
+          const employeeEmail = employee.user.email;
+
           await this.emailService.sendEmail({
             from: employeeEmail,
             to: companyEmail,
-            subject: "Apsara Talent - Matched Messages",
+            subject: 'Apsara Talent - Matched Messages',
             text: `🎉 Match! ${companyName} likes your profile.`,
           });
 
           console.log({
             from: companyEmail,
             to: employeeEmail,
-            subject: "Matched Message",
+            subject: 'Matched Message',
             text: `🎉 Match! ${companyName} likes your profile.`,
-          })
+          });
           // await this.messageService.notifyMatch(
           //   employeePhone,
           //   companyPhone,
@@ -309,6 +309,44 @@ export class MatchingService {
       this.logger.error(error.message);
       throw new RpcException({
         message: 'An error occurred while fetching the company matching.',
+        statusCode: 500,
+      });
+    }
+  }
+
+  async findCurrentEmployeeMatchingCount(eid: string): Promise<any> {
+    try {
+      const currentEmployeeMatchingCount = await this.jobMatchingRepo.count({
+        where: {
+          employee: { id: eid },
+          isMatched: true,
+        },
+      });
+      return { totalMatching: currentEmployeeMatchingCount };
+    } catch (error) {
+      this.logger.error(error.message);
+      throw new RpcException({
+        message:
+          'An error occurred while counting the current employee matching.',
+        statusCode: 500,
+      });
+    }
+  }
+
+  async findCurrentCompanyMatchingCount(cid: string): Promise<any> {
+    try {
+      const currentCompanyMatchingCount = await this.jobMatchingRepo.count({
+        where: {
+          company: { id: cid },
+          isMatched: true,
+        },
+      });
+      return { totalMatching: currentCompanyMatchingCount };
+    } catch (error) {
+      this.logger.error(error.message);
+      throw new RpcException({
+        message:
+          'An error occurred while counting the current company matching.',
         statusCode: 500,
       });
     }
