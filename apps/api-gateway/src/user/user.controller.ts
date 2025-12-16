@@ -56,10 +56,24 @@ export class UserController implements IUserController {
     @Param('cid', ParseUUIDPipe) cid: string,
   ): Promise<any> {
     const payload = { eid, cid };
-    console.log('Employee Fav');
     return firstValueFrom(
       this.userClient.send(
         USER_SERVICE.ACTIONS.ADD_COMPANY_TO_FAVORITE,
+        payload,
+      ),
+    );
+  }
+
+  @Post('employee/:eid/unfavorite/:favoriteId/company/:cid')
+  async employeeUnfavoriteCompany(
+    @Param('eid', ParseUUIDPipe) eid: string,
+    @Param('cid', ParseUUIDPipe) cid: string,
+    @Param('favoriteId', ParseUUIDPipe) favoriteId: string,
+  ): Promise<any> {
+    const payload = { eid, cid, favoriteId };
+    return firstValueFrom(
+      this.userClient.send(
+        USER_SERVICE.ACTIONS.REMOVE_COMPANY_FROM_FAVORITE,
         payload,
       ),
     );
@@ -74,6 +88,21 @@ export class UserController implements IUserController {
     return firstValueFrom(
       this.userClient.send(
         USER_SERVICE.ACTIONS.ADD_EMPLOYEE_TO_FAVORITE,
+        payload,
+      ),
+    );
+  }
+
+  @Post('company/:cid/unfavorite/:favoriteId/employee/:eid')
+  async companyUnfavoriteEmployee(
+    @Param('cid', ParseUUIDPipe) cid: string,
+    @Param('eid', ParseUUIDPipe) eid: string,
+    @Param('favoriteId', ParseUUIDPipe) favoriteId: string,
+  ): Promise<any> {
+    const payload = { cid, eid, favoriteId };
+    return firstValueFrom(
+      this.userClient.send(
+        USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_FROM_FAVORITE,
         payload,
       ),
     );

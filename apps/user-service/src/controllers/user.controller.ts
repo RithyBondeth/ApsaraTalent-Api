@@ -34,6 +34,28 @@ export class UserController implements IUserController {
     return this.userService.employeeFavoriteCompany(payload.eid, payload.cid);
   }
 
+  @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_COMPANY_FROM_FAVORITE)
+  async employeeUnfavoriteCompany(
+    @Payload() payload: { eid: string; cid: string; favoriteId: string },
+  ): Promise<any> {
+    return this.userService.employeeUnfavoriteCompany(
+      payload.eid,
+      payload.cid,
+      payload.favoriteId,
+    );
+  }
+
+  @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_FROM_FAVORITE)
+  async companyUnfavoriteEmployee(
+    @Payload() payload: { cid: string; eid: string; favoriteId: string },
+  ): Promise<any> {
+    return this.userService.companyUnfavoriteEmployee(
+      payload.cid,
+      payload.eid,
+      payload.favoriteId,
+    );
+  }
+
   @MessagePattern(USER_SERVICE.ACTIONS.ADD_EMPLOYEE_TO_FAVORITE)
   async companyFavoriteEmployee(
     @Payload() payload: { eid: string; cid: string },

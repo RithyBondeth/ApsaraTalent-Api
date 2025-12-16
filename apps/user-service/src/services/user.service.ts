@@ -21,9 +21,9 @@ export class UserService {
     @InjectRepository(CareerScope)
     private readonly careerScopeRepository: Repository<CareerScope>,
     @InjectRepository(EmployeeFavoriteCompany)
-    private readonly empFavoriteCmp: Repository<EmployeeFavoriteCompany>,
+    private readonly empFavoriteCmpRepository: Repository<EmployeeFavoriteCompany>,
     @InjectRepository(CompanyFavoriteEmployee)
-    private readonly cmpFavoriteEmp: Repository<CompanyFavoriteEmployee>,
+    private readonly cmpFavoriteEmpRepository: Repository<CompanyFavoriteEmployee>,
     private readonly logger: PinoLogger,
   ) {}
   async findAllUsers(): Promise<UserResponseDTO[]> {
@@ -67,7 +67,6 @@ export class UserService {
           }),
       );
     } catch (error) {
-      //Handle errors
       this.logger.error(error.message);
       throw new RpcException({
         statusCode: 500,
@@ -115,7 +114,6 @@ export class UserService {
         }),
       });
     } catch (error) {
-      //Handle errors
       this.logger.error(error.message);
       throw new RpcException({
         statusCode: 500,
@@ -124,9 +122,12 @@ export class UserService {
     }
   }
 
-  async employeeFavoriteCompany(eid: string, cid: string) {
+  async employeeFavoriteCompany(
+    eid: string,
+    cid: string,
+  ): Promise<{ message: string }> {
     try {
-      const exists = await this.empFavoriteCmp.findOne({
+      const exists = await this.empFavoriteCmpRepository.findOne({
         where: {
           employee: { id: eid },
           company: { id: cid },
@@ -139,12 +140,12 @@ export class UserService {
           message: 'Already favorite!',
         });
 
-      const favorite = this.empFavoriteCmp.create({
+      const favorite = this.empFavoriteCmpRepository.create({
         employee: { id: eid },
         company: { id: cid },
       });
 
-      await this.empFavoriteCmp.save(favorite);
+      await this.empFavoriteCmpRepository.save(favorite);
 
       return { message: 'Successfully added employee to favorite' };
     } catch (error) {
@@ -156,9 +157,74 @@ export class UserService {
     }
   }
 
-  async companyFavoriteEmployee(cid: string, eid: string) {
+  async employeeUnfavoriteCompany(
+    eid: string,
+    cid: string,
+    favoriteId: string,
+  ): Promise<any> {
     try {
-      const exists = await this.cmpFavoriteEmp.findOne({
+      const favoriteToRemove = await this.empFavoriteCmpRepository.findOne({
+        where: {
+          id: favoriteId,
+          employee: { id: eid },
+          company: { id: cid },
+        },
+      });
+
+      if (!favoriteToRemove)
+        throw new RpcException({
+          message: "There's no company to remove from favorite.",
+          statusCode: 404,
+        });
+
+      await this.empFavoriteCmpRepository.delete(favoriteToRemove);
+      return { message: 'Successfully removed company from favorite' };
+    } catch (error) {
+      this.logger.error(error.message);
+      throw new RpcException({
+        statusCode: 500,
+        message: 'An error occurred while unfavorite company by employee.',
+      });
+    }
+  }
+
+  async companyUnfavoriteEmployee(
+    cid: string,
+    eid: string,
+    favoriteId: string,
+  ): Promise<any> {
+    try {
+      const favoriteToRemove = await this.cmpFavoriteEmpRepository.findOne({
+        where: {
+          id: favoriteId,
+          company: { id: cid },
+          employee: { id: eid },
+        },
+      });
+
+      if (!favoriteToRemove)
+        throw new RpcException({
+          message: "There's no employee to remove from favorite.",
+          statusCode: 404,
+        });
+
+      await this.cmpFavoriteEmpRepository.delete(favoriteToRemove);
+      return { message: 'Successfully removed employee from favorite.' };
+    } catch (error) {
+      this.logger.error(error.message);
+      throw new RpcException({
+        statusCode: 500,
+        message: 'An error occurred while unfavorite employee by company.',
+      });
+    }
+  }
+
+  async companyFavoriteEmployee(
+    cid: string,
+    eid: string,
+  ): Promise<{ message: string }> {
+    try {
+      const exists = await this.cmpFavoriteEmpRepository.findOne({
         where: {
           employee: { id: eid },
           company: { id: cid },
@@ -171,12 +237,12 @@ export class UserService {
           message: 'Already favorite',
         });
 
-      const favorite = this.cmpFavoriteEmp.create({
+      const favorite = this.cmpFavoriteEmpRepository.create({
         employee: { id: eid },
         company: { id: cid },
       });
 
-      await this.cmpFavoriteEmp.save(favorite);
+      await this.cmpFavoriteEmpRepository.save(favorite);
 
       return { message: 'Successfully added company to favorite' };
     } catch (error) {
@@ -188,9 +254,9 @@ export class UserService {
     }
   }
 
-  async findAllEmployeeFavorites(eid: string) {
+  async findAllEmployeeFavorites(eid: string): Promise<any> {
     try {
-      const allFavorites = await this.empFavoriteCmp.find({
+      const allFavorites = await this.empFavoriteCmpRepository.find({
         where: { employee: { id: eid } },
         relations: ['company.openPositions'],
       });
@@ -224,9 +290,9 @@ export class UserService {
     }
   }
 
-  async findAllCompanyFavorites(cid: string) {
+  async findAllCompanyFavorites(cid: string): Promise<any> {
     try {
-      const allFavorites = await this.cmpFavoriteEmp.find({
+      const allFavorites = await this.cmpFavoriteEmpRepository.find({
         where: { company: { id: cid } },
         relations: ['employee.skills'],
       });
@@ -262,9 +328,10 @@ export class UserService {
 
   async countCompanyFavorite(cid: string): Promise<any> {
     try {
-      const countAllCompanyFavorites = await this.cmpFavoriteEmp.count({
-        where: { company: { id: cid } },
-      });
+      const countAllCompanyFavorites =
+        await this.cmpFavoriteEmpRepository.count({
+          where: { company: { id: cid } },
+        });
       return { totalFavorites: countAllCompanyFavorites };
     } catch (error) {
       this.logger.error(error.message);
@@ -277,9 +344,10 @@ export class UserService {
 
   async countEmployeeFavorite(eid: string): Promise<any> {
     try {
-      const countAllEmployeeFavorites = await this.empFavoriteCmp.count({
-        where: { employee: { id: eid } },
-      });
+      const countAllEmployeeFavorites =
+        await this.empFavoriteCmpRepository.count({
+          where: { employee: { id: eid } },
+        });
       return { totalFavorites: countAllEmployeeFavorites };
     } catch (error) {
       this.logger.error(error.message);
@@ -301,7 +369,6 @@ export class UserService {
 
       return careerScopes;
     } catch (error) {
-      // Handle error
       this.logger.error(error.message);
       throw new RpcException({
         message: 'An error occurred while finding all the career scopes.',
