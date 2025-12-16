@@ -177,7 +177,7 @@ export class UserService {
           statusCode: 404,
         });
 
-      await this.empFavoriteCmpRepository.delete(favoriteToRemove);
+      await this.empFavoriteCmpRepository.remove(favoriteToRemove);
       return { message: 'Successfully removed company from favorite' };
     } catch (error) {
       this.logger.error(error.message);
@@ -208,7 +208,7 @@ export class UserService {
           statusCode: 404,
         });
 
-      await this.cmpFavoriteEmpRepository.delete(favoriteToRemove);
+      await this.cmpFavoriteEmpRepository.remove(favoriteToRemove);
       return { message: 'Successfully removed employee from favorite.' };
     } catch (error) {
       this.logger.error(error.message);

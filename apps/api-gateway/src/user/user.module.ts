@@ -8,7 +8,6 @@ import { CompanyController } from './company.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '@app/common/database/entities/user.entity';
 import { ConfigService } from '@nestjs/config';
-import { Company } from '@app/common/database/entities/company/company.entity';
 
 @Module({
   imports: [
