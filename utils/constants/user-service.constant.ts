@@ -29,7 +29,9 @@ export const USER_SERVICE = {
     GET_CURRENT_USER: { cmd: 'getCurrentUser' },
 
     ADD_EMPLOYEE_TO_FAVORITE: { cmd: 'addEmployeeToFavorite' },
+    REMOVE_EMPLOYEE_FROM_FAVORITE: { cmd: 'removeEmployeeFromFavorite' },
     ADD_COMPANY_TO_FAVORITE: { cmd: 'addCompanyToFavorite' },
+    REMOVE_COMPANY_FROM_FAVORITE: { cmd: 'removeCompanyFromFavorite' },
     FIND_ALL_EMPLOYEE_FAVORITE: { cmd: 'findAllEmployeeFavorite' },
     FIND_ALL_COMPANY_FAVORITE: { cmd: 'findAllCompanyFavorite' },
     COUNT_COMPANY_FAVORITE: { cmd: 'countCompanyFavorite' },
