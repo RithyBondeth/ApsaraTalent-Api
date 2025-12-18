@@ -42,6 +42,7 @@ import { EmployeeFavoriteCompany } from '@app/common/database/entities/employee/
 import { CompanyFavoriteEmployee } from '@app/common/database/entities/company/favorite-employee.entity';
 import { OpenPositionController } from './controllers/company-controllers/open-position.controller';
 import { OpenPositionService } from './services/company-services/open-position.service';
+import { RedisModule } from '@app/common/redis/redis.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { OpenPositionService } from './services/company-services/open-position.s
     LoggerModule,
     UploadfileModule,
     JwtModule,
+    RedisModule,
   ],
   controllers: [
     UpdateEmployeeInfoController,

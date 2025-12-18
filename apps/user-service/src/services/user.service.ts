@@ -13,6 +13,7 @@ import { EmployeeFavoriteCompany } from '@app/common/database/entities/employee/
 import { RpcException } from '@nestjs/microservices';
 import { CompanyFavoriteEmployee } from '@app/common/database/entities/company/favorite-employee.entity';
 import { CareerScope } from '@app/common/database/entities/career-scope.entity';
+import { RedisService } from '@app/common/redis/redis.service';
 
 @Injectable()
 export class UserService {
@@ -25,8 +26,19 @@ export class UserService {
     @InjectRepository(CompanyFavoriteEmployee)
     private readonly cmpFavoriteEmpRepository: Repository<CompanyFavoriteEmployee>,
     private readonly logger: PinoLogger,
+    private readonly redisService: RedisService,
   ) {}
   async findAllUsers(): Promise<UserResponseDTO[]> {
+    const cacheKey = this.redisService.generateListKey('user', {});
+    const cached = await this.redisService.get<UserResponseDTO[]>(cacheKey);
+
+    if (cached) {
+      this.logger.info('All users cache HIT');
+      return cached;
+    }
+
+    this.logger.info('All users cache MISS');
+
     try {
       const users = await this.userRepository.find({
         relations: [
@@ -51,7 +63,7 @@ export class UserService {
           message: 'There are no users available!',
         });
 
-      return users.map(
+      const result = users.map(
         (user) =>
           new UserResponseDTO({
             ...user,
@@ -66,6 +78,11 @@ export class UserService {
             }),
           }),
       );
+
+      // Cache for 2 minutes
+      await this.redisService.set(cacheKey, result, 120000);
+
+      return result;
     } catch (error) {
       this.logger.error(error.message);
       throw new RpcException({
@@ -76,6 +93,16 @@ export class UserService {
   }
 
   async findOneUserByID(userId: string): Promise<UserResponseDTO> {
+    const cacheKey = this.redisService.generateUserKey('detail', userId);
+    const cached = await this.redisService.get<UserResponseDTO>(cacheKey);
+
+    if (cached) {
+      this.logger.info(`User ${userId} cache HIT`);
+      return cached;
+    }
+
+    this.logger.info(`User ${userId} cache MISS`);
+
     try {
       const user = await this.userRepository.findOne({
         where: { id: userId },
@@ -101,7 +128,7 @@ export class UserService {
           message: 'There is no user with this id!',
         });
 
-      return new UserResponseDTO({
+      const result: UserResponseDTO = new UserResponseDTO({
         ...user,
         employee: user.employee
           ? new EmployeeResponseDTO(user.employee)
@@ -113,6 +140,11 @@ export class UserService {
           ),
         }),
       });
+
+      // Cache for 5 minutes
+      await this.redisService.set(cacheKey, result, 300000);
+
+      return result;
     } catch (error) {
       this.logger.error(error.message);
       throw new RpcException({
@@ -147,6 +179,13 @@ export class UserService {
 
       await this.empFavoriteCmpRepository.save(favorite);
 
+      // INVALIDATE CACHE
+      await Promise.all([
+        this.redisService.invalidateEmployee(eid),
+        this.redisService.invalidateCompany(cid),
+        this.redisService.delPattern('*:favorite:*'),
+      ]);
+
       return { message: 'Successfully added employee to favorite' };
     } catch (error) {
       this.logger.error(error.message);
@@ -178,6 +217,14 @@ export class UserService {
         });
 
       await this.empFavoriteCmpRepository.remove(favoriteToRemove);
+
+      // INVALIDATE CACHES
+      await Promise.all([
+        this.redisService.invalidateEmployee(eid),
+        this.redisService.invalidateCompany(cid),
+        this.redisService.delPattern('*:favorite:*'),
+      ]);
+
       return { message: 'Successfully removed company from favorite' };
     } catch (error) {
       this.logger.error(error.message);
@@ -209,6 +256,14 @@ export class UserService {
         });
 
       await this.cmpFavoriteEmpRepository.remove(favoriteToRemove);
+
+      // INVALIDATE CACHES
+      await Promise.all([
+        this.redisService.invalidateCompany(cid),
+        this.redisService.invalidateEmployee(eid),
+        this.redisService.delPattern('*:favorite:*'),
+      ]);
+
       return { message: 'Successfully removed employee from favorite.' };
     } catch (error) {
       this.logger.error(error.message);
@@ -244,6 +299,13 @@ export class UserService {
 
       await this.cmpFavoriteEmpRepository.save(favorite);
 
+      // INVALIDATE CACHES
+      await Promise.all([
+        this.redisService.invalidateCompany(cid),
+        this.redisService.invalidateEmployee(eid),
+        this.redisService.delPattern('*:favorite:*'),
+      ]);
+
       return { message: 'Successfully added company to favorite' };
     } catch (error) {
       this.logger.error(error.message);
@@ -255,6 +317,16 @@ export class UserService {
   }
 
   async findAllEmployeeFavorites(eid: string): Promise<any> {
+    const cacheKey = this.redisService.generateEmployeeKey('favorites', eid);
+    const cached = await this.redisService.get(cacheKey);
+
+    if (cached) {
+      this.logger.info(`All employee ${eid} favorites cache HIT`);
+      return cached;
+    }
+
+    this.logger.info(`All employee ${eid} favorites cache MISS`);
+
     try {
       const allFavorites = await this.empFavoriteCmpRepository.find({
         where: { employee: { id: eid } },
@@ -280,6 +352,9 @@ export class UserService {
         }),
       );
 
+      // Cache for 2 minutes
+      await this.redisService.set(cacheKey, allFavoritesWithUsersId, 120000);
+
       return allFavoritesWithUsersId;
     } catch (error) {
       this.logger.error(error.message);
@@ -291,6 +366,16 @@ export class UserService {
   }
 
   async findAllCompanyFavorites(cid: string): Promise<any> {
+    const cacheKey = this.redisService.generateCompanyKey('favorites', cid);
+    const cached = await this.redisService.get(cacheKey);
+
+    if (cached) {
+      this.logger.info(`All company ${cid} favorites cache HIT`);
+      return cached;
+    }
+
+    this.logger.info(`All company ${cid} favorites cache MISS`);
+
     try {
       const allFavorites = await this.cmpFavoriteEmpRepository.find({
         where: { company: { id: cid } },
@@ -316,6 +401,9 @@ export class UserService {
         }),
       );
 
+      // Cache for 2 minutes
+      await this.redisService.set(cacheKey, allFavoritesWithUserId, 120000);
+
       return allFavoritesWithUserId;
     } catch (error) {
       this.logger.error(error.message);
@@ -327,12 +415,30 @@ export class UserService {
   }
 
   async countCompanyFavorite(cid: string): Promise<any> {
+    const cacheKey = this.redisService.generateCompanyKey(
+      'company-favorite-count',
+      cid,
+    );
+    const cached = await this.redisService.get(cacheKey);
+
+    if (cached) {
+      this.logger.info(`Company ${cid} favorite count cache HIT`);
+      return cached;
+    }
+
+    this.logger.info(`Company ${cid} favorite count cache MISS`);
+
     try {
       const countAllCompanyFavorites =
         await this.cmpFavoriteEmpRepository.count({
           where: { company: { id: cid } },
         });
-      return { totalFavorites: countAllCompanyFavorites };
+      const result = { totalFavorites: countAllCompanyFavorites };
+
+      // Cache for 5 minutes (count doesn't change too frequently)
+      await this.redisService.set(cacheKey, result, 300000);
+
+      return result;
     } catch (error) {
       this.logger.error(error.message);
       throw new RpcException({
@@ -343,12 +449,30 @@ export class UserService {
   }
 
   async countEmployeeFavorite(eid: string): Promise<any> {
+    const cacheKey = this.redisService.generateEmployeeKey(
+      'employee-favorite-count',
+      eid,
+    );
+    const cached = await this.redisService.get(cacheKey);
+
+    if (cached) {
+      this.logger.info(`Employee ${eid} favorite count cache HIT`);
+      return cached;
+    }
+
+    this.logger.info(`Employee ${eid} favorite count cache MISS`);
+
     try {
       const countAllEmployeeFavorites =
         await this.empFavoriteCmpRepository.count({
           where: { employee: { id: eid } },
         });
-      return { totalFavorites: countAllEmployeeFavorites };
+      const result = { totalFavorites: countAllEmployeeFavorites };
+
+      // Cache for 5 minutes
+      await this.redisService.set(cacheKey, result, 300000);
+
+      return result;
     } catch (error) {
       this.logger.error(error.message);
       throw new RpcException({
@@ -359,6 +483,17 @@ export class UserService {
   }
 
   async findAllCareerScopes(): Promise<Partial<CareerScope[]>> {
+    const cacheKey = this.redisService.generateListKey('career-scopes', {});
+    const cached =
+      await this.redisService.get<Partial<CareerScope[]>>(cacheKey);
+
+    if (cached) {
+      this.logger.info('Al career scopes cache HIT');
+      return cached;
+    }
+
+    this.logger.info('All career scopes cache MISS');
+
     try {
       const careerScopes = await this.careerScopeRepository.find();
       if (!careerScopes)
@@ -366,6 +501,9 @@ export class UserService {
           statusCode: 404,
           message: 'No career scopes available!',
         });
+
+      // Cache for 1 hour (rarely changes)
+      await this.redisService.set(cacheKey, careerScopes, 3600000);
 
       return careerScopes;
     } catch (error) {
