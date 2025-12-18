@@ -55,6 +55,11 @@ export const validationSchema = Joi.object({
   REDIS_WEBSOCKET_HOST: Joi.string().default('localhost'),
   REDIS_WEBSOCKET_PORT: Joi.number().port().default(6379),
 
+  // Redis Caching
+  REDIS_CACHING_HOST: Joi.string().default('localhost'),
+  REDIS_CACHING_PORT: Joi.number().default(6379),
+  REDIS_CACHING_TTL: Joi.number().default(300000), // 5 minutes default
+  
   // Frontend
   FRONTEND_ORIGIN: Joi.string().uri().default('http://localhost:4000'),
 
