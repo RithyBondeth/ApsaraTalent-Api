@@ -89,6 +89,11 @@ export default () => ({
       host: process.env.REDIS_WEBSOCKET_HOST || 'localhost',
       port: parseInt(process.env.REDIS_WEBSOCKET_PORT) || 6379,
     },
+    caching: {
+      host: process.env.REDIS_CACHING_HOST,
+      port: process.env.REDIS_CACHING_PORT,
+      ttl: process.env.REDIS_CACHING_TTL,
+    }
   },
 
   // Frontend Configuration
