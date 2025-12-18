@@ -1,17 +1,20 @@
 import { Global, Module } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
-import { ConfigModule } from '../config';
-import { ConfigService } from '@nestjs/config';
-import { redisConfig } from './config/redis.config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RedisService } from './redis.service';
+import { getRedisCloudConfig } from './config/redis.config';
 
 @Global()
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: './libs/.env',
+    }),
     CacheModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: redisConfig,
+      useFactory: getRedisCloudConfig,
     }),
   ],
   providers: [RedisService],

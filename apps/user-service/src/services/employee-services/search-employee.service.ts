@@ -7,6 +7,8 @@ import { Employee } from '@app/common/database/entities/employee/employee.entity
 import { RpcException } from '@nestjs/microservices';
 import { PinoLogger } from 'nestjs-pino';
 import { User } from '@app/common/database/entities/user.entity';
+import { RedisService } from '@app/common/redis/redis.service';
+import { cache } from 'sharp';
 
 @Injectable()
 export class SearchEmployeeService {
@@ -15,11 +17,22 @@ export class SearchEmployeeService {
     private readonly employeeRepo: Repository<Employee>,
     @InjectRepository(User) private readonly userRepo: Repository<User>,
     private readonly logger: PinoLogger,
+    private readonly redisService: RedisService,
   ) {}
 
   async searchEmployee(
     query: SearchEmployeeDto,
   ): Promise<EmployeeResponseDTO[]> {
+    const cacheKey = this.redisService.generateSearchKey('employee', query);
+    const cached = await this.redisService.get<EmployeeResponseDTO[]>(cacheKey);
+
+    if (cached) {
+      this.logger.info('Employee search cache HIT');
+      return cached;
+    }
+
+    this.logger.info('Employee search cache MISS');
+
     try {
       const qb = this.employeeRepo
         .createQueryBuilder('employee')
@@ -114,13 +127,18 @@ export class SearchEmployeeService {
         }),
       );
 
-      return employeesWithUsers.map(
+      const result = employeesWithUsers.map(
         ({ employee, userId }) =>
           new EmployeeResponseDTO({
             ...employee,
             userId: userId,
           }),
       );
+
+      // Cache search results for 1 minute (shorter because search is frequent)
+      await this.redisService.set(cacheKey, result, 60000);
+
+      return result;
     } catch (error) {
       this.logger.error(error, 'SearchEmployeeService failed');
       throw new RpcException({

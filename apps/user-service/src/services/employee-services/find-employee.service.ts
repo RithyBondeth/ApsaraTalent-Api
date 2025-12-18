@@ -7,6 +7,7 @@ import { UserPaginationDTO } from '../../dtos/user-pagination.dto';
 import { EmployeeResponseDTO } from '../../dtos/user-response.dto';
 import { RpcException } from '@nestjs/microservices';
 import { User } from '@app/common/database/entities/user.entity';
+import { RedisService } from '@app/common/redis/redis.service';
 
 @Injectable()
 export class FindEmployeeService {
@@ -16,9 +17,20 @@ export class FindEmployeeService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly logger: PinoLogger,
+    private readonly redisService: RedisService,
   ) {}
 
   async findAll(pagination: UserPaginationDTO): Promise<EmployeeResponseDTO[]> {
+    const cacheKey = this.redisService.generateListKey('employee', pagination);
+    const cached = await this.redisService.get<EmployeeResponseDTO[]>(cacheKey);
+
+    if (cached) {
+      this.logger.info('All employees list cache HIT');
+      return cached;
+    }
+
+    this.logger.info('All employees cache MISS');
+
     try {
       const employees = await this.employeeRepository.find({
         relations: [
@@ -37,9 +49,13 @@ export class FindEmployeeService {
           statusCode: 404,
         });
 
-      return employees.map((emp) => new EmployeeResponseDTO(emp));
+      const result = employees.map((emp) => new EmployeeResponseDTO(emp));
+
+      // Cache for 2 minutes
+      await this.redisService.set(cacheKey, result, 120000);
+
+      return result;
     } catch (error) {
-      //Handle error
       this.logger.error(error.message);
       throw new RpcException({
         message: 'An error occurred while fetching all of the employees',
@@ -49,6 +65,19 @@ export class FindEmployeeService {
   }
 
   async findOneById(employeeId: string): Promise<EmployeeResponseDTO> {
+    const cacheKey = this.redisService.generateEmployeeKey(
+      'detail',
+      employeeId,
+    );
+    const cached = await this.redisService.get<EmployeeResponseDTO>(cacheKey);
+
+    if (cached) {
+      this.logger.info(`Employee ${employeeId} cache HIT`);
+      return cached;
+    }
+
+    this.logger.info(`Employee ${employeeId} cache MISS`);
+
     try {
       const user = await this.userRepository.findOne({
         where: {
@@ -64,12 +93,16 @@ export class FindEmployeeService {
           'employee.educations',
         ],
       });
-      return new EmployeeResponseDTO({
+      const result = new EmployeeResponseDTO({
         ...user.employee,
         email: user.email,
       });
+
+      // Cache for 5 minutes
+      await this.redisService.set(cacheKey, result, 300000);
+
+      return result;
     } catch (error) {
-      //Handle error
       this.logger.error(error.message);
       throw new RpcException({
         message: 'An error occurred while fetching an employee',

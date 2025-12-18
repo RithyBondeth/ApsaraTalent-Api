@@ -10,6 +10,8 @@ import {
 } from '../../dtos/user-response.dto';
 import { RpcException } from '@nestjs/microservices';
 import { User } from '@app/common/database/entities/user.entity';
+import { RedisService } from '@app/common/redis/redis.service';
+import { cache } from 'sharp';
 
 @Injectable()
 export class FindCompanyService {
@@ -19,9 +21,20 @@ export class FindCompanyService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly logger: PinoLogger,
+    private readonly redisService: RedisService,
   ) {}
 
   async findAll(pagination: UserPaginationDTO): Promise<CompanyResponseDTO[]> {
+    const cacheKey = this.redisService.generateListKey('company', pagination);
+    const cached = await this.redisService.get<CompanyResponseDTO[]>(cacheKey);
+
+    if (cached) {
+      this.logger.info('All Companies cache HIT');
+      return cached;
+    }
+
+    this.logger.info('All Companies cache MISS');
+
     try {
       const companies = await this.companyRepository.find({
         relations: [
@@ -41,7 +54,7 @@ export class FindCompanyService {
           statusCode: 404,
         });
 
-      return companies.map((company) => {
+      const result = companies.map((company) => {
         const transformedCompany = {
           ...company,
           openPositions:
@@ -49,8 +62,12 @@ export class FindCompanyService {
         };
         return new CompanyResponseDTO(transformedCompany);
       });
+
+      // Cache the result for 2 minutes
+      await this.redisService.set(cacheKey, result, 120000);
+
+      return result;
     } catch (error) {
-      //Handle error
       this.logger.error(error.message);
       throw new RpcException({
         message: 'An error occurred while fetching all of the companies.',
@@ -60,6 +77,16 @@ export class FindCompanyService {
   }
 
   async findOneById(companyId: string): Promise<CompanyResponseDTO> {
+    const cacheKey = this.redisService.generateCompanyKey('detail', companyId);
+    const cached = await this.redisService.get<CompanyResponseDTO>(cacheKey);
+
+    if (cached) {
+      this.logger.info(`Company ${companyId} cache HIT`);
+      return cached;
+    }
+
+    this.logger.info(`Company ${companyId} cache MISS`);
+
     try {
       const user = await this.userRepository.findOne({
         where: {
@@ -76,15 +103,20 @@ export class FindCompanyService {
           'company.images',
         ],
       });
-      
-      return new CompanyResponseDTO({
+
+      const result = new CompanyResponseDTO({
         ...user.company,
         email: user.email,
         openPositions:
-          user.company.openPositions?.map((job) => new JobPositionDTO(job)) ?? [],
+          user.company.openPositions?.map((job) => new JobPositionDTO(job)) ??
+          [],
       });
+
+      // Cache the result for 5 minutes
+      await this.redisService.set(cacheKey, result, 300000);
+
+      return result;
     } catch (error) {
-      //Handle error
       this.logger.error(error.message);
       throw new RpcException({
         message: 'An error occurred while fetching a company.',
