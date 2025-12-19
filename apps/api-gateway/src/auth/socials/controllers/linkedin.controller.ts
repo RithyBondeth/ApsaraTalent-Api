@@ -152,7 +152,7 @@ export class LinkedInController implements ILinkedInAuthController {
       console.error('LinkedIn authentication error:', error);
 
       const FRONTEND_ORIGIN = this.configService.get<string>('frontend.origin');
-      
+
       const errorHtml = `
         <!doctype html>
         <html>

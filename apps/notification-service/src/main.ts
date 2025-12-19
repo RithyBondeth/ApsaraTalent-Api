@@ -16,8 +16,8 @@ async function bootstrap() {
     {
       transport: Transport.TCP,
       options: {
-        host: configService.get('services.notification.host', 'localhost'),
-        port: configService.get('services.notification.port', 3007),
+        host: configService.get<string>('services.notification.host'),
+        port: configService.get<number>('services.notification.port'),
       },
     },
   );
@@ -40,7 +40,7 @@ async function bootstrap() {
   app.useLogger(logger);
 
   await app.listen();
-  const port = configService.get('services.notification.port', 3007);
+  const port = configService.get<string>('services.notification.port');
   logger.log(`Notification service is running on port ${port}`);
 
   // Close the app context

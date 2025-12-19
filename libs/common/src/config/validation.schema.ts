@@ -1,15 +1,20 @@
 import * as Joi from 'joi';
 
 export const validationSchema = Joi.object({
+  // Node Environment
+  NODE_ENV: Joi.string()
+    .valid('development', 'production', 'test', 'staging', 'local')
+    .default('development'),
+
   // Database
   DATABASE_URL: Joi.string().required(),
-  DATABASE_SYNCHRONIZE: Joi.string().valid('true', 'false').default('false'),
+  DATABASE_SYNCHRONIZE: Joi.string(),
 
   // JWT
   JWT_SECRET: Joi.string().required(),
-  JWT_EXPIRES: Joi.string().default('1d'),
-  JWT_REFRESH_EXPIRES: Joi.string().default('7d'),
-  JWT_EMAIL_EXPIRES: Joi.string().default('24h'),
+  JWT_EXPIRES: Joi.string().required(),
+  JWT_REFRESH_EXPIRES: Joi.string().required(),
+  JWT_EMAIL_EXPIRES: Joi.string().required(),
 
   // SESSION
   SESSION_SECRET: Joi.string().required(),
@@ -22,46 +27,51 @@ export const validationSchema = Joi.object({
   EMAIL_FROM: Joi.string().required(),
 
   // Throttler
-  THROTTLE_TTL: Joi.number().default(60),
-  THROTTLE_LIMIT: Joi.number().default(5),
+  THROTTLE_TTL: Joi.number().required(),
+  THROTTLE_LIMIT: Joi.number().required(),
 
   // SMS Services
   TWILIO_ACCOUNT_SID: Joi.string(),
   TWILIO_AUTH_TOKEN: Joi.string(),
   TWILIO_PHONE_NUMBER: Joi.string(),
-  PLAS_GATE_API_URL: Joi.string().uri(),
-  PLAS_GATE_SECRET_KEY: Joi.string(),
-  PLAS_GATE_PRIVATE_KEY: Joi.string(),
-  PLAS_GATE_SMS_SENDER: Joi.string(),
 
   // Services
-  API_GATEWAY_PORT: Joi.number().port().default(3000),
-  AUTH_SERVICE_PORT: Joi.number().port().default(3001),
-  AUTH_SERVICE_HOST: Joi.string().default('localhost'),
-  USER_SERVICE_PORT: Joi.number().port().default(3002),
-  USER_SERVICE_HOST: Joi.string().default('localhost'),
-  RESUME_SERVICE_PORT: Joi.number().port().default(3003),
-  RESUME_SERVICE_HOST: Joi.string().default('localhost'),
-  CHAT_SERVICE_PORT: Joi.number().port().default(3004),
-  CHAT_SERVICE_HOST: Joi.string().default('localhost'),
-  JOB_SERVICE_PORT: Joi.number().port().default(3005),
-  JOB_SERVICE_HOST: Joi.string().default('localhost'),
-  PAYMENT_SERVICE_PORT: Joi.number().port().default(3006),
-  PAYMENT_SERVICE_HOST: Joi.string().default('localhost'),
-  NOTIFICATION_SERVICE_PORT: Joi.number().port().default(3007),
-  NOTIFICATION_SERVICE_HOST: Joi.string().default('localhost'),
+  API_GATEWAY_PORT: Joi.number().port(),
+
+  AUTH_SERVICE_PORT: Joi.number().port(),
+  AUTH_SERVICE_HOST: Joi.string(),
+
+  USER_SERVICE_PORT: Joi.number().port(),
+  USER_SERVICE_HOST: Joi.string(),
+
+  RESUME_SERVICE_PORT: Joi.number().port(),
+  RESUME_SERVICE_HOST: Joi.string(),
+
+  CHAT_SERVICE_PORT: Joi.number().port(),
+  CHAT_SERVICE_HOST: Joi.string(),
+
+  JOB_SERVICE_PORT: Joi.number().port(),
+  JOB_SERVICE_HOST: Joi.string(),
+  PAYMENT_SERVICE_PORT: Joi.number().port(),
+  PAYMENT_SERVICE_HOST: Joi.string(),
+
+  NOTIFICATION_SERVICE_PORT: Joi.number().port(),
+  NOTIFICATION_SERVICE_HOST: Joi.string(),
 
   // Redis
-  REDIS_WEBSOCKET_HOST: Joi.string().default('localhost'),
-  REDIS_WEBSOCKET_PORT: Joi.number().port().default(6379),
+  REDIS_WEBSOCKET_HOST: Joi.string(),
+  REDIS_WEBSOCKET_PORT: Joi.number().port(),
 
   // Redis Caching
-  REDIS_CACHING_HOST: Joi.string().default('localhost'),
-  REDIS_CACHING_PORT: Joi.number().default(6379),
-  REDIS_CACHING_TTL: Joi.number().default(300000), // 5 minutes default
-  
+  REDIS_CACHING_HOST: Joi.string(),
+  REDIS_CACHING_PORT: Joi.number(),
+  REDIS_CACHING_PASSWORD: Joi.string(),
+  REDIS_CACHING_USER: Joi.string(),
+  REDIS_CACHING_TLS: Joi.string(),
+  REDIS_CACHING_TTL: Joi.number(),
+
   // Frontend
-  FRONTEND_ORIGIN: Joi.string().uri().default('http://localhost:4000'),
+  FRONTEND_ORIGIN: Joi.string().uri(),
 
   // Social Auth - Google
   GOOGLE_CLIENT_ID: Joi.string(),
@@ -85,21 +95,14 @@ export const validationSchema = Joi.object({
   FACEBOOK_CALLBACK_URL: Joi.string().uri(),
 
   // Base URL
-  BASE_URL: Joi.string().uri().default('http://localhost:3000/'),
-
-  // Node Environment
-  NODE_ENV: Joi.string()
-    .valid('development', 'production', 'test', 'staging')
-    .default('development'),
+  BASE_URL: Joi.string().uri(),
 
   // OpenAI
   OPENAI_API_KEY: Joi.string().optional(),
 
   // Bakong KHQR Configuration
   BAKONG_DEVELOPER_TOKEN: Joi.string(),
-  BAKONG_API_BASE_URL: Joi.string()
-    .uri()
-    .default('https://api-bakong.nbc.gov.kh'),
+  BAKONG_API_BASE_URL: Joi.string().uri(),
   BAKONG_API_TIMEOUT: Joi.number()
     .integer()
     .min(5000)
@@ -129,7 +132,7 @@ export const validationSchema = Joi.object({
     .integer()
     .min(1)
     .max(525600)
-    .default(10080), // Max 1 year
+    .default(10080),
   BAKONG_BULK_PAYMENT_MAX_HASHES: Joi.number()
     .integer()
     .min(1)

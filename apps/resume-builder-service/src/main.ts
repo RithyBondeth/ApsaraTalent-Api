@@ -16,8 +16,8 @@ async function bootstrap() {
     {
       transport: Transport.TCP,
       options: {
-        host: configService.get('services.resume.host', 'localhost'),
-        port: configService.get('services.resume.port', 3003),
+        host: configService.get<string>('services.resume.host'),
+        port: configService.get<number>('services.resume.port'),
       },
     },
   );
@@ -40,7 +40,7 @@ async function bootstrap() {
   app.useLogger(logger);
 
   await app.listen();
-  const port = configService.get('services.resume.port', 3003);
+  const port = configService.get<number>('services.resume.port');
   logger.log(`Resume service is running on port ${port}`);
 
   // Close the app context

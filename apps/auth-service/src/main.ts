@@ -16,8 +16,8 @@ async function bootstrap() {
     {
       transport: Transport.TCP,
       options: {
-        host: configService.get('services.auth.host', 'localhost'),
-        port: configService.get('services.auth.port', 3001),
+        host: configService.get<string>('services.auth.host'),
+        port: configService.get<number>('services.auth.port'),
       },
     },
   );
@@ -40,7 +40,7 @@ async function bootstrap() {
   app.useLogger(logger);
 
   await app.listen();
-  const port = configService.get('services.auth.port', 3001);
+  const port = configService.get<number>('services.auth.port');
   logger.log(`Auth service is running on port ${port}`);
 
   // Close the app context

@@ -1,39 +1,35 @@
 export default () => ({
-  // Database Configuration
+  nodeEnv: process.env.NODE_ENV,
+
   database: {
     url: process.env.DATABASE_URL,
     synchronize: process.env.DATABASE_SYNCHRONIZE === 'true',
   },
 
-  // JWT Configuration
   jwt: {
     secret: process.env.JWT_SECRET,
-    expiresIn: process.env.JWT_EXPIRES || '1d',
-    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES || '7d',
-    emailExpiresIn: process.env.JWT_EMAIL_EXPIRES || '24h',
+    expiresIn: process.env.JWT_EXPIRES,
+    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES,
+    emailExpiresIn: process.env.JWT_EMAIL_EXPIRES,
   },
 
-  // Session Configuration
   session: {
-    sessionSecret: process.env.SESSION_SECRET || 'dev_secret_key',
+    secret: process.env.SESSION_SECRET,
   },
 
-  // Email Configuration
   email: {
     host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT) || 587,
+    port: Number(process.env.SMTP_PORT),
     user: process.env.EMAIL_USER,
     password: process.env.EMAIL_PASSWORD,
     from: process.env.EMAIL_FROM,
   },
 
-  // Throttler Configuration
   throttle: {
-    ttl: parseInt(process.env.THROTTLE_TTL) || 60,
-    limit: parseInt(process.env.THROTTLE_LIMIT) || 5,
+    ttl: Number(process.env.THROTTLE_TTL),
+    limit: Number(process.env.THROTTLE_LIMIT),
   },
 
-  // SMS Configuration
   sms: {
     twilio: {
       accountSid: process.env.TWILIO_ACCOUNT_SID,
@@ -42,77 +38,87 @@ export default () => ({
     },
   },
 
-  // Services Configuration
   services: {
     apiGateway: {
-      port: parseInt(process.env.API_GATEWAY_PORT) || 3000,
+      port: Number(process.env.API_GATEWAY_PORT),
     },
+
     auth: {
-      port: parseInt(process.env.AUTH_SERVICE_PORT) || 3001,
-      host: process.env.AUTH_SERVICE_HOST || 'localhost',
+      host: process.env.AUTH_SERVICE_HOST,
+      port: Number(process.env.AUTH_SERVICE_PORT),
     },
+
     user: {
-      port: parseInt(process.env.USER_SERVICE_PORT) || 3002,
-      host: process.env.USER_SERVICE_HOST || 'localhost',
+      host: process.env.USER_SERVICE_HOST,
+      port: Number(process.env.USER_SERVICE_PORT),
     },
+
     resume: {
-      port: parseInt(process.env.RESUME_SERVICE_PORT) || 3003,
-      host: process.env.RESUME_SERVICE_HOST || 'localhost',
+      host: process.env.RESUME_SERVICE_HOST,
+      port: Number(process.env.RESUME_SERVICE_PORT),
     },
+
     chat: {
-      port: parseInt(process.env.CHAT_SERVICE_PORT) || 3004,
-      host: process.env.CHAT_SERVICE_HOST || 'localhost',
+      host: process.env.CHAT_SERVICE_HOST,
+      port: Number(process.env.CHAT_SERVICE_PORT),
     },
+
     job: {
-      port: parseInt(process.env.JOB_SERVICE_PORT) || 3005,
-      host: process.env.JOB_SERVICE_HOST || 'localhost',
+      host: process.env.JOB_SERVICE_HOST,
+      port: Number(process.env.JOB_SERVICE_PORT),
     },
+
     payment: {
-      port: parseInt(process.env.PAYMENT_SERVICE_PORT) || 3006,
-      host: process.env.PAYMENT_SERVICE_HOST || 'localhost',
+      host: process.env.PAYMENT_SERVICE_HOST,
+      port: Number(process.env.PAYMENT_SERVICE_PORT),
     },
+
     notification: {
-      port: parseInt(process.env.NOTIFICATION_SERVICE_PORT) || 3007,
-      host: process.env.NOTIFICATION_SERVICE_HOST || 'localhost',
+      host: process.env.NOTIFICATION_SERVICE_HOST,
+      port: Number(process.env.NOTIFICATION_SERVICE_PORT),
     },
   },
 
-  // Redis Configuration
   redis: {
     websocket: {
-      host: process.env.REDIS_WEBSOCKET_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_WEBSOCKET_PORT) || 6379,
+      host: process.env.REDIS_WEBSOCKET_HOST,
+      port: Number(process.env.REDIS_WEBSOCKET_PORT),
     },
+
     caching: {
       host: process.env.REDIS_CACHING_HOST,
-      port: process.env.REDIS_CACHING_PORT,
-      ttl: process.env.REDIS_CACHING_TTL,
-    }
+      port: Number(process.env.REDIS_CACHING_PORT),
+      username: process.env.REDIS_CACHING_USER,
+      password: process.env.REDIS_CACHING_PASSWORD,
+      tls: process.env.REDIS_CACHING_TLS === 'true',
+      ttl: Number(process.env.REDIS_CACHING_TTL),
+    },
   },
 
-  // Frontend Configuration
   frontend: {
-    origin: process.env.FRONTEND_ORIGIN || 'http://localhost:4000',
+    origin: process.env.FRONTEND_ORIGIN,
   },
 
-  // Social Auth Configuration
   social: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackUrl: process.env.GOOGLE_CALLBACK_URL,
     },
+
     linkedin: {
       clientId: process.env.LINKEDIN_CLIENT_ID,
-      profileUrl: process.env.LINKEDIN_PROFILE_URL,
       clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
       callbackUrl: process.env.LINKEDIN_CALLBACK_URL,
+      profileUrl: process.env.LINKEDIN_PROFILE_URL,
     },
+
     github: {
       clientId: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
       callbackUrl: process.env.GITHUB_CALLBACK_URL,
     },
+
     facebook: {
       clientId: process.env.FACEBOOK_CLIENT_ID,
       clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
@@ -120,29 +126,27 @@ export default () => ({
     },
   },
 
-  // Base URL
-  baseUrl: process.env.BASE_URL || 'http://localhost:3000/',
+  baseUrl: process.env.BASE_URL,
 
-  // OpenAI Configuration
   openai: {
-    apiKey: process.env.OPENAI_API_KEY || null,
+    apiKey: process.env.OPENAI_API_KEY,
   },
 
-  // Bakong KHQR Configuration
   bakong: {
     developerToken: process.env.BAKONG_DEVELOPER_TOKEN,
-    apiBaseUrl:
-      process.env.BAKONG_API_BASE_URL || 'https://api-bakong.nbc.gov.kh',
-    apiTimeout: parseInt(process.env.BAKONG_API_TIMEOUT) || 30000,
-    rateLimitRequests: parseInt(process.env.BAKONG_RATE_LIMIT_REQUESTS) || 100,
-    rateLimitWindowMs:
-      parseInt(process.env.BAKONG_RATE_LIMIT_WINDOW_MS) || 60000,
-    qrImageDefaultWidth:
-      parseInt(process.env.BAKONG_QR_IMAGE_DEFAULT_WIDTH) || 300,
-    qrImageMaxWidth: parseInt(process.env.BAKONG_QR_IMAGE_MAX_WIDTH) || 1000,
-    qrExpirationMaxMinutes:
-      parseInt(process.env.BAKONG_QR_EXPIRATION_MAX_MINUTES) || 10080,
-    bulkPaymentMaxHashes:
-      parseInt(process.env.BAKONG_BULK_PAYMENT_MAX_HASHES) || 50,
+    apiBaseUrl: process.env.BAKONG_API_BASE_URL,
+    apiTimeout: Number(process.env.BAKONG_API_TIMEOUT),
+
+    rateLimitRequests: Number(process.env.BAKONG_RATE_LIMIT_REQUESTS),
+    rateLimitWindowMs: Number(process.env.BAKONG_RATE_LIMIT_WINDOW_MS),
+
+    qrImageDefaultWidth: Number(process.env.BAKONG_QR_IMAGE_DEFAULT_WIDTH),
+    qrImageMaxWidth: Number(process.env.BAKONG_QR_IMAGE_MAX_WIDTH),
+
+    qrExpirationMaxMinutes: Number(
+      process.env.BAKONG_QR_EXPIRATION_MAX_MINUTES,
+    ),
+
+    bulkPaymentMaxHashes: Number(process.env.BAKONG_BULK_PAYMENT_MAX_HASHES),
   },
 });
