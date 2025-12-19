@@ -15,8 +15,8 @@ import { validationSchema } from './validation.schema';
       },
       envFilePath: [
         // '.env.local',
-        // '.env',
-        '.env.development',
+        '.env',
+        // '.env.development',
         // '.env.production',
         // '.env.staging',
         // '.env.test',

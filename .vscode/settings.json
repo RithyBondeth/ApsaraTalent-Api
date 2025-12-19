@@ -12,6 +12,8 @@
         "dtos",
         "eastus",
         "emailaddress",
+        "favorited",
+        "favoriting",
         "firstname",
         "GOCSPX",
         "googleusercontent",
@@ -36,6 +38,9 @@
         "redns",
         "Regitser",
         "sslmode",
+        "TTLS",
+        "unfavorited",
+        "unfavoriting",
         "xnbu",
         "xuwuw"
     ]

@@ -15,7 +15,7 @@ async function bootstrap() {
   //Enable Express Session
   app.use(
     session({
-      secret: configService.get<string>('session.sessionSecret'),
+      secret: configService.get<string>('session.secret'),
       resave: false,
       saveUninitialized: true,
       cookie: {

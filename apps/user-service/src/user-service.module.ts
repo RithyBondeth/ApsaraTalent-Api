@@ -43,6 +43,7 @@ import { CompanyFavoriteEmployee } from '@app/common/database/entities/company/f
 import { OpenPositionController } from './controllers/company-controllers/open-position.controller';
 import { OpenPositionService } from './services/company-services/open-position.service';
 import { RedisModule } from '@app/common/redis/redis.module';
+import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -68,6 +69,15 @@ import { RedisModule } from '@app/common/redis/redis.module';
     UploadfileModule,
     JwtModule,
     RedisModule,
+    EventEmitterModule.forRoot({
+      wildcard: false,
+      delimiter: '.',
+      newListener: false,
+      removeListener: false,
+      maxListeners: 10,
+      verboseMemoryLeak: false,
+      ignoreErrors: false,
+    }),
   ],
   controllers: [
     UpdateEmployeeInfoController,

@@ -31,6 +31,22 @@ export class RedisService {
     return `${this.PREFIX}:${entity}:search:${queryString}`;
   }
 
+  generateEmployeeFavoriteCountKey(employeeId: string): string {
+    return this.generateEmployeeKey('favorite-count', employeeId);
+  }
+
+  generateCompanyFavoriteCountKey(companyId: string): string {
+    return this.generateCompanyKey('favorite-count', companyId);
+  }
+
+  generateEmployeeFavoritesKey(employeeId: string): string {
+    return this.generateEmployeeKey('favorites', employeeId);
+  }
+
+  generateCompanyFavoritesKey(companyId: string): string {
+    return this.generateCompanyKey('favorites', companyId);
+  }
+
   // Operations
   async get<T>(key: string): Promise<T | null> {
     try {
@@ -72,36 +88,40 @@ export class RedisService {
     }
   }
 
-  // Invalidation helpers
+  // ⚠️ REPLACE pattern deletion with simple del calls
   async invalidateUser(userId: string): Promise<void> {
+    // Instead of pattern deletion, delete specific known keys
     await Promise.all([
-      this.delPattern(`user:*:${userId}`),
-      this.delPattern(`user:list:*`),
+      this.del(this.generateUserKey('detail', userId)),
+      this.del(this.generateUserKey('profile', userId)),
+      this.del(this.generateUserKey('settings', userId)),
     ]);
   }
 
   async invalidateEmployee(employeeId: string): Promise<void> {
     await Promise.all([
-      this.delPattern(`employee:*:${employeeId}`),
-      this.delPattern('employee:list:*'),
-      this.delPattern('*:favorite:*'), // Invalidate favorite lists
+      this.del(this.generateEmployeeKey('detail', employeeId)),
+      this.del(this.generateEmployeeKey('favorites', employeeId)),
+      this.del(this.generateEmployeeKey('favorite-count', employeeId)),
     ]);
   }
 
   async invalidateCompany(companyId: string): Promise<void> {
     await Promise.all([
-      this.delPattern(`company:*:${companyId}`),
-      this.delPattern('company:list:*'),
-      this.delPattern('*:favorite:*'),
+      this.del(this.generateCompanyKey('detail', companyId)),
+      this.del(this.generateCompanyKey('favorites', companyId)),
+      this.del(this.generateCompanyKey('favorite-count', companyId)),
     ]);
   }
 
-  async invalidateAllLists(): Promise<void> {
-    await Promise.all([
-      this.delPattern('user:list:*'),
-      this.delPattern('employee:list:*'),
-      this.delPattern('company:list:*'),
-      this.delPattern('*:search:*'),
-    ]);
+  // 🆕 NEW: Helper for list invalidation (optional)
+  async invalidateListPages(
+    entity: string,
+    pages: number[] = [1, 2, 3],
+  ): Promise<void> {
+    const promises = pages.map((page) =>
+      this.del(`${this.PREFIX}:${entity}:list:page:${page}:limit:10`),
+    );
+    await Promise.all(promises);
   }
 }
