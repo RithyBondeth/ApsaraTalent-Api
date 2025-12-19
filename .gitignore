@@ -37,10 +37,10 @@ lerna-debug.log*
 
 # dotenv environment variable files
 .env.local
-.env.development.local
+.env.development
 .env.test.local
-.env.production.local
-.env.staging.local
+.env.production
+.env.staging
 
 # Keep .env and environment-specific files tracked
 # .env (development template - tracked)
