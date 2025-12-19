@@ -18,7 +18,7 @@ export class ResumeBuilderService {
   ) {
     this.logger.setContext(ResumeBuilderService.name);
     this.openAI = new OpenAI({
-      apiKey: this.configService.get<string>('OPENAI_API_KEY'),
+      apiKey: this.configService.get<string>('openai.apiKey'),
     });
   }
 

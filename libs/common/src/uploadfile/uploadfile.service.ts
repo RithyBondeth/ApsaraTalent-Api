@@ -29,7 +29,7 @@ export class UploadfileService {
   };
   getUploadFile(folderName: string, file: Express.Multer.File): string {
     return (
-      this.configService.get<string>('BASE_URL') +
+      this.configService.get<string>('baseUrl') +
       `storage/${folderName}/` +
       file.filename
     );

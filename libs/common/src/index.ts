@@ -4,3 +4,7 @@ export * from './jwt/jwt.module';
 export * from './uploadfile/uploadfile.module';
 export * from './email/email.module';
 export * from './throttler/throttler.module';
+export * from './message/message.module';
+export * from './config/config.module';
+export * from './redis/redis.module';
+export * from './guards/auth.guard';

@@ -59,9 +59,7 @@ export class LinkedInController implements ILinkedInAuthController {
         throw new BadRequestException('LinkedIn authentication failed');
       }
 
-      const FRONTEND_ORIGIN =
-        this.configService.get<string>('FRONTEND_ORIGIN') ?? // Fixed typo: was 'FRONTED_ORIGIN'
-        'http://localhost:4000';
+      const FRONTEND_ORIGIN = this.configService.get<string>('frontend.origin');
 
       const isProduction =
         this.configService.get<string>('NODE_ENV') === 'production';
@@ -153,10 +151,8 @@ export class LinkedInController implements ILinkedInAuthController {
     } catch (error) {
       console.error('LinkedIn authentication error:', error);
 
-      const FRONTEND_ORIGIN =
-        this.configService.get<string>('FRONTEND_ORIGIN') ??
-        'http://localhost:4000';
-
+      const FRONTEND_ORIGIN = this.configService.get<string>('frontend.origin');
+      
       const errorHtml = `
         <!doctype html>
         <html>

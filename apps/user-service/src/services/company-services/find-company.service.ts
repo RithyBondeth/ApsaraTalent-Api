@@ -11,7 +11,6 @@ import {
 import { RpcException } from '@nestjs/microservices';
 import { User } from '@app/common/database/entities/user.entity';
 import { RedisService } from '@app/common/redis/redis.service';
-import { cache } from 'sharp';
 
 @Injectable()
 export class FindCompanyService {

@@ -6,8 +6,8 @@ export const throttlerConfig = async (
 ): Promise<ThrottlerModuleOptions> => ({
   throttlers: [
     {
-      ttl: configService.get<number>('THROTTLE_TTL'),
-      limit: configService.get<number>('THROTTLE_LIMIT'),
+      ttl: configService.get<number>('throttle.ttl'),
+      limit: configService.get<number>('throttle.limit'),
     },
   ],
 });

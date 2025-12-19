@@ -11,15 +11,15 @@ export class MessageService {
 
   constructor(private configService: ConfigService) {
     this.twilioClient = Twilio(
-      this.configService.get<string>('TWILIO_ACCOUNT_SID'),
-      this.configService.get<string>('TWILIO_AUTH_TOKEN'),
+      this.configService.get<string>('sms.twilio.accountSid'),
+      this.configService.get<string>('sms.twilio.authToken'),
     );
   }
 
   async sendOtp(phone: string, otp: string) {
     return this.twilioClient.messages.create({
       body: `Apsara Talent, Your OTP code is: ${otp}`,
-      from: this.configService.get<string>('TWILIO_PHONE_NUMBER'),
+      from: this.configService.get<string>('sms.twilio.phoneNumber'),
       to: phone,
     });
   }
@@ -27,7 +27,7 @@ export class MessageService {
   async sendResetToken(phone: string, resetToken: string) {
     return this.twilioClient.messages.create({
       body: `Apsara Talent, Your reset token is: ${resetToken}`,
-      from: this.configService.get<string>('TWILIO_PHONE_NUMBER'),
+      from: this.configService.get<string>('sms.twilio.phoneNumber'),
       to: phone,
     });
   }
@@ -51,13 +51,13 @@ export class MessageService {
         this.emailService.sendEmail({
           to: employeeEmail,
           from: companyEmail,
-          subject: "Matching Notification",
+          subject: 'Matching Notification',
           text: employeeMsg,
         }),
         this.emailService.sendEmail({
           to: companyEmail,
           from: employeeEmail,
-          subject: "Matching Notification",
+          subject: 'Matching Notification',
           text: companyMsg,
         }),
         // this.twilioClient.messages.create({
@@ -71,9 +71,9 @@ export class MessageService {
         //   body: companyMsg,
         // }),
       ]);
-      this.logger.log('✅ SMS sent to employee and company after match.');
+      this.logger.log('SMS sent to employee and company after match.');
     } catch (err) {
-      this.logger.error(`❌ Twilio error: ${err.message}`);
+      this.logger.error(`Twilio error: ${err.message}`);
       throw new Error('Failed to send match notifications');
     }
   }

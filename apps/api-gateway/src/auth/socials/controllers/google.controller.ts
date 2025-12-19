@@ -41,9 +41,9 @@ export class GoogleController implements IGoogleAuthController {
       const remember = req.session.remember;
 
       const result = await firstValueFrom(
-        this.authService.send(AUTH_SERVICE.ACTIONS.GOOGLE_AUTH, req.user).pipe(
-          timeout(10000)
-        )
+        this.authService
+          .send(AUTH_SERVICE.ACTIONS.GOOGLE_AUTH, req.user)
+          .pipe(timeout(10000)),
       );
 
       if (!result?.accessToken) {
@@ -51,17 +51,15 @@ export class GoogleController implements IGoogleAuthController {
       }
 
       // Determine frontend URL
-      const FRONTEND_ORIGIN =
-        this.configService.get('FRONTEND_ORIGIN') ??
-        'http://localhost:5173';
+      const FRONTEND_ORIGIN = this.configService.get<string>('frontend.origin');
 
       const isProduction =
-        this.configService.get('NODE_ENV') === 'production';
+        this.configService.get<string>('NODE_ENV') === 'production';
 
       // Cookie expiration based on remember flag
       const maxAge = remember
-        ? 30 * 24 * 60 * 60 * 1000   // 30 days
-        : 24 * 60 * 60 * 1000;       // 1 day
+        ? 30 * 24 * 60 * 60 * 1000 // 30 days
+        : 24 * 60 * 60 * 1000; // 1 day
 
       // Secure cookie options
       const cookieOptions = {
@@ -127,9 +125,7 @@ export class GoogleController implements IGoogleAuthController {
     } catch (error) {
       console.error('Google authentication error:', error);
 
-      const FRONTEND_ORIGIN =
-        this.configService.get('FRONTEND_ORIGIN') ??
-        'http://localhost:5173';
+      const FRONTEND_ORIGIN = this.configService.get<string>('frontend.origin');
 
       const errorHtml = `
         <!doctype html>

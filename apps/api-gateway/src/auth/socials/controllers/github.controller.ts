@@ -50,9 +50,7 @@ export class GithubController implements IGithubAuthController {
         throw new BadRequestException('GitHub authentication failed');
       }
 
-      const FRONTEND_ORIGIN =
-        this.configService.get<string>('FRONTEND_ORIGIN') ??
-        'http://localhost:4000';
+      const FRONTEND_ORIGIN = this.configService.get<string>('frontend.origin');
 
       const isProduction =
         this.configService.get<string>('NODE_ENV') === 'production';
@@ -87,7 +85,7 @@ export class GithubController implements IGithubAuthController {
         path: '/',
       });
 
-     // Send user info using postMessage (no tokens)
+      // Send user info using postMessage (no tokens)
       const html = `
         <!doctype html>
         <html>
@@ -144,9 +142,7 @@ export class GithubController implements IGithubAuthController {
     } catch (error) {
       console.error('GitHub authentication error:', error);
 
-      const FRONTEND_ORIGIN =
-        this.configService.get<string>('FRONTEND_ORIGIN') ??
-        'http://localhost:4000';
+      const FRONTEND_ORIGIN = this.configService.get<string>('frontend.origin');
 
       const errorHtml = `
         <!doctype html>

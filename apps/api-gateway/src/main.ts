@@ -39,7 +39,7 @@ async function bootstrap() {
   app.useLogger(logger);
 
   await app.startAllMicroservices();
-  const port = configService.get('services.apiGateway.port');
+  const port = configService.get<number>('services.apiGateway.port');
   await app.listen(port);
   logger.log(`Api gateway is running on port ${port}`);
 }

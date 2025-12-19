@@ -8,7 +8,6 @@ import { RpcException } from '@nestjs/microservices';
 import { PinoLogger } from 'nestjs-pino';
 import { User } from '@app/common/database/entities/user.entity';
 import { RedisService } from '@app/common/redis/redis.service';
-import { cache } from 'sharp';
 
 @Injectable()
 export class SearchEmployeeService {

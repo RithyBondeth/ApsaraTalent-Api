@@ -8,12 +8,6 @@ import { PinoLogger } from 'nestjs-pino';
 import { SearchJobDto } from '../dtos/job-search.dto';
 import { extractSalaryRange } from 'utils/functions/extract-salary-range';
 
-function toNumber(val?: string): number | undefined {
-  if (!val) return undefined;
-  const n = Number(val.toString().replace(/[^\d.]/g, ''));
-  return Number.isFinite(n) ? n : undefined;
-}
-
 @Injectable()
 export class JobServiceService {
   constructor(

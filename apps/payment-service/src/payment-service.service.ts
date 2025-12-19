@@ -45,7 +45,7 @@ export class PaymentServiceService {
     @InjectRepository(PaymentTransaction)
     private readonly transactionRepository: Repository<PaymentTransaction>,
   ) {
-    this.bakongConfig = this.configService.get('bakong');
+    this.bakongConfig = this.configService.get<string>('bakong');
 
     if (!this.bakongConfig?.developerToken) {
       throw new BakongConfigurationException(

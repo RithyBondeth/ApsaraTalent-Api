@@ -24,8 +24,8 @@ export const databaseConfig = async (
   configService: ConfigService,
 ): Promise<PostgresConnectionOptions> => ({
   type: 'postgres',
-  url: configService.get<string>('DATABASE_URL'),
-  synchronize: configService.get<boolean>('DATABASE_SYNCHRONIZE'),
+  url: configService.get<string>('database.url'),
+  synchronize: configService.get<boolean>('database.synchronize'),
   entities: [
     User,
     Employee,
