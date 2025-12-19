@@ -40,12 +40,6 @@ export default () => ({
       authToken: process.env.TWILIO_AUTH_TOKEN,
       phoneNumber: process.env.TWILIO_PHONE_NUMBER,
     },
-    plasgate: {
-      apiUrl: process.env.PLAS_GATE_API_URL,
-      secretKey: process.env.PLAS_GATE_SECRET_KEY,
-      privateKey: process.env.PLAS_GATE_PRIVATE_KEY,
-      smsSender: process.env.PLAS_GATE_SMS_SENDER,
-    },
   },
 
   // Services Configuration
@@ -110,6 +104,7 @@ export default () => ({
     },
     linkedin: {
       clientId: process.env.LINKEDIN_CLIENT_ID,
+      profileUrl: process.env.LINKEDIN_PROFILE_URL,
       clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
       callbackUrl: process.env.LINKEDIN_CALLBACK_URL,
     },

@@ -51,9 +51,7 @@ export class FacebookController implements IFacebookAuthController {
       }
 
       // Determine frontend URL
-      const FRONTEND_ORIGIN =
-        this.configService.get<string>('FRONTEND_ORIGIN') ??
-        'http://localhost:4000';
+      const FRONTEND_ORIGIN = this.configService.get<string>('frontend.origin');
 
       const isProduction =
         this.configService.get<string>('NODE_ENV') === 'production';
@@ -145,9 +143,7 @@ export class FacebookController implements IFacebookAuthController {
     } catch (error) {
       console.error('Facebook authentication error:', error);
 
-      const FRONTEND_ORIGIN =
-        this.configService.get<string>('FRONTEND_ORIGIN') ??
-        'http://localhost:4000';
+      const FRONTEND_ORIGIN = this.configService.get<string>('frontend.origin');
 
       const errorHtml = `
         <!doctype html>

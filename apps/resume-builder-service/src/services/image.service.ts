@@ -5,7 +5,7 @@ import * as sharp from 'sharp';
 @Injectable()
 export class ImageService {
   constructor(private readonly logger: PinoLogger) {
-    this.logger.setContext(ImageService.name); // optional context tagging
+    this.logger.setContext(ImageService.name);
   }
 
   async optimizeProfilePicture(imageData: string): Promise<string> {

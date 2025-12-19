@@ -1,6 +1,6 @@
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { UploadfileService } from './uploadfile.service';
-import { mixin, Type } from '@nestjs/common'; // <-- important!
+import { mixin, Type } from '@nestjs/common';
 
 export function UploadFilesInterceptor(
   fieldName: string,

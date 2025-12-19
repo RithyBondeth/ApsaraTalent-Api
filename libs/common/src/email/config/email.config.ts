@@ -4,8 +4,8 @@ import { IEmailConfigOptions } from '../interfaces/email-config.interface';
 export const emailConfig = async (
   configService: ConfigService,
 ): Promise<IEmailConfigOptions> => ({
-  host: configService.get<string>('SMTP_HOST'),
-  port: configService.get<number>('SMTP_PORT'),
+  host: configService.get<string>('email.host'),
+  port: configService.get<number>('email.port'),
   secure: false, // false for TLS - port 587
   transportOptions: {
     tls: {
@@ -14,8 +14,8 @@ export const emailConfig = async (
     },
   },
   auth: {
-    user: configService.get<string>('EMAIL_USER'),
-    pass: configService.get<string>('EMAIL_PASSWORD'),
+    user: configService.get<string>('email.user'),
+    pass: configService.get<string>('email.password'),
   },
-  defaultFrom: configService.get<string>('EMAIL_FROM'),
+  defaultFrom: configService.get<string>('email.from'),
 });

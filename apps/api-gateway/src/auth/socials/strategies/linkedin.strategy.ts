@@ -17,7 +17,7 @@ export class LinkedInStrategy extends PassportStrategy(Strategy, 'linkedin') {
   }
 
   userProfile(accessToken: string, done: Function) {
-    fetch('https://api.linkedin.com/v2/userinfo', {
+    fetch(this.configService.get<string>('social.linkedin.profileUrl'), {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
       .then((r) => (r.ok ? r.json() : Promise.reject(r)))

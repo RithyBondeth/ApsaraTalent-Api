@@ -15,7 +15,7 @@ import { ResumeTemplateController } from './controllers/resume-template.controll
     LoggerModule,
     DatabaseModule,
     UploadfileModule,
-    TypeOrmModule.forFeature([ ResumeTemplate ]),
+    TypeOrmModule.forFeature([ResumeTemplate]),
   ],
   controllers: [ResumeBuilderController, ResumeTemplateController],
   providers: [ResumeBuilderService, ImageService, ResumeTemplateService],

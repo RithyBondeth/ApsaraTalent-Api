@@ -72,6 +72,7 @@ export const validationSchema = Joi.object({
   LINKEDIN_CLIENT_ID: Joi.string(),
   LINKEDIN_CLIENT_SECRET: Joi.string(),
   LINKEDIN_CALLBACK_URL: Joi.string().uri(),
+  LINKEDIN_PROFILE_URL: Joi.string().uri(),
 
   // Social Auth - GitHub
   GITHUB_CLIENT_ID: Joi.string(),
