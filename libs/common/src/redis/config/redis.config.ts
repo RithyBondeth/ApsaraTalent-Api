@@ -1,10 +1,9 @@
-import { CacheModuleOptions } from '@nestjs/cache-manager';
 import { ConfigService } from '@nestjs/config';
 import * as redisStore from 'cache-manager-redis-store';
 
 export const getRedisCloudConfig = (
   configService: ConfigService,
-): CacheModuleOptions => {
+) => {
   const host = configService.get<string>('REDIS_CACHING_HOST');
   const port = configService.get<number>('REDIS_CACHING_PORT');
   const password = configService.get<string>('REDIS_CACHING_PASSWORD');
