@@ -102,22 +102,21 @@ export class JobMatchingController implements IMatchingController {
     return firstValueFrom(
       this.jobClient.send(
         JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_MATCHING_COUNT,
-        payload
-      )
+        payload,
+      ),
     );
   }
 
-
   @Get('current-company-matching-count/:cid')
   async findCurrentCompanyMatchingCount(
-    @Param('cid', ParseUUIDPipe) cid: string
+    @Param('cid', ParseUUIDPipe) cid: string,
   ): Promise<any> {
     const payload = { cid };
     return firstValueFrom(
       this.jobClient.send(
         JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_MATCHING_COUNT,
-        payload
-      )
+        payload,
+      ),
     );
   }
 }
