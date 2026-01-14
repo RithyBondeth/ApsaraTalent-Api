@@ -2,7 +2,9 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "declaration": false,
-    "outDir": "../../dist/apps/job-service"
+    "outDir": "../../dist/apps/job-service",
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
