@@ -10,6 +10,7 @@ import { RefreshTokenDTO } from '../dtos/refresh-token.dto';
 import { JwtService } from '@app/common/jwt/jwt.service';
 import { RefreshTokenResponseDTO } from '../dtos/refresh-token-response.dto';
 import { User } from '@app/common/database/entities/user.entity';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class RefreshTokenService {
@@ -58,10 +59,12 @@ export class RefreshTokenService {
         user: user,
       });
     } catch (error) {
-      this.logger.error(error.message);
-      throw new BadRequestException(
-        'An error occurred while refreshing token.',
-      );
+      this.logger.error((error as Error).message || 'An error occurred while refreshing token.');
+      if (error instanceof RpcException) throw error;
+      throw new RpcException({
+        message: (error as Error).message,
+        statusCode: 500,
+      });
     }
   }
 }

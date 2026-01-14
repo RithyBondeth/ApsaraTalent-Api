@@ -239,9 +239,9 @@ export class RegisterService {
       };
     } catch (error) {
       // Handle error
-      this.logger.error(error.message);
+      this.logger.error((error as Error).message || 'An error occurred while registering company.');
       throw new RpcException({
-        message: error.message,
+        message: (error as Error).message,
         statusCode: 500,
       });
     }
@@ -432,9 +432,9 @@ export class RegisterService {
       };
     } catch (error) {
       // Handle error
-      this.logger.error(error.message);
+      this.logger.error((error as Error).message || 'An error occurred while registering employee.');
       throw new RpcException({
-        message: error.message,
+        message: (error as Error).message,
         statusCode: 500,
       });
     }

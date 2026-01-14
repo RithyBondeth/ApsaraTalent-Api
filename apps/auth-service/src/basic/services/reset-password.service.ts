@@ -63,8 +63,12 @@ export class ResetPasswordService {
         'You password was updated successfully',
       );
     } catch (error) {
-      this.logger.error(error.message);
-      throw new RpcException({ message: error.message, statusCode: 500 });
+      this.logger.error((error as Error).message || 'An error occurred while resetting password.');
+      if (error instanceof RpcException) throw error;
+      throw new RpcException({
+        message: (error as Error).message,
+        statusCode: 500,
+      });
     }
   }
 }

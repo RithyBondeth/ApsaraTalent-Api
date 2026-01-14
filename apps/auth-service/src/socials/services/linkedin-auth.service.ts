@@ -6,12 +6,14 @@ import { LinkedInAuthDTO } from '../dtos/linkedin-auth.dto';
 import { Repository } from 'typeorm';
 import { User } from '@app/common/database/entities/user.entity';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
+import { PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class LinkedInAuthService {
   constructor(
     @InjectRepository(User) private users: Repository<User>,
     private readonly jwt: JwtService,
+    private readonly logger: PinoLogger,
   ) {}
 
   async linkedInLogin(linkedInData: LinkedInAuthDTO) {
@@ -60,8 +62,13 @@ export class LinkedInAuthService {
         accessToken,
         refreshToken,
       };
-    } catch (err) {
-      console.error('LinkedIn login error:', err);
+    } catch (error) {
+      this.logger.error('LinkedIn login error:', {
+        error: (error as Error).message,
+        stack: (error as Error).stack,
+        linkedinId: linkedInData.id,
+        email: linkedInData.email,
+      });
       throw new Error('Failed to login with LinkedIn');
     }
   }

@@ -47,10 +47,10 @@ export class LoginOTPService {
         isSuccess: true,
       };
     } catch (error) {
-      this.logger.error(error?.message || 'Login OTP failed.');
+      this.logger.error((error as Error).message || 'Login OTP failed.');
       if (error instanceof RpcException) throw error;
       throw new RpcException({
-        message: error.message,
+        message: (error as Error).message,
         statusCode: 500,
       });
     }
@@ -111,10 +111,10 @@ export class LoginOTPService {
         },
       };
     } catch (error) {
-      this.logger.error(error?.message || 'Verify OTP failed.');
+      this.logger.error((error as Error).message || 'Verify OTP failed.');
       if (error instanceof RpcException) throw error;
       throw new RpcException({
-        message: error.message,
+        message: (error as Error).message,
         statusCode: 500,
       });
     }

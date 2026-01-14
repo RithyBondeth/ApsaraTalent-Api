@@ -76,9 +76,12 @@ export class ForgotPasswordService {
         );
       }
     } catch (error) {
-      this.logger.error(error?.message || 'Forgot password failed');
+      this.logger.error((error as Error).message || 'Forgot password failed');
       if (error instanceof RpcException) throw error;
-      throw new RpcException({ message: error.message, statusCode: 500 });
+      throw new RpcException({
+        message: (error as Error).message,
+        statusCode: 500,
+      });
     }
   }
 }

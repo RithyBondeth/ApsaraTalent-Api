@@ -82,12 +82,12 @@ export class LoginService {
         user: user,
       });
     } catch (error) {
-      this.logger.error(error?.message || 'Login failed');
+      this.logger.error((error as Error).message || 'Login failed');
       // If it's already an RpcException, rethrow it
       if (error instanceof RpcException) throw error;
       // Otherwise, wrap unexpected errors in RpcException
       throw new RpcException({
-        message: error.message,
+        message: (error as Error).message,
         statusCode: 500,
       });
     }

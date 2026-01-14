@@ -73,8 +73,8 @@ export class FacebookAuthService {
       };
     } catch (error) {
       this.logger.error('Facebook login error:', {
-        error: error.message,
-        stack: error.stack,
+        error: (error as Error).message,
+        stack: (error as Error).stack,
         googleId: facebookData.id,
         email: facebookData.email,
       });

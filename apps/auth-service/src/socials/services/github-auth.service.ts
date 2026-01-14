@@ -69,8 +69,8 @@ export class GithubAuthService {
       };
     } catch (error) {
       this.logger.error('Google login error:', {
-        error: error.message,
-        stack: error.stack,
+        error: (error as Error).message,
+        stack: (error as Error).stack,
         githubId: githubData.id,
         email: githubData.email,
       });
