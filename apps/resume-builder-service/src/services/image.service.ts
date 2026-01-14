@@ -30,8 +30,8 @@ export class ImageService {
 
       return `data:image/jpeg;base64,${optimizedBuffer.toString('base64')}`;
     } catch (error) {
-      this.logger.error(error?.message || 'Unknown image optimization error');
-      throw new Error('Failed to optimize profile picture');
+      this.logger.error((error as Error).message || 'Unknown image optimization error');
+      throw new Error((error as Error).message || 'Failed to optimize profile picture');
     }
   }
 }

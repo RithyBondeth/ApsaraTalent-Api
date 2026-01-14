@@ -57,9 +57,14 @@ export class ImageEmployeeService {
       return { message: "Employee's avatar was successfully set." };
     } catch (error) {
       // Handle error
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          "An error occurred while uploading the employee's avatar.",
+      );
       throw new RpcException({
-        message: "An error occurred while uploading the employee's avatar.",
+        message:
+          (error as Error).message ||
+          "An error occurred while uploading the employee's avatar.",
         statusCode: 500,
       });
     }
@@ -92,9 +97,14 @@ export class ImageEmployeeService {
       return { message: "Employee's avatar was successfully deleted." };
     } catch (error) {
       // Handle error
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          "An error occurred while removing the employee's avatar.",
+      );
       throw new RpcException({
-        message: "An error occurred while removing the employee's avatar.",
+        message:
+          (error as Error).message ||
+          "An error occurred while removing the employee's avatar.",
         statusCode: 500,
       });
     }

@@ -223,9 +223,9 @@ export class MatchingService {
         (empLiked) => new UserResponseDTO(empLiked.company),
       );
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error((error as Error).message || 'An error occurred while fetching the employee liked.');
       throw new RpcException({
-        message: 'An error occurred while fetching the employee liked.',
+        message: (error as Error).message,
         statusCode: 500,
       });
     }
@@ -250,9 +250,9 @@ export class MatchingService {
         (cmpLiked) => new UserResponseDTO(cmpLiked.employee),
       );
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error((error as Error).message || 'An error occurred while fetching the company liked.');
       throw new RpcException({
-        message: 'An error occurred while fetching the company liked.',
+        message: (error as Error).message,
         statusCode: 500,
       });
     }
@@ -278,9 +278,9 @@ export class MatchingService {
         (user) => new UserResponseDTO(user.company),
       );
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error((error as Error).message || 'An error occurred while fetching the employee matching.');
       throw new RpcException({
-        message: 'An error occurred while fetching the employee matching.',
+        message: (error as Error).message,
         statusCode: 500,
       });
     }
@@ -306,9 +306,9 @@ export class MatchingService {
         (user) => new UserResponseDTO(user.employee),
       );
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error((error as Error).message || 'An error occurred while fetching the company matching.');
       throw new RpcException({
-        message: 'An error occurred while fetching the company matching.',
+        message: (error as Error).message,
         statusCode: 500,
       });
     }
@@ -324,10 +324,9 @@ export class MatchingService {
       });
       return { totalMatching: currentEmployeeMatchingCount };
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error((error as Error).message || 'An error occurred while counting the current employee matching.');
       throw new RpcException({
-        message:
-          'An error occurred while counting the current employee matching.',
+        message: (error as Error).message,
         statusCode: 500,
       });
     }
@@ -343,10 +342,9 @@ export class MatchingService {
       });
       return { totalMatching: currentCompanyMatchingCount };
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error((error as Error).message || 'An error occurred while counting the current company matching.');
       throw new RpcException({
-        message:
-          'An error occurred while counting the current company matching.',
+        message: (error as Error).message,
         statusCode: 500,
       });
     }

@@ -139,9 +139,14 @@ export class SearchEmployeeService {
 
       return result;
     } catch (error) {
-      this.logger.error(error, 'SearchEmployeeService failed');
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while searching for employees.',
+      );
       throw new RpcException({
-        message: error.message,
+        message:
+          (error as Error).message ||
+          'An error occurred while searching for employees.',
         statusCode: 500,
       });
     }

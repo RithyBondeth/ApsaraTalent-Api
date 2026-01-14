@@ -60,9 +60,14 @@ export class ImageCompanyService {
       return { message: "Company's avatar was successfully set." };
     } catch (error) {
       // Handle error
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          "An error occurred while uploading the company's avatar.",
+      );
       throw new RpcException({
-        message: "An error occurred while uploading the company's avatar.",
+        message:
+          (error as Error).message ||
+          "An error occurred while uploading the company's avatar.",
         statusCode: 500,
       });
     }
@@ -95,9 +100,14 @@ export class ImageCompanyService {
       return { message: "Company's avatar was successfully deleted." };
     } catch (error) {
       // Handle error
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          "An error occurred while removing the company's avatar.",
+      );
       throw new RpcException({
-        message: "An error occurred while removing the company's avatar.",
+        message:
+          (error as Error).message ||
+          "An error occurred while removing the company's avatar.",
         statusCode: 500,
       });
     }
@@ -134,9 +144,14 @@ export class ImageCompanyService {
       return { message: "Company's cover was successfully set." };
     } catch (error) {
       // Handle error
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          "An error occurred while uploading the company's cover.",
+      );
       throw new RpcException({
-        message: "An error occurred while uploading the company's cover.",
+        message:
+          (error as Error).message ||
+          "An error occurred while uploading the company's cover.",
         statusCode: 500,
       });
     }
@@ -170,9 +185,14 @@ export class ImageCompanyService {
       return { message: "Company's cover was successfully deleted." };
     } catch (error) {
       // Handle error
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          "An error occurred while removing the company's cover.",
+      );
       throw new RpcException({
-        message: "An error occurred while removing the company's cover.",
+        message:
+          (error as Error).message ||
+          "An error occurred while removing the company's cover.",
         statusCode: 500,
       });
     }
@@ -205,9 +225,14 @@ export class ImageCompanyService {
       return { message: "Company's images was successfully set." };
     } catch (error) {
       // Handle error
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          "An error occurred while uploading the company's images.",
+      );
       throw new RpcException({
-        message: "An error occurred while uploading the company's images.",
+        message:
+          (error as Error).message ||
+          "An error occurred while uploading the company's images.",
         statusCode: 500,
       });
     }
@@ -238,7 +263,10 @@ export class ImageCompanyService {
       return { message: "Company's image was successfully removed." };
     } catch (error) {
       // Handle error
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          "An error occurred while removing the company's images.",
+      );
       throw new RpcException({
         message: "An error occurred while removing the company's images.",
         statusCode: 500,

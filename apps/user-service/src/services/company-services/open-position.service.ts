@@ -30,7 +30,10 @@ export class OpenPositionService {
       };
     } catch (error) {
       // Handle error
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          "An error occurred while removing the company's open positions.",
+      );
       throw new RpcException({
         message:
           "An error occurred while removing the company's open positions.",

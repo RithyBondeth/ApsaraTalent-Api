@@ -27,9 +27,10 @@ export class JobServiceService {
         });
       return jobs.map((job) => new JobResponseDTO(job));
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error((error as Error).message || 'An error occurred while fetching the job.');
+      if (error instanceof RpcException) throw error;
       throw new RpcException({
-        message: 'An error occurred while fetching the job.',
+        message: (error as Error).message,
         statusCode: 500,
       });
     }
@@ -168,9 +169,10 @@ export class JobServiceService {
 
       return jobs.map((job) => new JobResponseDTO(job));
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error((error as Error).message || 'An error occurred while searching for jobs.');
+      if (error instanceof RpcException) throw error;
       throw new RpcException({
-        message: error.message,
+        message: (error as Error).message,
         statusCode: 500,
       });
     }

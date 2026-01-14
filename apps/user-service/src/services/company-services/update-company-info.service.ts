@@ -292,9 +292,14 @@ export class UpdateCompanyInfoService {
       };
     } catch (error) {
       // Handle error
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          "An error occurred while updating the company's information.",
+      );
       throw new RpcException({
-        message: "An error occurred while updating the company's information.",
+        message:
+          (error as Error).message ||
+          "An error occurred while updating the company's information.",
         statusCode: 500,
       });
     }

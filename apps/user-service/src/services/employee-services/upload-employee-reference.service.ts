@@ -53,7 +53,10 @@ export class UploadEmployeeReferenceService {
       return { message: "Employee's resume was successfully set." };
     } catch (error) {
       // Handle error
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          "An error occurred while uploading the employee's resume.",
+      );
       throw new RpcException({
         message: "An error occurred while uploading the employee's resume.",
         statusCode: 500,
@@ -89,9 +92,14 @@ export class UploadEmployeeReferenceService {
       return { message: "Employee's resume was successfully deleted." };
     } catch (error) {
       // Handle error
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          "An error occurred while removing the employee's resume.",
+      );
       throw new RpcException({
-        message: "An error occurred while removing the employee's resume.",
+        message:
+          (error as Error).message ||
+          "An error occurred while removing the employee's resume.",
         statusCode: 500,
       });
     }
@@ -143,9 +151,13 @@ export class UploadEmployeeReferenceService {
       return { message: "Employee's cover letter was successfully set." };
     } catch (error) {
       // Handle error
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          "An error occurred while uploading the employee's cover letter.",
+      );
       throw new RpcException({
         message:
+          (error as Error).message ||
           "An error occurred while uploading the employee's cover letter.",
         statusCode: 500,
       });
@@ -183,9 +195,13 @@ export class UploadEmployeeReferenceService {
       return { message: "Employee's cover letter was successfully deleted." };
     } catch (error) {
       // Handle error
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          "An error occurred while removing the employee's cover letter.",
+      );
       throw new RpcException({
         message:
+          (error as Error).message ||
           "An error occurred while removing the employee's cover letter.",
         statusCode: 500,
       });

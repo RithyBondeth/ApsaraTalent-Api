@@ -120,9 +120,14 @@ export class UpdateEmployeeInfoService {
       };
     } catch (error) {
       // Handle error
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          "An error occurred while updating the employee's information.",
+      );
       throw new RpcException({
-        message: "An error occurred while updating the employee's information.",
+        message:
+          (error as Error).message ||
+          "An error occurred while updating the employee's information.",
         statusCode: 500,
       });
     }

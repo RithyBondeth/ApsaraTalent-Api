@@ -67,9 +67,14 @@ export class FindCompanyService {
 
       return result;
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while fetching all of the companies.',
+      );
       throw new RpcException({
-        message: 'An error occurred while fetching all of the companies.',
+        message:
+          (error as Error).message ||
+          'An error occurred while fetching all of the companies.',
         statusCode: 500,
       });
     }
@@ -116,9 +121,14 @@ export class FindCompanyService {
 
       return result;
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while fetching a company.',
+      );
       throw new RpcException({
-        message: 'An error occurred while fetching a company.',
+        message:
+          (error as Error).message ||
+          'An error occurred while fetching a company.',
         statusCode: 500,
       });
     }

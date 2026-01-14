@@ -87,10 +87,15 @@ export class UserService {
 
       return result;
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while finding all the users.',
+      );
       throw new RpcException({
         statusCode: 500,
-        message: 'An error occurred while finding all the users.',
+        message:
+          (error as Error).message ||
+          'An error occurred while finding all the users.',
       });
     }
   }
@@ -149,10 +154,15 @@ export class UserService {
 
       return result;
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while finding user by id.',
+      );
       throw new RpcException({
         statusCode: 500,
-        message: 'An error occurred while finding user by id.',
+        message:
+          (error as Error).message ||
+          'An error occurred while finding user by id.',
       });
     }
   }
@@ -184,10 +194,18 @@ export class UserService {
 
       // ✅ Use helper methods for consistent cache invalidation
       await Promise.all([
-        this.redisService.del(this.redisService.generateEmployeeFavoritesKey(eid)),
-        this.redisService.del(this.redisService.generateEmployeeFavoriteCountKey(eid)),
-        this.redisService.del(this.redisService.generateCompanyFavoritesKey(cid)),
-        this.redisService.del(this.redisService.generateCompanyFavoriteCountKey(cid)),
+        this.redisService.del(
+          this.redisService.generateEmployeeFavoritesKey(eid),
+        ),
+        this.redisService.del(
+          this.redisService.generateEmployeeFavoriteCountKey(eid),
+        ),
+        this.redisService.del(
+          this.redisService.generateCompanyFavoritesKey(cid),
+        ),
+        this.redisService.del(
+          this.redisService.generateCompanyFavoriteCountKey(cid),
+        ),
       ]);
 
       // ✅ Emit events for other services if needed
@@ -198,11 +216,16 @@ export class UserService {
 
       return { message: 'Successfully added company to favorites' };
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while favoriting company.',
+      );
       if (error instanceof RpcException) throw error;
       throw new RpcException({
         statusCode: 500,
-        message: 'An error occurred while favoriting company.',
+        message:
+          (error as Error).message ||
+          'An error occurred while favoriting company.',
       });
     }
   }
@@ -223,7 +246,8 @@ export class UserService {
 
       if (!favoriteToRemove)
         throw new RpcException({
-          message: "Favorite not found or you don't have permission to remove it.",
+          message:
+            "Favorite not found or you don't have permission to remove it.",
           statusCode: 404,
         });
 
@@ -231,10 +255,18 @@ export class UserService {
 
       // ✅ Use helper methods for consistent cache invalidation
       await Promise.all([
-        this.redisService.del(this.redisService.generateEmployeeFavoritesKey(eid)),
-        this.redisService.del(this.redisService.generateEmployeeFavoriteCountKey(eid)),
-        this.redisService.del(this.redisService.generateCompanyFavoritesKey(cid)),
-        this.redisService.del(this.redisService.generateCompanyFavoriteCountKey(cid)),
+        this.redisService.del(
+          this.redisService.generateEmployeeFavoritesKey(eid),
+        ),
+        this.redisService.del(
+          this.redisService.generateEmployeeFavoriteCountKey(eid),
+        ),
+        this.redisService.del(
+          this.redisService.generateCompanyFavoritesKey(cid),
+        ),
+        this.redisService.del(
+          this.redisService.generateCompanyFavoriteCountKey(cid),
+        ),
       ]);
 
       // ✅ Emit events
@@ -245,11 +277,16 @@ export class UserService {
 
       return { message: 'Successfully removed company from favorites' };
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while unfavoriting company.',
+      );
       if (error instanceof RpcException) throw error;
       throw new RpcException({
         statusCode: 500,
-        message: 'An error occurred while unfavoriting company.',
+        message:
+          (error as Error).message ||
+          'An error occurred while unfavoriting company.',
       });
     }
   }
@@ -281,10 +318,18 @@ export class UserService {
 
       // ✅ Use helper methods for consistent cache invalidation
       await Promise.all([
-        this.redisService.del(this.redisService.generateCompanyFavoritesKey(cid)),
-        this.redisService.del(this.redisService.generateCompanyFavoriteCountKey(cid)),
-        this.redisService.del(this.redisService.generateEmployeeFavoritesKey(eid)),
-        this.redisService.del(this.redisService.generateEmployeeFavoriteCountKey(eid)),
+        this.redisService.del(
+          this.redisService.generateCompanyFavoritesKey(cid),
+        ),
+        this.redisService.del(
+          this.redisService.generateCompanyFavoriteCountKey(cid),
+        ),
+        this.redisService.del(
+          this.redisService.generateEmployeeFavoritesKey(eid),
+        ),
+        this.redisService.del(
+          this.redisService.generateEmployeeFavoriteCountKey(eid),
+        ),
       ]);
 
       // ✅ Emit events
@@ -295,11 +340,16 @@ export class UserService {
 
       return { message: 'Successfully added employee to favorites' };
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while favoriting employee.',
+      );
       if (error instanceof RpcException) throw error;
       throw new RpcException({
         statusCode: 500,
-        message: 'An error occurred while favoriting employee.',
+        message:
+          (error as Error).message ||
+          'An error occurred while favoriting employee.',
       });
     }
   }
@@ -320,7 +370,8 @@ export class UserService {
 
       if (!favoriteToRemove)
         throw new RpcException({
-          message: "Favorite not found or you don't have permission to remove it.",
+          message:
+            "Favorite not found or you don't have permission to remove it.",
           statusCode: 404,
         });
 
@@ -328,10 +379,18 @@ export class UserService {
 
       // ✅ Use helper methods for consistent cache invalidation
       await Promise.all([
-        this.redisService.del(this.redisService.generateCompanyFavoritesKey(cid)),
-        this.redisService.del(this.redisService.generateCompanyFavoriteCountKey(cid)),
-        this.redisService.del(this.redisService.generateEmployeeFavoritesKey(eid)),
-        this.redisService.del(this.redisService.generateEmployeeFavoriteCountKey(eid)),
+        this.redisService.del(
+          this.redisService.generateCompanyFavoritesKey(cid),
+        ),
+        this.redisService.del(
+          this.redisService.generateCompanyFavoriteCountKey(cid),
+        ),
+        this.redisService.del(
+          this.redisService.generateEmployeeFavoritesKey(eid),
+        ),
+        this.redisService.del(
+          this.redisService.generateEmployeeFavoriteCountKey(eid),
+        ),
       ]);
 
       // ✅ Emit events
@@ -342,11 +401,16 @@ export class UserService {
 
       return { message: 'Successfully removed employee from favorites' };
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while unfavoriting employee.',
+      );
       if (error instanceof RpcException) throw error;
       throw new RpcException({
         statusCode: 500,
-        message: 'An error occurred while unfavoriting employee.',
+        message:
+          (error as Error).message ||
+          'An error occurred while unfavoriting employee.',
       });
     }
   }
@@ -395,10 +459,15 @@ export class UserService {
 
       return allFavoritesWithUsersId;
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while finding employee favorites.',
+      );
       throw new RpcException({
         statusCode: 500,
-        message: 'An error occurred while finding employee favorites.',
+        message:
+          (error as Error).message ||
+          'An error occurred while finding employee favorites.',
       });
     }
   }
@@ -447,10 +516,15 @@ export class UserService {
 
       return allFavoritesWithUserId;
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while finding company favorites.',
+      );
       throw new RpcException({
         statusCode: 500,
-        message: 'An error occurred while finding company favorites.',
+        message:
+          (error as Error).message ||
+          'An error occurred while finding company favorites.',
       });
     }
   }
@@ -458,7 +532,9 @@ export class UserService {
   async countCompanyFavorite(cid: string): Promise<{ totalFavorites: number }> {
     // ✅ Use helper method
     const cacheKey = this.redisService.generateCompanyFavoriteCountKey(cid);
-    const cached = await this.redisService.get<{ totalFavorites: number }>(cacheKey);
+    const cached = await this.redisService.get<{ totalFavorites: number }>(
+      cacheKey,
+    );
 
     if (cached) {
       this.logger.info(`Company ${cid} favorite count cache HIT`);
@@ -468,10 +544,11 @@ export class UserService {
     this.logger.info(`Company ${cid} favorite count cache MISS`);
 
     try {
-      const countAllCompanyFavorites = await this.cmpFavoriteEmpRepository.count({
-        where: { company: { id: cid } },
-      });
-      
+      const countAllCompanyFavorites =
+        await this.cmpFavoriteEmpRepository.count({
+          where: { company: { id: cid } },
+        });
+
       const result = { totalFavorites: countAllCompanyFavorites };
 
       // Cache for 5 minutes
@@ -479,18 +556,27 @@ export class UserService {
 
       return result;
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while counting company favorites.',
+      );
       throw new RpcException({
         statusCode: 500,
-        message: 'An error occurred while counting company favorites.',
+        message:
+          (error as Error).message ||
+          'An error occurred while counting company favorites.',
       });
     }
   }
 
-  async countEmployeeFavorite(eid: string): Promise<{ totalFavorites: number }> {
+  async countEmployeeFavorite(
+    eid: string,
+  ): Promise<{ totalFavorites: number }> {
     // ✅ Use helper method
     const cacheKey = this.redisService.generateEmployeeFavoriteCountKey(eid);
-    const cached = await this.redisService.get<{ totalFavorites: number }>(cacheKey);
+    const cached = await this.redisService.get<{ totalFavorites: number }>(
+      cacheKey,
+    );
 
     if (cached) {
       this.logger.info(`Employee ${eid} favorite count cache HIT`);
@@ -500,10 +586,11 @@ export class UserService {
     this.logger.info(`Employee ${eid} favorite count cache MISS`);
 
     try {
-      const countAllEmployeeFavorites = await this.empFavoriteCmpRepository.count({
-        where: { employee: { id: eid } },
-      });
-      
+      const countAllEmployeeFavorites =
+        await this.empFavoriteCmpRepository.count({
+          where: { employee: { id: eid } },
+        });
+
       const result = { totalFavorites: countAllEmployeeFavorites };
 
       // Cache for 5 minutes
@@ -511,17 +598,23 @@ export class UserService {
 
       return result;
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while counting employee favorites.',
+      );
       throw new RpcException({
         statusCode: 500,
-        message: 'An error occurred while counting employee favorites.',
+        message:
+          (error as Error).message ||
+          'An error occurred while counting employee favorites.',
       });
     }
   }
 
   async findAllCareerScopes(): Promise<Partial<CareerScope[]>> {
     const cacheKey = this.redisService.generateListKey('career-scopes', {});
-    const cached = await this.redisService.get<Partial<CareerScope[]>>(cacheKey);
+    const cached =
+      await this.redisService.get<Partial<CareerScope[]>>(cacheKey);
 
     if (cached) {
       this.logger.info('All career scopes cache HIT');
@@ -543,10 +636,15 @@ export class UserService {
 
       return careerScopes;
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while finding career scopes.',
+      );
       if (error instanceof RpcException) throw error;
       throw new RpcException({
-        message: 'An error occurred while finding career scopes.',
+        message:
+          (error as Error).message ||
+          'An error occurred while finding career scopes.',
         statusCode: 500,
       });
     }

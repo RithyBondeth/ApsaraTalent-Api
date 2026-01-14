@@ -145,11 +145,11 @@ export class PaymentServiceService {
         );
       }
     } catch (error) {
-      this.logger.error('Failed to generate individual KHQR', error.stack);
-      if (error instanceof BakongQRGenerationException) {
-        throw error;
-      }
-      throw new BakongApiConnectionException('Failed to connect to Bakong API');
+      this.logger.error('Failed to generate individual KHQR', (error as Error).message);
+      if (error instanceof BakongQRGenerationException) throw error;
+      throw new BakongApiConnectionException(
+        (error as Error).message || 'Failed to connect to Bakong API',
+      );
     }
   }
 
@@ -232,11 +232,11 @@ export class PaymentServiceService {
         );
       }
     } catch (error) {
-      this.logger.error('Failed to generate merchant KHQR', error.stack);
-      if (error instanceof BakongQRGenerationException) {
-        throw error;
-      }
-      throw new BakongApiConnectionException('Failed to connect to Bakong API');
+      this.logger.error('Failed to generate merchant KHQR', (error as Error).message);
+      if (error instanceof BakongQRGenerationException) throw error;
+      throw new BakongApiConnectionException(
+        (error as Error).message || 'Failed to connect to Bakong API',
+      );
     }
   }
 
@@ -265,8 +265,10 @@ export class PaymentServiceService {
         };
       }
     } catch (error) {
-      this.logger.error('Failed to verify KHQR', error.stack);
-      throw new BakongQRValidationException('Failed to verify KHQR code');
+      this.logger.error('Failed to verify KHQR', (error as Error).message);
+      throw new BakongQRValidationException(
+        (error as Error).message || 'Failed to verify KHQR code',
+      );
     }
   }
 
@@ -300,11 +302,11 @@ export class PaymentServiceService {
         );
       }
     } catch (error) {
-      this.logger.error('Failed to decode KHQR', error.stack);
-      if (error instanceof BakongQRValidationException) {
-        throw error;
-      }
-      throw new BakongApiConnectionException('Failed to connect to Bakong API');
+      this.logger.error('Failed to decode KHQR', (error as Error).message);
+      if (error instanceof BakongQRValidationException) throw error;
+      throw new BakongApiConnectionException(
+        (error as Error).message || 'Failed to connect to Bakong API',
+      );
     }
   }
 
@@ -335,11 +337,11 @@ export class PaymentServiceService {
         );
       }
     } catch (error) {
-      this.logger.error('Failed to generate deep link', error.stack);
-      if (error instanceof BakongQRGenerationException) {
-        throw error;
-      }
-      throw new BakongApiConnectionException('Failed to connect to Bakong API');
+      this.logger.error('Failed to generate deep link', (error as Error).message);
+      if (error instanceof BakongQRGenerationException) throw error;
+      throw new BakongApiConnectionException(
+        (error as Error).message || 'Failed to connect to Bakong API',
+      );
     }
   }
 
@@ -429,11 +431,11 @@ export class PaymentServiceService {
         throw new BakongPaymentNotFoundException(checkPaymentStatusDTO.md5Hash);
       }
     } catch (error) {
-      this.logger.error('Failed to check payment status', error.stack);
-      if (error instanceof BakongPaymentNotFoundException) {
-        throw error;
-      }
-      throw new BakongApiConnectionException('Failed to connect to Bakong API');
+      this.logger.error('Failed to check payment status', (error as Error).message);
+      if (error instanceof BakongPaymentNotFoundException) throw error;
+      throw new BakongApiConnectionException(
+        (error as Error).message || 'Failed to connect to Bakong API',
+      );
     }
   }
 
@@ -486,8 +488,10 @@ export class PaymentServiceService {
         );
       }
     } catch (error) {
-      this.logger.error('Failed to check bulk payment status', error.stack);
-      throw new BakongApiConnectionException('Failed to connect to Bakong API');
+      this.logger.error('Failed to check bulk payment status', (error as Error).message);
+      throw new BakongApiConnectionException(
+        (error as Error).message || 'Failed to connect to Bakong API',
+      );
     }
   }
 
@@ -533,7 +537,7 @@ export class PaymentServiceService {
         status: 'paid',
       });
     } catch (error) {
-      this.logger.error('Failed to update payment status', error.stack);
+      this.logger.error('Failed to update payment status', (error as Error).message);
       throw error;
     }
   }
@@ -551,8 +555,10 @@ export class PaymentServiceService {
 
       return qrImageBase64;
     } catch (error) {
-      this.logger.error('Failed to generate QR image', error.stack);
-      throw new BakongQRGenerationException('Failed to generate QR code image');
+      this.logger.error('Failed to generate QR image', (error as Error).message);
+      throw new BakongQRGenerationException(
+        (error as Error).message || 'Failed to generate QR code image',
+      );
     }
   }
 }

@@ -91,7 +91,7 @@ export class ChatServiceService {
       };
     } catch (error) {
       throw new RpcException({
-        message: `Failed to create message: ${error.message}`,
+        message: `Failed to create message: ${(error as Error).message}`,
         statusCode: 500,
       });
     }

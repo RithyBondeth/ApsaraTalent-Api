@@ -29,9 +29,14 @@ export class ResumeTemplateService {
       return templates;
     } catch (error) {
       // Handle error
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          "An error occurred while fetching all resume's templates.",
+      );
       throw new RpcException({
-        message: "An error occurred while fetching all resume's templates.",
+        message:
+          (error as Error).message ||
+          "An error occurred while fetching all resume's templates.",
         statusCode: 500,
       });
     }
@@ -51,9 +56,14 @@ export class ResumeTemplateService {
       return template;
     } catch (error) {
       // Handle error
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          "An error occurred while fetching a resume's templates.",
+      );
       throw new RpcException({
-        message: "An error occurred while fetching a resume's templates.",
+        message:
+          (error as Error).message ||
+          "An error occurred while fetching a resume's templates.",
         statusCode: 500,
       });
     }
@@ -84,9 +94,14 @@ export class ResumeTemplateService {
       return { message: "Resume's template was successfully created." };
     } catch (error) {
       // Handle error
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          "An error occurred while creating the resume's template.",
+      );
       throw new RpcException({
-        message: "An error occurred while creating the resume's template.",
+        message:
+          (error as Error).message ||
+          "An error occurred while creating the resume's template.",
         statusCode: 500,
       });
     }
@@ -132,9 +147,14 @@ export class ResumeTemplateService {
 
       return templates;
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          "An error occurred while searching the resume's templates.",
+      );
       throw new RpcException({
-        message: error.message,
+        message:
+          (error as Error).message ||
+          "An error occurred while searching the resume's templates.",
         statusCode: 500,
       });
     }

@@ -56,9 +56,14 @@ export class FindEmployeeService {
 
       return result;
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while fetching all of the employees',
+      );
       throw new RpcException({
-        message: 'An error occurred while fetching all of the employees',
+        message:
+          (error as Error).message ||
+          'An error occurred while fetching all of the employees',
         statusCode: 500,
       });
     }
@@ -103,9 +108,14 @@ export class FindEmployeeService {
 
       return result;
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while fetching an employee',
+      );
       throw new RpcException({
-        message: 'An error occurred while fetching an employee',
+        message:
+          (error as Error).message ||
+          'An error occurred while fetching an employee',
         statusCode: 500,
       });
     }
