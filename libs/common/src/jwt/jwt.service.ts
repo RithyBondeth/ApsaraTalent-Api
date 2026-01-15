@@ -35,8 +35,9 @@ export class JwtService {
     try {
       return this.jwtService.verifyAsync(token);
     } catch (error) {
-      console.error(error.message);
-      throw new Error(error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(errorMessage);
+      throw new Error(errorMessage);
     }
   }
 
@@ -46,8 +47,9 @@ export class JwtService {
       if (decoded.type !== 'refresh') throw new Error('Invalid token type');
       return decoded;
     } catch (error) {
-      console.error(error.message);
-      throw new Error(error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(errorMessage);
+      throw new Error(errorMessage);
     }
   }
 
@@ -58,8 +60,9 @@ export class JwtService {
         throw new Error('Invalid token type');
       return decoded;
     } catch (error) {
-      console.error(error.message);
-      throw new Error(error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(errorMessage);
+      throw new Error(errorMessage);
     }
   }
 
