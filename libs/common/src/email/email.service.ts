@@ -34,11 +34,12 @@ export class EmailService {
         host: this.emailConfig.host,
       });
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(
         'Failed to initialize email transporter: ',
-        error.message,
+        errorMessage,
       );
-      throw new Error(error.message);
+      throw new Error(errorMessage);
     }
   }
 
@@ -67,8 +68,9 @@ export class EmailService {
       //Return sent email
       return emailSent;
     } catch (error) {
-      this.logger.error('Failed to send email: ', error.message);
-      throw new Error(error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error('Failed to send email: ', errorMessage);
+      throw new Error(errorMessage);
     }
   }
 }

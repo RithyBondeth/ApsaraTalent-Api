@@ -73,7 +73,8 @@ export class MessageService {
       ]);
       this.logger.log('SMS sent to employee and company after match.');
     } catch (err) {
-      this.logger.error(`Twilio error: ${err.message}`);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      this.logger.error(`Twilio error: ${errorMessage}`);
       throw new Error('Failed to send match notifications');
     }
   }

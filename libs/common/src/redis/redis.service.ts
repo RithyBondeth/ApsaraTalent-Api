@@ -53,7 +53,8 @@ export class RedisService {
       const value = await this.cacheManager.get<T>(key);
       return value || null;
     } catch (error) {
-      this.logger.error(`Cache GET error: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Cache GET error: ${errorMessage}`);
     }
   }
 
@@ -61,7 +62,8 @@ export class RedisService {
     try {
       await this.cacheManager.set(key, value, ttl);
     } catch (error) {
-      this.logger.error(`Cache SET error: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Cache SET error: ${errorMessage}`);
     }
   }
 
@@ -69,7 +71,8 @@ export class RedisService {
     try {
       await this.cacheManager.del(key);
     } catch (error) {
-      this.logger.error(`Cache DEL error: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Cache DEL error: ${errorMessage}`);
     }
   }
 
@@ -84,7 +87,8 @@ export class RedisService {
         }
       }
     } catch (error) {
-      this.logger.error(`Cache DEL pattern error: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Cache DEL pattern error: ${errorMessage}`);
     }
   }
 
