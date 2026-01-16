@@ -60,7 +60,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       this.logger.log(`User connected: ${payload.id}`);
     } catch (err) {
-      this.logger.error(`Authentication failed: ${err.message}`);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      this.logger.error(`Authentication failed: ${errorMessage}`);
       client.emit('error', { message: 'Authentication failed' });
       client.disconnect();
     }
@@ -132,7 +133,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         },
       };
     } catch (error) {
-      this.logger.error(`Message handling error: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Message handling error: ${errorMessage}`);
       client.emit('error', { message: 'Failed to send message' });
     }
   }
@@ -152,7 +154,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       return { success: true };
     } catch (error) {
-      this.logger.error(`Mark read error: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Mark read error: ${errorMessage}`);
       client.emit('error', { message: 'Failed to mark as read' });
     }
   }
@@ -179,7 +182,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       return history;
     } catch (error) {
-      this.logger.error(`Get history error: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Get history error: ${errorMessage}`);
       client.emit('error', { message: 'Failed to get chat history' });
     }
   }
@@ -193,7 +197,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       return { unreadCount: count };
     } catch (error) {
-      this.logger.error(`Get unread count error: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Get unread count error: ${errorMessage}`);
       client.emit('error', { message: 'Failed to get unread count' });
     }
   }
@@ -212,7 +217,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         });
       }
     } catch (error) {
-      this.logger.error(`Typing indicator error: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Typing indicator error: ${errorMessage}`);
     }
   }
 }
