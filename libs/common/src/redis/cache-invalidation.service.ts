@@ -36,17 +36,44 @@ export class CacheInvalidationService {
   }
 
   // ==================== EMPLOYEE EVENTS ====================
+  // @OnEvent('employee.updated')
+  // async handleEmployeeUpdate(payload: { employeeId: string }): Promise<void> {
+  //   const { employeeId } = payload;
+  //   await Promise.all([
+  //     this.redisService.del(
+  //       this.redisService.generateEmployeeKey('detail', employeeId),
+  //     ),
+  //     this.redisService.delPattern('employee:list:*'), // Invalidate all lists
+  //     this.redisService.delPattern('employee:search:*'), // Invalidate searches
+  //   ]);
+  //   this.logger.log(`Invalidated cache for employee: ${employeeId}`);
+  // }
   @OnEvent('employee.updated')
-  async handleEmployeeUpdate(payload: { employeeId: string }): Promise<void> {
-    const { employeeId } = payload;
-    await Promise.all([
-      this.redisService.del(
-        this.redisService.generateEmployeeKey('detail', employeeId),
-      ),
-      this.redisService.delPattern('employee:list:*'), // Invalidate all lists
-      this.redisService.delPattern('employee:search:*'), // Invalidate searches
-    ]);
-    this.logger.log(`Invalidated cache for employee: ${employeeId}`);
+  async handleEmployeeUpdate(payload: { employeeId: string; userId?: string }): Promise<void> {
+    const { employeeId, userId } = payload;
+    
+    // Try to get userId from payload, then from cache
+    let userToInvalidate = userId;
+    if (!userToInvalidate) {
+      userToInvalidate = await this.redisService.getUserIdByEmployeeId(employeeId);
+    }
+    
+    const promises = [
+      this.redisService.del(this.redisService.generateEmployeeKey('detail', employeeId)),
+      this.redisService.delPattern('employee:list:*'),
+      this.redisService.delPattern('employee:search:*'),
+    ];
+    
+    // Also invalidate user cache if we have the userId
+    if (userToInvalidate) {
+      promises.push(
+        this.redisService.invalidateUser(userToInvalidate),
+        this.redisService.del(this.redisService.generateUserKey('detail', userToInvalidate))
+      );
+    }
+    
+    await Promise.all(promises);
+    this.logger.log(`Invalidated cache for employee: ${employeeId} and user: ${userToInvalidate || 'unknown'}`);
   }
 
   @OnEvent('employee.favorites.updated')
@@ -66,16 +93,43 @@ export class CacheInvalidationService {
   }
 
   // ==================== COMPANY EVENTS ====================
+  // @OnEvent('company.updated')
+  // async handleCompanyUpdate(payload: { companyId: string }): Promise<void> {
+  //   const { companyId } = payload;
+  //   await Promise.all([
+  //     this.redisService.del(
+  //       this.redisService.generateCompanyKey('detail', companyId),
+  //     ),
+  //     this.redisService.delPattern('company:list:*'),
+  //   ]);
+  //   this.logger.log(`Invalidated cache for company: ${companyId}`);
+  // }
+
   @OnEvent('company.updated')
-  async handleCompanyUpdate(payload: { companyId: string }): Promise<void> {
-    const { companyId } = payload;
-    await Promise.all([
-      this.redisService.del(
-        this.redisService.generateCompanyKey('detail', companyId),
-      ),
-      this.redisService.delPattern('company:list:*'),
-    ]);
-    this.logger.log(`Invalidated cache for company: ${companyId}`);
+  async handleCompanyUpdate(payload: { companyId: string; userId?: string }): Promise<void> {
+    const { companyId, userId } = payload;
+    
+    // Try to get userId from payload, then from cache
+    let userToInvalidate = userId;
+    if (!userToInvalidate) {
+      userToInvalidate = await this.redisService.getUserIdByCompanyId(companyId);
+    }
+    
+    const promises = [
+      this.redisService.del(this.redisService.generateCompanyKey('detail', companyId)),
+      this.redisService.delPattern('company:list:*'), // This will clear all company list caches
+    ];
+    
+    // Also invalidate user cache if we have the userId
+    if (userToInvalidate) {
+      promises.push(
+        this.redisService.invalidateUser(userToInvalidate),
+        this.redisService.del(this.redisService.generateUserKey('detail', userToInvalidate))
+      );
+    }
+    
+    await Promise.all(promises);
+    this.logger.log(`Invalidated cache for company: ${companyId} and user: ${userToInvalidate || 'unknown'}`);
   }
 
   @OnEvent('company.favorites.updated')
@@ -117,5 +171,13 @@ export class CacheInvalidationService {
 
     await Promise.all(promises);
     this.logger.log('Refreshed list caches (pages 1-3)');
+  }
+
+  // ==================== LIST CACHE EVENTS ====================
+  @OnEvent('cache.users.all.refresh')
+  async handleAllUsersRefresh(): Promise<void> {
+    // Clear the "all users" cache
+    await this.redisService.delPattern('user:list:*');
+    this.logger.log('Invalidated "all users" cache');
   }
 }

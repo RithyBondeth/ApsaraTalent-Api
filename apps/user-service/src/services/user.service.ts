@@ -29,7 +29,7 @@ export class UserService {
     private readonly logger: PinoLogger,
     private readonly redisService: RedisService,
     private readonly eventEmitter: EventEmitter2,
-  ) {}
+  ) { }
 
   async findAllUsers(): Promise<UserResponseDTO[]> {
     const cacheKey = this.redisService.generateListKey('user', {});
@@ -89,7 +89,7 @@ export class UserService {
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
-          'An error occurred while finding all the users.',
+        'An error occurred while finding all the users.',
       );
       throw new RpcException({
         statusCode: 500,
@@ -105,11 +105,11 @@ export class UserService {
     const cached = await this.redisService.get<UserResponseDTO>(cacheKey);
 
     if (cached) {
-      this.logger.info(`User ${userId} cache HIT`);
+      this.logger.info(`Find One User ${userId} cache HIT`);
       return cached;
     }
 
-    this.logger.info(`User ${userId} cache MISS`);
+    this.logger.info(`Find One User ${userId} cache MISS`);
 
     try {
       const user = await this.userRepository.findOne({
@@ -152,11 +152,19 @@ export class UserService {
       // Cache for 5 minutes
       await this.redisService.set(cacheKey, result, 300000);
 
+      if (user.employee?.id) {
+        await this.redisService.setUserEmployeeRelationship(user.employee.id, userId);
+      }
+
+      if (user.company?.id) {
+        await this.redisService.setUserCompanyRelationship(user.company.id, userId);
+      }
+
       return result;
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
-          'An error occurred while finding user by id.',
+        'An error occurred while finding user by id.',
       );
       throw new RpcException({
         statusCode: 500,
@@ -218,7 +226,7 @@ export class UserService {
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
-          'An error occurred while favoriting company.',
+        'An error occurred while favoriting company.',
       );
       if (error instanceof RpcException) throw error;
       throw new RpcException({
@@ -279,7 +287,7 @@ export class UserService {
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
-          'An error occurred while unfavoriting company.',
+        'An error occurred while unfavoriting company.',
       );
       if (error instanceof RpcException) throw error;
       throw new RpcException({
@@ -342,7 +350,7 @@ export class UserService {
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
-          'An error occurred while favoriting employee.',
+        'An error occurred while favoriting employee.',
       );
       if (error instanceof RpcException) throw error;
       throw new RpcException({
@@ -403,7 +411,7 @@ export class UserService {
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
-          'An error occurred while unfavoriting employee.',
+        'An error occurred while unfavoriting employee.',
       );
       if (error instanceof RpcException) throw error;
       throw new RpcException({
@@ -461,7 +469,7 @@ export class UserService {
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
-          'An error occurred while finding employee favorites.',
+        'An error occurred while finding employee favorites.',
       );
       throw new RpcException({
         statusCode: 500,
@@ -518,7 +526,7 @@ export class UserService {
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
-          'An error occurred while finding company favorites.',
+        'An error occurred while finding company favorites.',
       );
       throw new RpcException({
         statusCode: 500,
@@ -558,7 +566,7 @@ export class UserService {
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
-          'An error occurred while counting company favorites.',
+        'An error occurred while counting company favorites.',
       );
       throw new RpcException({
         statusCode: 500,
@@ -600,7 +608,7 @@ export class UserService {
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
-          'An error occurred while counting employee favorites.',
+        'An error occurred while counting employee favorites.',
       );
       throw new RpcException({
         statusCode: 500,
@@ -638,7 +646,7 @@ export class UserService {
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
-          'An error occurred while finding career scopes.',
+        'An error occurred while finding career scopes.',
       );
       if (error instanceof RpcException) throw error;
       throw new RpcException({

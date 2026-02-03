@@ -14,10 +14,15 @@ import {
   JobPositionDTO,
 } from '../../dtos/user-response.dto';
 import { RpcException } from '@nestjs/microservices';
+import { RedisService } from '@app/common/redis/redis.service';
+import { User } from '@app/common/database/entities/user.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class UpdateCompanyInfoService {
   constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     @InjectRepository(Company)
     private readonly companyRepository: Repository<Company>,
     @InjectRepository(Benefit)
@@ -30,7 +35,10 @@ export class UpdateCompanyInfoService {
     @InjectRepository(Social)
     private readonly socialRepository: Repository<Social>,
     private readonly logger: PinoLogger,
-  ) {}
+    private readonly redisService: RedisService,
+    private readonly eventEmitter: EventEmitter2,
+
+  ) { }
 
   async updateCompanyInfo(
     updateCompanyInfoDTO: UpdateCompanyInfoDTO,
@@ -278,8 +286,25 @@ export class UpdateCompanyInfoService {
         }
       }
 
+      // Find the associated user BEFORE updating
+      const user = await this.userRepository.findOne({
+        where: { company: { id: companyId } },
+        select: ['id'],
+      });
+
       // Save updated company entity
       await this.companyRepository.save(company);
+      console.log("Company Updated!!!");
+
+      // Emit event WITH userId included
+      this.eventEmitter.emit('company.updated', {
+        companyId: companyId,
+        userId: user?.id,
+      });
+
+       // 🆕 NEW: Also emit an event to invalidate the "all users" cache
+      this.eventEmitter.emit('cache.users.all.refresh', {});
+
 
       return {
         message: 'Company information updated successfully',
@@ -294,7 +319,7 @@ export class UpdateCompanyInfoService {
       // Handle error
       this.logger.error(
         (error as Error).message ||
-          "An error occurred while updating the company's information.",
+        "An error occurred while updating the company's information.",
       );
       throw new RpcException({
         message:

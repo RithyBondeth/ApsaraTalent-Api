@@ -6,7 +6,7 @@ export class RedisService {
   private readonly logger = new Logger(RedisService.name);
   private readonly PREFIX = 'apsaratalent:user-service';
 
-  constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
+  constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) { }
 
   // Cache key generators
   generateUserKey(type: string, id: string): string {
@@ -45,6 +45,14 @@ export class RedisService {
 
   generateCompanyFavoritesKey(companyId: string): string {
     return this.generateCompanyKey('favorites', companyId);
+  }
+
+  generateUserFromEmployeeKey(employeeId: string): string {
+    return `${this.PREFIX}:user-from-employee:${employeeId}`;
+  }
+
+  generateUserFromCompanyKey(companyId: string): string {
+    return `${this.PREFIX}:user-from-company:${companyId}`;
   }
 
   // Operations
@@ -90,6 +98,24 @@ export class RedisService {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Cache DEL pattern error: ${errorMessage}`);
     }
+  }
+
+  async setUserEmployeeRelationship(employeeId: string, userId: string): Promise<void> {
+    const key = this.generateUserFromEmployeeKey(employeeId);
+    await this.set(key, userId, 3600000); // Cache for 1 hour
+  }
+
+  async setUserCompanyRelationship(companyId: string, userId: string): Promise<void> {
+    const key = this.generateUserFromCompanyKey(companyId);
+    await this.set(key, userId, 3600000); // Cache for 1 hour
+  }
+
+  async getUserIdByEmployeeId(employeeId: string): Promise<string | null> {
+    return await this.get<string>(this.generateUserFromEmployeeKey(employeeId));
+  }
+
+  async getUserIdByCompanyId(companyId: string): Promise<string | null> {
+    return await this.get<string>(this.generateUserFromCompanyKey(companyId));
   }
 
   // ⚠️ REPLACE pattern deletion with simple del calls
