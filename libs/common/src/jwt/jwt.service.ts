@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { JwtService as NestJwtService } from '@nestjs/jwt';
 import { IPayload } from './interfaces/payload.interface';
 import { ConfigService } from '@nestjs/config';
-
+import { StringValue } from 'ms';
 @Injectable()
 export class JwtService {
   constructor(
@@ -18,7 +18,7 @@ export class JwtService {
   async generateRefreshToken(userId: string): Promise<string> {
     const refreshToken = await this.jwtService.signAsync(
       { id: userId, type: 'refresh' },
-      { expiresIn: this.configService.get<string>('jwt.refreshExpiresIn') },
+      { expiresIn: this.configService.get<StringValue>('jwt.refreshExpiresIn') },
     );
     return refreshToken;
   }
@@ -26,7 +26,7 @@ export class JwtService {
   async generateEmailVerificationToken(email: string): Promise<string> {
     const token = await this.jwtService.signAsync(
       { email, type: 'email-verification' },
-      { expiresIn: this.configService.get<string>('jwt.emailExpiresIn') },
+      { expiresIn: this.configService.get<StringValue>('jwt.emailExpiresIn') },
     );
     return token;
   }
