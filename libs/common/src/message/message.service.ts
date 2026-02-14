@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as Twilio from 'twilio';
+import Twilio from 'twilio';
 import { EmailService } from '../email/email.service';
 
 @Injectable()

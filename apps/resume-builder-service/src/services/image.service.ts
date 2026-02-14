@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PinoLogger } from 'nestjs-pino';
-import * as sharp from 'sharp';
+import sharp from 'sharp';
 
 @Injectable()
 export class ImageService {

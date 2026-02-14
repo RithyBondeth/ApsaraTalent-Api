@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { ApiGatewayModule } from './api-gateway.module';
 import { Logger } from 'nestjs-pino';
-import * as cookieParser from 'cookie-parser';
-import * as session from 'express-session';
+import cookieParser from 'cookie-parser';
+import session from 'express-session';
 import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
