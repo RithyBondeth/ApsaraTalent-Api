@@ -65,7 +65,7 @@ export class JobServiceService {
       // Keyword
       if (keyword) {
         query.where(
-          '(job.title LIKE :keyword OR job.description LIKE :keyword)',
+          '(job.title ILIKE :keyword OR job.description ILIKE :keyword)',
           {
             keyword: `%${keyword}%`,
           },
@@ -74,7 +74,7 @@ export class JobServiceService {
 
       // Location
       if (location) {
-        query.andWhere('company.location LIKE :location', {
+        query.andWhere('company.location ILIKE :location', {
           location: `%${location}%`,
         });
       }
@@ -102,7 +102,7 @@ export class JobServiceService {
 
       // Job type
       if (jobType) {
-        query.andWhere('job.type LIKE :type', {
+        query.andWhere('job.type ILIKE :type', {
           type: `%${jobType}%`,
         });
       }
@@ -123,7 +123,7 @@ export class JobServiceService {
       // Education
       if (educationRequired) {
         query.andWhere(
-          'LOWER(job.educationRequired) LIKE :education', // MySQL / SQLite / generic
+          'LOWER(job.educationRequired) ILIKE :education', // MySQL / SQLite / generic
           // For PostgreSQL you can shorten to:  'job.educationRequired ILIKE :education'
           { education: `%${educationRequired.toLowerCase()}%` },
         );
