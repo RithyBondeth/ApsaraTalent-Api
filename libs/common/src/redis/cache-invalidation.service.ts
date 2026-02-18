@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { RedisService } from './redis.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Company } from '../database/entities/company/company.entity';
 
 @Injectable()
 export class CacheInvalidationService {
@@ -15,7 +18,11 @@ export class CacheInvalidationService {
     LISTS: 120000, // 2 minutes
   };
 
-  constructor(private readonly redisService: RedisService) {}
+  constructor(
+    private readonly redisService: RedisService,
+    @InjectRepository(Company)
+    private readonly companyRepository: Repository<Company>,
+  ) {}
 
   // ==================== USER EVENTS ====================
   @OnEvent('user.updated')
@@ -69,13 +76,50 @@ export class CacheInvalidationService {
   @OnEvent('company.updated')
   async handleCompanyUpdate(payload: { companyId: string }): Promise<void> {
     const { companyId } = payload;
+
+    this.logger.warn(`[EVENT] company.updated received: ${companyId}`);
+
+    // 1) Find company + its owning user (most reliable way)
+    const company = await this.companyRepository.findOne({
+      where: { id: companyId },
+      relations: ['user'], // <-- important
+      select: { id: true, user: { id: true } } as any,
+    });
+
+    const ownerUserId = company?.user?.id;
+
+    // 2) Build the exact keys you want to delete (log them!)
+    const companyDetailKey = this.redisService.generateCompanyKey(
+      'detail',
+      companyId,
+    );
+    const userDetailKey = ownerUserId
+      ? this.redisService.generateUserKey('detail', ownerUserId)
+      : null;
+
+    this.logger.warn(`[CACHE] deleting company key: ${companyDetailKey}`);
+    if (userDetailKey)
+      this.logger.warn(`[CACHE] deleting user key: ${userDetailKey}`);
+    else
+      this.logger.warn(
+        `[CACHE] owner user not found for companyId=${companyId} (user cache not deleted)`,
+      );
+
+    // 3) Delete caches
     await Promise.all([
-      this.redisService.del(
-        this.redisService.generateCompanyKey('detail', companyId),
-      ),
+      this.redisService.del(companyDetailKey),
       this.redisService.delPattern('company:list:*'),
+
+      // delete the cached user detail that includes this company
+      userDetailKey ? this.redisService.del(userDetailKey) : Promise.resolve(),
+
+      // optional: if your user list includes company info
+      this.redisService.delPattern('user:list:*'),
     ]);
-    this.logger.log(`Invalidated cache for company: ${companyId}`);
+
+    this.logger.log(
+      `Invalidated cache for company ${companyId} and user ${ownerUserId ?? 'N/A'}`,
+    );
   }
 
   @OnEvent('company.favorites.updated')

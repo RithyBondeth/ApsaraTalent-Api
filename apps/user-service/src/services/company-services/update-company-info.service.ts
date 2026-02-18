@@ -14,6 +14,8 @@ import {
   JobPositionDTO,
 } from '../../dtos/user-response.dto';
 import { RpcException } from '@nestjs/microservices';
+import { User } from '@app/common/database/entities/user.entity';
+import { RedisService } from '@app/common/redis/redis.service';
 
 @Injectable()
 export class UpdateCompanyInfoService {
@@ -29,7 +31,9 @@ export class UpdateCompanyInfoService {
     private readonly careerScopeRepository: Repository<CareerScope>,
     @InjectRepository(Social)
     private readonly socialRepository: Repository<Social>,
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly logger: PinoLogger,
+    private readonly redisService: RedisService,
   ) {}
 
   async updateCompanyInfo(
@@ -280,6 +284,19 @@ export class UpdateCompanyInfoService {
 
       // Save updated company entity
       await this.companyRepository.save(company);
+
+      // ✅ Find owner userId of this company
+      const owner = await this.userRepository.findOne({
+        where: { company: { id: companyId } },
+        select: ['id'],
+      });
+
+      if (owner?.id) {
+        // ✅ Delete cache used by findOneUserByID()
+        await this.redisService.del(
+          this.redisService.generateUserKey('detail', owner.id),
+        );
+      }
 
       return {
         message: 'Company information updated successfully',
