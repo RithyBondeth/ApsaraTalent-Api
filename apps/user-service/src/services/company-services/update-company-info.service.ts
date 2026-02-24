@@ -345,7 +345,6 @@ export class UpdateCompanyInfoService {
         });
       }
 
-      // ✅ Never assign relation arrays directly (prevents wiping join tables)
       const {
         benefits,
         values,
@@ -354,103 +353,128 @@ export class UpdateCompanyInfoService {
         socials,
         benefitIdsToDelete,
         valueIdsToDelete,
-        careerScopeIdsToDelete,
         socialIdsToDelete,
         ...scalarFields
       } = updateCompanyInfoDTO as any;
 
-      // ✅ scalar fields only
+      /* =======================================================
+         1️⃣ UPDATE SCALAR FIELDS
+      ======================================================= */
       Object.assign(company, scalarFields);
+      await this.companyRepository.save(company);
 
-      /* ------------------------ BENEFITS (M2M) ------------------------ */
+      /* =======================================================
+         2️⃣ BENEFITS (MANY-TO-MANY SAFE)
+      ======================================================= */
       if (Array.isArray(benefits)) {
-        for (const benefitDto of benefits) {
-          const id = (benefitDto as any)?.id;
+        const finalIds: number[] = [];
+
+        for (const b of benefits) {
+          const id = b?.id;
+          const label = (b?.label ?? '').trim();
 
           if (id) {
-            const existing = await this.benefitRepository.findOne({
-              where: { id },
-            });
-            if (existing) {
-              const { id: _, ...updateData } = benefitDto as any;
-              Object.assign(existing, updateData);
-              await this.benefitRepository.save(existing);
+            finalIds.push(id);
+            continue;
+          }
 
-              // ensure linked
-              await this.companyRepository
-                .createQueryBuilder()
-                .relation(Company, 'benefits')
-                .of(companyId)
-                .add(existing.id)
-                .catch(() => undefined);
-            }
+          if (!label) continue;
+
+          // prevent duplicates by label
+          const existing = await this.benefitRepository.findOne({
+            where: { label },
+          });
+
+          if (existing) {
+            finalIds.push(existing.id);
           } else {
             const created = await this.benefitRepository.save(
-              this.benefitRepository.create({
-                ...(benefitDto as any),
-                companies: [company],
-              }),
+              this.benefitRepository.create({ label }),
             );
-            // already linked via companies: [company]
+            finalIds.push(created.id);
           }
         }
 
-        if (
-          Array.isArray(benefitIdsToDelete) &&
-          benefitIdsToDelete.length > 0
-        ) {
+        const uniqueFinalIds = Array.from(new Set(finalIds));
+
+        const currentIds = new Set(company.benefits.map((b) => b.id));
+        const finalSet = new Set(uniqueFinalIds);
+
+        const toAdd = uniqueFinalIds.filter((id) => !currentIds.has(id));
+        const toRemove = Array.from(currentIds).filter(
+          (id) =>
+            !finalSet.has(id) ||
+            (Array.isArray(benefitIdsToDelete) &&
+              benefitIdsToDelete.includes(id)),
+        );
+
+        if (toAdd.length || toRemove.length) {
           await this.companyRepository
             .createQueryBuilder()
             .relation(Company, 'benefits')
             .of(companyId)
-            .remove(benefitIdsToDelete);
+            .addAndRemove(toAdd, toRemove);
         }
       }
 
-      /* ------------------------ VALUES (M2M) ------------------------ */
+      /* =======================================================
+         3️⃣ VALUES (MANY-TO-MANY SAFE)
+      ======================================================= */
       if (Array.isArray(values)) {
-        for (const valueDto of values) {
-          const id = (valueDto as any)?.id;
+        const finalIds: number[] = [];
+
+        for (const v of values) {
+          const id = v?.id;
+          const label = (v?.label ?? '').trim();
 
           if (id) {
-            const existing = await this.valueRepository.findOne({
-              where: { id },
-            });
-            if (existing) {
-              const { id: _, ...updateData } = valueDto as any;
-              Object.assign(existing, updateData);
-              await this.valueRepository.save(existing);
+            finalIds.push(id);
+            continue;
+          }
 
-              await this.companyRepository
-                .createQueryBuilder()
-                .relation(Company, 'values')
-                .of(companyId)
-                .add(existing.id)
-                .catch(() => undefined);
-            }
+          if (!label) continue;
+
+          const existing = await this.valueRepository.findOne({
+            where: { label },
+          });
+
+          if (existing) {
+            finalIds.push(existing.id);
           } else {
-            await this.valueRepository.save(
-              this.valueRepository.create({
-                ...(valueDto as any),
-                companies: [company],
-              }),
+            const created = await this.valueRepository.save(
+              this.valueRepository.create({ label }),
             );
+            finalIds.push(created.id);
           }
         }
 
-        if (Array.isArray(valueIdsToDelete) && valueIdsToDelete.length > 0) {
+        const uniqueFinalIds = Array.from(new Set(finalIds));
+
+        const currentIds = new Set(company.values.map((v) => v.id));
+        const finalSet = new Set(uniqueFinalIds);
+
+        const toAdd = uniqueFinalIds.filter((id) => !currentIds.has(id));
+        const toRemove = Array.from(currentIds).filter(
+          (id) =>
+            !finalSet.has(id) ||
+            (Array.isArray(valueIdsToDelete) && valueIdsToDelete.includes(id)),
+        );
+
+        if (toAdd.length || toRemove.length) {
           await this.companyRepository
             .createQueryBuilder()
             .relation(Company, 'values')
             .of(companyId)
-            .remove(valueIdsToDelete);
+            .addAndRemove(toAdd, toRemove);
         }
       }
 
-      /* ------------------------ JOBS (O2M) ------------------------ */
+      /* =======================================================
+         4️⃣ JOBS (ONE-TO-MANY)
+      ======================================================= */
       if (Array.isArray(jobs)) {
         for (const jobDto of jobs) {
-          const jobId = (jobDto as any)?.id;
+          const jobId = jobDto?.id;
 
           if (jobId) {
             const existing = await this.jobRepository.findOne({
@@ -458,14 +482,14 @@ export class UpdateCompanyInfoService {
             });
 
             if (existing) {
-              const { id: _, ...updateData } = jobDto as any;
+              const { id: _, ...updateData } = jobDto;
               Object.assign(existing, updateData);
               await this.jobRepository.save(existing);
             }
           } else {
             await this.jobRepository.save(
               this.jobRepository.create({
-                ...(jobDto as any),
+                ...jobDto,
                 company,
               }),
             );
@@ -473,81 +497,37 @@ export class UpdateCompanyInfoService {
         }
       }
 
-      /* ------------------------ CAREER SCOPES (MANY-TO-MANY FIX) ------------------------ */
+      /* =======================================================
+         5️⃣ CAREER SCOPES (KEEP YOUR WORKING LOGIC)
+      ======================================================= */
       if (Array.isArray(careerScopes)) {
-        // 1) Normalize incoming DTO
-        const incoming = careerScopes
-          .filter(Boolean)
-          .map((cs: any) => ({
-            id: (cs.id ?? '').toString().trim(), // may be "" if frontend lost it
-            name: (cs.name ?? '').toString().trim(),
-            description: (cs.description ?? '').toString().trim(),
-          }))
-          .filter((cs) => cs.id || cs.name); // must have at least id or name
-
-        // 2) Resolve DTO items -> real CareerScope IDs (prevent duplicates by name)
         const finalIds: string[] = [];
 
-        for (const csDto of incoming) {
-          // If ID exists, use it (and optionally update fields)
-          if (csDto.id) {
-            const byId = await this.careerScopeRepository.findOne({
-              where: { id: csDto.id },
-            });
-            if (!byId) continue;
-
-            // optional update
-            const patch: any = {};
-            if (csDto.name) patch.name = csDto.name;
-            if (csDto.description) patch.description = csDto.description;
-            if (Object.keys(patch).length) {
-              Object.assign(byId, patch);
-              await this.careerScopeRepository.save(byId);
-            }
-
-            finalIds.push(byId.id);
+        for (const cs of careerScopes) {
+          if (cs.id) {
+            finalIds.push(cs.id);
             continue;
           }
 
-          // No ID -> try find by name
-          const byName = await this.careerScopeRepository.findOne({
-            where: { name: csDto.name },
+          const existing = await this.careerScopeRepository.findOne({
+            where: { name: cs.name },
           });
 
-          if (byName) {
-            // optional update description
-            if (csDto.description && csDto.description !== byName.description) {
-              byName.description = csDto.description;
-              await this.careerScopeRepository.save(byName);
-            }
-            finalIds.push(byName.id);
-            continue;
+          if (existing) {
+            finalIds.push(existing.id);
+          } else {
+            const created = await this.careerScopeRepository.save(
+              this.careerScopeRepository.create({
+                name: cs.name,
+                description: cs.description ?? null,
+              }),
+            );
+            finalIds.push(created.id);
           }
-
-          // Create new
-          const created = await this.careerScopeRepository.save(
-            this.careerScopeRepository.create({
-              name: csDto.name,
-              description: csDto.description || null,
-            }),
-          );
-
-          finalIds.push(created.id);
         }
 
-        // unique
         const uniqueFinalIds = Array.from(new Set(finalIds));
-
-        // 3) Load current relation IDs
-        const companyWithScopes = await this.companyRepository.findOne({
-          where: { id: companyId },
-          relations: ['careerScopes'],
-          select: { id: true }, // keep light
-        });
-
-        const currentIds = new Set(
-          (companyWithScopes?.careerScopes ?? []).map((cs) => cs.id),
-        );
+        const currentIds = new Set(company.careerScopes.map((c) => c.id));
         const finalSet = new Set(uniqueFinalIds);
 
         const toAdd = uniqueFinalIds.filter((id) => !currentIds.has(id));
@@ -555,7 +535,6 @@ export class UpdateCompanyInfoService {
           (id) => !finalSet.has(id),
         );
 
-        // 4) Apply changes atomically for M:N
         if (toAdd.length || toRemove.length) {
           await this.companyRepository
             .createQueryBuilder()
@@ -563,33 +542,27 @@ export class UpdateCompanyInfoService {
             .of(companyId)
             .addAndRemove(toAdd, toRemove);
         }
-
-        // 5) Refresh the relation for response
-        company.careerScopes = await this.careerScopeRepository
-          .createQueryBuilder('cs')
-          .innerJoin('cs.companies', 'c', 'c.id = :companyId', { companyId })
-          .getMany();
       }
 
-      /* ------------------------ SOCIALS (O2M) ------------------------ */
+      /* =======================================================
+         6️⃣ SOCIALS (O2M)
+      ======================================================= */
       if (Array.isArray(socials)) {
         for (const socialDto of socials) {
-          const socialId = (socialDto as any)?.id;
-
-          if (socialId) {
+          if (socialDto.id) {
             const existing = await this.socialRepository.findOne({
-              where: { id: socialId, company: { id: companyId } },
+              where: { id: socialDto.id, company: { id: companyId } },
             });
 
             if (existing) {
-              const { id: _, ...updateData } = socialDto as any;
+              const { id: _, ...updateData } = socialDto;
               Object.assign(existing, updateData);
               await this.socialRepository.save(existing);
             }
           } else {
             await this.socialRepository.save(
               this.socialRepository.create({
-                ...(socialDto as any),
+                ...socialDto,
                 company,
               }),
             );
@@ -601,10 +574,9 @@ export class UpdateCompanyInfoService {
         }
       }
 
-      // ✅ save only scalar updates safely
-      await this.companyRepository.save(company);
-
-      // ✅ reload fully fresh company snapshot for response
+      /* =======================================================
+         7️⃣ RELOAD COMPANY SNAPSHOT
+      ======================================================= */
       const freshCompany = await this.companyRepository.findOne({
         where: { id: companyId },
         relations: [
@@ -617,7 +589,9 @@ export class UpdateCompanyInfoService {
         ],
       });
 
-      // ✅ clear caches for ALL users in this company
+      /* =======================================================
+         8️⃣ CACHE INVALIDATION
+      ======================================================= */
       const users = await this.userRepository.find({
         where: { company: { id: companyId } },
         select: ['id'],

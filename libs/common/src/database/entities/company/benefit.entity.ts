@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  Index,
   ManyToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -11,7 +12,8 @@ export class Benefit {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true })
+  @Index({ unique: true })
+  @Column()
   label: string;
 
   @ManyToMany(() => Company, (company) => company.benefits)

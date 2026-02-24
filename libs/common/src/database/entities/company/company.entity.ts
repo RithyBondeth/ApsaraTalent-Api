@@ -60,12 +60,20 @@ export class Company {
   @OneToMany(() => Job, (job) => job.company, { cascade: true })
   openPositions: Job[];
 
-  @ManyToMany(() => Benefit, (benefit) => benefit.companies)
-  @JoinTable()
+  @ManyToMany(() => Benefit, (benefit) => benefit.companies, { cascade: true })
+  @JoinTable({
+    name: 'company_benefits_benefit',
+    joinColumn: { name: 'companyId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'benefitId', referencedColumnName: 'id' },
+  })
   benefits: Benefit[];
 
-  @ManyToMany(() => Value, (value) => value.companies)
-  @JoinTable()
+  @ManyToMany(() => Value, (value) => value.companies, { cascade: true })
+  @JoinTable({
+    name: 'company_values_value',
+    joinColumn: { name: 'companyId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'valueId', referencedColumnName: 'id' },
+  })
   values: Value[];
 
   @ManyToMany(() => CareerScope, (careerScope) => careerScope.companies)
