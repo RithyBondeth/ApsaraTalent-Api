@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { LoginOtpDTO } from '../dtos/login-otp.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '@app/common/database/entities/user.entity';
-import { RpcException } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { PinoLogger } from 'nestjs-pino';
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
@@ -11,10 +11,13 @@ import { MessageService } from '@app/common/message/message.service';
 import { VerifyOtpDTO } from '../dtos/verify-otp.dto';
 import { JwtService } from '@app/common/jwt/jwt.service';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
+import { firstValueFrom } from 'rxjs';
+import { USER_SERVICE } from 'utils/constants/user-service.constant';
 
 @Injectable()
 export class LoginOTPService {
   constructor(
+    @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
     @InjectRepository(User) private readonly userRepo: Repository<User>,
     private readonly messageService: MessageService,
     private readonly jwtService: JwtService,
@@ -96,6 +99,14 @@ export class LoginOTPService {
 
       // Save user updates
       await this.userRepo.save(user);
+
+      // Clear Cache in USER SERVICE
+      console.log('[AUTH] sending CLEAR_USER_CACHE from LOGIN_OTP', user.id);
+      await firstValueFrom(
+        this.userClient.send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, {
+          userId: user.id,
+        }),
+      );
 
       return {
         message: 'OTP verified successfully',

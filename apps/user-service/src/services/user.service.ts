@@ -675,4 +675,19 @@ export class UserService {
       },
     });
   }
+
+  async clearCurrentUserCache(userId: string) {
+    await Promise.all([
+      this.redisService.del(
+        this.redisService.generateUserKey('detail', userId),
+      ),
+      this.redisService.del(
+        this.redisService.generateUserKey('profile', userId),
+      ),
+      this.redisService.del(
+        this.redisService.generateUserKey('settings', userId),
+      ),
+    ]);
+    return { ok: true };
+  }
 }

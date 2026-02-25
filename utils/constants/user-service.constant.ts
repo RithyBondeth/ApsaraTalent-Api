@@ -38,5 +38,7 @@ export const USER_SERVICE = {
     COUNT_EMPLOYEE_FAVORITE: { cmd: 'countEmployeeFavorite' },
 
     FIND_ALL_CAREER_SCOPES: { cmd: 'findAllCareerScopes' },
+
+    CLEAR_CURRENT_USER_CACHE: { cmd: 'clearCurrentUserCache' },
   },
 };

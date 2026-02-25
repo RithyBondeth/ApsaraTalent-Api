@@ -53,7 +53,8 @@ export class RedisService {
       const value = await this.cacheManager.get<T>(key);
       return value || null;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Cache GET error: ${errorMessage}`);
     }
   }
@@ -62,7 +63,8 @@ export class RedisService {
     try {
       await this.cacheManager.set(key, value, ttl);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Cache SET error: ${errorMessage}`);
     }
   }
@@ -71,7 +73,8 @@ export class RedisService {
     try {
       await this.cacheManager.del(key);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Cache DEL error: ${errorMessage}`);
     }
   }
@@ -87,7 +90,8 @@ export class RedisService {
         }
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Cache DEL pattern error: ${errorMessage}`);
     }
   }
@@ -127,5 +131,10 @@ export class RedisService {
       this.del(`${this.PREFIX}:${entity}:list:page:${page}:limit:10`),
     );
     await Promise.all(promises);
+  }
+
+  // You can also clear profile/settings if you really use them
+  async clearUserDetailCache(userId: string): Promise<void> {
+    await this.del(this.generateUserKey('detail', userId));
   }
 }

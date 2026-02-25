@@ -1,16 +1,20 @@
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LinkedInAuthDTO } from '../dtos/linkedin-auth.dto';
 import { Repository } from 'typeorm';
 import { User } from '@app/common/database/entities/user.entity';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { PinoLogger } from 'nestjs-pino';
+import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class LinkedInAuthService {
   constructor(
+    @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
     @InjectRepository(User) private users: Repository<User>,
     private readonly jwt: JwtService,
     private readonly logger: PinoLogger,
@@ -53,6 +57,17 @@ export class LinkedInAuthService {
         this.jwt.generateToken(payload),
         this.jwt.generateRefreshToken(user.id),
       ]);
+
+      // Clear Cache in USER SERVICE
+      console.log(
+        '[AUTH] sending CLEAR_USER_CACHE from LINKEDIN LOGIN',
+        user.id,
+      );
+      await firstValueFrom(
+        this.userClient.send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, {
+          userId: user.id,
+        }),
+      );
 
       return {
         message: 'Successfully logged in with LinkedIn',

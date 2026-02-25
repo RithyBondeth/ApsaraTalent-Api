@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { LoginDTO } from '../dtos/login.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -9,12 +9,15 @@ import { LoginResponseDTO } from '../dtos/login-response.dto';
 import { PinoLogger } from 'nestjs-pino';
 import { User } from '@app/common/database/entities/user.entity';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
-import { RpcException } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { checkEmail } from 'utils/functions/check-email';
+import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class LoginService {
   constructor(
+    @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
     private readonly logger: PinoLogger,
@@ -73,6 +76,17 @@ export class LoginService {
       user.lastLoginMethod = ELoginMethod.EMAIL_PASSWORD;
       user.lastLoginAt = new Date();
       await this.userRepository.save(user);
+
+      // Clear Cache in USER SERVICE
+      console.log(
+        '[AUTH] sending CLEAR_USER_CACHE from EMAIL_PASSWORD_LOGIN',
+        user.id,
+      );
+      await firstValueFrom(
+        this.userClient.send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, {
+          userId: user.id,
+        }),
+      );
 
       //Return token and user details
       return new LoginResponseDTO({

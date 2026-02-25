@@ -95,4 +95,10 @@ export class UserController implements IUserController {
   async findAllCareerScopes(): Promise<Partial<CareerScope[]>> {
     return this.userService.findAllCareerScopes();
   }
+
+  @MessagePattern(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE)
+  async clearUserCache(@Payload() payload: { userId: string }) {
+    console.log('[USER-SERVICE] CLEAR_USER_CACHE received', payload.userId);
+    return this.userService.clearCurrentUserCache(payload.userId);
+  }
 }

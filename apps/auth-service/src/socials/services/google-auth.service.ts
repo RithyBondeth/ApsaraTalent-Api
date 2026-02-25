@@ -1,5 +1,5 @@
 import { JwtService } from '@app/common/jwt/jwt.service';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
@@ -7,10 +7,14 @@ import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { User } from '@app/common/database/entities/user.entity';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { GoogleAuthDTO } from '../dtos/google-auth.dto';
+import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class GoogleAuthService {
   constructor(
+    @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
     private readonly logger: PinoLogger,
@@ -57,6 +61,14 @@ export class GoogleAuthService {
         this.jwtService.generateToken(payload),
         this.jwtService.generateRefreshToken(user.id),
       ]);
+
+      // Clear Cache in USER SERVICE
+      console.log('[AUTH] sending CLEAR_USER_CACHE from GOOGLE LOGIN', user.id);
+      await firstValueFrom(
+        this.userClient.send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, {
+          userId: user.id,
+        }),
+      );
 
       return {
         message: 'Successfully Logged in with Google',

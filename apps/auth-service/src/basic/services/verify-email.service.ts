@@ -46,7 +46,9 @@ export class VerifyEmailService {
         'Your email was verified successfully. Now you can login',
       );
     } catch (error) {
-      this.logger.error((error as Error).message || 'An error occurred while verifying email.');
+      this.logger.error(
+        (error as Error).message || 'An error occurred while verifying email.',
+      );
       if (error instanceof RpcException) throw error;
       throw new RpcException({
         message: (error as Error).message,

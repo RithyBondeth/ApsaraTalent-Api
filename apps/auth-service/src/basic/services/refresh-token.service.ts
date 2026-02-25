@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
@@ -59,7 +55,9 @@ export class RefreshTokenService {
         user: user,
       });
     } catch (error) {
-      this.logger.error((error as Error).message || 'An error occurred while refreshing token.');
+      this.logger.error(
+        (error as Error).message || 'An error occurred while refreshing token.',
+      );
       if (error instanceof RpcException) throw error;
       throw new RpcException({
         message: (error as Error).message,

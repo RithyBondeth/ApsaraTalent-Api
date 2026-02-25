@@ -41,6 +41,9 @@ import { GithubAuthController } from './socials/controllers/github-auth.controll
 import { GithubAuthService } from './socials/services/github-auth.service';
 import { FacebookAuthService } from './socials/services/facebook-auth.service';
 import { FacebookAuthController } from './socials/controllers/facebook-auth.controller';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -63,6 +66,19 @@ import { FacebookAuthController } from './socials/controllers/facebook-auth.cont
       Experience,
       Education,
       Job,
+    ]),
+    ClientsModule.registerAsync([
+      {
+        name: USER_SERVICE.NAME,
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: configService.get<string>('services.user.host'),
+            port: configService.get<number>('services.user.port'),
+          },
+        }),
+        inject: [ConfigService],
+      },
     ]),
   ],
   controllers: [
