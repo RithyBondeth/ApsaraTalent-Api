@@ -34,7 +34,8 @@ export class EmailService {
         host: this.emailConfig.host,
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(
         'Failed to initialize email transporter: ',
         errorMessage,
@@ -68,7 +69,8 @@ export class EmailService {
       //Return sent email
       return emailSent;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       this.logger.error('Failed to send email: ', errorMessage);
       throw new Error(errorMessage);
     }
