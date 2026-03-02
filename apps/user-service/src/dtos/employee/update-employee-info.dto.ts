@@ -87,6 +87,10 @@ export class UpdateEmployeeInfoDTO {
 class SkillDto {
   @IsString()
   @IsOptional()
+  id?: string;
+
+  @IsString()
+  @IsOptional()
   name?: string;
 
   @IsString()
@@ -95,6 +99,10 @@ class SkillDto {
 }
 
 class ExperienceDto {
+  @IsString()
+  @IsOptional()
+  id?: string;
+
   @IsString()
   @IsOptional()
   title?: string;
@@ -117,6 +125,10 @@ class ExperienceDto {
 class CareerScopeDto {
   @IsString()
   @IsOptional()
+  id?: string;
+
+  @IsString()
+  @IsOptional()
   name?: string;
 
   @IsString()
@@ -127,6 +139,10 @@ class CareerScopeDto {
 class SocialDto {
   @IsString()
   @IsOptional()
+  id?: string;
+
+  @IsString()
+  @IsOptional()
   platform?: string;
 
   @IsUrl()
@@ -135,6 +151,10 @@ class SocialDto {
 }
 
 class EducationDto {
+  @IsString()
+  @IsOptional()
+  id?: string;
+
   @IsString()
   @IsOptional()
   school?: string;

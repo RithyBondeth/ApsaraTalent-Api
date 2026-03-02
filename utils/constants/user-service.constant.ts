@@ -11,6 +11,8 @@ export const USER_SERVICE = {
     REMOVE_EMPLOYEE_RESUME: { cmd: 'removeEmployeeResume' },
     UPLOAD_EMPLOYEE_COVER_LETTER: { cmd: 'uploadEmployeeCoverLetter' },
     REMOVE_EMPLOYEE_COVER_LETTER: { cmd: 'removeEmployeeCoverLetter' },
+    REMOVE_EMPLOYEE_EXPERIENCE: { cmd: 'removeEmployeeExperience' },
+    REMOVE_EMPLOYEE_EDUCATION: { cmd: 'removeEmployeeEducation' },
 
     FIND_ALL_COMPANY: { cmd: 'findAllCompany' },
     FIND_ONE_COMPANY_BY_ID: { cmd: 'findOneCompanyById' },

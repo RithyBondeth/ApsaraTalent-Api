@@ -44,6 +44,8 @@ import { OpenPositionController } from './controllers/company-controllers/open-p
 import { OpenPositionService } from './services/company-services/open-position.service';
 import { RedisModule } from '@app/common/redis/redis.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ExperienceAndEducationService } from './services/employee-services/experienc-education.service';
+import { ExperienceAndEducationController } from './controllers/employee-controllers/experience-education.controller';
 
 @Module({
   imports: [
@@ -90,6 +92,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     SearchEmployeeController,
     UserController,
     OpenPositionController,
+    ExperienceAndEducationController,
   ],
   providers: [
     UpdateEmployeeInfoService,
@@ -102,6 +105,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     SearchEmployeeService,
     UserService,
     OpenPositionService,
+    ExperienceAndEducationService,
     {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor,

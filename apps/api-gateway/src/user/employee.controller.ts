@@ -5,6 +5,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
@@ -136,6 +137,34 @@ export class EmployeeController implements IEmployeeController {
     return firstValueFrom(
       this.userClient.send(
         USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_COVER_LETTER,
+        payload,
+      ),
+    );
+  }
+
+  @Delete('remove-experience/:employeeId/:experienceId')
+  async removeEmployeeExperience(
+    @Param('employeeId', ParseUUIDPipe) employeeId: string,
+    @Param('experienceId', ParseUUIDPipe) experienceId: string,
+  ) {
+    const payload = { employeeId, experienceId };
+    return firstValueFrom(
+      this.userClient.send(
+        USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_EXPERIENCE,
+        payload,
+      ),
+    );
+  }
+
+  @Delete('remove-education/:employeeId/:educationId')
+  async removeEmployeeEducation(
+    @Param('employeeId', ParseUUIDPipe) employeeId: string,
+    @Param('educationId', ParseUUIDPipe) educationId: string,
+  ) {
+    const payload = { employeeId, educationId };
+    return firstValueFrom(
+      this.userClient.send(
+        USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_EDUCATION,
         payload,
       ),
     );
