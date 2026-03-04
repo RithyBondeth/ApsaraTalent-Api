@@ -6,6 +6,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import * as path from 'path';
 import { RpcException } from '@nestjs/microservices';
+import { CacheInvalidationService } from '@app/common/redis/cache-invalidation.service';
 
 @Injectable()
 export class UploadEmployeeReferenceService {
@@ -13,6 +14,7 @@ export class UploadEmployeeReferenceService {
     @InjectRepository(Employee)
     private readonly employeeRepository: Repository<Employee>,
     private readonly uploadFileService: UploadfileService,
+    private readonly cacheInvalidationService: CacheInvalidationService,
     private readonly logger: PinoLogger,
   ) {}
 
@@ -49,6 +51,9 @@ export class UploadEmployeeReferenceService {
       employee.resume = resumeUrl;
 
       await this.employeeRepository.save(employee);
+
+      // Cache Invalidation
+      await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
 
       return { message: "Employee's resume was successfully set." };
     } catch (error) {
@@ -88,6 +93,9 @@ export class UploadEmployeeReferenceService {
       employee.resume = null;
 
       await this.employeeRepository.save(employee);
+
+      // Cache Invalidation
+      await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
 
       return { message: "Employee's resume was successfully deleted." };
     } catch (error) {
@@ -148,6 +156,9 @@ export class UploadEmployeeReferenceService {
 
       await this.employeeRepository.save(employee);
 
+      // Cache Invalidation
+      await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
+
       return { message: "Employee's cover letter was successfully set." };
     } catch (error) {
       // Handle error
@@ -191,6 +202,9 @@ export class UploadEmployeeReferenceService {
       employee.coverLetter = null;
 
       await this.employeeRepository.save(employee);
+
+      // Cache Invalidation
+      await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
 
       return { message: "Employee's cover letter was successfully deleted." };
     } catch (error) {

@@ -1,7 +1,6 @@
 import { Education } from '@app/common/database/entities/employee/education.entity';
 import { Experience } from '@app/common/database/entities/employee/experience.entity';
-import { User } from '@app/common/database/entities/user.entity';
-import { RedisService } from '@app/common/redis/redis.service';
+import { CacheInvalidationService } from '@app/common/redis/cache-invalidation.service';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -12,34 +11,12 @@ import { Repository } from 'typeorm';
 export class ExperienceAndEducationService {
   constructor(
     private readonly logger: PinoLogger,
-    @InjectRepository(User) private readonly userRepository: Repository<User>,
     @InjectRepository(Experience)
     private readonly expRepository: Repository<Experience>,
     @InjectRepository(Education)
     private readonly eduRepository: Repository<Education>,
-    private readonly redisService: RedisService,
+    private readonly cacheInvalidationService: CacheInvalidationService,
   ) {}
-
-  private async invalidateEmployeeCaches(employeeId: string, keyword: string) {
-    const users = await this.userRepository.find({
-      where: { employee: { id: employeeId } },
-      select: ['id'],
-    });
-
-    const keysToDelete = users.map((u) =>
-      this.redisService.generateUserKey('detail', u.id),
-    );
-
-    // If you cache user list
-    keysToDelete.push(this.redisService.generateListKey('user', {}));
-
-    await Promise.all(keysToDelete.map((k) => this.redisService.del(k)));
-
-    this.logger.info(
-      { employeeId, keysToDelete },
-      `Employee caches invalidated after removing ${keyword}`,
-    );
-  }
 
   async removeEmployeeExperience(employeeId: string, experienceId: string) {
     try {
@@ -55,7 +32,7 @@ export class ExperienceAndEducationService {
         });
 
       // Invalidate cache after deletion
-      await this.invalidateEmployeeCaches(employeeId, 'experience');
+      await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
 
       await this.expRepository.delete(experienceId);
 
@@ -88,13 +65,13 @@ export class ExperienceAndEducationService {
           message: "There's no education with this id.",
         });
 
+      // Invalidate cache after deletion
+      await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
+
       await this.eduRepository.delete(educationId);
 
-      // Invalidate cache after deletion
-      await this.invalidateEmployeeCaches(employeeId, 'education');
-
       return {
-        message: `${removeEdu.school} education was removed successfully.`,
+        message: `${removeEdu.school} education was removed successfully`,
       };
     } catch (error) {
       // Handle error
