@@ -1,4 +1,5 @@
 import { Employee } from '@app/common/database/entities/employee/employee.entity';
+import { CacheInvalidationService } from '@app/common/redis/cache-invalidation.service';
 import { UploadfileService } from '@app/common/uploadfile/uploadfile.service';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
@@ -13,6 +14,7 @@ export class ImageEmployeeService {
     @InjectRepository(Employee)
     private readonly employeeRepository: Repository<Employee>,
     private readonly uploadFileService: UploadfileService,
+    private readonly cacheInvalidationService: CacheInvalidationService,
     private readonly logger: PinoLogger,
   ) {}
 
@@ -54,6 +56,9 @@ export class ImageEmployeeService {
 
       await this.employeeRepository.save(employee);
 
+      // Invalidate user caches (fix for stale avatar in findOneUserByID)
+      await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
+
       return { message: "Employee's avatar was successfully set." };
     } catch (error) {
       // Handle error
@@ -93,6 +98,9 @@ export class ImageEmployeeService {
       employee.avatar = null;
 
       await this.employeeRepository.save(employee);
+
+      // Invalidate user caches
+      await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
 
       return { message: "Employee's avatar was successfully deleted." };
     } catch (error) {

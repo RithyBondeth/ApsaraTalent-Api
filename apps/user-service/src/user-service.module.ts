@@ -46,6 +46,7 @@ import { RedisModule } from '@app/common/redis/redis.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ExperienceAndEducationService } from './services/employee-services/experienc-education.service';
 import { ExperienceAndEducationController } from './controllers/employee-controllers/experience-education.controller';
+import { CacheInvalidationService } from '@app/common/redis/cache-invalidation.service';
 
 @Module({
   imports: [
@@ -106,6 +107,7 @@ import { ExperienceAndEducationController } from './controllers/employee-control
     UserService,
     OpenPositionService,
     ExperienceAndEducationService,
+    CacheInvalidationService,
     {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor,

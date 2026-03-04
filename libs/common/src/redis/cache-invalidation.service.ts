@@ -4,25 +4,39 @@ import { RedisService } from './redis.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Company } from '../database/entities/company/company.entity';
+import { User } from '../database/entities/user.entity';
 
 @Injectable()
 export class CacheInvalidationService {
   private readonly logger = new Logger(CacheInvalidationService.name);
 
-  // Cache TTLs (in milliseconds)
-  private readonly TTLS = {
-    USER_DETAIL: 300000, // 5 minutes
-    EMPLOYEE_DETAIL: 300000, // 5 minutes
-    COMPANY_DETAIL: 300000, // 5 minutes
-    FAVORITES: 120000, // 2 minutes
-    LISTS: 120000, // 2 minutes
-  };
-
   constructor(
     private readonly redisService: RedisService,
     @InjectRepository(Company)
     private readonly companyRepository: Repository<Company>,
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
   ) {}
+
+  async invalidateEmployeeCache(employeeId: string): Promise<void> {
+    const users = await this.userRepository.find({
+      where: { employee: { id: employeeId } },
+      select: ['id'],
+    });
+
+    const keysToDelete: string[] = users.map((u) =>
+      this.redisService.generateUserKey('detail', u.id),
+    );
+
+    // if you cache "all users" list
+    keysToDelete.push(this.redisService.generateListKey('user', {}));
+
+    await Promise.all(keysToDelete.map((k) => this.redisService.del(k)));
+
+    this.logger.log(
+      { employeeId, keysToDelete },
+      'Employee caches invalidated',
+    );
+  }
 
   // ==================== USER EVENTS ====================
   @OnEvent('user.updated')
