@@ -23,7 +23,7 @@ export class ExperienceAndEducationController {
   async removeEmployeeEducation(
     @Payload() payload: { employeeId: string; educationId: string },
   ) {
-    this.experienceAndEducationService.removeEmployeeEducation(
+    return this.experienceAndEducationService.removeEmployeeEducation(
       payload.employeeId,
       payload.educationId,
     );
