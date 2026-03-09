@@ -71,12 +71,12 @@ export class SearchEmployeeService {
 
       // Experience range
       if (query.experienceMin !== undefined) {
-        qb.andWhere('employee.yearsOfExperience >= :minExp', {
+        qb.andWhere('CAST(employee.yearsOfExperience AS INTEGER) >= :minExp', {
           minExp: query.experienceMin,
         });
       }
       if (query.experienceMax !== undefined) {
-        qb.andWhere('employee.yearsOfExperience <= :maxExp', {
+        qb.andWhere('CAST(employee.yearsOfExperience AS INTEGER) <= :maxExp', {
           maxExp: query.experienceMax,
         });
       }
@@ -102,7 +102,14 @@ export class SearchEmployeeService {
         ? query.sortOrder.toUpperCase()
         : 'DESC';
 
-      qb.orderBy(sortField, sortOrder as 'ASC' | 'DESC');
+      if (query.sortBy === 'yearsOfExperience') {
+        qb.orderBy(
+          'CAST(employee.yearsOfExperience AS INTEGER)',
+          sortOrder as 'ASC' | 'DESC',
+        );
+      } else {
+        qb.orderBy(sortField, sortOrder as 'ASC' | 'DESC');
+      }
 
       const employees = await qb.getMany();
 

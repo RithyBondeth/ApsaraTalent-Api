@@ -47,9 +47,9 @@ export class EmployeeResponseDTO {
   @IsString()
   job: string;
 
-  @IsNumber()
-  @IsPositive()
-  yearsOfExperience: number;
+  @IsString()
+  @IsOptional()
+  yearsOfExperience: string;
 
   @IsString()
   availability: string;

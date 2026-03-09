@@ -32,10 +32,9 @@ export class UpdateEmployeeInfoDTO {
   @IsOptional()
   job?: string;
 
-  @IsNumber()
+  @IsString()
   @IsOptional()
-  @Type(() => Number)
-  yearsOfExperience?: number;
+  yearsOfExperience?: string;
 
   @IsString()
   @IsOptional()

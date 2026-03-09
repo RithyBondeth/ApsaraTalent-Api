@@ -46,7 +46,7 @@ export class Employee {
   job: string;
 
   @Column({ nullable: true })
-  yearsOfExperience: number;
+  yearsOfExperience: string;
 
   @Column()
   availability: string;
