@@ -110,61 +110,62 @@ export class RegisterService {
       const newJobs =
         companyRegisterDTO.jobs?.map((job) => {
           return this.jobRepository.create({
-            title: job.title,
-            description: job.description,
-            type: job.type,
-            experienceRequired: job.experienceRequired,
-            educationRequired: job.educationRequired,
-            skillsRequired: job.skillsRequired,
-            salary: job.salary,
-            expireDate: job.expireDate,
+            ...job,
             company: newCompany,
           });
         }) || [];
+      await this.jobRepository.save(newJobs);
 
-      // Create benefits and associate them with the company
-      const newBenefits =
-        companyRegisterDTO.benefits?.map((benefit) => {
-          return this.benefitRepository.create({
-            label: benefit.label,
-            companies: [newCompany],
+      // Create or find existing benefits and associate them with the company
+      const newBenefits = await Promise.all(
+        companyRegisterDTO.benefits?.map(async (benefit) => {
+          let existingBenefit = await this.benefitRepository.findOne({
+            where: { label: benefit.label },
           });
-        }) || [];
+          if (!existingBenefit) {
+            existingBenefit = this.benefitRepository.create(benefit);
+            await this.benefitRepository.save(existingBenefit);
+          }
+          return existingBenefit;
+        }) || [],
+      );
 
-      // Create values and associate them with the company
-      const newValues =
-        companyRegisterDTO.values?.map((value) => {
-          return this.valueRepository.create({
-            label: value.label,
-            companies: [newCompany],
+      // Create or find existing values and associate them with the company
+      const newValues = await Promise.all(
+        companyRegisterDTO.values?.map(async (value) => {
+          let existingValue = await this.valueRepository.findOne({
+            where: { label: value.label },
           });
-        }) || [];
+          if (!existingValue) {
+            existingValue = this.valueRepository.create(value);
+            await this.valueRepository.save(existingValue);
+          }
+          return existingValue;
+        }) || [],
+      );
 
-      // Create career scopes and associate them with the company
-      const newCareerScopes =
-        companyRegisterDTO.careerScopes?.map((career) => {
-          return this.careerScopeRepository.create({
-            name: career.name,
-            description: career.description,
-            companies: [newCompany],
+      // Create or find existing career scopes and associate them with the company
+      const newCareerScopes = await Promise.all(
+        companyRegisterDTO.careerScopes?.map(async (career) => {
+          let existingCareerScope = await this.careerScopeRepository.findOne({
+            where: { name: career.name },
           });
-        }) || [];
+          if (!existingCareerScope) {
+            existingCareerScope = this.careerScopeRepository.create(career);
+            await this.careerScopeRepository.save(existingCareerScope);
+          }
+          return existingCareerScope;
+        }) || [],
+      );
 
       // Create socials and associate them with the company
       const newSocials =
         companyRegisterDTO.socials?.map((social) => {
           return this.socialRepository.create({
-            platform: social.platform,
-            url: social.url,
+            ...social,
             company: newCompany,
           });
         }) || [];
-
-      // Save benefits, values, career scopes, and socials
-      await this.jobRepository.save(newJobs);
-      await this.benefitRepository.save(newBenefits);
-      await this.valueRepository.save(newValues);
-      await this.careerScopeRepository.save(newCareerScopes);
       await this.socialRepository.save(newSocials);
 
       // Update the company entity with the new relations
@@ -303,48 +304,67 @@ export class RegisterService {
       // Save employee first to get the ID
       await this.employeeRepository.save(newEmployee);
 
-      // Create education and associate them with the employee
-      const newEducations =
-        employeeRegisterDTO.educations?.map((edu) => {
-          return this.educationRepository.create({
-            school: edu.school,
-            degree: edu.degree,
-            year: edu.year,
-            employee: newEmployee,
+      // Create or find existing educations and associate them with the employee
+      const newEducations = await Promise.all(
+        employeeRegisterDTO.educations?.map(async (edu) => {
+          let education = await this.educationRepository.findOne({
+            where: { school: edu.school, degree: edu.degree, year: edu.year },
           });
-        }) || [];
+          if (!education) {
+            education = this.educationRepository.create({
+              ...edu,
+              employee: newEmployee,
+            });
+            await this.educationRepository.save(education);
+          }
+          return education;
+        }) || [],
+      );
 
-      // Create skills and related them with the employee
-      const newSkills =
-        employeeRegisterDTO.skills?.map((skill) => {
-          return this.skillRepository.create({
-            name: skill.name,
-            description: skill.description,
-            employees: [newEmployee],
+      // Create or find existing skills and associate them with the employee
+      const newSkills = await Promise.all(
+        employeeRegisterDTO.skills?.map(async (skill) => {
+          let existingSkill = await this.skillRepository.findOne({
+            where: { name: skill.name },
           });
-        }) || [];
+          if (!existingSkill) {
+            existingSkill = this.skillRepository.create(skill);
+            await this.skillRepository.save(existingSkill);
+          }
+          return existingSkill;
+        }) || [],
+      );
 
-      // Create experiences and related them with the employee
-      const newExperiences =
-        employeeRegisterDTO.experiences?.map((exp) => {
-          return this.experienceRepository.create({
-            title: exp.title,
-            description: exp.description,
-            startDate: exp.startDate,
-            endDate: exp.endDate,
-            employee: newEmployee,
+      // Create or find existing experiences and associate them with the employee
+      const newExperiences = await Promise.all(
+        employeeRegisterDTO.experiences?.map(async (exp) => {
+          let experience = await this.experienceRepository.findOne({
+            where: { title: exp.title, description: exp.description },
           });
-        }) || [];
+          if (!experience) {
+            experience = this.experienceRepository.create({
+              ...exp,
+              employee: newEmployee,
+            });
+            await this.experienceRepository.save(experience);
+          }
+          return experience;
+        }) || [],
+      );
 
-      // Create careerScopes and related them with the employee
-      const newCareerScopes =
-        employeeRegisterDTO.careerScopes?.map((csp) => {
-          return this.careerScopeRepository.create({
-            name: csp.name,
-            description: csp.description,
-            employees: [newEmployee],
+      // Create or find existing career scopes and associate them with the employee
+      const newCareerScopes = await Promise.all(
+        employeeRegisterDTO.careerScopes?.map(async (csp) => {
+          let careerScope = await this.careerScopeRepository.findOne({
+            where: { name: csp.name },
           });
-        }) || [];
+          if (!careerScope) {
+            careerScope = this.careerScopeRepository.create(csp);
+            await this.careerScopeRepository.save(careerScope);
+          }
+          return careerScope;
+        }) || [],
+      );
 
       // Create socials and related them with the employee
       const newSocials =
@@ -356,11 +376,6 @@ export class RegisterService {
           });
         }) || [];
 
-      // Save educations, skills, experiences, career scopes, and socials
-      await this.educationRepository.save(newEducations);
-      await this.skillRepository.save(newSkills);
-      await this.experienceRepository.save(newExperiences);
-      await this.careerScopeRepository.save(newCareerScopes);
       await this.socialRepository.save(newSocials);
 
       // Update the employee entity with the new relations
