@@ -1,19 +1,19 @@
-import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { JwtModule, LoggerModule } from '@app/common';
 import { ConfigModule } from '@app/common/config';
-import { AuthModule } from './auth/auth.module';
 import { UploadfileModule } from '@app/common/uploadfile/uploadfile.module';
+import { ClassSerializerInterceptor, Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ServeStaticModule } from '@nestjs/serve-static';
-import { HealthController } from './health/health.controller';
-import * as path from 'path';
 import { TerminusModule } from '@nestjs/terminus';
+import * as path from 'path';
+import { AuthModule } from './auth/auth.module';
+import { ChatModule } from './chat/chat.module';
+import { HealthController } from './health/health.controller';
+import { JobModule } from './job/job.module';
+import { NotificationModule } from './notification/notification.module';
+import { PaymentModule } from './payment/payment.module';
 import { ResumeBuilderModule } from './resume-builder/resume-builder.module';
 import { UserModule } from './user/user.module';
-import { APP_INTERCEPTOR } from '@nestjs/core';
-import { ChatModule } from './chat/chat.module';
-import { JobModule } from './job/job.module';
-import { PaymentModule } from './payment/payment.module';
-import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [

@@ -29,7 +29,8 @@ export interface IBasicAuthLoginOTPController {
 }
 
 export interface IBasicAuthController
-  extends IBasicAuthRegisterController,
+  extends
+    IBasicAuthRegisterController,
     IBasicAuthLoginController,
     IBasicAuthForgotPasswordController,
     IBasicAuthResetPasswordController,

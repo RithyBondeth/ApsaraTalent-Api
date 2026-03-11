@@ -1,10 +1,10 @@
+import { CareerScope } from '@app/common/database/entities/career-scope.entity';
+import { IUserController } from '@app/common/interfaces/user-controller.interface';
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
-import { UserService } from '../services/user.service';
 import { UserResponseDTO } from '../dtos/user-response.dto';
-import { IUserController } from '@app/common/interfaces/user-controller.interface';
-import { CareerScope } from '@app/common/database/entities/career-scope.entity';
+import { UserService } from '../services/user.service';
 
 @Controller()
 export class UserController implements IUserController {

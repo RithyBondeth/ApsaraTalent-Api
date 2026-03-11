@@ -1,19 +1,19 @@
-import { Injectable } from '@nestjs/common';
-import { UpdateEmployeeInfoDTO } from '../../dtos/employee/update-employee-info.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Employee } from '@app/common/database/entities/employee/employee.entity';
-import { Repository } from 'typeorm';
-import { PinoLogger } from 'nestjs-pino';
-import { Skill } from '@app/common/database/entities/employee/skill.entity';
-import { Experience } from '@app/common/database/entities/employee/experience.entity';
 import { CareerScope } from '@app/common/database/entities/career-scope.entity';
-import { Social } from '@app/common/database/entities/social.entity';
 import { Education } from '@app/common/database/entities/employee/education.entity';
-import { EmployeeResponseDTO } from '../../dtos/user-response.dto';
-import { RpcException } from '@nestjs/microservices';
+import { Employee } from '@app/common/database/entities/employee/employee.entity';
+import { Experience } from '@app/common/database/entities/employee/experience.entity';
+import { Skill } from '@app/common/database/entities/employee/skill.entity';
+import { Social } from '@app/common/database/entities/social.entity';
 import { User } from '@app/common/database/entities/user.entity';
-import { RedisService } from '@app/common/redis/redis.service';
 import { CacheInvalidationService } from '@app/common/redis/cache-invalidation.service';
+import { RedisService } from '@app/common/redis/redis.service';
+import { Injectable } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
+import { InjectRepository } from '@nestjs/typeorm';
+import { PinoLogger } from 'nestjs-pino';
+import { Repository } from 'typeorm';
+import { UpdateEmployeeInfoDTO } from '../../dtos/employee/update-employee-info.dto';
+import { EmployeeResponseDTO } from '../../dtos/user-response.dto';
 
 @Injectable()
 export class UpdateEmployeeInfoService {

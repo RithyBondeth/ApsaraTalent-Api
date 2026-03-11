@@ -1,22 +1,22 @@
+import { ILinkedInAuthController } from '@app/common/interfaces/auth-controller.interface';
 import {
-  BadRequestException,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Inject,
-  Query,
-  Req,
-  Res,
-  UseGuards,
+    BadRequestException,
+    Controller,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Inject,
+    Query,
+    Req,
+    Res,
+    UseGuards
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { ClientProxy } from '@nestjs/microservices';
+import { Response } from 'express';
 import { firstValueFrom, timeout } from 'rxjs';
 import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
-import { ClientProxy } from '@nestjs/microservices';
 import { LinkedInAuthGuard } from '../guards/linkedin-auth.guard';
-import { ILinkedInAuthController } from '@app/common/interfaces/auth-controller.interface';
-import { Response } from 'express';
-import { ConfigService } from '@nestjs/config';
 
 @Controller('social')
 export class LinkedInController implements ILinkedInAuthController {

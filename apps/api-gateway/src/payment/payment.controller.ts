@@ -1,11 +1,11 @@
 import {
-  Body,
-  Controller,
-  Get,
-  Inject,
-  Param,
-  Post,
-  Query,
+    Body,
+    Controller,
+    Get,
+    Inject,
+    Param,
+    Post,
+    Query
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -25,7 +25,7 @@ export class PaymentController {
       this.paymentClient.send(
         PAYMENT_SERVICE.ACTIONS.GENERATE_INDIVIDUAL_KHQR,
         generateIndividualQrDTO,
-      )
+      ),
     );
     // return firstValueFrom(
     //   this.paymentClient.send(

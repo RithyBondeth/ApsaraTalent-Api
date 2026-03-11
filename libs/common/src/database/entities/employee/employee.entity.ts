@@ -1,22 +1,22 @@
 import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  JoinColumn,
-  JoinTable,
-  ManyToMany,
-  OneToMany,
-  OneToOne,
-  PrimaryGeneratedColumn,
+    Column,
+    CreateDateColumn,
+    Entity,
+    JoinColumn,
+    JoinTable,
+    ManyToMany,
+    OneToMany,
+    OneToOne,
+    PrimaryGeneratedColumn
 } from 'typeorm';
-import { User } from '../user.entity';
 import { EGender } from '../../enums/gender.enum';
-import { Skill } from './skill.entity';
+import { CareerScope } from '../career-scope.entity';
+import { Social } from '../social.entity';
+import { User } from '../user.entity';
 import { Education } from './education.entity';
 import { Experience } from './experience.entity';
-import { Social } from '../social.entity';
-import { CareerScope } from '../career-scope.entity';
 import { EmployeeFavoriteCompany } from './favorite-company.entity';
+import { Skill } from './skill.entity';
 
 @Entity()
 export class Employee {

@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
-import { ExperienceAndEducationService } from '../../services/employee-services/experienc-education.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { ExperienceAndEducationService } from '../../services/employee-services/experienc-education.service';
 
 @Controller()
 export class ExperienceAndEducationController {

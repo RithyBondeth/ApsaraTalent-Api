@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { RedisService } from './redis.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Company } from '../database/entities/company/company.entity';
 import { User } from '../database/entities/user.entity';
+import { RedisService } from './redis.service';
 
 @Injectable()
 export class CacheInvalidationService {

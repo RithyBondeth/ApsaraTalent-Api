@@ -1,13 +1,13 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
 import { IMatchingController } from '@app/common/interfaces/job-controller.interface';
 import {
-  Controller,
-  Get,
-  Inject,
-  Param,
-  ParseUUIDPipe,
-  Post,
-  UseGuards,
+    Controller,
+    Get,
+    Inject,
+    Param,
+    ParseUUIDPipe,
+    Post,
+    UseGuards
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';

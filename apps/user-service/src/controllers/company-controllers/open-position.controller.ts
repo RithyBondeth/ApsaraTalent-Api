@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
-import { OpenPositionService } from '../../services/company-services/open-position.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { OpenPositionService } from '../../services/company-services/open-position.service';
 
 @Controller()
 export class OpenPositionController {

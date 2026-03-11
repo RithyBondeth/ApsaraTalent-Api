@@ -1,8 +1,8 @@
+import { IImageCompanyController } from '@app/common/interfaces/company.interface';
 import { Controller } from '@nestjs/common';
-import { ImageCompanyService } from '../../services/company-services/image-company.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
-import { IImageCompanyController } from '@app/common/interfaces/company.interface';
+import { ImageCompanyService } from '../../services/company-services/image-company.service';
 
 @Controller()
 export class ImageCompanyController implements IImageCompanyController {

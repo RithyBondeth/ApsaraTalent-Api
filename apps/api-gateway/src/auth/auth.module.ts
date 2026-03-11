@@ -1,20 +1,20 @@
-import { Module } from '@nestjs/common';
-import { AuthController } from './auth.controller';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
 import { JwtModule, ThrottlerModule } from '@app/common';
-import { GoogleController } from './socials/controllers/google.controller';
-import { ConfigService } from '@nestjs/config';
-import { PassportModule } from '@nestjs/passport';
-import { GoogleStrategy } from './socials/strategies/google.strategy';
-import { LinkedInController } from './socials/controllers/linkedin.controller';
-import { LinkedInStrategy } from './socials/strategies/linkedin.strategy';
-import { GithubController } from './socials/controllers/github.controller';
-import { GitHubStrategy } from './socials/strategies/github.strategy';
-import { FacebookController } from './socials/controllers/facebook.controller';
-import { FacebookStrategy } from './socials/strategies/facebook.strategy';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '@app/common/database/entities/user.entity';
+import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { PassportModule } from '@nestjs/passport';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
+import { AuthController } from './auth.controller';
+import { FacebookController } from './socials/controllers/facebook.controller';
+import { GithubController } from './socials/controllers/github.controller';
+import { GoogleController } from './socials/controllers/google.controller';
+import { LinkedInController } from './socials/controllers/linkedin.controller';
+import { FacebookStrategy } from './socials/strategies/facebook.strategy';
+import { GitHubStrategy } from './socials/strategies/github.strategy';
+import { GoogleStrategy } from './socials/strategies/google.strategy';
+import { LinkedInStrategy } from './socials/strategies/linkedin.strategy';
 
 @Module({
   imports: [

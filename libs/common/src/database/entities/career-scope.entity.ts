@@ -1,6 +1,6 @@
 import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { Employee } from './employee/employee.entity';
 import { Company } from './company/company.entity';
+import { Employee } from './employee/employee.entity';
 @Entity()
 export class CareerScope {
   @PrimaryGeneratedColumn('uuid')

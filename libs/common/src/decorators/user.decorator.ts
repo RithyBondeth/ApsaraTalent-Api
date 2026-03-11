@@ -1,7 +1,7 @@
 import {
-  createParamDecorator,
-  ExecutionContext,
-  NotFoundException,
+    createParamDecorator,
+    ExecutionContext,
+    NotFoundException
 } from '@nestjs/common';
 import { EUserRole } from '../database/enums/user-role.enum';
 

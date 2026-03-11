@@ -1,22 +1,22 @@
 import { IGithubAuthController } from '@app/common/interfaces/auth-controller.interface';
 import {
-  BadRequestException,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Inject,
-  Query,
-  Req,
-  Res,
-  UseGuards,
+    BadRequestException,
+    Controller,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Inject,
+    Query,
+    Req,
+    Res,
+    UseGuards
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
+import { Response } from 'express';
+import { firstValueFrom, timeout } from 'rxjs';
 import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
 import { GithubAuthGuard } from '../guards/github-auth.guard';
-import { firstValueFrom, timeout } from 'rxjs';
-import { ConfigService } from '@nestjs/config';
-import { Response } from 'express';
 
 @Controller('social')
 export class GithubController implements IGithubAuthController {

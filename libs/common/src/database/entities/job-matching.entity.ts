@@ -1,13 +1,13 @@
 import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-  Unique,
+    Column,
+    CreateDateColumn,
+    Entity,
+    ManyToOne,
+    PrimaryGeneratedColumn,
+    Unique
 } from 'typeorm';
-import { Employee } from './employee/employee.entity';
 import { Company } from './company/company.entity';
+import { Employee } from './employee/employee.entity';
 
 @Unique(['employee', 'company'])
 @Entity()

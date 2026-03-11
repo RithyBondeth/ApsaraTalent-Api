@@ -1,11 +1,11 @@
+import { User } from '@app/common/database/entities/user.entity';
 import { JwtService } from '@app/common/jwt/jwt.service';
 import { Injectable } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { VerifyEmailResponseDTO } from '../dtos/verify-email-response.dto';
-import { User } from '@app/common/database/entities/user.entity';
-import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class VerifyEmailService {

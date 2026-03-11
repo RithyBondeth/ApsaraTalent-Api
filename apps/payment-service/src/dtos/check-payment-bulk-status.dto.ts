@@ -1,9 +1,9 @@
 import {
-  ArrayMaxSize,
-  IsArray,
-  IsString,
-  Length,
-  Matches,
+    ArrayMaxSize,
+    IsArray,
+    IsString,
+    Length,
+    Matches
 } from 'class-validator';
 
 export class CheckPaymentBulkStatusDTO {

@@ -1,12 +1,12 @@
-import { Module } from '@nestjs/common';
-import { JobController } from './controllers/job.controller';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { JOB_SERVICE } from 'utils/constants/job-service.constant';
-import { ConfigService } from '@nestjs/config';
 import { JwtModule, ThrottlerModule } from '@app/common';
-import { JobMatchingController } from './controllers/matching.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '@app/common/database/entities/user.entity';
+import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { JOB_SERVICE } from 'utils/constants/job-service.constant';
+import { JobController } from './controllers/job.controller';
+import { JobMatchingController } from './controllers/matching.controller';
 
 @Module({
   imports: [

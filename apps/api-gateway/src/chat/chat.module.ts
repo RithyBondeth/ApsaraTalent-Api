@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { CHAT_SERVICE } from 'utils/constants/chat-service.constant';
-import { ConfigService } from '@nestjs/config';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { ChatController } from './chat.controller';
 

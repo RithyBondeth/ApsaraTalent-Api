@@ -1,15 +1,15 @@
 import { Transform } from 'class-transformer';
 import {
-  IsBoolean,
-  IsEnum,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-  Length,
-  Matches,
-  Max,
-  Min,
+    IsBoolean,
+    IsEnum,
+    IsNotEmpty,
+    IsNumber,
+    IsOptional,
+    IsString,
+    Length,
+    Matches,
+    Max,
+    Min
 } from 'class-validator';
 
 export enum Currency {

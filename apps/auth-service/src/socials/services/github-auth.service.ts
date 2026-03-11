@@ -1,15 +1,15 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { GithubAuthDTO } from '../dtos/github-auth.dto';
-import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '@app/common/database/entities/user.entity';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
-import { Repository } from 'typeorm';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
-import { PinoLogger } from 'nestjs-pino';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { InjectRepository } from '@nestjs/typeorm';
+import { PinoLogger } from 'nestjs-pino';
 import { firstValueFrom } from 'rxjs';
+import { Repository } from 'typeorm';
+import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { GithubAuthDTO } from '../dtos/github-auth.dto';
 
 @Injectable()
 export class GithubAuthService {
@@ -23,7 +23,7 @@ export class GithubAuthService {
   async githubLogin(githubData: GithubAuthDTO) {
     try {
       // Find a user by email
-      let user = await this.userRepository.findOne({
+      const user = await this.userRepository.findOne({
         where: { email: githubData.email },
       });
 

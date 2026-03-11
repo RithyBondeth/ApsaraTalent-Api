@@ -1,9 +1,9 @@
+import { IUpdateEmployeeController } from '@app/common/interfaces/employee-controller.interface';
 import { Controller } from '@nestjs/common';
-import { UpdateEmployeeInfoService } from '../../services/employee-services/update-employee-info.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { UpdateEmployeeInfoDTO } from '../../dtos/employee/update-employee-info.dto';
-import { IUpdateEmployeeController } from '@app/common/interfaces/employee-controller.interface';
+import { UpdateEmployeeInfoService } from '../../services/employee-services/update-employee-info.service';
 
 @Controller()
 export class UpdateEmployeeInfoController implements IUpdateEmployeeController {

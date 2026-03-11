@@ -1,10 +1,10 @@
+import { IFindCompanyController } from '@app/common/interfaces/company.interface';
 import { Controller } from '@nestjs/common';
-import { FindCompanyService } from '../../services/company-services/find-company.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { UserPaginationDTO } from '../../dtos/user-pagination.dto';
 import { CompanyResponseDTO } from '../../dtos/user-response.dto';
-import { IFindCompanyController } from '@app/common/interfaces/company.interface';
+import { FindCompanyService } from '../../services/company-services/find-company.service';
 
 @Controller()
 export class FindCompanyController implements IFindCompanyController {

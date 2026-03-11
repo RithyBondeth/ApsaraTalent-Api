@@ -1,11 +1,5 @@
 import { Transform } from 'class-transformer';
-import {
-  IsEnum,
-  IsNumber,
-  IsOptional,
-  IsString,
-  IsArray,
-} from 'class-validator';
+import { IsArray, IsEnum, IsOptional, IsString } from 'class-validator';
 
 export class SearchEmployeeDto {
   @IsOptional()
@@ -27,18 +21,14 @@ export class SearchEmployeeDto {
   jobType?: string; // e.g., full_time, part_time
 
   @IsOptional()
-  @Transform(({ value }) => parseFloat(value))
-  @IsNumber()
-  experienceMin?: number;
-
-  @IsOptional()
-  @Transform(({ value }) => parseFloat(value))
-  @IsNumber()
-  experienceMax?: number;
-
-  @IsOptional()
   @IsString()
-  education?: string; // e.g., Bachelor, Master, PhD
+  experienceLevel?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+  education?: string[]; // e.g., Bachelor, Master, PhD
 
   @IsOptional()
   @IsString()

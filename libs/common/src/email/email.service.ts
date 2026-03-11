@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PinoLogger } from 'nestjs-pino';
 import * as nodemailer from 'nodemailer';
-import { IEmailConfigOptions } from './interfaces/email-config.interface';
 import { emailConfig } from './config/email.config';
+import { IEmailConfigOptions } from './interfaces/email-config.interface';
 import { IEmailOptions } from './interfaces/email-option.interface';
 
 @Injectable()

@@ -1,13 +1,13 @@
-import { Module } from '@nestjs/common';
-import { UserController } from './user.controller';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
-import { UploadfileModule, JwtModule, DatabaseModule } from '@app/common';
-import { EmployeeController } from './employee.controller';
-import { CompanyController } from './company.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { DatabaseModule, JwtModule, UploadfileModule } from '@app/common';
 import { User } from '@app/common/database/entities/user.entity';
+import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { CompanyController } from './company.controller';
+import { EmployeeController } from './employee.controller';
+import { UserController } from './user.controller';
 
 @Module({
   imports: [

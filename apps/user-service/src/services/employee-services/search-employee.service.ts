@@ -1,13 +1,13 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { SearchEmployeeDto } from '../../dtos/employee/search-employee.dto';
-import { EmployeeResponseDTO } from '../../dtos/user-response.dto';
 import { Employee } from '@app/common/database/entities/employee/employee.entity';
-import { RpcException } from '@nestjs/microservices';
-import { PinoLogger } from 'nestjs-pino';
 import { User } from '@app/common/database/entities/user.entity';
 import { RedisService } from '@app/common/redis/redis.service';
+import { Injectable } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
+import { InjectRepository } from '@nestjs/typeorm';
+import { PinoLogger } from 'nestjs-pino';
+import { Brackets, Repository } from 'typeorm';
+import { SearchEmployeeDto } from '../../dtos/employee/search-employee.dto';
+import { EmployeeResponseDTO } from '../../dtos/user-response.dto';
 
 @Injectable()
 export class SearchEmployeeService {
@@ -69,23 +69,51 @@ export class SearchEmployeeService {
         });
       }
 
-      // Experience range
-      if (query.experienceMin !== undefined) {
-        qb.andWhere('CAST(employee.yearsOfExperience AS INTEGER) >= :minExp', {
-          minExp: query.experienceMin,
-        });
-      }
-      if (query.experienceMax !== undefined) {
-        qb.andWhere('CAST(employee.yearsOfExperience AS INTEGER) <= :maxExp', {
-          maxExp: query.experienceMax,
+      // Experience Level
+      if (
+        query.experienceLevel &&
+        query.experienceLevel !== 'All' &&
+        query.experienceLevel !== ''
+      ) {
+        const mappedExps = [query.experienceLevel];
+
+        // Map modern UI strings to legacy database strings to catch old records
+        if (query.experienceLevel === '1 - 2 years') {
+          mappedExps.push(
+            '1 - 3 years',
+            '1+ year',
+            '2+ years',
+            'More than 2 years',
+          );
+        } else if (query.experienceLevel === '3 - 5 years') {
+          mappedExps.push('1 - 3 years');
+        } else if (query.experienceLevel === '6 - 10 years') {
+          mappedExps.push('5 - 10 years');
+        }
+
+        qb.andWhere('employee.yearsOfExperience IN (:...mappedExps)', {
+          mappedExps,
         });
       }
 
       // Education
-      if (query.education) {
-        qb.andWhere('edu.degree ILIKE :degree', {
-          degree: `%${query.education}%`,
-        });
+      if (query.education && query.education.length > 0) {
+        qb.andWhere(
+          new Brackets((bracket) => {
+            query.education.forEach((edu, index) => {
+              const paramName = `degree_${index}`;
+              if (index === 0) {
+                bracket.where(`edu.degree ILIKE :${paramName}`, {
+                  [paramName]: `%${edu}%`,
+                });
+              } else {
+                bracket.orWhere(`edu.degree ILIKE :${paramName}`, {
+                  [paramName]: `%${edu}%`,
+                });
+              }
+            });
+          }),
+        );
       }
 
       // Dynamic Sort
@@ -104,7 +132,20 @@ export class SearchEmployeeService {
 
       if (query.sortBy === 'yearsOfExperience') {
         qb.orderBy(
-          'CAST(employee.yearsOfExperience AS INTEGER)',
+          `CASE "employee"."yearsOfExperience"
+            WHEN 'No Experience' THEN 0
+            WHEN 'Less than 1 year' THEN 1
+            WHEN '1+ year' THEN 2
+            WHEN '1 - 2 years' THEN 3
+            WHEN '1 - 3 years' THEN 3
+            WHEN '2+ years' THEN 4
+            WHEN 'More than 2 years' THEN 4
+            WHEN '3 - 5 years' THEN 5
+            WHEN '5 - 10 years' THEN 6
+            WHEN '6 - 10 years' THEN 6
+            WHEN '10+ years' THEN 7
+            ELSE 8
+          END`,
           sortOrder as 'ASC' | 'DESC',
         );
       } else {

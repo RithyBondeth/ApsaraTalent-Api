@@ -1,10 +1,10 @@
+import { IJobController } from '@app/common/interfaces/job-controller.interface';
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { JOB_SERVICE } from 'utils/constants/job-service.constant';
-import { JobServiceService } from '../services/job-service.service';
 import { JobResponseDTO } from '../dtos/job-response.dto';
 import { SearchJobDto } from '../dtos/job-search.dto';
-import { IJobController } from '@app/common/interfaces/job-controller.interface';
+import { JobServiceService } from '../services/job-service.service';
 
 @Controller()
 export class JobServiceController implements IJobController {

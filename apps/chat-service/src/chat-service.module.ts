@@ -1,13 +1,13 @@
-import { Module } from '@nestjs/common';
-import { ChatServiceService } from './chat-service.service';
-import { ConfigModule } from '@app/common/config';
 import { DatabaseModule, LoggerModule } from '@app/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from '@app/common/database/entities/user.entity';
+import { ConfigModule } from '@app/common/config';
 import { Chat } from '@app/common/database/entities/chat.entity';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { User } from '@app/common/database/entities/user.entity';
+import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { ChatServiceService } from './chat-service.service';
 
 @Module({
   imports: [

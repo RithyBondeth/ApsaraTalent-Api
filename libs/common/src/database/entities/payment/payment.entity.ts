@@ -1,17 +1,10 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
-  OneToMany,
-  Index,
+    Column,
+    CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn
 } from 'typeorm';
-import { User } from '../user.entity';
 import { Company } from '../company/company.entity';
-import { PaymentTransaction, Currency } from './payment-transaction.entity';
+import { User } from '../user.entity';
+import { Currency, PaymentTransaction } from './payment-transaction.entity';
 
 export enum PaymentStatus {
   PENDING = 'pending',

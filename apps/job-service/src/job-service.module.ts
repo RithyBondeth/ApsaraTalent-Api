@@ -1,18 +1,18 @@
-import { ClassSerializerInterceptor, Module } from '@nestjs/common';
-import { JobServiceService } from './services/job-service.service';
-import { ConfigModule } from '@app/common/config';
 import { DatabaseModule, EmailModule, LoggerModule } from '@app/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@app/common/config';
 import { Company } from '@app/common/database/entities/company/company.entity';
-import { Employee } from '@app/common/database/entities/employee/employee.entity';
 import { Job } from '@app/common/database/entities/company/job.entity';
-import { APP_INTERCEPTOR } from '@nestjs/core';
-import { User } from '@app/common/database/entities/user.entity';
-import { JobServiceController } from './controllers/job-service.controller';
-import { MessageModule } from '@app/common/message/message.module';
-import { MatchingController } from './controllers/matching.controller';
-import { MatchingService } from './services/matching.service';
+import { Employee } from '@app/common/database/entities/employee/employee.entity';
 import { JobMatching } from '@app/common/database/entities/job-matching.entity';
+import { User } from '@app/common/database/entities/user.entity';
+import { MessageModule } from '@app/common/message/message.module';
+import { ClassSerializerInterceptor, Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { JobServiceController } from './controllers/job-service.controller';
+import { MatchingController } from './controllers/matching.controller';
+import { JobServiceService } from './services/job-service.service';
+import { MatchingService } from './services/matching.service';
 
 @Module({
   imports: [

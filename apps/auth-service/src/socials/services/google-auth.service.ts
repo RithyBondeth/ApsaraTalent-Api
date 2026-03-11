@@ -1,15 +1,15 @@
-import { JwtService } from '@app/common/jwt/jwt.service';
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { PinoLogger } from 'nestjs-pino';
-import { Repository } from 'typeorm';
-import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { User } from '@app/common/database/entities/user.entity';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
-import { GoogleAuthDTO } from '../dtos/google-auth.dto';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
+import { JwtService } from '@app/common/jwt/jwt.service';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { InjectRepository } from '@nestjs/typeorm';
+import { PinoLogger } from 'nestjs-pino';
 import { firstValueFrom } from 'rxjs';
+import { Repository } from 'typeorm';
+import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { GoogleAuthDTO } from '../dtos/google-auth.dto';
 
 @Injectable()
 export class GoogleAuthService {
@@ -23,7 +23,7 @@ export class GoogleAuthService {
   async googleLogin(googleData: GoogleAuthDTO) {
     try {
       // Find a user by email
-      let user = await this.userRepository.findOne({
+      const user = await this.userRepository.findOne({
         where: { email: googleData.email },
       });
 

@@ -1,22 +1,22 @@
 import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  JoinColumn,
-  JoinTable,
-  ManyToMany,
-  OneToMany,
-  OneToOne,
-  PrimaryGeneratedColumn,
+    Column,
+    CreateDateColumn,
+    Entity,
+    JoinColumn,
+    JoinTable,
+    ManyToMany,
+    OneToMany,
+    OneToOne,
+    PrimaryGeneratedColumn
 } from 'typeorm';
-import { Benefit } from './benefit.entity';
-import { Value } from './value.entity';
-import { Job } from './job.entity';
-import { User } from '../user.entity';
-import { Social } from '../social.entity';
 import { CareerScope } from '../career-scope.entity';
-import { Image } from './image.entity';
+import { Social } from '../social.entity';
+import { User } from '../user.entity';
+import { Benefit } from './benefit.entity';
 import { CompanyFavoriteEmployee } from './favorite-employee.entity';
+import { Image } from './image.entity';
+import { Job } from './job.entity';
+import { Value } from './value.entity';
 
 @Entity()
 export class Company {

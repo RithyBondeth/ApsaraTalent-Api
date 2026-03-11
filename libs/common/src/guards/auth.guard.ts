@@ -1,10 +1,10 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
-import { JwtService } from '../jwt/jwt.service';
-import { IPayload } from '../jwt/interfaces/payload.interface';
-import { InjectRepository } from '@nestjs/typeorm';
-import { User } from '../database/entities/user.entity';
-import { Repository } from 'typeorm';
 import { RpcException } from '@nestjs/microservices';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../database/entities/user.entity';
+import { IPayload } from '../jwt/interfaces/payload.interface';
+import { JwtService } from '../jwt/jwt.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {

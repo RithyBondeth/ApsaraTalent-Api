@@ -1,22 +1,22 @@
 import { IFacebookAuthController } from '@app/common/interfaces/auth-controller.interface';
 import {
-  BadRequestException,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Inject,
-  Query,
-  Req,
-  Res,
-  UseGuards,
+    BadRequestException,
+    Controller,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Inject,
+    Query,
+    Req,
+    Res,
+    UseGuards
 } from '@nestjs/common';
-import { FacebookAuthGuard } from '../guards/facebook-auth.guard';
+import { ConfigService } from '@nestjs/config';
+import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
 import { firstValueFrom, timeout } from 'rxjs';
 import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
-import { ClientProxy } from '@nestjs/microservices';
-import { ConfigService } from '@nestjs/config';
+import { FacebookAuthGuard } from '../guards/facebook-auth.guard';
 
 @Controller('social')
 export class FacebookController implements IFacebookAuthController {

@@ -1,8 +1,8 @@
 import { Controller } from '@nestjs/common';
-import { LinkedInAuthService } from '../services/linkedin-auth.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
 import { LinkedInAuthDTO } from '../dtos/linkedin-auth.dto';
+import { LinkedInAuthService } from '../services/linkedin-auth.service';
 
 @Controller()
 export class LinkedInAuthController {

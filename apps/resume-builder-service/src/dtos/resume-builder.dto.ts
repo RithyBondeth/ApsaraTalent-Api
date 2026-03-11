@@ -1,13 +1,8 @@
-import {
-  IsString,
-  IsEmail,
-  IsOptional,
-  IsArray,
-  ValidateNested,
-  IsIn,
-  IsObject,
-} from 'class-validator';
 import { Type } from 'class-transformer';
+import {
+    IsArray, IsEmail, IsIn,
+    IsObject, IsOptional, IsString, ValidateNested
+} from 'class-validator';
 
 export class PersonalInfoDto {
   @IsString()

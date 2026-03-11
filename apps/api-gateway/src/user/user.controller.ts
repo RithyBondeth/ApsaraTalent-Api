@@ -3,14 +3,14 @@ import { AuthGuard } from '@app/common/guards/auth.guard';
 import { UserInterceptor } from '@app/common/interceptors/user.interceptor';
 import { IUserController } from '@app/common/interfaces/user-controller.interface';
 import {
-  Controller,
-  Get,
-  Inject,
-  Param,
-  ParseUUIDPipe,
-  Post,
-  UseGuards,
-  UseInterceptors,
+    Controller,
+    Get,
+    Inject,
+    Param,
+    ParseUUIDPipe,
+    Post,
+    UseGuards,
+    UseInterceptors
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';

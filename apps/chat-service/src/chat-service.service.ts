@@ -1,8 +1,8 @@
 // apps/chat-service/src/chat.service.ts
 import { Chat } from '@app/common/database/entities/chat.entity';
 import {
-  IChatMessage,
-  TChatContent,
+    IChatMessage,
+    TChatContent
 } from '@app/common/interfaces/chat.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';

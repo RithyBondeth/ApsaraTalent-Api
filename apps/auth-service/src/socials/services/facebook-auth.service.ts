@@ -1,15 +1,15 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { FacebookAuthDTO } from '../dtos/facebook-auth.dto';
-import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '@app/common/database/entities/user.entity';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
-import { Repository } from 'typeorm';
-import { JwtService } from '@app/common/jwt/jwt.service';
-import { PinoLogger } from 'nestjs-pino';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
-import { firstValueFrom } from 'rxjs';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { JwtService } from '@app/common/jwt/jwt.service';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { InjectRepository } from '@nestjs/typeorm';
+import { PinoLogger } from 'nestjs-pino';
+import { firstValueFrom } from 'rxjs';
+import { Repository } from 'typeorm';
+import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { FacebookAuthDTO } from '../dtos/facebook-auth.dto';
 
 @Injectable()
 export class FacebookAuthService {
@@ -23,7 +23,7 @@ export class FacebookAuthService {
   async facebookLogin(facebookData: FacebookAuthDTO) {
     try {
       // Find a user by email
-      let user = await this.userRepository.findOne({
+      const user = await this.userRepository.findOne({
         where: { email: facebookData.email },
       });
 

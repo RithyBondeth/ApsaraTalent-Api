@@ -1,15 +1,15 @@
 import { Type } from 'class-transformer';
 import {
-  IsArray,
-  IsBoolean,
-  IsDate,
-  IsEmail,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-  IsStrongPassword,
-  ValidateNested,
+    IsArray,
+    IsBoolean,
+    IsDate,
+    IsEmail,
+    IsNotEmpty,
+    IsNumber,
+    IsOptional,
+    IsString,
+    IsStrongPassword,
+    ValidateNested
 } from 'class-validator';
 
 export class CompanyRegisterDTO {

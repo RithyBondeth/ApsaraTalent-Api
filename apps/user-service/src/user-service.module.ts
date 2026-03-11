@@ -1,52 +1,52 @@
-import { ClassSerializerInterceptor, Module } from '@nestjs/common';
-import { ConfigModule } from '@app/common/config';
 import {
-  DatabaseModule,
-  JwtModule,
-  LoggerModule,
-  UploadfileModule,
+    DatabaseModule,
+    JwtModule,
+    LoggerModule,
+    UploadfileModule
 } from '@app/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from '@app/common/database/entities/user.entity';
-import { Employee } from '@app/common/database/entities/employee/employee.entity';
-import { Company } from '@app/common/database/entities/company/company.entity';
-import { ImageEmployeeController } from './controllers/employee-controllers/image-employee.controller';
-import { ImageEmployeeService } from './services/employee-services/image-employee.service';
-import { UserController } from './controllers/user.controller';
-import { UserService } from './services/user.service';
-import { UpdateEmployeeInfoController } from './controllers/employee-controllers/update-employee-info.controller';
-import { UpdateEmployeeInfoService } from './services/employee-services/update-employee-info.service';
-import { Skill } from '@app/common/database/entities/employee/skill.entity';
+import { ConfigModule } from '@app/common/config';
 import { CareerScope } from '@app/common/database/entities/career-scope.entity';
 import { Benefit } from '@app/common/database/entities/company/benefit.entity';
-import { Value } from '@app/common/database/entities/company/value.entity';
-import { Social } from '@app/common/database/entities/social.entity';
-import { Experience } from '@app/common/database/entities/employee/experience.entity';
-import { Education } from '@app/common/database/entities/employee/education.entity';
-import { Job } from '@app/common/database/entities/company/job.entity';
-import { UpdateCompanyInfoController } from './controllers/company-controllers/update-company-info.controller';
-import { UpdateCompanyInfoService } from './services/company-services/update-company-info.service';
-import { FindEmployeeController } from './controllers/employee-controllers/find-employee.controller';
-import { FindEmployeeService } from './services/employee-services/find-employee.service';
-import { FindCompanyController } from './controllers/company-controllers/find-company.controller';
-import { FindCompanyService } from './services/company-services/find-company.service';
-import { ImageCompanyController } from './controllers/company-controllers/image-company.controller';
-import { ImageCompanyService } from './services/company-services/image-company.service';
-import { UploadEmployeeReferenceController } from './controllers/employee-controllers/upload-employee-reference.controller';
-import { UploadEmployeeReferenceService } from './services/employee-services/upload-employee-reference.service';
-import { Image } from '@app/common/database/entities/company/image.entity';
-import { APP_INTERCEPTOR } from '@nestjs/core';
-import { SearchEmployeeController } from './controllers/employee-controllers/search-employee.controller';
-import { SearchEmployeeService } from './services/employee-services/search-employee.service';
-import { EmployeeFavoriteCompany } from '@app/common/database/entities/employee/favorite-company.entity';
+import { Company } from '@app/common/database/entities/company/company.entity';
 import { CompanyFavoriteEmployee } from '@app/common/database/entities/company/favorite-employee.entity';
-import { OpenPositionController } from './controllers/company-controllers/open-position.controller';
-import { OpenPositionService } from './services/company-services/open-position.service';
-import { RedisModule } from '@app/common/redis/redis.module';
-import { EventEmitterModule } from '@nestjs/event-emitter';
-import { ExperienceAndEducationService } from './services/employee-services/experienc-education.service';
-import { ExperienceAndEducationController } from './controllers/employee-controllers/experience-education.controller';
+import { Image } from '@app/common/database/entities/company/image.entity';
+import { Job } from '@app/common/database/entities/company/job.entity';
+import { Value } from '@app/common/database/entities/company/value.entity';
+import { Education } from '@app/common/database/entities/employee/education.entity';
+import { Employee } from '@app/common/database/entities/employee/employee.entity';
+import { Experience } from '@app/common/database/entities/employee/experience.entity';
+import { EmployeeFavoriteCompany } from '@app/common/database/entities/employee/favorite-company.entity';
+import { Skill } from '@app/common/database/entities/employee/skill.entity';
+import { Social } from '@app/common/database/entities/social.entity';
+import { User } from '@app/common/database/entities/user.entity';
 import { CacheInvalidationService } from '@app/common/redis/cache-invalidation.service';
+import { RedisModule } from '@app/common/redis/redis.module';
+import { ClassSerializerInterceptor, Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { FindCompanyController } from './controllers/company-controllers/find-company.controller';
+import { ImageCompanyController } from './controllers/company-controllers/image-company.controller';
+import { OpenPositionController } from './controllers/company-controllers/open-position.controller';
+import { UpdateCompanyInfoController } from './controllers/company-controllers/update-company-info.controller';
+import { ExperienceAndEducationController } from './controllers/employee-controllers/experience-education.controller';
+import { FindEmployeeController } from './controllers/employee-controllers/find-employee.controller';
+import { ImageEmployeeController } from './controllers/employee-controllers/image-employee.controller';
+import { SearchEmployeeController } from './controllers/employee-controllers/search-employee.controller';
+import { UpdateEmployeeInfoController } from './controllers/employee-controllers/update-employee-info.controller';
+import { UploadEmployeeReferenceController } from './controllers/employee-controllers/upload-employee-reference.controller';
+import { UserController } from './controllers/user.controller';
+import { FindCompanyService } from './services/company-services/find-company.service';
+import { ImageCompanyService } from './services/company-services/image-company.service';
+import { OpenPositionService } from './services/company-services/open-position.service';
+import { UpdateCompanyInfoService } from './services/company-services/update-company-info.service';
+import { ExperienceAndEducationService } from './services/employee-services/experienc-education.service';
+import { FindEmployeeService } from './services/employee-services/find-employee.service';
+import { ImageEmployeeService } from './services/employee-services/image-employee.service';
+import { SearchEmployeeService } from './services/employee-services/search-employee.service';
+import { UpdateEmployeeInfoService } from './services/employee-services/update-employee-info.service';
+import { UploadEmployeeReferenceService } from './services/employee-services/upload-employee-reference.service';
+import { UserService } from './services/user.service';
 
 @Module({
   imports: [

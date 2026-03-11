@@ -1,10 +1,10 @@
+import { IBasicAuthLoginOTPController } from '@app/common/interfaces/auth-controller.interface';
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
 import { LoginOtpDTO } from '../dtos/login-otp.dto';
-import { LoginOTPService } from '../services/login-otp.service';
 import { VerifyOtpDTO } from '../dtos/verify-otp.dto';
-import { IBasicAuthLoginOTPController } from '@app/common/interfaces/auth-controller.interface';
+import { LoginOTPService } from '../services/login-otp.service';
 
 @Controller()
 export class LoginOTPController implements IBasicAuthLoginOTPController {

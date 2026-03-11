@@ -1,18 +1,18 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { LoginOtpDTO } from '../dtos/login-otp.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { User } from '@app/common/database/entities/user.entity';
-import { ClientProxy, RpcException } from '@nestjs/microservices';
-import { PinoLogger } from 'nestjs-pino';
-import { EUserRole } from '@app/common/database/enums/user-role.enum';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
-import { MessageService } from '@app/common/message/message.service';
-import { VerifyOtpDTO } from '../dtos/verify-otp.dto';
-import { JwtService } from '@app/common/jwt/jwt.service';
+import { EUserRole } from '@app/common/database/enums/user-role.enum';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
+import { JwtService } from '@app/common/jwt/jwt.service';
+import { MessageService } from '@app/common/message/message.service';
+import { Inject, Injectable } from '@nestjs/common';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
+import { InjectRepository } from '@nestjs/typeorm';
+import { PinoLogger } from 'nestjs-pino';
 import { firstValueFrom } from 'rxjs';
+import { Repository } from 'typeorm';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { LoginOtpDTO } from '../dtos/login-otp.dto';
+import { VerifyOtpDTO } from '../dtos/verify-otp.dto';
 
 @Injectable()
 export class LoginOTPService {

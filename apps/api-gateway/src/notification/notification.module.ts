@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { NotificationController } from './notification.controller';
+import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { NOTIFICATION_SERVICE } from 'utils/constants/notification.constant';
-import { ConfigService } from '@nestjs/config';
+import { NotificationController } from './notification.controller';
 
 @Module({
   imports: [

@@ -1,13 +1,13 @@
 import { Employee } from '@app/common/database/entities/employee/employee.entity';
+import { User } from '@app/common/database/entities/user.entity';
+import { RedisService } from '@app/common/redis/redis.service';
 import { Injectable } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { UserPaginationDTO } from '../../dtos/user-pagination.dto';
 import { EmployeeResponseDTO } from '../../dtos/user-response.dto';
-import { RpcException } from '@nestjs/microservices';
-import { User } from '@app/common/database/entities/user.entity';
-import { RedisService } from '@app/common/redis/redis.service';
 
 @Injectable()
 export class FindEmployeeService {

@@ -1,17 +1,17 @@
 import { EGender } from '@app/common/database/enums/gender.enum';
 import { Type } from 'class-transformer';
 import {
-  IsArray,
-  IsBoolean,
-  IsDate,
-  IsEmail,
-  IsEnum,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsStrongPassword,
-  IsUrl,
-  ValidateNested,
+    IsArray,
+    IsBoolean,
+    IsDate,
+    IsEmail,
+    IsEnum,
+    IsNotEmpty,
+    IsOptional,
+    IsString,
+    IsStrongPassword,
+    IsUrl,
+    ValidateNested
 } from 'class-validator';
 
 export class EmployeeRegisterDTO {

@@ -1,11 +1,11 @@
 import {
-  CreateDateColumn,
-  Entity,
-  ManyToOne,
-  PrimaryGeneratedColumn,
+    CreateDateColumn,
+    Entity,
+    ManyToOne,
+    PrimaryGeneratedColumn
 } from 'typeorm';
-import { Employee } from './employee.entity';
 import { Company } from '../company/company.entity';
+import { Employee } from './employee.entity';
 
 @Entity()
 export class EmployeeFavoriteCompany {

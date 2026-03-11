@@ -1,32 +1,32 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
-import { PinoLogger } from 'nestjs-pino';
-import { JwtService } from '@app/common/jwt/jwt.service';
-import { EmailService } from '@app/common/email/email.service';
+import { CareerScope } from '@app/common/database/entities/career-scope.entity';
+import { Benefit } from '@app/common/database/entities/company/benefit.entity';
+import { Company } from '@app/common/database/entities/company/company.entity';
+import { Job } from '@app/common/database/entities/company/job.entity';
+import { Value } from '@app/common/database/entities/company/value.entity';
+import { Education } from '@app/common/database/entities/employee/education.entity';
+import { Employee } from '@app/common/database/entities/employee/employee.entity';
+import { Experience } from '@app/common/database/entities/employee/experience.entity';
+import { Skill } from '@app/common/database/entities/employee/skill.entity';
+import { Social } from '@app/common/database/entities/social.entity';
 import { User } from '@app/common/database/entities/user.entity';
+import { EUserRole } from '@app/common/database/enums/user-role.enum';
+import { EmailService } from '@app/common/email/email.service';
+import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
+import { JwtService } from '@app/common/jwt/jwt.service';
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { RpcException } from '@nestjs/microservices';
+import { InjectRepository } from '@nestjs/typeorm';
+import {
+    CompanyResponseDTO,
+    EmployeeResponseDTO,
+    JobPositionDTO,
+    UserResponseDTO
+} from 'apps/user-service/src/dtos/user-response.dto';
+import { PinoLogger } from 'nestjs-pino';
+import { Repository } from 'typeorm';
 import { CompanyRegisterDTO } from '../dtos/company-register.dto';
 import { EmployeeRegisterDTO } from '../dtos/employee-register.dto';
-import { EUserRole } from '@app/common/database/enums/user-role.enum';
-import { Skill } from '@app/common/database/entities/employee/skill.entity';
-import { Experience } from '@app/common/database/entities/employee/experience.entity';
-import { CareerScope } from '@app/common/database/entities/career-scope.entity';
-import { Education } from '@app/common/database/entities/employee/education.entity';
-import { Social } from '@app/common/database/entities/social.entity';
-import { Employee } from '@app/common/database/entities/employee/employee.entity';
-import { Company } from '@app/common/database/entities/company/company.entity';
-import { Benefit } from '@app/common/database/entities/company/benefit.entity';
-import { Value } from '@app/common/database/entities/company/value.entity';
-import { Job } from '@app/common/database/entities/company/job.entity';
-import {
-  CompanyResponseDTO,
-  EmployeeResponseDTO,
-  JobPositionDTO,
-  UserResponseDTO,
-} from 'apps/user-service/src/dtos/user-response.dto';
-import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
-import { RpcException } from '@nestjs/microservices';
 @Injectable()
 export class RegisterService {
   constructor(

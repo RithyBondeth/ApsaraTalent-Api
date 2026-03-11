@@ -1,14 +1,14 @@
-import { Injectable } from '@nestjs/common';
-import { MatchDto } from '../dtos/match.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { JobMatching } from '@app/common/database/entities/job-matching.entity';
-import { Repository } from 'typeorm';
-import { Employee } from '@app/common/database/entities/employee/employee.entity';
 import { Company } from '@app/common/database/entities/company/company.entity';
-import { RpcException } from '@nestjs/microservices';
-import { Logger } from 'nestjs-pino';
-import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
+import { Employee } from '@app/common/database/entities/employee/employee.entity';
+import { JobMatching } from '@app/common/database/entities/job-matching.entity';
 import { EmailService } from '@app/common/email/email.service';
+import { Injectable } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
+import { InjectRepository } from '@nestjs/typeorm';
+import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
+import { Logger } from 'nestjs-pino';
+import { Repository } from 'typeorm';
+import { MatchDto } from '../dtos/match.dto';
 
 @Injectable()
 export class MatchingService {
@@ -223,7 +223,10 @@ export class MatchingService {
         (empLiked) => new UserResponseDTO(empLiked.company),
       );
     } catch (error) {
-      this.logger.error((error as Error).message || 'An error occurred while fetching the employee liked.');
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while fetching the employee liked.',
+      );
       throw new RpcException({
         message: (error as Error).message,
         statusCode: 500,
@@ -250,7 +253,10 @@ export class MatchingService {
         (cmpLiked) => new UserResponseDTO(cmpLiked.employee),
       );
     } catch (error) {
-      this.logger.error((error as Error).message || 'An error occurred while fetching the company liked.');
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while fetching the company liked.',
+      );
       throw new RpcException({
         message: (error as Error).message,
         statusCode: 500,
@@ -278,7 +284,10 @@ export class MatchingService {
         (user) => new UserResponseDTO(user.company),
       );
     } catch (error) {
-      this.logger.error((error as Error).message || 'An error occurred while fetching the employee matching.');
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while fetching the employee matching.',
+      );
       throw new RpcException({
         message: (error as Error).message,
         statusCode: 500,
@@ -306,7 +315,10 @@ export class MatchingService {
         (user) => new UserResponseDTO(user.employee),
       );
     } catch (error) {
-      this.logger.error((error as Error).message || 'An error occurred while fetching the company matching.');
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while fetching the company matching.',
+      );
       throw new RpcException({
         message: (error as Error).message,
         statusCode: 500,
@@ -324,7 +336,10 @@ export class MatchingService {
       });
       return { totalMatching: currentEmployeeMatchingCount };
     } catch (error) {
-      this.logger.error((error as Error).message || 'An error occurred while counting the current employee matching.');
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while counting the current employee matching.',
+      );
       throw new RpcException({
         message: (error as Error).message,
         statusCode: 500,
@@ -342,7 +357,10 @@ export class MatchingService {
       });
       return { totalMatching: currentCompanyMatchingCount };
     } catch (error) {
-      this.logger.error((error as Error).message || 'An error occurred while counting the current company matching.');
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while counting the current company matching.',
+      );
       throw new RpcException({
         message: (error as Error).message,
         statusCode: 500,

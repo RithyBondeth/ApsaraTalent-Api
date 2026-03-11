@@ -1,7 +1,7 @@
-import { Controller } from '@nestjs/common';
-import { ChatServiceService } from './chat-service.service';
-import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { TChatContent } from '@app/common/interfaces/chat.interface';
+import { Controller } from '@nestjs/common';
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
+import { ChatServiceService } from './chat-service.service';
 
 @Controller()
 export class ChatServiceController {

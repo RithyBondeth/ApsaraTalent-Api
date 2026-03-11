@@ -1,15 +1,15 @@
+import { User } from '@app/common/database/entities/user.entity';
+import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
 import { Inject, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { LinkedInAuthDTO } from '../dtos/linkedin-auth.dto';
-import { Repository } from 'typeorm';
-import { User } from '@app/common/database/entities/user.entity';
-import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
-import { PinoLogger } from 'nestjs-pino';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { ClientProxy } from '@nestjs/microservices';
+import { InjectRepository } from '@nestjs/typeorm';
+import { PinoLogger } from 'nestjs-pino';
 import { firstValueFrom } from 'rxjs';
+import { Repository } from 'typeorm';
+import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { LinkedInAuthDTO } from '../dtos/linkedin-auth.dto';
 
 @Injectable()
 export class LinkedInAuthService {
@@ -22,7 +22,7 @@ export class LinkedInAuthService {
 
   async linkedInLogin(linkedInData: LinkedInAuthDTO) {
     try {
-      let user = await this.users.findOne({
+      const user = await this.users.findOne({
         where: { email: linkedInData.email },
       });
 

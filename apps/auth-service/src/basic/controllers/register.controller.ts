@@ -1,11 +1,11 @@
+import { IBasicAuthRegisterController } from '@app/common/interfaces/auth-controller.interface';
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { RegisterService } from '../services/register.service';
+import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
 import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
 import { CompanyRegisterDTO } from '../dtos/company-register.dto';
 import { EmployeeRegisterDTO } from '../dtos/employee-register.dto';
-import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
-import { IBasicAuthRegisterController } from '@app/common/interfaces/auth-controller.interface';
+import { RegisterService } from '../services/register.service';
 
 @Controller()
 export class RegisterController implements IBasicAuthRegisterController {

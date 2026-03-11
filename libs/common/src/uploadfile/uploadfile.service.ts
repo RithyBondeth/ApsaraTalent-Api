@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import * as fs from 'fs';
 import { diskStorage, StorageEngine } from 'multer';
 import * as path from 'path';
-import * as fs from 'fs';
 
 @Injectable()
 export class UploadfileService {

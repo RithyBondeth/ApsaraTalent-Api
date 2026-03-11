@@ -1,8 +1,8 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
-import { GoogleAuthService } from '../services/google-auth.service';
 import { GoogleAuthDTO } from '../dtos/google-auth.dto';
+import { GoogleAuthService } from '../services/google-auth.service';
 
 @Controller()
 export class GoogleAuthController {

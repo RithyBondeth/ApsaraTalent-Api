@@ -1,8 +1,8 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
-import { FacebookAuthService } from '../services/facebook-auth.service';
 import { FacebookAuthDTO } from '../dtos/facebook-auth.dto';
+import { FacebookAuthService } from '../services/facebook-auth.service';
 
 @Controller()
 export class FacebookAuthController {

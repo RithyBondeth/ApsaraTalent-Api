@@ -1,12 +1,12 @@
+import { User } from '@app/common/database/entities/user.entity';
+import { JwtService } from '@app/common/jwt/jwt.service';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
-import { RefreshTokenDTO } from '../dtos/refresh-token.dto';
-import { JwtService } from '@app/common/jwt/jwt.service';
 import { RefreshTokenResponseDTO } from '../dtos/refresh-token-response.dto';
-import { User } from '@app/common/database/entities/user.entity';
-import { RpcException } from '@nestjs/microservices';
+import { RefreshTokenDTO } from '../dtos/refresh-token.dto';
 
 @Injectable()
 export class RefreshTokenService {

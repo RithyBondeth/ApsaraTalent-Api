@@ -1,11 +1,11 @@
 import { Type } from 'class-transformer';
 import {
-  IsArray,
-  IsNumber,
-  IsOptional,
-  IsPositive,
-  IsString,
-  ValidateNested,
+    IsArray,
+    IsNumber,
+    IsOptional,
+    IsPositive,
+    IsString,
+    ValidateNested
 } from 'class-validator';
 
 export class UpdateCompanyInfoDTO {

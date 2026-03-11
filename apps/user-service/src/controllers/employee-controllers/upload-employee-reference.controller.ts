@@ -1,13 +1,11 @@
+import { IUploadEmployeeController } from '@app/common/interfaces/employee-controller.interface';
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { UploadEmployeeReferenceService } from '../../services/employee-services/upload-employee-reference.service';
-import { IUploadEmployeeController } from '@app/common/interfaces/employee-controller.interface';
 
 @Controller()
-export class UploadEmployeeReferenceController
-  implements IUploadEmployeeController
-{
+export class UploadEmployeeReferenceController implements IUploadEmployeeController {
   constructor(
     private readonly uploadEmployeeReferenceService: UploadEmployeeReferenceService,
   ) {}

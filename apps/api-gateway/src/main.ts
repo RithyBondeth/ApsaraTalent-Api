@@ -1,9 +1,9 @@
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import { ApiGatewayModule } from './api-gateway.module';
-import { Logger } from 'nestjs-pino';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
-import { ConfigService } from '@nestjs/config';
+import { Logger } from 'nestjs-pino';
+import { ApiGatewayModule } from './api-gateway.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(ApiGatewayModule);

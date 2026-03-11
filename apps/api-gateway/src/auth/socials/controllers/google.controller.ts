@@ -1,22 +1,19 @@
+import { IGoogleAuthController } from '@app/common/interfaces/auth-controller.interface';
 import {
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Inject,
-  Req,
-  Res,
-  UseGuards,
-  BadRequestException,
-  Query,
+    BadRequestException, Controller,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Inject, Query, Req,
+    Res,
+    UseGuards
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
+import { Response } from 'express';
+import { firstValueFrom, timeout } from 'rxjs';
 import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
 import { GoogleAuthGuard } from '../guards/google-auth.guard';
-import { firstValueFrom, timeout } from 'rxjs';
-import { IGoogleAuthController } from '@app/common/interfaces/auth-controller.interface';
-import { Response } from 'express';
-import { ConfigService } from '@nestjs/config';
 
 @Controller('social')
 export class GoogleController implements IGoogleAuthController {

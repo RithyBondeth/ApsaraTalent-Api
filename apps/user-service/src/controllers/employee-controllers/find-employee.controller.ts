@@ -1,10 +1,10 @@
+import { IFindEmployeeController } from '@app/common/interfaces/employee-controller.interface';
 import { Controller } from '@nestjs/common';
-import { FindEmployeeService } from '../../services/employee-services/find-employee.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { UserPaginationDTO } from '../../dtos/user-pagination.dto';
 import { EmployeeResponseDTO } from '../../dtos/user-response.dto';
-import { IFindEmployeeController } from '@app/common/interfaces/employee-controller.interface';
+import { FindEmployeeService } from '../../services/employee-services/find-employee.service';
 
 @Controller()
 export class FindEmployeeController implements IFindEmployeeController {

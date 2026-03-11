@@ -1,20 +1,20 @@
+import { CareerScope } from '@app/common/database/entities/career-scope.entity';
+import { CompanyFavoriteEmployee } from '@app/common/database/entities/company/favorite-employee.entity';
+import { EmployeeFavoriteCompany } from '@app/common/database/entities/employee/favorite-company.entity';
 import { User } from '@app/common/database/entities/user.entity';
+import { RedisService } from '@app/common/redis/redis.service';
 import { Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import {
-  CompanyResponseDTO,
-  EmployeeResponseDTO,
-  JobPositionDTO,
-  UserResponseDTO,
+    CompanyResponseDTO,
+    EmployeeResponseDTO,
+    JobPositionDTO,
+    UserResponseDTO
 } from '../dtos/user-response.dto';
-import { EmployeeFavoriteCompany } from '@app/common/database/entities/employee/favorite-company.entity';
-import { RpcException } from '@nestjs/microservices';
-import { CompanyFavoriteEmployee } from '@app/common/database/entities/company/favorite-employee.entity';
-import { CareerScope } from '@app/common/database/entities/career-scope.entity';
-import { RedisService } from '@app/common/redis/redis.service';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class UserService {

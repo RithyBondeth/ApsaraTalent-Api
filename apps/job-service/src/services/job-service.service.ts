@@ -1,12 +1,12 @@
 import { Job } from '@app/common/database/entities/company/job.entity';
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { JobResponseDTO } from '../dtos/job-response.dto';
 import { RpcException } from '@nestjs/microservices';
+import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
-import { SearchJobDto } from '../dtos/job-search.dto';
+import { Brackets, Repository } from 'typeorm';
 import { extractSalaryRange } from 'utils/functions/extract-salary-range';
+import { JobResponseDTO } from '../dtos/job-response.dto';
+import { SearchJobDto } from '../dtos/job-search.dto';
 
 @Injectable()
 export class JobServiceService {
@@ -27,7 +27,9 @@ export class JobServiceService {
         });
       return jobs.map((job) => new JobResponseDTO(job));
     } catch (error) {
-      this.logger.error((error as Error).message || 'An error occurred while fetching the job.');
+      this.logger.error(
+        (error as Error).message || 'An error occurred while fetching the job.',
+      );
       if (error instanceof RpcException) throw error;
       throw new RpcException({
         message: (error as Error).message,
@@ -51,8 +53,7 @@ export class JobServiceService {
         salaryMin,
         salaryMax,
         jobType,
-        experienceRequiredMin,
-        experienceRequiredMax,
+        experienceLevel,
         educationRequired,
       } = searchParams;
 
@@ -101,31 +102,73 @@ export class JobServiceService {
       }
 
       // Job type
-      if (jobType) {
-        query.andWhere('job.type ILIKE :type', {
-          type: `%${jobType}%`,
-        });
+      if (jobType && jobType.length > 0) {
+        query.andWhere(
+          new Brackets((qb) => {
+            jobType.forEach((type, index) => {
+              if (index === 0) {
+                qb.where('job.type ILIKE :type_' + index, {
+                  ['type_' + index]: `%${type}%`,
+                });
+              } else {
+                qb.orWhere('job.type ILIKE :type_' + index, {
+                  ['type_' + index]: `%${type}%`,
+                });
+              }
+            });
+          }),
+        );
       }
 
-      // Experience range
-      if (experienceRequiredMin !== undefined) {
-        query.andWhere('job.experienceRequired >= :minExp', {
-          minExp: experienceRequiredMin,
-        });
-      }
+      // Experience Level
+      if (
+        experienceLevel &&
+        experienceLevel !== 'All' &&
+        experienceLevel !== ''
+      ) {
+        const mappedExps = [experienceLevel];
 
-      if (experienceRequiredMax !== undefined) {
-        query.andWhere('job.experienceRequired <= :maxExp', {
-          maxExp: experienceRequiredMax,
+        // Map modern UI strings to legacy database strings to catch old records
+        if (experienceLevel === '1 - 2 years') {
+          mappedExps.push(
+            '1 - 3 years',
+            '1+ year',
+            '2+ years',
+            'More than 2 years',
+          );
+        } else if (experienceLevel === '3 - 5 years') {
+          mappedExps.push('1 - 3 years');
+        } else if (experienceLevel === '6 - 10 years') {
+          mappedExps.push('5 - 10 years');
+        }
+
+        query.andWhere('job.experienceRequired IN (:...mappedExps)', {
+          mappedExps,
         });
       }
 
       // Education
-      if (educationRequired) {
+      if (educationRequired && educationRequired.length > 0) {
         query.andWhere(
-          'LOWER(job.educationRequired) ILIKE :education', // MySQL / SQLite / generic
-          // For PostgreSQL you can shorten to:  'job.educationRequired ILIKE :education'
-          { education: `%${educationRequired.toLowerCase()}%` },
+          new Brackets((qb) => {
+            educationRequired.forEach((edu, index) => {
+              if (index === 0) {
+                qb.where(
+                  'LOWER(job.educationRequired) ILIKE :education_' + index,
+                  {
+                    ['education_' + index]: `%${edu.toLowerCase()}%`,
+                  },
+                );
+              } else {
+                qb.orWhere(
+                  'LOWER(job.educationRequired) ILIKE :education_' + index,
+                  {
+                    ['education_' + index]: `%${edu.toLowerCase()}%`,
+                  },
+                );
+              }
+            });
+          }),
         );
       }
 
@@ -169,7 +212,10 @@ export class JobServiceService {
 
       return jobs.map((job) => new JobResponseDTO(job));
     } catch (error) {
-      this.logger.error((error as Error).message || 'An error occurred while searching for jobs.');
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while searching for jobs.',
+      );
       if (error instanceof RpcException) throw error;
       throw new RpcException({
         message: (error as Error).message,

@@ -1,17 +1,17 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { PaymentServiceController } from './payment-service.controller';
-import { PaymentServiceService } from './payment-service.service';
 import { LoggerModule } from '@app/common';
 import { ConfigModule } from '@app/common/config';
 import { DatabaseModule } from '@app/common/database/database.module';
-import { Payment } from '@app/common/database/entities/payment/payment.entity';
-import { PaymentTransaction } from '@app/common/database/entities/payment/payment-transaction.entity';
-import { User } from '@app/common/database/entities/user.entity';
 import { Company } from '@app/common/database/entities/company/company.entity';
+import { PaymentTransaction } from '@app/common/database/entities/payment/payment-transaction.entity';
+import { Payment } from '@app/common/database/entities/payment/payment.entity';
+import { User } from '@app/common/database/entities/user.entity';
+import { Module } from '@nestjs/common';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { BakongRateLimitGuard } from './guards/bakong-rate-limit.guard';
 import { BakongLoggingInterceptor } from './interceptors/bakong.interceptor';
+import { PaymentServiceController } from './payment-service.controller';
+import { PaymentServiceService } from './payment-service.service';
 
 @Module({
   imports: [

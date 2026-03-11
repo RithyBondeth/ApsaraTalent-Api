@@ -1,12 +1,12 @@
+import { JwtModule, UploadfileModule } from '@app/common';
+import { User } from '@app/common/database/entities/user.entity';
 import { Module } from '@nestjs/common';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { RESUME_BUILDER_SERVICE } from 'utils/constants/resume-builder-service.constant';
 import { ConfigService } from '@nestjs/config';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { RESUME_BUILDER_SERVICE } from 'utils/constants/resume-builder-service.constant';
 import { ResumeBuilderController } from './controllers/resume-builder.controller';
 import { ResumeTemplateController } from './controllers/resume-template.controller';
-import { JwtModule, UploadfileModule } from '@app/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from '@app/common/database/entities/user.entity';
 
 @Module({
   imports: [

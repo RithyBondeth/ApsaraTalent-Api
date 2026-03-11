@@ -1,9 +1,9 @@
 import {
-  IsBoolean,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
+    IsBoolean,
+    IsNotEmpty,
+    IsNumber,
+    IsOptional,
+    IsString
 } from 'class-validator';
 
 export class CreateResumeTemplateDTO {

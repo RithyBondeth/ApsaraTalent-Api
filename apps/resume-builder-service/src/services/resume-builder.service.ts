@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { BuildResumeDTO } from '../dtos/resume-builder.dto';
+import { ConfigService } from '@nestjs/config';
+import { RpcException } from '@nestjs/microservices';
+import { PinoLogger } from 'nestjs-pino';
 import OpenAI from 'openai';
 import * as puppeteer from 'puppeteer';
-import { ConfigService } from '@nestjs/config';
+import { BuildResumeDTO } from '../dtos/resume-builder.dto';
 import { ImageService } from './image.service';
-import { PinoLogger } from 'nestjs-pino';
-import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class ResumeBuilderService {

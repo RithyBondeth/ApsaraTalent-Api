@@ -1,10 +1,10 @@
-import { Strategy } from 'passport-linkedin-oauth2';
-import fetch from 'node-fetch';
-import { ConfigService } from '@nestjs/config';
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { linkedInConfig } from '../config/linkedin.config';
+import fetch from 'node-fetch';
 import * as crypto from 'node:crypto';
+import { Strategy } from 'passport-linkedin-oauth2';
+import { linkedInConfig } from '../config/linkedin.config';
 
 @Injectable()
 export class LinkedInStrategy extends PassportStrategy(Strategy, 'linkedin') {

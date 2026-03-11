@@ -1,15 +1,15 @@
-import { EmailService } from '@app/common/email/email.service';
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ForgotPasswordDTO } from '../dtos/forgot-password.dto';
-import { PinoLogger } from 'nestjs-pino';
-import * as crypto from 'crypto';
-import { ForgotPasswordResponseDTO } from '../dtos/forgot-password-response.dto';
 import { User } from '@app/common/database/entities/user.entity';
-import { RpcException } from '@nestjs/microservices';
-import { checkEmail } from 'utils/functions/check-email';
+import { EmailService } from '@app/common/email/email.service';
 import { MessageService } from '@app/common/message/message.service';
+import { Injectable } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
+import { InjectRepository } from '@nestjs/typeorm';
+import * as crypto from 'crypto';
+import { PinoLogger } from 'nestjs-pino';
+import { Repository } from 'typeorm';
+import { checkEmail } from 'utils/functions/check-email';
+import { ForgotPasswordResponseDTO } from '../dtos/forgot-password-response.dto';
+import { ForgotPasswordDTO } from '../dtos/forgot-password.dto';
 
 @Injectable()
 export class ForgotPasswordService {

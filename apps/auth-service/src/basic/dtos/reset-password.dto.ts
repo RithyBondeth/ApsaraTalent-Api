@@ -1,8 +1,8 @@
 import {
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsStrongPassword,
+    IsNotEmpty,
+    IsOptional,
+    IsString,
+    IsStrongPassword
 } from 'class-validator';
 
 export class ResetPasswordDTO {

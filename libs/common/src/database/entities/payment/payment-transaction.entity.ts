@@ -1,15 +1,9 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
-  Index,
+    Column,
+    CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn
 } from 'typeorm';
-import { Payment } from './payment.entity';
 import { User } from '../user.entity';
+import { Payment } from './payment.entity';
 
 export enum Currency {
   KHR = 'KHR',

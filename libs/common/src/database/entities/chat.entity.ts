@@ -1,12 +1,12 @@
 import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  ManyToOne,
-  PrimaryGeneratedColumn,
+    Column,
+    CreateDateColumn,
+    Entity,
+    ManyToOne,
+    PrimaryGeneratedColumn
 } from 'typeorm';
-import { User } from './user.entity';
 import { JobMatching } from './job-matching.entity';
+import { User } from './user.entity';
 
 @Entity()
 export class Chat {

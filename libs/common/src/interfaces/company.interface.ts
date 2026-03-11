@@ -21,7 +21,8 @@ export interface IOpenPositionController {
 }
 
 export interface ICompanyController
-  extends IFindCompanyController,
+  extends
+    IFindCompanyController,
     IImageCompanyController,
     IUpdateCompanyInfoController,
     IOpenPositionController {}

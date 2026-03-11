@@ -1,17 +1,17 @@
+import * as bcrypt from 'bcrypt';
 import {
-  BeforeInsert,
-  Column,
-  CreateDateColumn,
-  Entity,
-  OneToOne,
-  PrimaryGeneratedColumn,
+    BeforeInsert,
+    Column,
+    CreateDateColumn,
+    Entity,
+    OneToOne,
+    PrimaryGeneratedColumn
 } from 'typeorm';
 import { SALT_ROUNDS } from 'utils/constants/password.constant';
-import * as bcrypt from 'bcrypt';
-import { EUserRole } from '../enums/user-role.enum';
 import { ELoginMethod } from '../enums/login-method.enum';
-import { Employee } from './employee/employee.entity';
+import { EUserRole } from '../enums/user-role.enum';
 import { Company } from './company/company.entity';
+import { Employee } from './employee/employee.entity';
 
 @Entity()
 export class User {

@@ -1,14 +1,14 @@
+import { User } from '@app/common/database/entities/user.entity';
 import { Injectable } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { PinoLogger } from 'nestjs-pino';
 import { MoreThan, Repository } from 'typeorm';
-import { ResetPasswordDTO } from '../dtos/reset-password.dto';
-import * as crypto from 'crypto';
-import * as bcrypt from 'bcrypt';
-import { ResetPasswordResponseDTO } from '../dtos/reset-password-response.dto';
 import { SALT_ROUNDS } from 'utils/constants/password.constant';
-import { User } from '@app/common/database/entities/user.entity';
-import { RpcException } from '@nestjs/microservices';
+import { ResetPasswordResponseDTO } from '../dtos/reset-password-response.dto';
+import { ResetPasswordDTO } from '../dtos/reset-password.dto';
 
 @Injectable()
 export class ResetPasswordService {
@@ -63,7 +63,10 @@ export class ResetPasswordService {
         'You password was updated successfully',
       );
     } catch (error) {
-      this.logger.error((error as Error).message || 'An error occurred while resetting password.');
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while resetting password.',
+      );
       if (error instanceof RpcException) throw error;
       throw new RpcException({
         message: (error as Error).message,

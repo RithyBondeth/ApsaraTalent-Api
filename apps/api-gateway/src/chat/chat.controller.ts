@@ -1,8 +1,7 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Body, Controller, Inject, Post } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { Inject } from '@nestjs/common';
-import { CHAT_SERVICE } from 'utils/constants/chat-service.constant';
 import { firstValueFrom } from 'rxjs';
+import { CHAT_SERVICE } from 'utils/constants/chat-service.constant';
 
 @Controller('chat')
 export class ChatController {

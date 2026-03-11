@@ -1,9 +1,9 @@
+import { DatabaseModule } from '@app/common';
 import { Module } from '@nestjs/common';
-import { PaymentController } from './payment.controller';
+import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PAYMENT_SERVICE } from 'utils/constants/payment-service.constant';
-import { ConfigService } from '@nestjs/config';
-import { DatabaseModule } from '@app/common';
+import { PaymentController } from './payment.controller';
 
 @Module({
   imports: [

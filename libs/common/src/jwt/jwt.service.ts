@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { JwtService as NestJwtService } from '@nestjs/jwt';
-import { IPayload } from './interfaces/payload.interface';
 import { ConfigService } from '@nestjs/config';
+import { JwtService as NestJwtService } from '@nestjs/jwt';
 import { StringValue } from 'ms';
+import { IPayload } from './interfaces/payload.interface';
 @Injectable()
 export class JwtService {
   constructor(
@@ -18,7 +18,9 @@ export class JwtService {
   async generateRefreshToken(userId: string): Promise<string> {
     const refreshToken = await this.jwtService.signAsync(
       { id: userId, type: 'refresh' },
-      { expiresIn: this.configService.get<StringValue>('jwt.refreshExpiresIn') },
+      {
+        expiresIn: this.configService.get<StringValue>('jwt.refreshExpiresIn'),
+      },
     );
     return refreshToken;
   }
@@ -35,7 +37,8 @@ export class JwtService {
     try {
       return this.jwtService.verifyAsync(token);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       console.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -47,7 +50,8 @@ export class JwtService {
       if (decoded.type !== 'refresh') throw new Error('Invalid token type');
       return decoded;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       console.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -60,7 +64,8 @@ export class JwtService {
         throw new Error('Invalid token type');
       return decoded;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       console.error(errorMessage);
       throw new Error(errorMessage);
     }

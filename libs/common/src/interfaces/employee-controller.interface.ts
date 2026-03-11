@@ -24,7 +24,8 @@ export interface IUploadEmployeeController {
 }
 
 export interface IEmployeeController
-  extends IFindEmployeeController,
+  extends
+    IFindEmployeeController,
     IImageEmployeeController,
     ISearchEmployeeController,
     IUpdateEmployeeController,

@@ -1,36 +1,29 @@
+import {
+    Currency, PaymentTransaction,
+    TransactionStatus,
+    TransactionType
+} from '@app/common/database/entities/payment/payment-transaction.entity';
+import {
+    Payment, PaymentStatus, PaymentType
+} from '@app/common/database/entities/payment/payment.entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import axios, { AxiosInstance } from 'axios';
-import * as QRCode from 'qrcode';
 import CryptoJS from 'crypto-js';
+import * as QRCode from 'qrcode';
+import { Repository } from 'typeorm';
+import { BAKONG_CONSTANTS } from './constants/bakong.constant';
+import { CheckPaymentBulkStatusDTO } from './dtos/check-payment-bulk-status.dto';
+import { CheckPaymentStatusDTO } from './dtos/check-payment-status.dto';
+import { DecodeKhqrDTO } from './dtos/decode-khqr.dto';
+import { GenerateDeepLinkDTO } from './dtos/generate-deeplink.dto';
 import { GenerateIndividualKhqrDTO } from './dtos/generate-individual-khqr.dto';
 import { GenerateMerchantKhqrDTO } from './dtos/generate-merchant-khqr.dto';
 import { VerifyKhqrDTO } from './dtos/verify-khqr.dto';
-import { DecodeKhqrDTO } from './dtos/decode-khqr.dto';
-import { GenerateDeepLinkDTO } from './dtos/generate-deeplink.dto';
-import { CheckPaymentStatusDTO } from './dtos/check-payment-status.dto';
-import { CheckPaymentBulkStatusDTO } from './dtos/check-payment-bulk-status.dto';
-import { BAKONG_CONSTANTS } from './constants/bakong.constant';
 import {
-  BakongQRGenerationException,
-  BakongApiConnectionException,
-  BakongPaymentNotFoundException,
-  BakongConfigurationException,
-  BakongQRValidationException,
+    BakongApiConnectionException, BakongConfigurationException, BakongPaymentNotFoundException, BakongQRGenerationException, BakongQRValidationException
 } from './exceptions/bakong.exceptions';
-import {
-  Payment,
-  PaymentType,
-  PaymentStatus,
-} from '@app/common/database/entities/payment/payment.entity';
-import {
-  PaymentTransaction,
-  TransactionStatus,
-  TransactionType,
-  Currency,
-} from '@app/common/database/entities/payment/payment-transaction.entity';
 
 @Injectable()
 export class PaymentServiceService {
@@ -145,7 +138,10 @@ export class PaymentServiceService {
         );
       }
     } catch (error) {
-      this.logger.error('Failed to generate individual KHQR', (error as Error).message);
+      this.logger.error(
+        'Failed to generate individual KHQR',
+        (error as Error).message,
+      );
       if (error instanceof BakongQRGenerationException) throw error;
       throw new BakongApiConnectionException(
         (error as Error).message || 'Failed to connect to Bakong API',
@@ -232,7 +228,10 @@ export class PaymentServiceService {
         );
       }
     } catch (error) {
-      this.logger.error('Failed to generate merchant KHQR', (error as Error).message);
+      this.logger.error(
+        'Failed to generate merchant KHQR',
+        (error as Error).message,
+      );
       if (error instanceof BakongQRGenerationException) throw error;
       throw new BakongApiConnectionException(
         (error as Error).message || 'Failed to connect to Bakong API',
@@ -337,7 +336,10 @@ export class PaymentServiceService {
         );
       }
     } catch (error) {
-      this.logger.error('Failed to generate deep link', (error as Error).message);
+      this.logger.error(
+        'Failed to generate deep link',
+        (error as Error).message,
+      );
       if (error instanceof BakongQRGenerationException) throw error;
       throw new BakongApiConnectionException(
         (error as Error).message || 'Failed to connect to Bakong API',
@@ -431,7 +433,10 @@ export class PaymentServiceService {
         throw new BakongPaymentNotFoundException(checkPaymentStatusDTO.md5Hash);
       }
     } catch (error) {
-      this.logger.error('Failed to check payment status', (error as Error).message);
+      this.logger.error(
+        'Failed to check payment status',
+        (error as Error).message,
+      );
       if (error instanceof BakongPaymentNotFoundException) throw error;
       throw new BakongApiConnectionException(
         (error as Error).message || 'Failed to connect to Bakong API',
@@ -488,7 +493,10 @@ export class PaymentServiceService {
         );
       }
     } catch (error) {
-      this.logger.error('Failed to check bulk payment status', (error as Error).message);
+      this.logger.error(
+        'Failed to check bulk payment status',
+        (error as Error).message,
+      );
       throw new BakongApiConnectionException(
         (error as Error).message || 'Failed to connect to Bakong API',
       );
@@ -537,7 +545,10 @@ export class PaymentServiceService {
         status: 'paid',
       });
     } catch (error) {
-      this.logger.error('Failed to update payment status', (error as Error).message);
+      this.logger.error(
+        'Failed to update payment status',
+        (error as Error).message,
+      );
       throw error;
     }
   }
@@ -555,7 +566,10 @@ export class PaymentServiceService {
 
       return qrImageBase64;
     } catch (error) {
-      this.logger.error('Failed to generate QR image', (error as Error).message);
+      this.logger.error(
+        'Failed to generate QR image',
+        (error as Error).message,
+      );
       throw new BakongQRGenerationException(
         (error as Error).message || 'Failed to generate QR code image',
       );

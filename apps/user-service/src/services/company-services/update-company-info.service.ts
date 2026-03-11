@@ -1,21 +1,21 @@
-import { Injectable } from '@nestjs/common';
-import { UpdateCompanyInfoDTO } from '../../dtos/company/update-company-info.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Company } from '@app/common/database/entities/company/company.entity';
-import { Repository } from 'typeorm';
-import { Benefit } from '@app/common/database/entities/company/benefit.entity';
-import { Value } from '@app/common/database/entities/company/value.entity';
-import { Job } from '@app/common/database/entities/company/job.entity';
 import { CareerScope } from '@app/common/database/entities/career-scope.entity';
+import { Benefit } from '@app/common/database/entities/company/benefit.entity';
+import { Company } from '@app/common/database/entities/company/company.entity';
+import { Job } from '@app/common/database/entities/company/job.entity';
+import { Value } from '@app/common/database/entities/company/value.entity';
 import { Social } from '@app/common/database/entities/social.entity';
-import { PinoLogger } from 'nestjs-pino';
-import {
-  CompanyResponseDTO,
-  JobPositionDTO,
-} from '../../dtos/user-response.dto';
-import { RpcException } from '@nestjs/microservices';
 import { User } from '@app/common/database/entities/user.entity';
 import { RedisService } from '@app/common/redis/redis.service';
+import { Injectable } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
+import { InjectRepository } from '@nestjs/typeorm';
+import { PinoLogger } from 'nestjs-pino';
+import { Repository } from 'typeorm';
+import { UpdateCompanyInfoDTO } from '../../dtos/company/update-company-info.dto';
+import {
+    CompanyResponseDTO,
+    JobPositionDTO
+} from '../../dtos/user-response.dto';
 
 @Injectable()
 export class UpdateCompanyInfoService {

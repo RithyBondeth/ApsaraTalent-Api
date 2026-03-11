@@ -1,13 +1,13 @@
-import { Module } from '@nestjs/common';
-import { ResumeBuilderController } from './controllers/resume-builder.controller';
-import { ResumeBuilderService } from './services/resume-builder.service';
-import { ImageService } from './services/image.service';
-import { ConfigModule } from '@app/common/config';
 import { DatabaseModule, LoggerModule, UploadfileModule } from '@app/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@app/common/config';
 import { ResumeTemplate } from '@app/common/database/entities/resume-template.entity';
-import { ResumeTemplateService } from './services/resume-template.service';
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ResumeBuilderController } from './controllers/resume-builder.controller';
 import { ResumeTemplateController } from './controllers/resume-template.controller';
+import { ImageService } from './services/image.service';
+import { ResumeBuilderService } from './services/resume-builder.service';
+import { ResumeTemplateService } from './services/resume-template.service';
 
 @Module({
   imports: [

@@ -1,9 +1,9 @@
 import {
-  Column,
-  Entity,
-  Index,
-  ManyToMany,
-  PrimaryGeneratedColumn,
+    Column,
+    Entity,
+    Index,
+    ManyToMany,
+    PrimaryGeneratedColumn
 } from 'typeorm';
 import { Company } from './company.entity';
 

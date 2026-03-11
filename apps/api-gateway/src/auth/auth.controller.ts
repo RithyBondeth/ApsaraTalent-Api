@@ -1,20 +1,20 @@
-import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
+import { IBasicAuthController } from '@app/common/interfaces/auth-controller.interface';
+import { ThrottlerGuard } from '@app/common/throttler/guards/throttler.guard';
 import {
-  Body,
-  Controller,
-  HttpCode,
-  HttpStatus,
-  Inject,
-  Param,
-  Post,
-  Res,
-  UseGuards,
+    Body,
+    Controller,
+    HttpCode,
+    HttpStatus,
+    Inject,
+    Param,
+    Post,
+    Res,
+    UseGuards
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
-import { ThrottlerGuard } from '@app/common/throttler/guards/throttler.guard';
-import { IBasicAuthController } from '@app/common/interfaces/auth-controller.interface';
 import { Response } from 'express';
+import { firstValueFrom } from 'rxjs';
+import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
 
 @Controller('auth')
 export class AuthController implements IBasicAuthController {

@@ -1,9 +1,9 @@
-import { NestFactory } from '@nestjs/core';
-import { AuthServiceModule } from './auth-service.module';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ValidationPipe } from '@nestjs/common';
-import { Logger } from 'nestjs-pino';
 import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { Logger } from 'nestjs-pino';
+import { AuthServiceModule } from './auth-service.module';
 
 async function bootstrap() {
   const appContext =

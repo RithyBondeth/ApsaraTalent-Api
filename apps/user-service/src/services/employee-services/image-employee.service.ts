@@ -20,7 +20,7 @@ export class ImageEmployeeService {
 
   async uploadEmployeeAvatar(employeeId: string, avatar: Express.Multer.File) {
     try {
-      let employee = await this.employeeRepository.findOne({
+      const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
       });
 

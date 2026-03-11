@@ -1,9 +1,9 @@
 import {
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsUrl,
-  Length,
+    IsNotEmpty,
+    IsOptional,
+    IsString,
+    IsUrl,
+    Length
 } from 'class-validator';
 
 export class GenerateDeepLinkDTO {

@@ -2,9 +2,9 @@ import { Controller, Get } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Transport } from '@nestjs/microservices';
 import {
-  HealthCheck,
-  HealthCheckService,
-  MicroserviceHealthIndicator,
+    HealthCheck,
+    HealthCheckService,
+    MicroserviceHealthIndicator
 } from '@nestjs/terminus';
 import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';

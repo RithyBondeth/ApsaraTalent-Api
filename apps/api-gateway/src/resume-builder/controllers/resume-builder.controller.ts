@@ -1,13 +1,13 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
 import { IResumeBuilderController } from '@app/common/interfaces/resume-controller.interface';
 import {
-  Body,
-  Controller,
-  HttpCode,
-  HttpStatus,
-  Inject,
-  Post,
-  UseGuards,
+    Body,
+    Controller,
+    HttpCode,
+    HttpStatus,
+    Inject,
+    Post,
+    UseGuards
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';

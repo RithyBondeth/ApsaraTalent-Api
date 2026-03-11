@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { MessageService } from './message.service';
 import { LoggerModule } from '../logger/logger.module';
+import { MessageService } from './message.service';
 
 @Module({
-  imports: [ LoggerModule ],
+  imports: [LoggerModule],
   providers: [MessageService],
   exports: [MessageService],
 })
