@@ -1,8 +1,8 @@
 // apps/chat-service/src/chat.service.ts
 import { Chat } from '@app/common/database/entities/chat.entity';
 import {
-    IChatMessage,
-    TChatContent
+  IChatMessage,
+  TChatContent,
 } from '@app/common/interfaces/chat.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
@@ -10,35 +10,80 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { User } from '@app/common/database/entities/user.entity';
 
 @Injectable()
 export class ChatServiceService {
   constructor(
     @InjectRepository(Chat) private readonly chatRepository: Repository<Chat>,
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
     @Inject(USER_SERVICE.NAME) private readonly userServiceClient: ClientProxy,
   ) {}
 
+  /**
+   * Resolves the User.id from any combination of:
+   *  - a raw User UUID
+   *  - an Employee UUID (looks up via employee join)
+   *  - a Company UUID  (looks up via company join)
+   */
+  private async resolveUserId(id: string): Promise<string> {
+    // Try direct User lookup first
+    const byUserId = await this.userRepository.findOne({ where: { id } });
+    if (byUserId) return byUserId.id;
+
+    // Try to find via employee relation
+    const byEmployee = await this.userRepository.findOne({
+      where: { employee: { id } },
+      relations: ['employee'],
+    });
+    if (byEmployee) return byEmployee.id;
+
+    // Try to find via company relation
+    const byCompany = await this.userRepository.findOne({
+      where: { company: { id } },
+      relations: ['company'],
+    });
+    if (byCompany) return byCompany.id;
+
+    throw new RpcException({
+      message: `Could not resolve user ID from: ${id}`,
+      statusCode: 404,
+    });
+  }
+
   async createOrGetChat(senderId: string, receiverId: string) {
-    const existing = await this.chatRepository.findOne({
-      where: [
-        { sender: { id: senderId }, receiver: { id: receiverId } },
-        { sender: { id: receiverId }, receiver: { id: senderId } },
-      ],
-    });
+    try {
+      // Resolve actual User PKs (handles employee/company IDs too)
+      const senderUserId = await this.resolveUserId(senderId);
+      const receiverUserId = await this.resolveUserId(receiverId);
 
-    if (existing) {
-      return { chatId: existing.id, alreadyExists: true };
+      const existing = await this.chatRepository.findOne({
+        where: [
+          { sender: { id: senderUserId }, receiver: { id: receiverUserId } },
+          { sender: { id: receiverUserId }, receiver: { id: senderUserId } },
+        ],
+      });
+
+      if (existing) {
+        return { chatId: existing.id, receiverUserId, alreadyExists: true };
+      }
+
+      const message = this.chatRepository.create({
+        sender: { id: senderUserId },
+        receiver: { id: receiverUserId },
+        content: "👋 Let's chat!",
+        messageType: 'text',
+      });
+
+      const saved = await this.chatRepository.save(message);
+      return { chatId: saved.id, receiverUserId, alreadyExists: false };
+    } catch (error) {
+      if (error instanceof RpcException) throw error;
+      throw new RpcException({
+        message: `Failed to create chat: ${(error as Error).message}`,
+        statusCode: 500,
+      });
     }
-
-    const message = this.chatRepository.create({
-      sender: { id: senderId },
-      receiver: { id: receiverId },
-      content: "👋 Let's chat!", // initial message
-      messageType: 'text',
-    });
-
-    const saved = await this.chatRepository.save(message);
-    return { chatId: saved.id, alreadyExists: false };
   }
 
   async createMessage(data: TChatContent): Promise<IChatMessage> {
@@ -115,7 +160,9 @@ export class ChatServiceService {
 
   async getUserByIdForChat(userId: string) {
     return await firstValueFrom(
-      this.userServiceClient.send(USER_SERVICE.ACTIONS.FIND_ONE_BY_ID, userId),
+      this.userServiceClient.send(USER_SERVICE.ACTIONS.FIND_ONE_BY_ID, {
+        userId,
+      }),
     );
   }
 
@@ -172,17 +219,17 @@ export class ChatServiceService {
       .select([
         'chat.id',
         'chat.content',
-        'chat.sendAt',
+        'chat.sentAt',
         'chat.isRead',
         'sender.id',
         'sender.email',
         'receiver.id',
         'receiver.email',
       ])
-      .where('chat.sender.id = :userId OR chat.receiver.id = :userId', {
+      .where('sender.id = :userId OR receiver.id = :userId', {
         userId,
       })
-      .orderBy('chat.createdAt', 'DESC')
+      .orderBy('chat.sentAt', 'DESC')
       .limit(20);
 
     return await query.getMany();

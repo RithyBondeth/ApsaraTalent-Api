@@ -1,9 +1,13 @@
+import { DatabaseModule, JwtModule } from '@app/common';
+import { User } from '@app/common/database/entities/user.entity';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { CHAT_SERVICE } from 'utils/constants/chat-service.constant';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { ChatController } from './chat.controller';
+import { ChatGateway } from './chat.gateway';
 
 @Module({
   imports: [
@@ -31,7 +35,11 @@ import { ChatController } from './chat.controller';
         inject: [ConfigService],
       },
     ]),
+    DatabaseModule,
+    JwtModule,
+    TypeOrmModule.forFeature([User]),
   ],
   controllers: [ChatController],
+  providers: [ChatGateway], // ← was missing — gateway never started without this
 })
 export class ChatModule {}

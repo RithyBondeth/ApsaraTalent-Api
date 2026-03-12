@@ -31,7 +31,7 @@ import { UserModule } from './user/user.module';
     JwtModule,
     ChatModule,
     JobModule,
-    PaymentModule,
+    //PaymentModule,
     NotificationModule,
   ],
   controllers: [HealthController],

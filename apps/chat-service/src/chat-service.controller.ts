@@ -1,32 +1,45 @@
 import { TChatContent } from '@app/common/interfaces/chat.interface';
-import { Controller } from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { ChatServiceService } from './chat-service.service';
 
 @Controller()
 export class ChatServiceController {
+  private readonly logger = new Logger('ChatServiceController');
+
   constructor(private readonly chatService: ChatServiceService) {}
 
   @MessagePattern('createOrGetChat')
   async createOrGetChat(
     @Payload() data: { senderId: string; receiverId: string },
   ) {
-    console.log('Inside Chat Service');
+    this.logger.log(
+      `[CHAT] createOrGetChat: sender=${data.senderId}, receiver=${data.receiverId}`,
+    );
     return this.chatService.createOrGetChat(data.senderId, data.receiverId);
   }
 
-  @EventPattern('createMessage')
+  @MessagePattern('createMessage')
   async createMessage(@Payload() data: TChatContent) {
-    return this.chatService.createMessage(data);
+    this.logger.log(
+      `[CHAT] createMessage: sender=${data.senderId}, receiver=${data.receiverId}, content="${data.content}"`,
+    );
+    const result = await this.chatService.createMessage(data);
+    this.logger.log(`[CHAT] ✅ createMessage saved with id=${result.id}`);
+    return result;
   }
 
   @EventPattern('markMessageRead')
   async markAsRead(@Payload() data: { messageId: string; readerId: string }) {
+    this.logger.log(
+      `[CHAT] markAsRead: messageId=${data.messageId}, reader=${data.readerId}`,
+    );
     return this.chatService.markAsRead(data);
   }
 
   @MessagePattern('getUserByIdForChat')
   async getUserByIdForChat(@Payload() userId: string) {
+    this.logger.log(`[CHAT] getUserByIdForChat: userId=${userId}`);
     return this.chatService.getUserByIdForChat(userId);
   }
 
@@ -34,10 +47,20 @@ export class ChatServiceController {
   async validateChatUsers(
     @Payload() data: { senderId: string; receiverId: string },
   ) {
-    return this.chatService.validateChatUsers(data.senderId, data.receiverId);
+    this.logger.log(
+      `[CHAT] validateChatUsers: sender=${data.senderId}, receiver=${data.receiverId}`,
+    );
+    const result = await this.chatService.validateChatUsers(
+      data.senderId,
+      data.receiverId,
+    );
+    this.logger.log(
+      `[CHAT] ✅ validateChatUsers OK: sender=${result.sender?.email}, receiver=${result.receiver?.email}`,
+    );
+    return result;
   }
 
-  @MessagePattern()
+  @MessagePattern('getChatHistory')
   async getChatHistory(
     @Payload()
     data: {
@@ -47,21 +70,30 @@ export class ChatServiceController {
       offset?: number;
     },
   ) {
-    return this.chatService.getChatHistory(
+    this.logger.log(
+      `[CHAT] getChatHistory: userId1=${data.userId1}, userId2=${data.userId2}`,
+    );
+    const result = await this.chatService.getChatHistory(
       data.userId1,
       data.userId2,
       data.limit,
       data.offset,
     );
+    this.logger.log(`[CHAT] getChatHistory returned ${result.length} messages`);
+    return result;
   }
 
   @MessagePattern('getUnreadCount')
   async getUnreadCount(@Payload() userId: string) {
+    this.logger.log(`[CHAT] getUnreadCount: userId=${userId}`);
     return this.chatService.getUnreadCount(userId);
   }
 
   @MessagePattern('getRecentChats')
   async getRecentChats(@Payload() userId: string) {
-    return this.chatService.getRecentChats(userId);
+    this.logger.log(`[CHAT] getRecentChats: userId=${userId}`);
+    const result = await this.chatService.getRecentChats(userId);
+    this.logger.log(`[CHAT] getRecentChats returned ${result.length} chats`);
+    return result;
   }
 }

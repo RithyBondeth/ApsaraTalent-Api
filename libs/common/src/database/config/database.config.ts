@@ -44,7 +44,7 @@ export const databaseConfig = async (
     ResumeTemplate,
     CompanyFavoriteEmployee,
     EmployeeFavoriteCompany,
-    Payment,
-    PaymentTransaction,
+    //  Payment,
+    //PaymentTransaction,
   ],
 });

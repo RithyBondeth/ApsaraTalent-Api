@@ -1,4 +1,4 @@
-import { DatabaseModule, LoggerModule } from '@app/common';
+import { DatabaseModule, JwtModule, LoggerModule } from '@app/common';
 import { ConfigModule } from '@app/common/config';
 import { Chat } from '@app/common/database/entities/chat.entity';
 import { User } from '@app/common/database/entities/user.entity';
@@ -8,12 +8,14 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { ChatServiceService } from './chat-service.service';
+import { ChatServiceController } from './chat-service.controller';
 
 @Module({
   imports: [
     ConfigModule,
     LoggerModule,
     DatabaseModule,
+    JwtModule,
     TypeOrmModule.forFeature([User, Chat]),
     ClientsModule.registerAsync([
       {
@@ -29,7 +31,7 @@ import { ChatServiceService } from './chat-service.service';
       },
     ]),
   ],
-  controllers: [],
+  controllers: [ChatServiceController],
   providers: [ChatServiceService],
 })
 export class ChatServiceModule {}

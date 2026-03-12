@@ -1,5 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
 import { Logger } from 'nestjs-pino';
@@ -8,6 +9,9 @@ import { ApiGatewayModule } from './api-gateway.module';
 async function bootstrap() {
   const app = await NestFactory.create(ApiGatewayModule);
   const configService = app.get<ConfigService>(ConfigService);
+
+  // Enable socket.io WebSocket adapter — required for ChatGateway to work
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   // Enable Cookie Parser
   app.use(cookieParser());

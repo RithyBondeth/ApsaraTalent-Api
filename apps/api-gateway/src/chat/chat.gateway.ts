@@ -5,20 +5,19 @@ import { Inject, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import {
-    OnGatewayConnection,
-    OnGatewayDisconnect,
-    SubscribeMessage,
-    WebSocketGateway,
-    WebSocketServer
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
 } from '@nestjs/websockets';
 import { firstValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
 import { CHAT_SERVICE } from '../../../../utils/constants/chat-service.constant';
 
 @WebSocketGateway({
-  // Note: WebSocketGateway decorator requires static values at compile time
-  // Using process.env here as ConfigService is not available in decorators
-  port: parseInt(process.env.CHAT_SERVICE_PORT || '3005'),
+  // No port specified — gateway attaches to the same HTTP server as the API Gateway (port 3000)
+  // CHAT_SERVICE_PORT is for the internal TCP microservice, not the WebSocket server
   namespace: '/chat',
   cors: {
     origin: ['*'],
@@ -37,11 +36,31 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {}
 
   async handleConnection(client: Socket) {
+    this.logger.log(`[WS] New connection attempt: socketId=${client.id}`);
     try {
+      // auth-token is httpOnly — JS can't read it, but withCredentials sends it in the WS upgrade headers
+      const cookieHeader = (client.handshake.headers?.cookie as string) || '';
+      const cookieToken = cookieHeader.match(/auth-token=([^;]+)/)?.[1];
+
       const token =
-        client.handshake.auth.token ||
-        client.handshake.headers?.authorization?.split(' ')[1];
+        (client.handshake.auth as any)?.token ||
+        client.handshake.headers?.authorization?.split(' ')[1] ||
+        cookieToken;
+
+      this.logger.log(
+        `[WS] Token present: ${!!token}, source: ${
+          (client.handshake.auth as any)?.token
+            ? 'auth.token'
+            : client.handshake.headers?.authorization
+              ? 'Authorization header'
+              : cookieToken
+                ? 'Cookie header'
+                : 'none'
+        }`,
+      );
+
       if (!token) {
+        this.logger.error('[WS] No token provided — disconnecting client');
         throw new Error('No token provided');
       }
 
@@ -58,10 +77,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         status: 'online',
       });
 
-      this.logger.log(`User connected: ${payload.id}`);
+      this.logger.log(
+        `[WS] ✅ User connected: userId=${payload.id}, socketId=${client.id}`,
+      );
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      this.logger.error(`Authentication failed: ${errorMessage}`);
+      this.logger.error(`[WS] ❌ Authentication failed: ${errorMessage}`);
       client.emit('error', { message: 'Authentication failed' });
       client.disconnect();
     }
@@ -81,19 +102,31 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('sendMessage')
   async handleMessage(client: Socket, payload: TChatPayload) {
+    this.logger.log(
+      `[WS] 📨 sendMessage received from userId=${client.data.userId}, receiverId=${payload?.receiverId}, content.length=${payload?.content?.length}`,
+    );
     try {
       // Validate payload
       if (!payload.receiverId || !payload.content?.trim()) {
+        this.logger.warn(
+          '[WS] Invalid payload — missing receiverId or content',
+        );
         client.emit('error', { message: 'Invalid message payload' });
         return;
       }
 
       // Validate users exist
+      this.logger.log(
+        `[WS] Calling validateChatUsers: sender=${client.data.userId}, receiver=${payload.receiverId}`,
+      );
       const usersData = await firstValueFrom(
         this.chatServiceClient.send('validateChatUsers', {
           senderId: client.data.userId,
           receiverId: payload.receiverId,
         }),
+      );
+      this.logger.log(
+        `[WS] ✅ validateChatUsers success: sender=${usersData.sender?.email}, receiver=${usersData.receiver?.email}`,
       );
 
       const message = {
@@ -104,8 +137,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         timestamp: new Date(),
       };
 
-      // Save message
-      this.chatServiceClient.emit('createMessage', message);
+      // Save message — use send() not emit() so errors are surfaced
+      await firstValueFrom(
+        this.chatServiceClient.send('createMessage', message),
+      );
 
       // Deliver to recipient if online
       const recipientSocketId = this.onlineUsers.get(payload.receiverId);
@@ -204,6 +239,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Get unread count error: ${errorMessage}`);
       client.emit('error', { message: 'Failed to get unread count' });
+    }
+  }
+
+  @SubscribeMessage('getRecentChats')
+  async handleRecentChats(client: Socket) {
+    try {
+      const recentChats = await firstValueFrom(
+        this.chatServiceClient.send('getRecentChats', client.data.userId),
+      );
+
+      return recentChats;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Get recent chats error: ${errorMessage}`);
+      client.emit('error', { message: 'Failed to get recent chats' });
     }
   }
 

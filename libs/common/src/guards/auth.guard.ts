@@ -1,5 +1,9 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
-import { RpcException } from '@nestjs/microservices';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../database/entities/user.entity';
@@ -20,7 +24,7 @@ export class AuthGuard implements CanActivate {
       request.headers?.authorization?.split('Bearer ')[1];
 
     if (!token) {
-      throw new RpcException("There's no token");
+      throw new UnauthorizedException("There's no token");
     }
 
     try {
@@ -30,12 +34,15 @@ export class AuthGuard implements CanActivate {
       });
 
       if (!user) {
-        throw new RpcException('User not found');
+        throw new UnauthorizedException('User not found');
       }
 
+      request.user = user;
       return true;
     } catch (error) {
-      throw new RpcException('Invalid Token or Insufficient permissions');
+      throw new UnauthorizedException(
+        'Invalid Token or Insufficient permissions',
+      );
     }
   }
 }

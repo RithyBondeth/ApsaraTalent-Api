@@ -19,6 +19,8 @@ tmux new-window -t "$SESSION" -n auth "cd \"$PROJECT_DIR\" && npm run start:dev:
 tmux new-window -t "$SESSION" -n users "cd \"$PROJECT_DIR\" && npm run start:dev:users"
 tmux new-window -t "$SESSION" -n job "cd \"$PROJECT_DIR\" && npm run start:dev:job"
 tmux new-window -t "$SESSION" -n resume "cd \"$PROJECT_DIR\" && npm run start:dev:resume"
+tmux new-window -t "$SESSION" -n chat "cd \"$PROJECT_DIR\" && npm run start:dev:chat"
+tmux new-window -t "$SESSION" -n notification "cd \"$PROJECT_DIR\" && npm run start:dev:notification"
 
 tmux select-window -t "$SESSION:api"
 exec tmux attach -t "$SESSION"
