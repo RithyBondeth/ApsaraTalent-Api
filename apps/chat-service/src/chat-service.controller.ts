@@ -29,7 +29,7 @@ export class ChatServiceController {
     return result;
   }
 
-  @EventPattern('markMessageRead')
+  @MessagePattern('markMessageRead')
   async markAsRead(@Payload() data: { messageId: string; readerId: string }) {
     this.logger.log(
       `[CHAT] markAsRead: messageId=${data.messageId}, reader=${data.readerId}`,
@@ -95,5 +95,20 @@ export class ChatServiceController {
     const result = await this.chatService.getRecentChats(userId);
     this.logger.log(`[CHAT] getRecentChats returned ${result.length} chats`);
     return result;
+  }
+
+  @MessagePattern('updateReaction')
+  async updateReaction(
+    @Payload()
+    data: {
+      messageId: string;
+      userId: string;
+      emoji: string | null;
+    },
+  ) {
+    this.logger.log(
+      `[CHAT] updateReaction: messageId=${data.messageId}, userId=${data.userId}, emoji=${data.emoji}`,
+    );
+    return this.chatService.updateReaction(data);
   }
 }

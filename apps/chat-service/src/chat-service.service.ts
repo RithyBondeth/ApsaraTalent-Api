@@ -211,26 +211,70 @@ export class ChatServiceService {
     });
   }
 
+  async updateReaction(data: {
+    messageId: string;
+    userId: string;
+    emoji: string | null;
+  }) {
+    const chat = await this.chatRepository.findOne({
+      where: { id: data.messageId },
+    });
+    if (!chat) throw new Error('Message not found');
+
+    const reactions = chat.reactions || {};
+    if (data.emoji) {
+      reactions[data.userId] = data.emoji;
+    } else {
+      delete reactions[data.userId];
+    }
+
+    await this.chatRepository.update(data.messageId, { reactions });
+    return { success: true, reactions };
+  }
+
   async getRecentChats(userId: string) {
     const query = this.chatRepository
       .createQueryBuilder('chat')
       .leftJoin('chat.sender', 'sender')
       .leftJoin('chat.receiver', 'receiver')
+      .leftJoin('sender.employee', 'senderEmployee')
+      .leftJoin('sender.company', 'senderCompany')
+      .leftJoin('receiver.employee', 'receiverEmployee')
+      .leftJoin('receiver.company', 'receiverCompany')
       .select([
         'chat.id',
         'chat.content',
         'chat.sentAt',
         'chat.isRead',
+        'chat.reactions',
+        // Sender base
         'sender.id',
         'sender.email',
+        'sender.role',
+        // Sender employee profile
+        'senderEmployee.firstname',
+        'senderEmployee.lastname',
+        'senderEmployee.username',
+        'senderEmployee.avatar',
+        // Sender company profile
+        'senderCompany.name',
+        'senderCompany.avatar',
+        // Receiver base
         'receiver.id',
         'receiver.email',
+        'receiver.role',
+        // Receiver employee profile
+        'receiverEmployee.firstname',
+        'receiverEmployee.lastname',
+        'receiverEmployee.username',
+        'receiverEmployee.avatar',
+        // Receiver company profile
+        'receiverCompany.name',
+        'receiverCompany.avatar',
       ])
-      .where('sender.id = :userId OR receiver.id = :userId', {
-        userId,
-      })
+      .where('sender.id = :userId OR receiver.id = :userId', { userId })
       .orderBy('chat.sentAt', 'DESC')
-      .limit(20);
+      .limit(50);
 
     return await query.getMany();
   }

@@ -1,9 +1,9 @@
 import {
-    Column,
-    CreateDateColumn,
-    Entity,
-    ManyToOne,
-    PrimaryGeneratedColumn
+  Column,
+  CreateDateColumn,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { JobMatching } from './job-matching.entity';
 import { User } from './user.entity';
@@ -37,6 +37,9 @@ export class Chat {
     default: 'text',
   })
   messageType: string;
+
+  @Column({ type: 'jsonb', default: {} })
+  reactions: Record<string, string>;
 
   @CreateDateColumn()
   sentAt: Date;

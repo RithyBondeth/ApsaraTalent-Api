@@ -176,19 +176,45 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('markAsRead')
-  async handleRead(client: Socket, messageId: string) {
+  async handleRead(
+    client: Socket,
+    payload: { messageId: string; senderId?: string } | string,
+  ) {
     try {
+      const messageId =
+        typeof payload === 'string' ? payload : payload?.messageId;
+      const senderId =
+        typeof payload === 'object' ? payload?.senderId : undefined;
+
       if (!messageId) {
         client.emit('error', { message: 'Message ID required' });
         return;
       }
 
-      this.chatServiceClient.emit('markMessageRead', {
-        messageId,
-        readerId: client.data.userId,
-      });
+      // Mark as read in the DB (using send so errors propagate)
+      await firstValueFrom(
+        this.chatServiceClient.send('markMessageRead', {
+          messageId,
+          readerId: client.data.userId,
+        }),
+      );
 
-      return { success: true };
+      this.logger.log(
+        `[WS] Message ${messageId} marked as read by ${client.data.userId}`,
+      );
+
+      // Notify the original sender in real time so they can show "Seen"
+      if (senderId) {
+        const senderSocketId = this.onlineUsers.get(senderId);
+        if (senderSocketId) {
+          this.server.to(senderSocketId).emit('messageRead', { messageId });
+          this.logger.log(
+            `[WS] Notified sender ${senderId} that message ${messageId} was seen`,
+          );
+        }
+      }
+
+      return { success: true, messageId };
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -275,6 +301,46 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Typing indicator error: ${errorMessage}`);
+    }
+  }
+
+  @SubscribeMessage('react')
+  async handleReaction(
+    client: Socket,
+    data: { messageId: string; receiverId: string; emoji: string | null },
+  ) {
+    try {
+      this.logger.log(
+        `[WS] Reaction received: messageId=${data.messageId}, userId=${client.data.userId}, emoji=${data.emoji}`,
+      );
+
+      // Update DB
+      const result = await firstValueFrom(
+        this.chatServiceClient.send('updateReaction', {
+          messageId: data.messageId,
+          userId: client.data.userId,
+          emoji: data.emoji,
+        }),
+      );
+
+      // Broadcast to both users (sender and receiver)
+      // Since it's a 1-on-1 chat, we emit to both personal rooms
+      const payload = {
+        messageId: data.messageId,
+        reactions: result.reactions,
+      };
+
+      this.server.to(client.data.userId).emit('messageReaction', payload);
+      this.server.to(data.receiverId).emit('messageReaction', payload);
+
+      this.logger.log(
+        `[WS] ✅ Reaction broadcasted for message ${data.messageId}`,
+      );
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Reaction error: ${errorMessage}`);
+      client.emit('error', { message: 'Failed to update reaction' });
     }
   }
 }
