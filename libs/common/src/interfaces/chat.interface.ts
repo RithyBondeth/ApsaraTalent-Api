@@ -16,7 +16,7 @@ export interface IChatMessage {
   content: string;
   messageType: string;
   isRead: boolean;
-  sendAt: Date;
+  sentAt: Date;
   sender?: {
     id: string;
     name: string;

@@ -12,8 +12,12 @@ import { Repository } from 'typeorm';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { User } from '@app/common/database/entities/user.entity';
 
+import { Logger } from '@nestjs/common';
+
 @Injectable()
 export class ChatServiceService {
+  private readonly logger = new Logger('ChatServiceService');
+
   constructor(
     @InjectRepository(Chat) private readonly chatRepository: Repository<Chat>,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
@@ -27,9 +31,13 @@ export class ChatServiceService {
    *  - a Company UUID  (looks up via company join)
    */
   private async resolveUserId(id: string): Promise<string> {
+    this.logger.debug(`Resolving ID: ${id}`);
     // Try direct User lookup first
     const byUserId = await this.userRepository.findOne({ where: { id } });
-    if (byUserId) return byUserId.id;
+    if (byUserId) {
+      this.logger.debug(`ID ${id} is directly a User PK`);
+      return byUserId.id;
+    }
 
     // Try to find via employee relation
     const byEmployee = await this.userRepository.findOne({
@@ -51,11 +59,35 @@ export class ChatServiceService {
     });
   }
 
-  async createOrGetChat(senderId: string, receiverId: string) {
+  async createOrGetChat(data: { senderId: string; receiverId: string }) {
     try {
       // Resolve actual User PKs (handles employee/company IDs too)
-      const senderUserId = await this.resolveUserId(senderId);
-      const receiverUserId = await this.resolveUserId(receiverId);
+      const senderUserId = await this.resolveUserId(data.senderId);
+      const receiverUserId = await this.resolveUserId(data.receiverId);
+
+      // Find partner profile early for a rich response
+      const partner = await this.userRepository.findOne({
+        where: { id: receiverUserId },
+        relations: ['employee', 'company'],
+      });
+
+      if (!partner) throw new Error('Partner user not found');
+
+      const pEmp = partner.employee;
+      const partnerProfile = {
+        id: partner.id,
+        name: pEmp
+          ? [pEmp.firstname, pEmp.lastname].filter(Boolean).join(' ')
+          : partner.company?.name || 'Unknown',
+        avatar:
+          partner.employee?.avatar ||
+          partner.company?.avatar ||
+          '/avatars/default.png',
+        email: partner.email,
+        isRead: true, // New or existing, we assume read if just initiated
+        preview: "👋 Let's chat!",
+        time: 'Just now',
+      };
 
       const existing = await this.chatRepository.findOne({
         where: [
@@ -65,18 +97,29 @@ export class ChatServiceService {
       });
 
       if (existing) {
-        return { chatId: existing.id, receiverUserId, alreadyExists: true };
+        return {
+          ...partnerProfile,
+          id: receiverUserId,
+          chatId: existing.id,
+          alreadyExists: true,
+        };
       }
 
       const message = this.chatRepository.create({
         sender: { id: senderUserId },
         receiver: { id: receiverUserId },
-        content: "👋 Let's chat!",
+        content: partnerProfile.preview,
         messageType: 'text',
       });
 
       const saved = await this.chatRepository.save(message);
-      return { chatId: saved.id, receiverUserId, alreadyExists: false };
+
+      return {
+        ...partnerProfile,
+        id: receiverUserId,
+        chatId: saved.id,
+        alreadyExists: false,
+      };
     } catch (error) {
       if (error instanceof RpcException) throw error;
       throw new RpcException({
@@ -88,9 +131,17 @@ export class ChatServiceService {
 
   async createMessage(data: TChatContent): Promise<IChatMessage> {
     try {
+      // Resolve actual User PKs
+      const senderUserId = await this.resolveUserId(data.senderId);
+      const receiverUserId = await this.resolveUserId(data.receiverId);
+
+      this.logger.log(
+        `Creating message: ${senderUserId} -> ${receiverUserId} (Original: ${data.senderId} -> ${data.receiverId})`,
+      );
+
       const message = this.chatRepository.create({
-        sender: { id: data.senderId },
-        receiver: { id: data.receiverId },
+        sender: { id: senderUserId },
+        receiver: { id: receiverUserId },
         content: data.content,
         messageType: data.type || 'text',
       });
@@ -109,29 +160,35 @@ export class ChatServiceService {
         ],
       });
 
+      if (!chat) throw new Error('Failed to retrieve saved message');
+
+      const senderEmp = chat.sender?.employee;
+      const senderCo = chat.sender?.company;
+      const receiverEmp = chat.receiver?.employee;
+      const receiverCo = chat.receiver?.company;
+
       return {
         id: chat.id,
-        senderId: chat.sender.id,
-        receiverId: chat.receiver.id,
+        senderId: chat.sender?.id || data.senderId,
+        receiverId: chat.receiver?.id || data.receiverId,
         content: chat.content,
         messageType: chat.messageType,
         isRead: chat.isRead,
-        sendAt: chat.sentAt,
+        sentAt: chat.sentAt,
+        reactions: chat.reactions || {},
         sender: {
-          id: chat.sender.id,
-          name:
-            chat.sender.employee?.username ||
-            chat.sender.company?.name ||
-            'Unknown',
-          email: chat.sender.email,
+          id: chat.sender?.id || data.senderId,
+          name: senderEmp
+            ? [senderEmp.firstname, senderEmp.lastname].filter(Boolean).join(' ')
+            : senderCo?.name || 'Unknown',
+          email: chat.sender?.email || '',
         },
         receiver: {
-          id: chat.receiver.id,
-          name:
-            chat.receiver.employee?.username ||
-            chat.receiver.company?.name ||
-            'Unknown',
-          email: chat.receiver.email,
+          id: chat.receiver?.id || data.receiverId,
+          name: receiverEmp
+            ? [receiverEmp.firstname, receiverEmp.lastname].filter(Boolean).join(' ')
+            : receiverCo?.name || 'Unknown',
+          email: chat.receiver?.email || '',
         },
       };
     } catch (error) {
@@ -167,9 +224,13 @@ export class ChatServiceService {
   }
 
   async validateChatUsers(senderId: string, receiverId: string) {
+    // Resolve actual User PKs
+    const senderUserId = await this.resolveUserId(senderId);
+    const receiverUserId = await this.resolveUserId(receiverId);
+
     const [sender, receiver] = await Promise.all([
-      this.getUserByIdForChat(senderId),
-      this.getUserByIdForChat(receiverId),
+      this.getUserByIdForChat(senderUserId),
+      this.getUserByIdForChat(receiverUserId),
     ]);
 
     if (!sender || !receiver)
@@ -184,25 +245,80 @@ export class ChatServiceService {
     };
   }
 
-  async getChatHistory(
-    userId1: string,
-    userId2: string,
-    limit = 50,
-    offset = 0,
-  ) {
-    return await this.chatRepository.find({
-      where: [
-        { sender: { id: userId1 }, receiver: { id: userId2 } },
-        { sender: { id: userId2 }, receiver: { id: userId1 } },
+  async getChatHistory(u1: string, u2: string, limit = 100, offset = 0) {
+    const userId1 = await this.resolveUserId(u1);
+    const userId2 = await this.resolveUserId(u2);
+
+    this.logger.log(
+      `Fetching history: ${userId1} <-> ${userId2} (Originals: ${u1}, ${u2})`,
+    );
+
+    // Build conditions to include both resolved PKs and original IDs (handles migration/legacy data)
+    const conditions = [];
+
+    // Direction 1: u1 -> u2
+    conditions.push({ sender: { id: userId1 }, receiver: { id: userId2 } });
+    if (userId2 !== u2)
+      conditions.push({ sender: { id: userId1 }, receiver: { id: u2 } });
+    if (userId1 !== u1)
+      conditions.push({ sender: { id: u1 }, receiver: { id: userId2 } });
+    if (userId1 !== u1 && userId2 !== u2)
+      conditions.push({ sender: { id: u1 }, receiver: { id: u2 } });
+
+    // Direction 2: u2 -> u1
+    conditions.push({ sender: { id: userId2 }, receiver: { id: userId1 } });
+    if (userId2 !== u2)
+      conditions.push({ sender: { id: u2 }, receiver: { id: userId1 } });
+    if (userId1 !== u1)
+      conditions.push({ sender: { id: userId2 }, receiver: { id: u1 } });
+    if (userId1 !== u1 && userId2 !== u2)
+      conditions.push({ sender: { id: u2 }, receiver: { id: u1 } });
+
+    const messages = await this.chatRepository.find({
+      where: conditions,
+      relations: [
+        'sender',
+        'sender.employee',
+        'sender.company',
+        'receiver',
+        'receiver.employee',
+        'receiver.company',
       ],
-      relations: ['sender', 'receiver'],
-      order: { sentAt: 'DESC' },
+      order: { sentAt: 'ASC' },
       take: limit,
       skip: offset,
     });
+
+    // Resolve partner profile for the frontend
+    const partner = await this.getUserByIdForChat(userId2);
+
+    const formattedMessages = messages.map((msg) => {
+      const sEmp = msg.sender?.employee;
+      const sCo = msg.sender?.company;
+      return {
+        id: msg.id,
+        senderId: msg.sender?.id,
+        receiverId: msg.receiver?.id,
+        senderName: sEmp
+          ? [sEmp.firstname, sEmp.lastname].filter(Boolean).join(' ')
+          : sCo?.name || 'Unknown',
+        content: msg.content,
+        messageType: msg.messageType,
+        isRead: msg.isRead,
+        sentAt: msg.sentAt,
+        reactions: msg.reactions || {},
+      };
+    });
+
+    return {
+      messages: formattedMessages,
+      partnerId: userId2,
+      partnerProfile: partner,
+    };
   }
 
-  async getUnreadCount(userId: string) {
+  async getUnreadCount(u: string) {
+    const userId = await this.resolveUserId(u);
     return await this.chatRepository.count({
       where: {
         receiver: { id: userId },
@@ -232,50 +348,30 @@ export class ChatServiceService {
     return { success: true, reactions };
   }
 
-  async getRecentChats(userId: string) {
-    const query = this.chatRepository
-      .createQueryBuilder('chat')
-      .leftJoin('chat.sender', 'sender')
-      .leftJoin('chat.receiver', 'receiver')
-      .leftJoin('sender.employee', 'senderEmployee')
-      .leftJoin('sender.company', 'senderCompany')
-      .leftJoin('receiver.employee', 'receiverEmployee')
-      .leftJoin('receiver.company', 'receiverCompany')
-      .select([
-        'chat.id',
-        'chat.content',
-        'chat.sentAt',
-        'chat.isRead',
-        'chat.reactions',
-        // Sender base
-        'sender.id',
-        'sender.email',
-        'sender.role',
-        // Sender employee profile
-        'senderEmployee.firstname',
-        'senderEmployee.lastname',
-        'senderEmployee.username',
-        'senderEmployee.avatar',
-        // Sender company profile
-        'senderCompany.name',
-        'senderCompany.avatar',
-        // Receiver base
-        'receiver.id',
-        'receiver.email',
-        'receiver.role',
-        // Receiver employee profile
-        'receiverEmployee.firstname',
-        'receiverEmployee.lastname',
-        'receiverEmployee.username',
-        'receiverEmployee.avatar',
-        // Receiver company profile
-        'receiverCompany.name',
-        'receiverCompany.avatar',
-      ])
-      .where('sender.id = :userId OR receiver.id = :userId', { userId })
-      .orderBy('chat.sentAt', 'DESC')
-      .limit(50);
+  async getRecentChats(u: string) {
+    const userId = await this.resolveUserId(u);
+    this.logger.log(`Fetching recent chats for: ${userId} (Original: ${u})`);
 
-    return await query.getMany();
+    const conditions = [];
+    conditions.push({ sender: { id: userId } });
+    conditions.push({ receiver: { id: userId } });
+    if (userId !== u) {
+      conditions.push({ sender: { id: u } });
+      conditions.push({ receiver: { id: u } });
+    }
+
+    return await this.chatRepository.find({
+      where: conditions,
+      relations: [
+        'sender',
+        'sender.employee',
+        'sender.company',
+        'receiver',
+        'receiver.employee',
+        'receiver.company',
+      ],
+      order: { sentAt: 'DESC' },
+      take: 100,
+    });
   }
 }

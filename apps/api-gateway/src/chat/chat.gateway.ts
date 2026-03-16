@@ -20,14 +20,16 @@ import { CHAT_SERVICE } from '../../../../utils/constants/chat-service.constant'
   // CHAT_SERVICE_PORT is for the internal TCP microservice, not the WebSocket server
   namespace: '/chat',
   cors: {
-    origin: ['*'],
+    origin: (origin: string, callback: (err: Error | null, allow: boolean) => void) => {
+      // Allow requests with no origin (mobile apps, server-to-server) and all browser origins
+      callback(null, true);
+    },
     credentials: true,
   },
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
   private logger = new Logger('ChatGateway');
-  private onlineUsers = new Map<string, string>();
 
   constructor(
     private jwtService: JwtService,
@@ -38,7 +40,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleConnection(client: Socket) {
     this.logger.log(`[WS] New connection attempt: socketId=${client.id}`);
     try {
-      // auth-token is httpOnly — JS can't read it, but withCredentials sends it in the WS upgrade headers
       const cookieHeader = (client.handshake.headers?.cookie as string) || '';
       const cookieToken = cookieHeader.match(/auth-token=([^;]+)/)?.[1];
 
@@ -47,18 +48,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         client.handshake.headers?.authorization?.split(' ')[1] ||
         cookieToken;
 
-      this.logger.log(
-        `[WS] Token present: ${!!token}, source: ${
-          (client.handshake.auth as any)?.token
-            ? 'auth.token'
-            : client.handshake.headers?.authorization
-              ? 'Authorization header'
-              : cookieToken
-                ? 'Cookie header'
-                : 'none'
-        }`,
-      );
-
       if (!token) {
         this.logger.error('[WS] No token provided — disconnecting client');
         throw new Error('No token provided');
@@ -66,12 +55,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       const payload: IPayload = await this.jwtService.verifyToken(token);
       client.data.userId = payload.id;
-      this.onlineUsers.set(payload.id, client.id);
 
-      // Join user to their personal room
+      // Join user to their personal room (allows targeting all their tabs)
       client.join(payload.id);
 
-      // Notify user is online
+      // Notify user is online across all tabs
       this.server.emit('userStatus', {
         userId: payload.id,
         status: 'online',
@@ -91,12 +79,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleDisconnect(client: Socket) {
     const userId = client.data.userId;
     if (userId) {
-      this.onlineUsers.delete(userId);
       this.server.emit('userStatus', {
         userId,
         status: 'offline',
       });
-      this.logger.log(`User disconnected: ${userId}`);
+      this.logger.log(`User disconnected: ${userId} (socket ${client.id})`);
     }
   }
 
@@ -129,37 +116,35 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         `[WS] ✅ validateChatUsers success: sender=${usersData.sender?.email}, receiver=${usersData.receiver?.email}`,
       );
 
-      const message = {
-        senderId: client.data.userId,
-        receiverId: payload.receiverId,
+      const messagePayload = {
+        senderId: usersData.sender.id,
+        receiverId: usersData.receiver.id,
         content: payload.content.trim(),
         type: payload.type || 'text',
         timestamp: new Date(),
       };
 
-      // Save message — use send() not emit() so errors are surfaced
-      await firstValueFrom(
-        this.chatServiceClient.send('createMessage', message),
+      // Save message — capture the returned saved message which includes the DB ID
+      const savedMessage = await firstValueFrom(
+        this.chatServiceClient.send('createMessage', messagePayload),
       );
 
-      // Deliver to recipient if online
-      const recipientSocketId = this.onlineUsers.get(payload.receiverId);
-      if (recipientSocketId) {
-        this.server.to(recipientSocketId).emit('newMessage', {
-          ...message,
-          sender: {
-            id: usersData.sender.id,
-            role: usersData.sender.role,
-            email: usersData.sender.email,
-          },
-        });
-      }
+      // 3. Broadcast to both participants (standardized on resolved User PK rooms)
+      this.server.to(usersData.receiver.id).emit('newMessage', {
+        ...savedMessage,
+        isMe: false,
+      });
 
-      // Confirm to sender
+      this.server.to(usersData.sender.id).emit('newMessage', {
+        ...savedMessage,
+        isMe: true,
+      });
+
+      // Confirm to current tab
       return {
-        status: recipientSocketId ? 'delivered' : 'sent',
+        status: 'sent',
         message: {
-          ...message,
+          ...savedMessage,
           receiver: {
             id: usersData.receiver.id,
             role: usersData.receiver.role,
@@ -172,6 +157,61 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Message handling error: ${errorMessage}`);
       client.emit('error', { message: 'Failed to send message' });
+    }
+  }
+
+  @SubscribeMessage('getRecentChats')
+  async handleGetRecentChats(client: Socket) {
+    const userId = client.data.userId;
+    try {
+      this.logger.log(`[WS] Fetching recent chats for userId=${userId}`);
+      const chats = await firstValueFrom(
+        this.chatServiceClient.send('getRecentChats', userId),
+      );
+      return chats;
+    } catch (error: any) {
+      this.logger.error(`getRecentChats error: ${error?.message || 'Unknown'}`);
+      return [];
+    }
+  }
+
+  @SubscribeMessage('getChatHistory')
+  async handleGetChatHistory(
+    client: Socket,
+    payload: { userId2: string; limit?: number; offset?: number },
+  ) {
+    const userId1 = client.data.userId;
+    try {
+      this.logger.log(
+        `[WS] Fetching history: user1=${userId1}, user2=${payload.userId2}`,
+      );
+      const history = await firstValueFrom(
+        this.chatServiceClient.send('getChatHistory', {
+          userId1,
+          userId2: payload.userId2,
+          limit: payload.limit || 100,
+          offset: payload.offset || 0,
+        }),
+      );
+      return history;
+    } catch (error: any) {
+      this.logger.error(`getChatHistory error: ${error?.message || 'Unknown'}`);
+      return [];
+    }
+  }
+
+  @SubscribeMessage('getUnreadCount')
+  async handleGetUnreadCount(client: Socket) {
+    const userId = client.data.userId;
+    try {
+      const count = await firstValueFrom(
+        this.chatServiceClient.send('getUnreadCount', userId),
+      );
+      // chat-service returns a raw number; wrap it so the client can read res.unreadCount
+      return { unreadCount: typeof count === 'number' ? count : 0 };
+    } catch (error: any) {
+      this.logger.error(`getUnreadCount error: ${error?.message || 'Unknown'}`);
+      return { unreadCount: 0 };
     }
   }
 
@@ -191,7 +231,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return;
       }
 
-      // Mark as read in the DB (using send so errors propagate)
+      // Mark as read in the DB
       await firstValueFrom(
         this.chatServiceClient.send('markMessageRead', {
           messageId,
@@ -203,100 +243,32 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         `[WS] Message ${messageId} marked as read by ${client.data.userId}`,
       );
 
-      // Notify the original sender in real time so they can show "Seen"
+      // Notify the original sender in real time across all their tabs
       if (senderId) {
-        const senderSocketId = this.onlineUsers.get(senderId);
-        if (senderSocketId) {
-          this.server.to(senderSocketId).emit('messageRead', { messageId });
-          this.logger.log(
-            `[WS] Notified sender ${senderId} that message ${messageId} was seen`,
-          );
-        }
+        this.server.to(senderId).emit('messageRead', { messageId });
+        this.logger.log(
+          `[WS] Notified sender ${senderId} that message ${messageId} was seen`,
+        );
       }
 
       return { success: true, messageId };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Unknown error';
       this.logger.error(`Mark read error: ${errorMessage}`);
       client.emit('error', { message: 'Failed to mark as read' });
     }
   }
-
-  @SubscribeMessage('getChatHistory')
-  async handleGetHistory(
-    client: Socket,
-    data: { userId2: string; limit?: number; offset?: number },
-  ) {
-    try {
-      if (!data.userId2) {
-        client.emit('error', { message: 'User ID required' });
-        return;
-      }
-
-      const history = await firstValueFrom(
-        this.chatServiceClient.send('getChatHistory', {
-          userId1: client.data.userId,
-          userId2: data.userId2,
-          limit: data.limit || 50,
-          offset: data.offset || 0,
-        }),
-      );
-
-      return history;
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Get history error: ${errorMessage}`);
-      client.emit('error', { message: 'Failed to get chat history' });
-    }
-  }
-
-  @SubscribeMessage('getUnreadCount')
-  async handleUnreadCount(client: Socket) {
-    try {
-      const count = await firstValueFrom(
-        this.chatServiceClient.send('getUnreadCount', client.data.userId),
-      );
-
-      return { unreadCount: count };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Get unread count error: ${errorMessage}`);
-      client.emit('error', { message: 'Failed to get unread count' });
-    }
-  }
-
-  @SubscribeMessage('getRecentChats')
-  async handleRecentChats(client: Socket) {
-    try {
-      const recentChats = await firstValueFrom(
-        this.chatServiceClient.send('getRecentChats', client.data.userId),
-      );
-
-      return recentChats;
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Get recent chats error: ${errorMessage}`);
-      client.emit('error', { message: 'Failed to get recent chats' });
-    }
-  }
-
   @SubscribeMessage('typing')
   async handleTyping(
     client: Socket,
     data: { receiverId: string; isTyping: boolean },
   ) {
     try {
-      const recipientSocketId = this.onlineUsers.get(data.receiverId);
-      if (recipientSocketId) {
-        this.server.to(recipientSocketId).emit('userTyping', {
-          userId: client.data.userId,
-          isTyping: data.isTyping,
-        });
-      }
+      // Broadcast to all of recipient's tabs
+      this.server.to(data.receiverId).emit('userTyping', {
+        userId: client.data.userId,
+        isTyping: data.isTyping,
+      });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -323,8 +295,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }),
       );
 
-      // Broadcast to both users (sender and receiver)
-      // Since it's a 1-on-1 chat, we emit to both personal rooms
+      // Broadcast to both users across all their open tabs
       const payload = {
         messageId: data.messageId,
         reactions: result.reactions,
@@ -340,7 +311,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Reaction error: ${errorMessage}`);
-      client.emit('error', { message: 'Failed to update reaction' });
+      client.emit('error', { message: errorMessage });
     }
   }
 }

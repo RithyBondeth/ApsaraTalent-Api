@@ -17,8 +17,14 @@ export class ChatController {
   constructor(@Inject(CHAT_SERVICE.NAME) private chatClient: ClientProxy) {}
 
   @Post('initiate')
-  async initiateChat(@Body() body: { senderId: string; receiverId: string }) {
-    return await firstValueFrom(this.chatClient.send('createOrGetChat', body));
+  @UseGuards(AuthGuard)
+  async initiateChat(@Body() body: { receiverId: string }, @Req() req) {
+    return await firstValueFrom(
+      this.chatClient.send('createOrGetChat', {
+        senderId: req.user.id,
+        receiverId: body.receiverId,
+      }),
+    );
   }
 
   @Get('recent')

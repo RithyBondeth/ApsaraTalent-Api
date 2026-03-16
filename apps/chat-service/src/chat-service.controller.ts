@@ -16,7 +16,7 @@ export class ChatServiceController {
     this.logger.log(
       `[CHAT] createOrGetChat: sender=${data.senderId}, receiver=${data.receiverId}`,
     );
-    return this.chatService.createOrGetChat(data.senderId, data.receiverId);
+    return this.chatService.createOrGetChat(data);
   }
 
   @MessagePattern('createMessage')
