@@ -85,7 +85,12 @@ export class ChatServiceService {
         ],
       });
       if (existing) {
-        return { ...partnerProfile, id: receiverUserId, chatId: existing.id, alreadyExists: true };
+        return {
+          ...partnerProfile,
+          id: receiverUserId,
+          chatId: existing.id,
+          alreadyExists: true,
+        };
       }
       const message = this.chatRepository.create({
         sender: { id: senderUserId },
@@ -94,7 +99,12 @@ export class ChatServiceService {
         messageType: EMessageType.TEXT,
       });
       const saved = await this.chatRepository.save(message);
-      return { ...partnerProfile, id: receiverUserId, chatId: saved.id, alreadyExists: false };
+      return {
+        ...partnerProfile,
+        id: receiverUserId,
+        chatId: saved.id,
+        alreadyExists: false,
+      };
     } catch (error) {
       if (error instanceof RpcException) throw error;
       throw new RpcException({
@@ -108,9 +118,7 @@ export class ChatServiceService {
     try {
       const senderUserId = await this.resolveUserId(data.senderId);
       const receiverUserId = await this.resolveUserId(data.receiverId);
-      this.logger.log(
-        `Creating message: ${senderUserId} -> ${receiverUserId}`,
-      );
+      this.logger.log(`Creating message: ${senderUserId} -> ${receiverUserId}`);
 
       // Build entity — store replyToId and attachment if provided
       const message = this.chatRepository.create({
@@ -125,8 +133,12 @@ export class ChatServiceService {
       const chat = await this.chatRepository.findOne({
         where: { id: savedMessage.id },
         relations: [
-          'sender', 'sender.employee', 'sender.company',
-          'receiver', 'receiver.employee', 'receiver.company',
+          'sender',
+          'sender.employee',
+          'sender.company',
+          'receiver',
+          'receiver.employee',
+          'receiver.company',
         ],
       });
       if (!chat) throw new Error('Failed to retrieve saved message');
@@ -152,22 +164,26 @@ export class ChatServiceService {
           chat.messageType === 'image'
             ? 'image'
             : chat.messageType === 'document'
-            ? 'document'
-            : undefined,
+              ? 'document'
+              : undefined,
         attachmentFilename: chat.attachment
-          ? chat.attachment.split('/').pop() ?? undefined
+          ? (chat.attachment.split('/').pop() ?? undefined)
           : undefined,
         sender: {
           id: chat.sender?.id || data.senderId,
           name: senderEmp
-            ? [senderEmp.firstname, senderEmp.lastname].filter(Boolean).join(' ')
+            ? [senderEmp.firstname, senderEmp.lastname]
+                .filter(Boolean)
+                .join(' ')
             : senderCo?.name || 'Unknown',
           email: chat.sender?.email || '',
         },
         receiver: {
           id: chat.receiver?.id || data.receiverId,
           name: receiverEmp
-            ? [receiverEmp.firstname, receiverEmp.lastname].filter(Boolean).join(' ')
+            ? [receiverEmp.firstname, receiverEmp.lastname]
+                .filter(Boolean)
+                .join(' ')
             : receiverCo?.name || 'Unknown',
           email: chat.receiver?.email || '',
         },
@@ -302,7 +318,9 @@ export class ChatServiceService {
 
   async getUserByIdForChat(userId: string) {
     return await firstValueFrom(
-      this.userServiceClient.send(USER_SERVICE.ACTIONS.FIND_ONE_BY_ID, { userId }),
+      this.userServiceClient.send(USER_SERVICE.ACTIONS.FIND_ONE_BY_ID, {
+        userId,
+      }),
     );
   }
 
@@ -314,7 +332,10 @@ export class ChatServiceService {
       this.getUserByIdForChat(receiverUserId),
     ]);
     if (!sender || !receiver)
-      throw new RpcException({ message: 'One or both users not found', statusCode: 400 });
+      throw new RpcException({
+        message: 'One or both users not found',
+        statusCode: 400,
+      });
     return { sender, receiver };
   }
 
@@ -327,19 +348,29 @@ export class ChatServiceService {
 
     const conditions = [];
     conditions.push({ sender: { id: userId1 }, receiver: { id: userId2 } });
-    if (userId2 !== u2) conditions.push({ sender: { id: userId1 }, receiver: { id: u2 } });
-    if (userId1 !== u1) conditions.push({ sender: { id: u1 }, receiver: { id: userId2 } });
-    if (userId1 !== u1 && userId2 !== u2) conditions.push({ sender: { id: u1 }, receiver: { id: u2 } });
+    if (userId2 !== u2)
+      conditions.push({ sender: { id: userId1 }, receiver: { id: u2 } });
+    if (userId1 !== u1)
+      conditions.push({ sender: { id: u1 }, receiver: { id: userId2 } });
+    if (userId1 !== u1 && userId2 !== u2)
+      conditions.push({ sender: { id: u1 }, receiver: { id: u2 } });
     conditions.push({ sender: { id: userId2 }, receiver: { id: userId1 } });
-    if (userId2 !== u2) conditions.push({ sender: { id: u2 }, receiver: { id: userId1 } });
-    if (userId1 !== u1) conditions.push({ sender: { id: userId2 }, receiver: { id: u1 } });
-    if (userId1 !== u1 && userId2 !== u2) conditions.push({ sender: { id: u2 }, receiver: { id: u1 } });
+    if (userId2 !== u2)
+      conditions.push({ sender: { id: u2 }, receiver: { id: userId1 } });
+    if (userId1 !== u1)
+      conditions.push({ sender: { id: userId2 }, receiver: { id: u1 } });
+    if (userId1 !== u1 && userId2 !== u2)
+      conditions.push({ sender: { id: u2 }, receiver: { id: u1 } });
 
     const messages = await this.chatRepository.find({
       where: conditions,
       relations: [
-        'sender', 'sender.employee', 'sender.company',
-        'receiver', 'receiver.employee', 'receiver.company',
+        'sender',
+        'sender.employee',
+        'sender.company',
+        'receiver',
+        'receiver.employee',
+        'receiver.company',
       ],
       order: { sentAt: 'ASC' },
       take: limit,
@@ -374,17 +405,21 @@ export class ChatServiceService {
           msg.messageType === 'image'
             ? 'image'
             : msg.messageType === 'document'
-            ? 'document'
-            : undefined,
+              ? 'document'
+              : undefined,
         // Extract filename from the stored URL path as a best-effort label
         // (e.g. "/uploads/chat/2024-01-15/abc123.pdf" → "abc123.pdf")
         attachmentFilename: msg.attachment
-          ? msg.attachment.split('/').pop() ?? undefined
+          ? (msg.attachment.split('/').pop() ?? undefined)
           : undefined,
       };
     });
 
-    return { messages: formattedMessages, partnerId: userId2, partnerProfile: partner };
+    return {
+      messages: formattedMessages,
+      partnerId: userId2,
+      partnerProfile: partner,
+    };
   }
 
   async getUnreadCount(u: string) {
@@ -394,8 +429,14 @@ export class ChatServiceService {
     });
   }
 
-  async updateReaction(data: { messageId: string; userId: string; emoji: string | null }) {
-    const chat = await this.chatRepository.findOne({ where: { id: data.messageId } });
+  async updateReaction(data: {
+    messageId: string;
+    userId: string;
+    emoji: string | null;
+  }) {
+    const chat = await this.chatRepository.findOne({
+      where: { id: data.messageId },
+    });
     if (!chat) throw new Error('Message not found');
     const reactions = chat.reactions || {};
     if (data.emoji) {
@@ -420,8 +461,12 @@ export class ChatServiceService {
     return await this.chatRepository.find({
       where: conditions,
       relations: [
-        'sender', 'sender.employee', 'sender.company',
-        'receiver', 'receiver.employee', 'receiver.company',
+        'sender',
+        'sender.employee',
+        'sender.company',
+        'receiver',
+        'receiver.employee',
+        'receiver.company',
       ],
       order: { sentAt: 'DESC' },
       take: 100,
