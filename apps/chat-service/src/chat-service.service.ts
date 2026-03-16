@@ -180,14 +180,18 @@ export class ChatServiceService {
         sender: {
           id: chat.sender?.id || data.senderId,
           name: senderEmp
-            ? [senderEmp.firstname, senderEmp.lastname].filter(Boolean).join(' ')
+            ? [senderEmp.firstname, senderEmp.lastname]
+                .filter(Boolean)
+                .join(' ')
             : senderCo?.name || 'Unknown',
           email: chat.sender?.email || '',
         },
         receiver: {
           id: chat.receiver?.id || data.receiverId,
           name: receiverEmp
-            ? [receiverEmp.firstname, receiverEmp.lastname].filter(Boolean).join(' ')
+            ? [receiverEmp.firstname, receiverEmp.lastname]
+                .filter(Boolean)
+                .join(' ')
             : receiverCo?.name || 'Unknown',
           email: chat.receiver?.email || '',
         },

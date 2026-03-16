@@ -1,6 +1,6 @@
 import { TChatContent } from '@app/common/interfaces/chat.interface';
 import { Controller, Logger } from '@nestjs/common';
-import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ChatServiceService } from './chat-service.service';
 
 @Controller()
@@ -79,7 +79,7 @@ export class ChatServiceController {
       data.limit,
       data.offset,
     );
-    this.logger.log(`[CHAT] getChatHistory returned ${result.length} messages`);
+    this.logger.log(`[CHAT] getChatHistory returned ${result} messages`);
     return result;
   }
 
