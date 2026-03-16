@@ -2,6 +2,8 @@ export interface TChatPayload {
   receiverId: string;
   content: string;
   type?: 'text' | 'image' | 'file';
+  /** UUID of the message being replied to (optional) */
+  replyToId?: string | null;
 }
 
 export interface TChatContent extends TChatPayload {
@@ -18,6 +20,10 @@ export interface IChatMessage {
   isRead: boolean;
   reactions: {};
   sentAt: Date;
+  /** True when sender deleted the message (soft-delete tombstone) */
+  isDeleted?: boolean;
+  /** UUID of the message being quoted/replied to, or null for top-level messages */
+  replyToId?: string | null;
   sender?: {
     id: string;
     name: string;

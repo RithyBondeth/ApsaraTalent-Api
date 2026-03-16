@@ -111,4 +111,19 @@ export class ChatServiceController {
     );
     return this.chatService.updateReaction(data);
   }
+
+  /**
+   * Soft-delete a message.
+   * Only the original sender can delete; the row stays in the DB
+   * with isDeleted=true so reply references and read receipts are preserved.
+   */
+  @MessagePattern('deleteMessage')
+  async deleteMessage(
+    @Payload() data: { messageId: string; requesterId: string },
+  ) {
+    this.logger.log(
+      `[CHAT] deleteMessage: messageId=${data.messageId}, requester=${data.requesterId}`,
+    );
+    return this.chatService.deleteMessage(data);
+  }
 }

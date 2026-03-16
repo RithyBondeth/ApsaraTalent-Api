@@ -43,6 +43,25 @@ export class Chat {
   @Column({ type: 'jsonb', default: {} })
   reactions: Record<string, string>;
 
+  /**
+   * Soft-delete flag.
+   * When true the message body is hidden on the frontend (shows tombstone
+   * "This message was deleted"). The DB row is kept so that:
+   *  - read-receipts still work
+   *  - reply-to references don't become broken foreign keys
+   */
+  @Column({ default: false })
+  isDeleted: boolean;
+
+  /**
+   * Reply-to reference (UUID of parent message or null).
+   * We store only the ID — not a full FK relation — so that deleting
+   * the quoted message doesn't cascade-delete the reply chain.
+   * Frontend reads this field to render the inline quote block.
+   */
+  @Column({ nullable: true, type: 'uuid' })
+  replyToId: string | null;
+
   @CreateDateColumn()
   sentAt: Date;
 

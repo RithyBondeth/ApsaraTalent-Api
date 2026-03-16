@@ -109,7 +109,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       // Join user to their personal room (allows targeting all their tabs)
       client.join(payload.id);
 
-      // Notify user is online across all tabs
+      // Broadcast online status to ALL connected clients so any open chat window
+      // can immediately show the green dot for this user.
       this.server.emit('userStatus', { userId: payload.id, status: 'online' });
 
       this.logger.log(
@@ -125,6 +126,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleDisconnect(client: Socket) {
     const userId = client.data.userId;
     if (userId) {
+      // Broadcast offline status so chat headers and sidebars update in real time
       this.server.emit('userStatus', {
         userId,
         status: 'offline',
@@ -193,6 +195,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         content: trimmedContent,
         type: messageType,
         timestamp: new Date(),
+        // Pass reply-to reference if the sender is quoting another message.
+        // null = top-level message. Stored as a plain UUID column in the DB.
+        replyToId: payload.replyToId ?? null,
       };
 
       // Save message — capture the returned saved message which includes the DB ID
@@ -200,7 +205,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.chatServiceClient.send('createMessage', messagePayload),
       );
 
-      // 3. Broadcast to both participants (standardized on resolved User PK rooms)
+      // Broadcast to both participants (standardized on resolved User PK rooms).
+      // The isMe flag lets the client distinguish their own messages.
       this.server.to(usersData.receiver.id).emit('newMessage', {
         ...savedMessage,
         isMe: false,
@@ -211,7 +217,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         isMe: true,
       });
 
-      // Confirm to current tab
+      // Confirm to current tab (ack callback)
       return {
         status: 'sent',
         message: {
@@ -335,6 +341,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.emit('error', { message: 'Failed to mark as read' });
     }
   }
+
   @SubscribeMessage('typing')
   async handleTyping(
     client: Socket,
@@ -393,6 +400,63 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Reaction error: ${errorMessage}`);
+      client.emit('error', { message: errorMessage });
+    }
+  }
+
+  /**
+   * Delete (soft-delete) a message.
+   *
+   * Flow:
+   *  1. Client emits: socket.emit('deleteMessage', { messageId, receiverId })
+   *  2. Gateway verifies auth + forwards to chat-service.
+   *  3. Chat-service checks ownership (only sender can delete) and sets isDeleted=true.
+   *  4. Gateway broadcasts 'messageDeleted' to BOTH participants so their UIs update.
+   *  5. The message row stays in the DB; the frontend renders "[This message was deleted]".
+   */
+  @SubscribeMessage('deleteMessage')
+  async handleDeleteMessage(
+    client: Socket,
+    data: { messageId: string; receiverId: string },
+  ) {
+    if (!client.data.userId) {
+      client.emit('error', { message: 'Unauthorized' });
+      return;
+    }
+
+    if (!data?.messageId || typeof data.messageId !== 'string') {
+      client.emit('error', { message: 'messageId is required' });
+      return;
+    }
+
+    try {
+      // Ask chat-service to soft-delete; it verifies ownership internally
+      const result = await firstValueFrom(
+        this.chatServiceClient.send('deleteMessage', {
+          messageId: data.messageId,
+          requesterId: client.data.userId,
+        }),
+      );
+
+      // Build the broadcast payload
+      const broadcastPayload = { messageId: data.messageId };
+
+      // Notify the sender (all tabs) so the message tombstone appears immediately
+      this.server.to(client.data.userId).emit('messageDeleted', broadcastPayload);
+
+      // Notify the receiver if provided, so their view also updates in real time
+      if (data.receiverId) {
+        this.server.to(data.receiverId).emit('messageDeleted', broadcastPayload);
+      }
+
+      this.logger.log(
+        `[WS] ✅ Message ${data.messageId} deleted by ${client.data.userId}`,
+      );
+
+      return result;
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Unknown error';
+      this.logger.error(`Delete message error: ${errorMessage}`);
       client.emit('error', { message: errorMessage });
     }
   }

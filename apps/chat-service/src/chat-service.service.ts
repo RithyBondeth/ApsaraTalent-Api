@@ -140,11 +140,15 @@ export class ChatServiceService {
         `Creating message: ${senderUserId} -> ${receiverUserId} (Original: ${data.senderId} -> ${data.receiverId})`,
       );
 
+      // Build entity — include replyToId if provided so the quote chain is stored.
+      // replyToId is a plain UUID column (not a FK relation), so deleting the
+      // parent message never cascades to delete the reply.
       const message = this.chatRepository.create({
         sender: { id: senderUserId },
         receiver: { id: receiverUserId },
         content: data.content,
         messageType: (data.type as EMessageType) || EMessageType.TEXT,
+        replyToId: data.replyToId ?? null,
       });
 
       const savedMessage = await this.chatRepository.save(message);
@@ -177,6 +181,8 @@ export class ChatServiceService {
         isRead: chat.isRead,
         sentAt: chat.sentAt,
         reactions: chat.reactions || {},
+        isDeleted: chat.isDeleted,
+        replyToId: chat.replyToId ?? null,
         sender: {
           id: chat.sender?.id || data.senderId,
           name: senderEmp
@@ -202,6 +208,57 @@ export class ChatServiceService {
         statusCode: 500,
       });
     }
+  }
+
+  /**
+   * Soft-delete a message.
+   *
+   * Flow:
+   *  1. Verify the requester is the SENDER of the message (only the author can delete).
+   *  2. Set isDeleted = true (soft delete — row stays in DB).
+   *  3. Return the updated message so the gateway can broadcast the change.
+   *
+   * Why soft-delete instead of hard-delete?
+   *  - Preserves read-receipts and unread counts.
+   *  - Allows replies that reference this message to show "[Deleted]" gracefully.
+   *  - Complies with audit/legal requirements without losing data.
+   */
+  async deleteMessage(data: { messageId: string; requesterId: string }) {
+    // Resolve the requester's canonical User PK
+    const requesterUserId = await this.resolveUserId(data.requesterId);
+
+    // Fetch the message with sender relation to check ownership
+    const message = await this.chatRepository.findOne({
+      where: { id: data.messageId },
+      relations: ['sender'],
+    });
+
+    if (!message) {
+      throw new RpcException({ message: 'Message not found', statusCode: 404 });
+    }
+
+    // Authorization: only the original sender may delete
+    if (message.sender?.id !== requesterUserId) {
+      throw new RpcException({
+        message: 'Not authorized to delete this message',
+        statusCode: 403,
+      });
+    }
+
+    // Mark as deleted — DO NOT remove the row (soft delete)
+    await this.chatRepository.update(data.messageId, { isDeleted: true });
+
+    this.logger.log(
+      `[CHAT] Message ${data.messageId} soft-deleted by ${requesterUserId}`,
+    );
+
+    // Return enough info for the gateway to broadcast to both participants
+    return {
+      success: true,
+      messageId: data.messageId,
+      senderId: message.sender.id,
+      receiverId: (message as any).receiver?.id ?? null,
+    };
   }
 
   async markAsRead(data: { messageId: string; readerId: string }) {
@@ -315,6 +372,9 @@ export class ChatServiceService {
         isRead: msg.isRead,
         sentAt: msg.sentAt,
         reactions: msg.reactions || {},
+        // Pass soft-delete and reply fields to the frontend
+        isDeleted: msg.isDeleted,
+        replyToId: msg.replyToId ?? null,
       };
     });
 
