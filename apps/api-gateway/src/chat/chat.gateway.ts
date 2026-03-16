@@ -1,3 +1,4 @@
+import { EMessageType } from '@app/common/database/enums/message-type.enum';
 import { TChatPayload } from '@app/common/interfaces/chat.interface';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
@@ -20,9 +21,21 @@ import { CHAT_SERVICE } from '../../../../utils/constants/chat-service.constant'
   // CHAT_SERVICE_PORT is for the internal TCP microservice, not the WebSocket server
   namespace: '/chat',
   cors: {
-    origin: (origin: string, callback: (err: Error | null, allow: boolean) => void) => {
-      // Allow requests with no origin (mobile apps, server-to-server) and all browser origins
-      callback(null, true);
+    origin: (
+      origin: string,
+      callback: (err: Error | null, allow: boolean) => void,
+    ) => {
+      const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+        .split(',')
+        .map((o) => o.trim())
+        .filter(Boolean);
+
+      // Allow mobile/server requests with no origin, or any explicitly listed origin
+      if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS: origin ${origin} not allowed`), false);
+      }
     },
     credentials: true,
   },
@@ -31,48 +44,81 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
   private logger = new Logger('ChatGateway');
 
+  // In-memory rate limiter: userId -> timestamps of recent messages
+  private readonly rateLimitMap = new Map<string, number[]>();
+  private readonly MAX_MESSAGES_PER_WINDOW = 10;
+  private readonly RATE_LIMIT_WINDOW_MS = 5000; // 10 messages per 5 seconds
+
+  private readonly MAX_MESSAGE_LENGTH = 5000;
+  private readonly VALID_MESSAGE_TYPES = Object.values(EMessageType);
+
   constructor(
     private jwtService: JwtService,
     private configService: ConfigService,
     @Inject(CHAT_SERVICE.NAME) private chatServiceClient: ClientProxy,
   ) {}
 
+  /** Returns true if this userId has exceeded the rate limit */
+  private isRateLimited(userId: string): boolean {
+    const now = Date.now();
+    const timestamps = (this.rateLimitMap.get(userId) || []).filter(
+      (ts) => now - ts < this.RATE_LIMIT_WINDOW_MS,
+    );
+    if (timestamps.length >= this.MAX_MESSAGES_PER_WINDOW) return true;
+    timestamps.push(now);
+    this.rateLimitMap.set(userId, timestamps);
+    return false;
+  }
+
+  /** Extracts JWT from handshake (auth object → Bearer header → cookie) */
+  private extractToken(client: Socket): string | null {
+    const auth = client.handshake.auth as Record<string, string> | undefined;
+    if (auth?.token) return auth.token;
+
+    const authHeader = client.handshake.headers?.authorization;
+    if (authHeader?.startsWith('Bearer ')) return authHeader.slice(7);
+
+    const cookieHeader = (client.handshake.headers?.cookie as string) || '';
+    return cookieHeader.match(/auth-token=([^;]+)/)?.[1] ?? null;
+  }
+
   async handleConnection(client: Socket) {
     this.logger.log(`[WS] New connection attempt: socketId=${client.id}`);
     try {
-      const cookieHeader = (client.handshake.headers?.cookie as string) || '';
-      const cookieToken = cookieHeader.match(/auth-token=([^;]+)/)?.[1];
-
-      const token =
-        (client.handshake.auth as any)?.token ||
-        client.handshake.headers?.authorization?.split(' ')[1] ||
-        cookieToken;
+      const token = this.extractToken(client);
 
       if (!token) {
-        this.logger.error('[WS] No token provided — disconnecting client');
-        throw new Error('No token provided');
+        this.logger.warn('[WS] No token provided — disconnecting client');
+        client.emit('error', { message: 'Authentication required' });
+        client.disconnect(true);
+        return;
       }
 
-      const payload: IPayload = await this.jwtService.verifyToken(token);
+      let payload: IPayload;
+      try {
+        payload = await this.jwtService.verifyToken(token);
+      } catch {
+        this.logger.warn(`[WS] Invalid token — disconnecting ${client.id}`);
+        client.emit('error', { message: 'Invalid or expired token' });
+        client.disconnect(true);
+        return;
+      }
+
       client.data.userId = payload.id;
 
       // Join user to their personal room (allows targeting all their tabs)
       client.join(payload.id);
 
       // Notify user is online across all tabs
-      this.server.emit('userStatus', {
-        userId: payload.id,
-        status: 'online',
-      });
+      this.server.emit('userStatus', { userId: payload.id, status: 'online' });
 
       this.logger.log(
         `[WS] ✅ User connected: userId=${payload.id}, socketId=${client.id}`,
       );
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      this.logger.error(`[WS] ❌ Authentication failed: ${errorMessage}`);
-      client.emit('error', { message: 'Authentication failed' });
-      client.disconnect();
+      this.logger.error(`[WS] ❌ Connection handler error: ${errorMessage}`);
+      client.disconnect(true);
     }
   }
 
@@ -93,12 +139,37 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       `[WS] 📨 sendMessage received from userId=${client.data.userId}, receiverId=${payload?.receiverId}, content.length=${payload?.content?.length}`,
     );
     try {
-      // Validate payload
-      if (!payload.receiverId || !payload.content?.trim()) {
-        this.logger.warn(
-          '[WS] Invalid payload — missing receiverId or content',
-        );
-        client.emit('error', { message: 'Invalid message payload' });
+      // Ensure the socket is authenticated
+      if (!client.data.userId) {
+        client.emit('error', { message: 'Unauthorized' });
+        return;
+      }
+
+      // Rate limit check
+      if (this.isRateLimited(client.data.userId)) {
+        client.emit('error', { message: 'Too many messages — slow down' });
+        return;
+      }
+
+      // Validate receiverId
+      if (!payload?.receiverId || typeof payload.receiverId !== 'string') {
+        client.emit('error', { message: 'Invalid message payload: missing receiverId' });
+        return;
+      }
+
+      // Validate content length (1–5000 chars)
+      const trimmedContent = payload?.content?.trim() ?? '';
+      if (!trimmedContent || trimmedContent.length > this.MAX_MESSAGE_LENGTH) {
+        client.emit('error', {
+          message: `Message must be 1–${this.MAX_MESSAGE_LENGTH} characters`,
+        });
+        return;
+      }
+
+      // Validate message type
+      const messageType = payload.type ?? 'text';
+      if (!this.VALID_MESSAGE_TYPES.includes(messageType as any)) {
+        client.emit('error', { message: 'Invalid message type' });
         return;
       }
 
@@ -119,8 +190,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const messagePayload = {
         senderId: usersData.sender.id,
         receiverId: usersData.receiver.id,
-        content: payload.content.trim(),
-        type: payload.type || 'text',
+        content: trimmedContent,
+        type: messageType,
         timestamp: new Date(),
       };
 
@@ -189,8 +260,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.chatServiceClient.send('getChatHistory', {
           userId1,
           userId2: payload.userId2,
-          limit: payload.limit || 100,
-          offset: payload.offset || 0,
+          limit: Math.min(Math.max(1, payload.limit || 50), 100),
+          offset: Math.min(Math.max(0, payload.offset || 0), 10_000),
         }),
       );
       return history;
@@ -221,12 +292,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     payload: { messageId: string; senderId?: string } | string,
   ) {
     try {
+      // Ensure the socket is authenticated
+      if (!client.data.userId) {
+        client.emit('error', { message: 'Unauthorized' });
+        return;
+      }
+
       const messageId =
         typeof payload === 'string' ? payload : payload?.messageId;
       const senderId =
         typeof payload === 'object' ? payload?.senderId : undefined;
 
-      if (!messageId) {
+      if (!messageId || typeof messageId !== 'string') {
         client.emit('error', { message: 'Message ID required' });
         return;
       }
@@ -263,6 +340,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client: Socket,
     data: { receiverId: string; isTyping: boolean },
   ) {
+    if (!data?.receiverId || typeof data.isTyping !== 'boolean') {
+      client.emit('error', { message: 'Invalid typing payload' });
+      return;
+    }
     try {
       // Broadcast to all of recipient's tabs
       this.server.to(data.receiverId).emit('userTyping', {
@@ -273,6 +354,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Typing indicator error: ${errorMessage}`);
+      client.emit('error', { message: 'Failed to send typing indicator' });
     }
   }
 

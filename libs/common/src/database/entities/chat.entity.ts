@@ -4,7 +4,9 @@ import {
   Entity,
   ManyToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
+import { EMessageType } from '../enums/message-type.enum';
 import { JobMatching } from './job-matching.entity';
 import { User } from './user.entity';
 
@@ -33,14 +35,17 @@ export class Chat {
 
   @Column({
     type: 'enum',
-    enum: ['text', 'image', 'document'],
-    default: 'text',
+    enum: EMessageType,
+    default: EMessageType.TEXT,
   })
-  messageType: string;
+  messageType: EMessageType;
 
   @Column({ type: 'jsonb', default: {} })
   reactions: Record<string, string>;
 
   @CreateDateColumn()
   sentAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

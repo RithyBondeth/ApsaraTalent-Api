@@ -251,7 +251,7 @@ export class RegisterService {
     }
   }
 
-  async employeeRegitser(employeeRegisterDTO: EmployeeRegisterDTO): Promise<{
+  async employeeRegister(employeeRegisterDTO: EmployeeRegisterDTO): Promise<{
     message: string;
     accessToken: string;
     refreshToken: string;

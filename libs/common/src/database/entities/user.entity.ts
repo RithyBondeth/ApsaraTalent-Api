@@ -1,6 +1,7 @@
 import * as bcrypt from 'bcrypt';
 import {
     BeforeInsert,
+    BeforeUpdate,
     Column,
     CreateDateColumn,
     Entity,
@@ -37,6 +38,14 @@ export class User {
   async hashPassword() {
     if (this.password)
       this.password = await bcrypt.hash(this.password, SALT_ROUNDS);
+  }
+
+  @BeforeUpdate()
+  async hashPasswordOnUpdate() {
+    // Only hash if the password was changed (i.e. it is not already a bcrypt hash)
+    if (this.password && !this.password.startsWith('$2b$')) {
+      this.password = await bcrypt.hash(this.password, SALT_ROUNDS);
+    }
   }
 
   @Column({ nullable: true })

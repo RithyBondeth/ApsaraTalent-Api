@@ -17,15 +17,17 @@ async function bootstrap() {
   app.use(cookieParser());
 
   //Enable Express Session
+  const isProduction = process.env.NODE_ENV === 'production';
   app.use(
     session({
       secret: configService.get<string>('session.secret'),
       resave: false,
-      saveUninitialized: true,
+      saveUninitialized: false, // Don't create session until something is stored
       cookie: {
         httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
+        secure: isProduction, // HTTPS-only in production
+        sameSite: 'strict',   // Stricter CSRF protection
+        maxAge: 1000 * 60 * 60 * 24, // 24 hours
       },
     }),
   );

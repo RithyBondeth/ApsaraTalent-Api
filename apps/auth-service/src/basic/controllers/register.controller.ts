@@ -32,6 +32,6 @@ export class RegisterController implements IBasicAuthRegisterController {
     refreshToken: string;
     user: UserResponseDTO;
   }> {
-    return this.registerService.employeeRegitser(registerEmployeeDto);
+    return this.registerService.employeeRegister(registerEmployeeDto);
   }
 }

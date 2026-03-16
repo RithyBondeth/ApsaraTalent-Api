@@ -1,5 +1,6 @@
 // apps/chat-service/src/chat.service.ts
 import { Chat } from '@app/common/database/entities/chat.entity';
+import { EMessageType } from '@app/common/database/enums/message-type.enum';
 import {
   IChatMessage,
   TChatContent,
@@ -109,7 +110,7 @@ export class ChatServiceService {
         sender: { id: senderUserId },
         receiver: { id: receiverUserId },
         content: partnerProfile.preview,
-        messageType: 'text',
+        messageType: EMessageType.TEXT,
       });
 
       const saved = await this.chatRepository.save(message);
@@ -143,7 +144,7 @@ export class ChatServiceService {
         sender: { id: senderUserId },
         receiver: { id: receiverUserId },
         content: data.content,
-        messageType: data.type || 'text',
+        messageType: (data.type as EMessageType) || EMessageType.TEXT,
       });
 
       const savedMessage = await this.chatRepository.save(message);
@@ -245,7 +246,10 @@ export class ChatServiceService {
     };
   }
 
-  async getChatHistory(u1: string, u2: string, limit = 100, offset = 0) {
+  async getChatHistory(u1: string, u2: string, limit = 50, offset = 0) {
+    // Cap limits to prevent abuse: max 100 messages per page, max 10,000 offset
+    limit = Math.min(Math.max(1, limit), 100);
+    offset = Math.min(Math.max(0, offset), 10_000);
     const userId1 = await this.resolveUserId(u1);
     const userId2 = await this.resolveUserId(u2);
 

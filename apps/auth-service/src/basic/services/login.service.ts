@@ -35,11 +35,14 @@ export class LoginService {
           : { phone: loginDTO.identifier },
       });
 
-      if (!user)
-        throw new RpcException({
-          message: `There's no user with this ${isEmail ? 'email address' : 'phone number'}`,
-          statusCode: 401,
-        });
+      // Use a single generic error for both missing user and wrong password
+      // to prevent user enumeration attacks
+      const invalidCredentialsError = new RpcException({
+        message: 'Invalid credentials',
+        statusCode: 401,
+      });
+
+      if (!user) throw invalidCredentialsError;
 
       //Compare password
       const validPassword: boolean = await bcrypt.compare(
@@ -47,11 +50,7 @@ export class LoginService {
         user.password,
       );
 
-      if (!validPassword)
-        throw new RpcException({
-          message: 'Incorrect password',
-          statusCode: 401,
-        });
+      if (!validPassword) throw invalidCredentialsError;
 
       //Check email verification
       if (isEmail && !user.isEmailVerified)
@@ -78,9 +77,8 @@ export class LoginService {
       await this.userRepository.save(user);
 
       // Clear Cache in USER SERVICE
-      console.log(
-        '[AUTH] sending CLEAR_USER_CACHE from EMAIL_PASSWORD_LOGIN',
-        user.id,
+      this.logger.info(
+        `[AUTH] Clearing user cache after login for userId=${user.id}`,
       );
       await firstValueFrom(
         this.userClient.send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, {
