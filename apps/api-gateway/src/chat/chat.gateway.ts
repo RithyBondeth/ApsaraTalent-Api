@@ -53,19 +53,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly VALID_MESSAGE_TYPES = Object.values(EMessageType);
 
   /**
-   * In-memory set of currently connected user IDs.
+   * In-memory map of userId → Set of socket IDs.
    *
-   * Why we need this:
-   *   When client A connects, we broadcast 'userStatus online' for A.
-   *   But client B (who was already online) will never re-emit their status
-   *   just because A joined.  So A has no way to know B is online unless
-   *   we keep a server-side record and let clients query it.
+   * Why a Map of Sets (not just a Set<userId>):
+   *   One user may open multiple browser tabs — each tab creates a separate
+   *   socket.  We must only mark the user offline when ALL their sockets
+   *   disconnect.  Tracking per-socket lets us do that accurately.
    *
-   * We use a Set<string> (userId) rather than a Map of socket IDs because
-   * one user may have multiple open tabs — they are "online" as long as ANY
-   * socket with their userId is connected.
+   * Why not rely on socket.io room size:
+   *   Socket.IO removes the socket FROM the room BEFORE calling handleDisconnect,
+   *   so this.server.sockets.adapter.rooms.get(userId) already returns undefined
+   *   (or size 0) by the time we check — causing a false "offline" broadcast even
+   *   when other tabs are still connected.  Managing our own Set avoids that race.
    */
-  private readonly connectedUsers = new Set<string>();
+  private readonly connectedUsers = new Map<string, Set<string>>();
 
   constructor(
     private jwtService: JwtService,
@@ -124,8 +125,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       // Join user to their personal room (allows targeting all their tabs)
       client.join(payload.id);
 
-      // Track in the in-memory set so late-joining clients can query online state
-      this.connectedUsers.add(payload.id);
+      // Track this specific socket under the userId.
+      // If the user already has other tabs open, we add to the existing Set;
+      // otherwise we create a new Set.  Either way, the user is now "online".
+      if (!this.connectedUsers.has(payload.id)) {
+        this.connectedUsers.set(payload.id, new Set());
+      }
+      this.connectedUsers.get(payload.id)!.add(client.id);
 
       // Broadcast online status to ALL connected clients so any open chat window
       // can immediately show the green dot for this user.
@@ -143,13 +149,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   async handleDisconnect(client: Socket) {
     const userId = client.data.userId;
-    if (userId) {
-      // Only mark offline when ALL sockets for this user have disconnected.
-      // Check by counting remaining sockets still in the user's personal room.
-      const room = this.server.sockets.adapter.rooms.get(userId);
-      const remainingSockets = room ? room.size : 0;
+    if (!userId) return;
 
-      if (remainingSockets === 0) {
+    // Remove this specific socket from the user's socket set.
+    // NOTE: We intentionally do NOT use socket.io room sizes here because
+    //       Socket.IO removes the socket from the room BEFORE calling handleDisconnect,
+    //       making rooms.get(userId).size unreliable (always appears as 0 / undefined).
+    const socketSet = this.connectedUsers.get(userId);
+    if (socketSet) {
+      socketSet.delete(client.id);
+
+      if (socketSet.size === 0) {
         // Last tab/device disconnected — user is truly offline
         this.connectedUsers.delete(userId);
         this.server.emit('userStatus', { userId, status: 'offline' });
@@ -157,9 +167,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           `[WS] User fully offline: ${userId} (socket ${client.id})`,
         );
       } else {
-        // Other tabs still open — user remains online, no broadcast needed
+        // Other tabs still connected — user remains online, no broadcast needed
         this.logger.log(
-          `[WS] Socket closed but user still online: ${userId} (${remainingSockets} remaining)`,
+          `[WS] Socket closed but user still online: ${userId} (${socketSet.size} remaining sockets)`,
         );
       }
     }
@@ -185,10 +195,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ): Record<string, boolean> {
     if (!Array.isArray(userIds)) return {};
 
-    // Build a userId → boolean map from the persistent connectedUsers set
+    // Build a userId → boolean map from the persistent connectedUsers map.
+    // A user is online if they have at least one socket in their Set.
     const result: Record<string, boolean> = {};
     for (const id of userIds) {
-      result[id] = this.connectedUsers.has(id);
+      const sockets = this.connectedUsers.get(id);
+      result[id] = sockets != null && sockets.size > 0;
     }
 
     this.logger.log(
