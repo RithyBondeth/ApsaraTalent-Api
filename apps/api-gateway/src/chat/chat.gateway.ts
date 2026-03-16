@@ -52,6 +52,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly MAX_MESSAGE_LENGTH = 5000;
   private readonly VALID_MESSAGE_TYPES = Object.values(EMessageType);
 
+  /**
+   * In-memory set of currently connected user IDs.
+   *
+   * Why we need this:
+   *   When client A connects, we broadcast 'userStatus online' for A.
+   *   But client B (who was already online) will never re-emit their status
+   *   just because A joined.  So A has no way to know B is online unless
+   *   we keep a server-side record and let clients query it.
+   *
+   * We use a Set<string> (userId) rather than a Map of socket IDs because
+   * one user may have multiple open tabs — they are "online" as long as ANY
+   * socket with their userId is connected.
+   */
+  private readonly connectedUsers = new Set<string>();
+
   constructor(
     private jwtService: JwtService,
     private configService: ConfigService,
@@ -109,6 +124,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       // Join user to their personal room (allows targeting all their tabs)
       client.join(payload.id);
 
+      // Track in the in-memory set so late-joining clients can query online state
+      this.connectedUsers.add(payload.id);
+
       // Broadcast online status to ALL connected clients so any open chat window
       // can immediately show the green dot for this user.
       this.server.emit('userStatus', { userId: payload.id, status: 'online' });
@@ -126,13 +144,59 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleDisconnect(client: Socket) {
     const userId = client.data.userId;
     if (userId) {
-      // Broadcast offline status so chat headers and sidebars update in real time
-      this.server.emit('userStatus', {
-        userId,
-        status: 'offline',
-      });
-      this.logger.log(`User disconnected: ${userId} (socket ${client.id})`);
+      // Only mark offline when ALL sockets for this user have disconnected.
+      // Check by counting remaining sockets still in the user's personal room.
+      const room = this.server.sockets.adapter.rooms.get(userId);
+      const remainingSockets = room ? room.size : 0;
+
+      if (remainingSockets === 0) {
+        // Last tab/device disconnected — user is truly offline
+        this.connectedUsers.delete(userId);
+        this.server.emit('userStatus', { userId, status: 'offline' });
+        this.logger.log(
+          `[WS] User fully offline: ${userId} (socket ${client.id})`,
+        );
+      } else {
+        // Other tabs still open — user remains online, no broadcast needed
+        this.logger.log(
+          `[WS] Socket closed but user still online: ${userId} (${remainingSockets} remaining)`,
+        );
+      }
     }
+  }
+
+  /**
+   * Returns the online status for a list of user IDs.
+   *
+   * Flow:
+   *  1. Client connects and calls getRecentChats() to build the sidebar.
+   *  2. Once the sidebar is rendered, the client emits 'getOnlineUsers'
+   *     with the list of partner IDs from the sidebar.
+   *  3. The server looks up each ID in connectedUsers and returns a map.
+   *  4. The client merges the map into its onlineUsers store state.
+   *
+   * This solves the "already online before I joined" problem: the server
+   * always has the ground truth, so a late-joining client can catch up.
+   */
+  @SubscribeMessage('getOnlineUsers')
+  handleGetOnlineUsers(
+    client: Socket,
+    userIds: string[],
+  ): Record<string, boolean> {
+    if (!Array.isArray(userIds)) return {};
+
+    // Build a userId → boolean map from the persistent connectedUsers set
+    const result: Record<string, boolean> = {};
+    for (const id of userIds) {
+      result[id] = this.connectedUsers.has(id);
+    }
+
+    this.logger.log(
+      `[WS] getOnlineUsers for ${userIds.length} IDs: ` +
+        `${Object.values(result).filter(Boolean).length} online`,
+    );
+
+    return result;
   }
 
   @SubscribeMessage('sendMessage')
