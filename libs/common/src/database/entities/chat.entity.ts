@@ -30,8 +30,9 @@ export class Chat {
   @Column({ default: false })
   isRead: boolean;
 
-  @Column({ nullable: true })
-  attachment: string;
+  /** URL of uploaded file or image. Null for plain text messages. */
+  @Column({ nullable: true, type: 'text' })
+  attachment: string | null;
 
   @Column({
     type: 'enum',
@@ -52,6 +53,15 @@ export class Chat {
    */
   @Column({ default: false })
   isDeleted: boolean;
+
+  /**
+   * Edit flag.
+   * Set to true when the sender edits their message content.
+   * Shown as a small "(edited)" label in the bubble so both parties know
+   * the original wording may have changed.
+   */
+  @Column({ default: false })
+  isEdited: boolean;
 
   /**
    * Reply-to reference (UUID of parent message or null).

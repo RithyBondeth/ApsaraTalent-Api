@@ -117,6 +117,26 @@ export class ChatServiceController {
    * Only the original sender can delete; the row stays in the DB
    * with isDeleted=true so reply references and read receipts are preserved.
    */
+  /**
+   * Edit a message's content.
+   * Only the original sender may edit; deleted messages cannot be edited.
+   * Sets isEdited=true so the UI shows "(edited)" label.
+   */
+  @MessagePattern('editMessage')
+  async editMessage(
+    @Payload() data: { messageId: string; requesterId: string; newContent: string },
+  ) {
+    this.logger.log(
+      `[CHAT] editMessage: messageId=${data.messageId}, requester=${data.requesterId}`,
+    );
+    return this.chatService.editMessage(data);
+  }
+
+  /**
+   * Soft-delete a message.
+   * Only the original sender can delete; the row stays in the DB
+   * with isDeleted=true so reply references and read receipts are preserved.
+   */
   @MessagePattern('deleteMessage')
   async deleteMessage(
     @Payload() data: { messageId: string; requesterId: string },

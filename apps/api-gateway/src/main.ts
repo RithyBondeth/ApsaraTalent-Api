@@ -1,13 +1,19 @@
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { IoAdapter } from '@nestjs/platform-socket.io';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
 import { Logger } from 'nestjs-pino';
+import { join } from 'path';
 import { ApiGatewayModule } from './api-gateway.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(ApiGatewayModule);
+  const app = await NestFactory.create<NestExpressApplication>(ApiGatewayModule);
+
+  // Serve uploaded chat attachments as static files at /uploads/**
+  // Files are written by the POST /chat/upload endpoint and read back by the frontend.
+  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
   const configService = app.get<ConfigService>(ConfigService);
 
   // Enable socket.io WebSocket adapter — required for ChatGateway to work
