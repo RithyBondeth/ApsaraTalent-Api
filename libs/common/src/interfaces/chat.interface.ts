@@ -1,13 +1,17 @@
 export interface TChatPayload {
   receiverId: string;
   content: string;
-  type?: 'text' | 'image' | 'document';
+  type?: 'text' | 'image' | 'document' | 'audio' | 'call';
   /** UUID of the message being replied to (optional) */
   replyToId?: string | null;
   /** URL of an uploaded file/image attachment (optional) */
   attachment?: string | null;
   /** Original filename of the attachment (optional, for display purposes) */
   attachmentFilename?: string | null;
+  /** Duration in seconds for audio attachments (optional) */
+  attachmentDuration?: number | null;
+  /** Waveform amplitude data for audio attachments (optional) */
+  attachmentAmplitude?: number[] | null;
 }
 
 export interface TChatContent extends TChatPayload {
@@ -37,6 +41,8 @@ export interface IChatMessage {
   attachment?: string | null;
   attachmentType?: string | null;
   attachmentFilename?: string | null;
+  attachmentDuration?: number | null;
+  attachmentAmplitude?: number[] | null;
   sender?: {
     id: string;
     name: string;

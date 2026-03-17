@@ -34,6 +34,14 @@ export class Chat {
   @Column({ nullable: true, type: 'text' })
   attachment: string | null;
 
+  /** Duration in seconds for audio attachments. */
+  @Column({ nullable: true, type: 'int' })
+  attachmentDuration: number | null;
+
+  /** Waveform amplitude array for audio attachments. */
+  @Column({ nullable: true, type: 'jsonb' })
+  attachmentAmplitude: number[] | null;
+
   @Column({
     type: 'enum',
     enum: EMessageType,

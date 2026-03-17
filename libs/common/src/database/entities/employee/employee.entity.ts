@@ -1,13 +1,13 @@
 import {
-    Column,
-    CreateDateColumn,
-    Entity,
-    JoinColumn,
-    JoinTable,
-    ManyToMany,
-    OneToMany,
-    OneToOne,
-    PrimaryGeneratedColumn
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  JoinTable,
+  ManyToMany,
+  OneToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { EGender } from '../../enums/gender.enum';
 import { CareerScope } from '../career-scope.entity';
@@ -32,6 +32,9 @@ export class Employee {
 
   @Column({ nullable: true })
   lastname: string;
+
+  @Column({ type: 'date', nullable: true })
+  dob: Date;
 
   @Column({ nullable: true })
   username: string;

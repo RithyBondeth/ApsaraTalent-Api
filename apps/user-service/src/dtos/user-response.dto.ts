@@ -2,16 +2,16 @@ import { EGender } from '@app/common/database/enums/gender.enum';
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
 import { Exclude, Expose, Type } from 'class-transformer';
 import {
-    IsArray,
-    IsBoolean,
-    IsDate,
-    IsEmail,
-    IsEnum,
-    IsNumber,
-    IsOptional,
-    IsPositive,
-    IsString,
-    ValidateNested
+  IsArray,
+  IsBoolean,
+  IsDate,
+  IsEmail,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsPositive,
+  IsString,
+  ValidateNested,
 } from 'class-validator';
 import { formatDateToDDMMYYYY } from 'utils/functions/date-formatter';
 
@@ -26,6 +26,11 @@ export class EmployeeResponseDTO {
 
   @IsString()
   lastname: string;
+
+  @IsDate()
+  @Type(() => Date)
+  @IsOptional()
+  dob?: Date;
 
   @IsString()
   username: string;

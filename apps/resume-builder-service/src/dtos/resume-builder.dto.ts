@@ -1,7 +1,13 @@
 import { Type } from 'class-transformer';
 import {
-    IsArray, IsEmail, IsIn,
-    IsObject, IsOptional, IsString, ValidateNested
+  IsArray,
+  IsEmail,
+  IsIn,
+  IsNumber,
+  IsObject,
+  IsOptional,
+  IsString,
+  ValidateNested,
 } from 'class-validator';
 
 export class PersonalInfoDto {
@@ -18,6 +24,10 @@ export class PersonalInfoDto {
   @IsString()
   @IsOptional()
   location?: string;
+
+  @IsNumber()
+  @IsOptional()
+  age?: number;
 
   @IsString()
   @IsOptional()

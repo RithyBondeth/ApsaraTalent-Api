@@ -24,13 +24,18 @@ import { v4 as uuidv4 } from 'uuid';
 // Files are saved to storage/chat/<date>/<uuid><ext> on the server.
 // The frontend uses the returned URL to attach the file to a message payload.
 //
-// Allowed types: images (jpg, png, gif, webp) + documents (pdf, doc, docx, txt).
+// Allowed types: images (jpg, png, gif, webp) + documents (pdf, doc, docx, txt) + audio (webm, ogg, mp4, mpeg, wav).
 // Max size: 10 MB.
 const ALLOWED_MIME_TYPES = [
   'image/jpeg',
   'image/png',
   'image/gif',
   'image/webp',
+  'audio/webm',
+  'audio/ogg',
+  'audio/mp4',
+  'audio/mpeg',
+  'audio/wav',
   'application/pdf',
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -76,7 +81,7 @@ export class ChatController {
    *  3. Frontend includes that URL in the socket 'sendMessage' payload as `attachment`.
    *  4. The socket handler stores the URL in the Chat.attachment column.
    *
-   * Returns: { url: string, type: 'image' | 'document', filename: string }
+   * Returns: { url: string, type: 'image' | 'document' | 'audio', filename: string }
    *
    * Security:
    *  - Requires AuthGuard (JWT) — only logged-in users can upload.
@@ -90,11 +95,12 @@ export class ChatController {
     FileInterceptor('file', {
       limits: { fileSize: MAX_FILE_SIZE_BYTES },
       fileFilter: (_req, file, callback) => {
+        const mime = (file.mimetype || '').split(';')[0].trim();
         // Reject disallowed MIME types immediately
-        if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+        if (!ALLOWED_MIME_TYPES.includes(mime)) {
           return callback(
             new BadRequestException(
-              `File type not allowed. Allowed: images (jpg/png/gif/webp), PDF, Word, TXT`,
+              `File type not allowed. Allowed: images (jpg/png/gif/webp), audio (webm/ogg/mp4/mpeg/wav), PDF, Word, TXT`,
             ),
             false,
           );
@@ -130,9 +136,14 @@ export class ChatController {
     const today = new Date().toISOString().slice(0, 10);
     const publicUrl = `/storage/chat/${today}/${file.filename}`;
 
-    // Determine whether this is an image or a document for the frontend to render correctly
+    // Determine whether this is an image, audio, or document for the frontend to render correctly
     const isImage = file.mimetype.startsWith('image/');
-    const type: 'image' | 'document' = isImage ? 'image' : 'document';
+    const isAudio = file.mimetype.startsWith('audio/');
+    const type: 'image' | 'document' | 'audio' = isImage
+      ? 'image'
+      : isAudio
+        ? 'audio'
+        : 'document';
 
     return {
       url: publicUrl,

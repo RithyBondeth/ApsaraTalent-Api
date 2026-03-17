@@ -14,6 +14,7 @@ import { Experience } from '../entities/employee/experience.entity';
 import { EmployeeFavoriteCompany } from '../entities/employee/favorite-company.entity';
 import { Skill } from '../entities/employee/skill.entity';
 import { JobMatching } from '../entities/job-matching.entity';
+import { Notification } from '../entities/notification.entity';
 import { PaymentTransaction } from '../entities/payment/payment-transaction.entity';
 import { Payment } from '../entities/payment/payment.entity';
 import { ResumeTemplate } from '../entities/resume-template.entity';
@@ -33,6 +34,7 @@ export const databaseConfig = async (
     Social,
     Chat,
     JobMatching,
+    Notification,
     CareerScope,
     Education,
     Experience,

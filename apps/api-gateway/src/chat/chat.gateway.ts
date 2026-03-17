@@ -1,10 +1,12 @@
 import { EMessageType } from '@app/common/database/enums/message-type.enum';
+import { User } from '@app/common/database/entities/user.entity';
 import { TChatPayload } from '@app/common/interfaces/chat.interface';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
 import { Inject, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
+import { InjectRepository } from '@nestjs/typeorm';
 import {
   OnGatewayConnection,
   OnGatewayDisconnect,
@@ -14,6 +16,7 @@ import {
 } from '@nestjs/websockets';
 import { firstValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
+import { Repository } from 'typeorm';
 import { CHAT_SERVICE } from '../../../../utils/constants/chat-service.constant';
 
 @WebSocketGateway({
@@ -72,7 +75,61 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private jwtService: JwtService,
     private configService: ConfigService,
     @Inject(CHAT_SERVICE.NAME) private chatServiceClient: ClientProxy,
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
   ) {}
+
+  private async getCallerProfile(userId: string) {
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        relations: ['employee', 'company'],
+      });
+      if (!user) return { name: 'Unknown', avatar: '/avatars/default.png' };
+      const emp = user.employee;
+      const co = user.company;
+      const name = emp
+        ? [emp.firstname, emp.lastname].filter(Boolean).join(' ') ||
+          emp.username ||
+          user.email ||
+          'Unknown'
+        : co?.name || user.email || 'Unknown';
+      const avatar = emp?.avatar || co?.avatar || '/avatars/default.png';
+      return { name, avatar };
+    } catch {
+      return { name: 'Unknown', avatar: '/avatars/default.png' };
+    }
+  }
+
+  private async emitCallLogMessage(params: {
+    senderId: string;
+    receiverId: string;
+    content: string;
+  }) {
+    try {
+      const savedMessage = await firstValueFrom(
+        this.chatServiceClient.send('createMessage', {
+          senderId: params.senderId,
+          receiverId: params.receiverId,
+          content: params.content,
+          type: 'call',
+          timestamp: new Date(),
+        }),
+      );
+
+      this.server.to(params.receiverId).emit('newMessage', {
+        ...savedMessage,
+        isMe: false,
+      });
+      this.server.to(params.senderId).emit('newMessage', {
+        ...savedMessage,
+        isMe: true,
+      });
+    } catch (error: any) {
+      this.logger.error(
+        `[WS] Failed to log call message: ${error?.message || 'Unknown'}`,
+      );
+    }
+  }
 
   /** Returns true if this userId has exceeded the rate limit */
   private isRateLimited(userId: string): boolean {
@@ -287,6 +344,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         // We don't store this in the DB (the URL is authoritative), but we include
         // it in the broadcast so the in-memory newMessage handler has it available.
         attachmentFilename: payload.attachmentFilename ?? null,
+        // Audio-only metadata for waveform display on reload.
+        attachmentDuration: payload.attachmentDuration ?? null,
+        attachmentAmplitude: payload.attachmentAmplitude ?? null,
       };
 
       // Save message — capture the returned saved message which includes the DB ID
@@ -620,5 +680,137 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.logger.error(`Delete message error: ${errorMessage}`);
       client.emit('error', { message: errorMessage });
     }
+  }
+
+  // ── Voice call signaling ────────────────────────────────────────────────
+
+  @SubscribeMessage('callOffer')
+  async handleCallOffer(
+    client: Socket,
+    data: { callId: string; receiverId: string; offer: RTCSessionDescriptionInit },
+  ) {
+    if (!client.data.userId) {
+      client.emit('error', { message: 'Unauthorized' });
+      return;
+    }
+    if (!data?.callId || !data?.receiverId || !data?.offer) {
+      client.emit('error', { message: 'Invalid call offer payload' });
+      return;
+    }
+
+    const callerId = client.data.userId as string;
+    const profile = await this.getCallerProfile(callerId);
+
+    this.server.to(data.receiverId).emit('incomingCall', {
+      callId: data.callId,
+      callerId,
+      callerName: profile.name,
+      callerAvatar: profile.avatar,
+      offer: data.offer,
+    });
+
+    return { success: true };
+  }
+
+  @SubscribeMessage('callAnswer')
+  async handleCallAnswer(
+    client: Socket,
+    data: { callId: string; callerId: string; answer: RTCSessionDescriptionInit },
+  ) {
+    if (!client.data.userId) {
+      client.emit('error', { message: 'Unauthorized' });
+      return;
+    }
+    if (!data?.callId || !data?.callerId || !data?.answer) {
+      client.emit('error', { message: 'Invalid call answer payload' });
+      return;
+    }
+
+    this.server.to(data.callerId).emit('callAnswered', {
+      callId: data.callId,
+      answer: data.answer,
+    });
+
+    return { success: true };
+  }
+
+  @SubscribeMessage('iceCandidate')
+  async handleIceCandidate(
+    client: Socket,
+    data: { callId: string; targetUserId: string; candidate: RTCIceCandidateInit },
+  ) {
+    if (!client.data.userId) {
+      client.emit('error', { message: 'Unauthorized' });
+      return;
+    }
+    if (!data?.callId || !data?.targetUserId || !data?.candidate) {
+      client.emit('error', { message: 'Invalid ICE candidate payload' });
+      return;
+    }
+
+    this.server.to(data.targetUserId).emit('remoteIceCandidate', {
+      callId: data.callId,
+      candidate: data.candidate,
+    });
+  }
+
+  @SubscribeMessage('callDecline')
+  async handleCallDecline(
+    client: Socket,
+    data: { callId: string; callerId: string },
+  ) {
+    if (!client.data.userId) {
+      client.emit('error', { message: 'Unauthorized' });
+      return;
+    }
+    if (!data?.callId || !data?.callerId) {
+      client.emit('error', { message: 'Invalid call decline payload' });
+      return;
+    }
+
+    this.server.to(data.callerId).emit('callDeclined', { callId: data.callId });
+
+    // Log a call message in chat history for both participants
+    await this.emitCallLogMessage({
+      senderId: client.data.userId,
+      receiverId: data.callerId,
+      content: 'Call declined',
+    });
+  }
+
+  @SubscribeMessage('callEnd')
+  async handleCallEnd(
+    client: Socket,
+    data: { callId: string; targetUserId: string; reason?: string },
+  ) {
+    if (!client.data.userId) {
+      client.emit('error', { message: 'Unauthorized' });
+      return;
+    }
+    if (!data?.callId || !data?.targetUserId) {
+      client.emit('error', { message: 'Invalid call end payload' });
+      return;
+    }
+
+    this.server.to(data.targetUserId).emit('callEnded', {
+      callId: data.callId,
+      reason: data.reason,
+    });
+
+    const reason = (data.reason || 'ended').toLowerCase();
+    const content =
+      reason === 'missed'
+        ? 'Missed call'
+        : reason === 'declined'
+          ? 'Call declined'
+          : reason === 'error'
+            ? 'Call failed'
+            : 'Call ended';
+
+    await this.emitCallLogMessage({
+      senderId: client.data.userId,
+      receiverId: data.targetUserId,
+      content,
+    });
   }
 }

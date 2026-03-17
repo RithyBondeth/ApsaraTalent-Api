@@ -128,6 +128,8 @@ export class ChatServiceService {
         messageType: (data.type as EMessageType) || EMessageType.TEXT,
         replyToId: data.replyToId ?? null,
         attachment: data.attachment ?? null,
+        attachmentDuration: data.attachmentDuration ?? null,
+        attachmentAmplitude: data.attachmentAmplitude ?? null,
       });
       const savedMessage = await this.chatRepository.save(message);
       const chat = await this.chatRepository.findOne({
@@ -165,7 +167,9 @@ export class ChatServiceService {
             ? 'image'
             : chat.messageType === 'document'
               ? 'document'
-              : undefined,
+              : chat.messageType === 'audio'
+                ? 'audio'
+                : undefined,
         // Use the client-provided original filename if available (preserves name like "report.pdf").
         // Fall back to extracting from the URL path for backwards compatibility.
         attachmentFilename:
@@ -173,6 +177,8 @@ export class ChatServiceService {
           (chat.attachment
             ? (chat.attachment.split('/').pop() ?? undefined)
             : undefined),
+        attachmentDuration: chat.attachmentDuration ?? null,
+        attachmentAmplitude: chat.attachmentAmplitude ?? null,
         sender: {
           id: chat.sender?.id || data.senderId,
           name: senderEmp
@@ -410,12 +416,16 @@ export class ChatServiceService {
             ? 'image'
             : msg.messageType === 'document'
               ? 'document'
-              : undefined,
+              : msg.messageType === 'audio'
+                ? 'audio'
+                : undefined,
         // Extract filename from the stored URL path as a best-effort label
         // (e.g. "/uploads/chat/2024-01-15/abc123.pdf" → "abc123.pdf")
         attachmentFilename: msg.attachment
           ? (msg.attachment.split('/').pop() ?? undefined)
           : undefined,
+        attachmentDuration: msg.attachmentDuration ?? null,
+        attachmentAmplitude: msg.attachmentAmplitude ?? null,
       };
     });
 

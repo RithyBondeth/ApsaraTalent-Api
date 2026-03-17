@@ -18,10 +18,10 @@ import { ConfigService } from '@nestjs/config';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
-    CompanyResponseDTO,
-    EmployeeResponseDTO,
-    JobPositionDTO,
-    UserResponseDTO
+  CompanyResponseDTO,
+  EmployeeResponseDTO,
+  JobPositionDTO,
+  UserResponseDTO,
 } from 'apps/user-service/src/dtos/user-response.dto';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
@@ -291,6 +291,7 @@ export class RegisterService {
       const newEmployee = this.employeeRepository.create({
         firstname: employeeRegisterDTO.firstname,
         lastname: employeeRegisterDTO.lastname,
+        dob: employeeRegisterDTO.dob,
         username: employeeRegisterDTO.username,
         gender: employeeRegisterDTO.gender,
         job: employeeRegisterDTO.job,

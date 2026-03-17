@@ -417,7 +417,7 @@ CONTENT RULES
    • If not provided → <div class="monogram">FIRST_INITIAL</div> (use template's monogram style)
 
 2. SECTIONS (render only if data exists):
-   • Header: full name, job title, email, phone, location, social links
+   • Header: full name, job title, email, phone, location, age (personalInfo.age — display as e.g. "29 years old"), social links
    • Professional Summary (field: "summary") — use template's summary style class
    • Work Experience (field: "experience") — show position, company, startDate–endDate, description, achievements as <ul>
    • Skills (field: "skills") — use template's skill display style
