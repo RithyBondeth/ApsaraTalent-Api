@@ -21,13 +21,16 @@ import { existsSync, mkdirSync } from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 
 // ── Upload config ────────────────────────────────────────────────────────────
-// Files are saved to /uploads/chat/<date>/<uuid><ext> on the server.
+// Files are saved to storage/chat/<date>/<uuid><ext> on the server.
 // The frontend uses the returned URL to attach the file to a message payload.
 //
 // Allowed types: images (jpg, png, gif, webp) + documents (pdf, doc, docx, txt).
 // Max size: 10 MB.
 const ALLOWED_MIME_TYPES = [
-  'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
   'application/pdf',
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -100,9 +103,9 @@ export class ChatController {
       },
       storage: diskStorage({
         destination: (_req, _file, callback) => {
-          // Store under /uploads/chat/<YYYY-MM-DD>/ so old files are easy to archive
+          // Store under storage/chat/<YYYY-MM-DD>/ so old files are easy to archive
           const today = new Date().toISOString().slice(0, 10);
-          const dir = join(process.cwd(), 'uploads', 'chat', today);
+          const dir = join(process.cwd(), 'storage', 'chat', today);
           // Create the directory tree if it doesn't exist yet
           if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
           callback(null, dir);
@@ -123,9 +126,9 @@ export class ChatController {
     }
 
     // Build a public URL path the frontend can use to display the file
-    // Format: /uploads/chat/<date>/<uuid>.<ext>
+    // Format: /storage/chat/<date>/<uuid>.<ext>
     const today = new Date().toISOString().slice(0, 10);
-    const publicUrl = `/uploads/chat/${today}/${file.filename}`;
+    const publicUrl = `/storage/chat/${today}/${file.filename}`;
 
     // Determine whether this is an image or a document for the frontend to render correctly
     const isImage = file.mimetype.startsWith('image/');

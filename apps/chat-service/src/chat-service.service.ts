@@ -166,9 +166,13 @@ export class ChatServiceService {
             : chat.messageType === 'document'
               ? 'document'
               : undefined,
-        attachmentFilename: chat.attachment
-          ? (chat.attachment.split('/').pop() ?? undefined)
-          : undefined,
+        // Use the client-provided original filename if available (preserves name like "report.pdf").
+        // Fall back to extracting from the URL path for backwards compatibility.
+        attachmentFilename:
+          data.attachmentFilename ||
+          (chat.attachment
+            ? (chat.attachment.split('/').pop() ?? undefined)
+            : undefined),
         sender: {
           id: chat.sender?.id || data.senderId,
           name: senderEmp

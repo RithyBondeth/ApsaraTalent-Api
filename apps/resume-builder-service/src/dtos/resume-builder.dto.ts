@@ -59,6 +59,18 @@ export class BuildResumeDTO {
   @Type(() => PersonalInfoDto)
   personalInfo: PersonalInfoDto;
 
+  @IsString()
+  @IsOptional()
+  summary?: string;
+
+  @IsString()
+  @IsOptional()
+  yearsOfExperience?: string;
+
+  @IsString()
+  @IsOptional()
+  availability?: string;
+
   @ValidateNested({ each: true })
   @Type(() => ExperienceDto)
   experience: ExperienceDto[];
@@ -70,6 +82,11 @@ export class BuildResumeDTO {
   @IsString()
   @IsOptional()
   education?: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  careerScopes?: string[];
 
   @IsString()
   @IsIn([

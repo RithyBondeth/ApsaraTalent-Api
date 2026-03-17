@@ -21,7 +21,7 @@ export class CreateResumeTemplateDTO {
 
   @IsNumber()
   @IsNotEmpty()
-  price: string;
+  price: number;
 
   @IsBoolean()
   @IsNotEmpty()

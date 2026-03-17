@@ -124,7 +124,12 @@ export class ChatServiceController {
    */
   @MessagePattern('editMessage')
   async editMessage(
-    @Payload() data: { messageId: string; requesterId: string; newContent: string },
+    @Payload()
+    data: {
+      messageId: string;
+      requesterId: string;
+      newContent: string;
+    },
   ) {
     this.logger.log(
       `[CHAT] editMessage: messageId=${data.messageId}, requester=${data.requesterId}`,

@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
+import { BuildResumeDTO } from '../../../../resume-builder-service/src/dtos/resume-builder.dto';
 import { RESUME_BUILDER_SERVICE } from 'utils/constants/resume-builder-service.constant';
 
 @Controller('resume')
@@ -23,7 +24,7 @@ export class ResumeBuilderController implements IResumeBuilderController {
 
   @Post('build-resume')
   @HttpCode(HttpStatus.CREATED)
-  async buildResume(@Body() buildResumeDTO: any): Promise<any> {
+  async buildResume(@Body() buildResumeDTO: BuildResumeDTO): Promise<any> {
     return firstValueFrom(
       this.resumeBuilderClient.send(
         RESUME_BUILDER_SERVICE.ACTIONS.BUILD_RESUME,

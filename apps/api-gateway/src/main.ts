@@ -11,9 +11,9 @@ import { ApiGatewayModule } from './api-gateway.module';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(ApiGatewayModule);
 
-  // Serve uploaded chat attachments as static files at /uploads/**
+  // Serve uploaded chat attachments as static files at /storage/**
   // Files are written by the POST /chat/upload endpoint and read back by the frontend.
-  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
+  app.useStaticAssets(join(process.cwd(), 'storage'), { prefix: '/storage' });
   const configService = app.get<ConfigService>(ConfigService);
 
   // Enable socket.io WebSocket adapter — required for ChatGateway to work

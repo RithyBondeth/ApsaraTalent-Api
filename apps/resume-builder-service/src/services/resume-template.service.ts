@@ -20,7 +20,7 @@ export class ResumeTemplateService {
   async findAllResumeTemplate(): Promise<any> {
     try {
       const templates = await this.resumeTemplateRepository.find();
-      if (!templates)
+      if (!templates || templates.length === 0)
         throw new RpcException({
           message: 'There are no templates available.',
           statusCode: 404,
@@ -28,6 +28,7 @@ export class ResumeTemplateService {
 
       return templates;
     } catch (error) {
+      if (error instanceof RpcException) throw error;
       // Handle error
       this.logger.error(
         (error as Error).message ||
@@ -55,6 +56,7 @@ export class ResumeTemplateService {
 
       return template;
     } catch (error) {
+      if (error instanceof RpcException) throw error;
       // Handle error
       this.logger.error(
         (error as Error).message ||
@@ -147,6 +149,7 @@ export class ResumeTemplateService {
 
       return templates;
     } catch (error) {
+      if (error instanceof RpcException) throw error;
       this.logger.error(
         (error as Error).message ||
           "An error occurred while searching the resume's templates.",

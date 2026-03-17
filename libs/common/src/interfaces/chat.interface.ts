@@ -6,6 +6,8 @@ export interface TChatPayload {
   replyToId?: string | null;
   /** URL of an uploaded file/image attachment (optional) */
   attachment?: string | null;
+  /** Original filename of the attachment (optional, for display purposes) */
+  attachmentFilename?: string | null;
 }
 
 export interface TChatContent extends TChatPayload {
@@ -33,6 +35,8 @@ export interface IChatMessage {
   replyToId?: string | null;
   /** URL of an uploaded file or image attachment */
   attachment?: string | null;
+  attachmentType?: string | null;
+  attachmentFilename?: string | null;
   sender?: {
     id: string;
     name: string;

@@ -72,9 +72,9 @@ export class Chat {
   @Column({ nullable: true, type: 'uuid' })
   replyToId: string | null;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   sentAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 }

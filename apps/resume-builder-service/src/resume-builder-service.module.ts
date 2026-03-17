@@ -7,6 +7,7 @@ import { ResumeBuilderController } from './controllers/resume-builder.controller
 import { ResumeTemplateController } from './controllers/resume-template.controller';
 import { ImageService } from './services/image.service';
 import { ResumeBuilderService } from './services/resume-builder.service';
+import { ResumeTemplateSeedService } from './services/resume-template-seed.service';
 import { ResumeTemplateService } from './services/resume-template.service';
 
 @Module({
@@ -18,6 +19,6 @@ import { ResumeTemplateService } from './services/resume-template.service';
     TypeOrmModule.forFeature([ResumeTemplate]),
   ],
   controllers: [ResumeBuilderController, ResumeTemplateController],
-  providers: [ResumeBuilderService, ImageService, ResumeTemplateService],
+  providers: [ResumeBuilderService, ImageService, ResumeTemplateService, ResumeTemplateSeedService],
 })
 export class ResumeBuilderServiceModule {}
