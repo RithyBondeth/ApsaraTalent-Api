@@ -361,22 +361,33 @@ body { font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text); ba
     };
 
     const templateInstructions: Record<string, string> = {
-      modern: 'Use .wrapper flex container. Left .sidebar (30%) + right .main (70%). Place avatar/monogram at top of sidebar. Use .skill-pill for skills. Use .summary-box for summary. Use .main-section-title for section headers. Use .exp-dates with float:right for date alignment.',
-      classic: 'Single column. Use .header for centered name/title. Use <hr class="divider"> between header and body. Use .section-title with double border. Use .exp-header with flex justify-between for position/date row.',
-      creative: 'Use .wrapper flex. Left .sidebar (35%) with purple bg + right .main (65%). Use .exp-card for experience entries. Use .summary-quote with amber left border. Use .career-chip for career interests. Use .avail-badge in green for availability.',
-      minimalist: 'Single column with generous padding. Name in 2.6rem light weight. Use .section-label as inline-block with sky underline. Use .exp-date-badge float:right. Use .skills-row with .skill-sep spans. Keep everything sparse and open.',
-      timeline: 'Use .header with indigo bg. Below: .body with .summary-box then .timeline. Timeline uses ::before pseudo for vertical line. Each .tl-item has .tl-dot positioned absolutely + .tl-card. Use .tl-date-badge on each item.',
+      modern:
+        'Use .wrapper flex container. Left .sidebar (30%) + right .main (70%). Place avatar/monogram at top of sidebar. Use .skill-pill for skills. Use .summary-box for summary. Use .main-section-title for section headers. Use .exp-dates with float:right for date alignment.',
+      classic:
+        'Single column. Use .header for centered name/title. Use <hr class="divider"> between header and body. Use .section-title with double border. Use .exp-header with flex justify-between for position/date row.',
+      creative:
+        'Use .wrapper flex. Left .sidebar (35%) with purple bg + right .main (65%). Use .exp-card for experience entries. Use .summary-quote with amber left border. Use .career-chip for career interests. Use .avail-badge in green for availability.',
+      minimalist:
+        'Single column with generous padding. Name in 2.6rem light weight. Use .section-label as inline-block with sky underline. Use .exp-date-badge float:right. Use .skills-row with .skill-sep spans. Keep everything sparse and open.',
+      timeline:
+        'Use .header with indigo bg. Below: .body with .summary-box then .timeline. Timeline uses ::before pseudo for vertical line. Each .tl-item has .tl-dot positioned absolutely + .tl-card. Use .tl-date-badge on each item.',
       bold: 'Use .wrapper flex. Left .sidebar (38%) near-black bg + right .main (62%). Name all-caps in .red. Use .red-divider. Use .yoe-badge for years of experience stat. Use .main-section-title with red left border. List markers use red squares.',
-      compact: 'Use .header with blue bg. Compact .body. Small font sizes throughout. Use .hr between sections. Use .exp-row flex for position/dates. Keep everything tight — no wasted vertical space.',
-      elegant: 'Use .wrapper flex. Left .sidebar (28%) cream bg + right .main (72%). Wrap main sections in .section-wrap with box-shadow. Use Playfair Display serif headings. Use .skill-tag with gold border. Keep typography elegant and refined.',
-      colorful: 'Use .wrapper flex. Left .sidebar (32%) with teal-purple gradient + right .main (68%). Alternate .skill-pill-t, .skill-pill-p, .skill-pill-k for colorful skills. Alternate section colors: .section-teal, .section-purple, .section-pink. Use .exp-card with gradient bg.',
-      professional: 'Use .wrapper flex. Left .sidebar (30%) light gray + right .main (70%). Use .skill-bar-wrap with .skill-bar-track/.skill-bar-fill for progress bars. Show .yoe-stat block if yearsOfExperience provided. Use .summary-box in light blue.',
-      corporate: 'Use .top-header full-width navy bar with flex justify-between. Below: .content flex with .sidebar (28%) + .main (72%). Use .skill-bar-track/.skill-bar-fill. Use .exp-entry with blue left border. Section titles all-caps.',
+      compact:
+        'Use .header with blue bg. Compact .body. Small font sizes throughout. Use .hr between sections. Use .exp-row flex for position/dates. Keep everything tight — no wasted vertical space.',
+      elegant:
+        'Use .wrapper flex. Left .sidebar (28%) cream bg + right .main (72%). Wrap main sections in .section-wrap with box-shadow. Use Playfair Display serif headings. Use .skill-tag with gold border. Keep typography elegant and refined.',
+      colorful:
+        'Use .wrapper flex. Left .sidebar (32%) with teal-purple gradient + right .main (68%). Alternate .skill-pill-t, .skill-pill-p, .skill-pill-k for colorful skills. Alternate section colors: .section-teal, .section-purple, .section-pink. Use .exp-card with gradient bg.',
+      professional:
+        'Use .wrapper flex. Left .sidebar (30%) light gray + right .main (70%). Use .skill-bar-wrap with .skill-bar-track/.skill-bar-fill for progress bars. Show .yoe-stat block if yearsOfExperience provided. Use .summary-box in light blue.',
+      corporate:
+        'Use .top-header full-width navy bar with flex justify-between. Below: .content flex with .sidebar (28%) + .main (72%). Use .skill-bar-track/.skill-bar-fill. Use .exp-entry with blue left border. Section titles all-caps.',
       dark: 'Use .wrapper flex. Left .sidebar (32%) #0D1117 + right .main (68%) #161B22. Wrap experience in .exp-card dark cards. Use .summary-code for summary block. Skills as .skill-pill with blue border. All text on dark backgrounds. Accent color #58A6FF throughout.',
     };
 
     const cssScaffold = cssScaffolds[template] ?? cssScaffolds['modern'];
-    const instruction = templateInstructions[template] ?? templateInstructions['modern'];
+    const instruction =
+      templateInstructions[template] ?? templateInstructions['modern'];
 
     return `You are a world-class resume designer and expert frontend developer. Generate a complete, pixel-perfect, print-ready HTML5 resume.
 
@@ -402,7 +413,7 @@ ${cssScaffold}
 CONTENT RULES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 1. PROFILE PICTURE:
-   • If personalInfo.profilePicture is a URL → <img class="avatar" src="URL" alt="Profile">
+   • If personalInfo.profilePicture is a URL or a data: URI → <img class="avatar" src="VALUE" alt="Profile"> (use the value as-is in the src attribute)
    • If not provided → <div class="monogram">FIRST_INITIAL</div> (use template's monogram style)
 
 2. SECTIONS (render only if data exists):
@@ -436,6 +447,25 @@ CONTENT RULES
     try {
       const systemPrompt = this.buildSystemPrompt(buildResumeDTO.template);
 
+      // If profilePicture is a base64 data URI, extract it before sending to GPT
+      // so the large base64 string doesn't consume the token budget.
+      // We replace it with a sentinel token and substitute it back after generation.
+      const AVATAR_TOKEN = '__AVATAR_BASE64__';
+      const avatarBase64 =
+        buildResumeDTO.personalInfo?.profilePicture?.startsWith('data:')
+          ? buildResumeDTO.personalInfo.profilePicture
+          : null;
+
+      const dtoForGPT = avatarBase64
+        ? {
+            ...buildResumeDTO,
+            personalInfo: {
+              ...buildResumeDTO.personalInfo,
+              profilePicture: AVATAR_TOKEN,
+            },
+          }
+        : buildResumeDTO;
+
       const completion = await this.openAI.chat.completions.create({
         model: 'gpt-4o',
         temperature: 0.3,
@@ -447,7 +477,7 @@ CONTENT RULES
           },
           {
             role: 'user',
-            content: `Generate the resume HTML for this candidate data:\n\n${JSON.stringify(buildResumeDTO, null, 2)}`,
+            content: `Generate the resume HTML for this candidate data:\n\n${JSON.stringify(dtoForGPT, null, 2)}`,
           },
         ],
       });
@@ -458,11 +488,16 @@ CONTENT RULES
       }
 
       // Strip any accidental markdown code fences
-      const cleanedHTML = content
+      let cleanedHTML = content
         .replace(/^```html\s*/i, '')
         .replace(/^```\s*/i, '')
         .replace(/```\s*$/i, '')
         .trim();
+
+      // Substitute the sentinel token back with the real base64 image
+      if (avatarBase64) {
+        cleanedHTML = cleanedHTML.split(AVATAR_TOKEN).join(avatarBase64);
+      }
 
       return cleanedHTML;
     } catch (error) {
@@ -482,7 +517,10 @@ CONTENT RULES
 
     try {
       const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
+      await page.setContent(html, {
+        waitUntil: 'networkidle0',
+        timeout: 30000,
+      });
 
       const pdf = await page.pdf({
         format: 'A4',
@@ -493,11 +531,7 @@ CONTENT RULES
           bottom: '20px',
           left: '20px',
         },
-        displayHeaderFooter: true,
-        headerTemplate: '<div></div>',
-        footerTemplate: `<div style="font-size: 8px; text-align: center; width: 100%;">
-        Generated on ${new Date().toLocaleDateString()}
-      </div>`,
+        displayHeaderFooter: false,
       });
 
       return Buffer.from(pdf);
