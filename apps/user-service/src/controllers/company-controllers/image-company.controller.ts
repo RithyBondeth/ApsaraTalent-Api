@@ -1,0 +1,64 @@
+import { IImageCompanyController } from '@app/common/interfaces/company.interface';
+import { Controller } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
+import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { ImageCompanyService } from '../../services/company-services/image-company.service';
+
+@Controller()
+export class ImageCompanyController implements IImageCompanyController {
+  constructor(private readonly imageCompanyService: ImageCompanyService) {}
+
+  @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_AVATAR)
+  async uploadCompanyAvatar(
+    @Payload() payload: { companyId: string; avatar: Express.Multer.File },
+  ): Promise<any> {
+    return this.imageCompanyService.uploadCompanyAvatar(
+      payload.companyId,
+      payload.avatar,
+    );
+  }
+
+  @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_COMPANY_AVATAR)
+  async removeCompanyAvatar(
+    @Payload() payload: { companyId: string },
+  ): Promise<any> {
+    return this.imageCompanyService.removeCompanyAvatar(payload.companyId);
+  }
+
+  @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_COVER)
+  async uploadCompanyCover(
+    @Payload() payload: { companyId: string; cover: Express.Multer.File },
+  ): Promise<any> {
+    return this.imageCompanyService.uploadCompanyCover(
+      payload.companyId,
+      payload.cover,
+    );
+  }
+
+  @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_COMPANY_COVER)
+  async removeCompanyCover(
+    @Payload() payload: { companyId: string },
+  ): Promise<any> {
+    return this.imageCompanyService.removeCompanyCover(payload.companyId);
+  }
+
+  @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_IMAGES)
+  async uploadCompanyImages(
+    @Payload() payload: { companyId: string; images: Express.Multer.File[] },
+  ): Promise<any> {
+    return this.imageCompanyService.uploadCompanyImage(
+      payload.companyId,
+      payload.images,
+    );
+  }
+
+  @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_COMPANY_IMAGES)
+  async removeCompanyImage(
+    @Payload() payload: { companyId: string; imageId: string },
+  ): Promise<any> {
+    return this.imageCompanyService.removeCompanyImage(
+      payload.companyId,
+      payload.imageId,
+    );
+  }
+}

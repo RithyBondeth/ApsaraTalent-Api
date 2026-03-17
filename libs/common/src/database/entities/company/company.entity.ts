@@ -1,0 +1,94 @@
+import {
+    Column,
+    CreateDateColumn,
+    Entity,
+    JoinColumn,
+    JoinTable,
+    ManyToMany,
+    OneToMany,
+    OneToOne,
+    PrimaryGeneratedColumn
+} from 'typeorm';
+import { CareerScope } from '../career-scope.entity';
+import { Social } from '../social.entity';
+import { User } from '../user.entity';
+import { Benefit } from './benefit.entity';
+import { CompanyFavoriteEmployee } from './favorite-employee.entity';
+import { Image } from './image.entity';
+import { Job } from './job.entity';
+import { Value } from './value.entity';
+
+@Entity()
+export class Company {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @OneToOne(() => User, (user) => user.company, { onDelete: 'CASCADE' })
+  @JoinColumn()
+  user: User;
+
+  @Column()
+  name: string;
+
+  @Column('text')
+  description: string;
+
+  @Column({ nullable: true })
+  phone: string;
+
+  @Column({ nullable: true })
+  avatar: string;
+
+  @Column({ nullable: true })
+  cover: string;
+
+  @OneToMany(() => Image, (image) => image.company, { cascade: true })
+  images: Image[];
+
+  @Column()
+  companySize: number;
+
+  @Column()
+  industry: string;
+
+  @Column()
+  location: string;
+
+  @Column()
+  foundedYear: number;
+
+  @OneToMany(() => Job, (job) => job.company, { cascade: true })
+  openPositions: Job[];
+
+  @ManyToMany(() => Benefit, (benefit) => benefit.companies, { cascade: true })
+  @JoinTable({
+    name: 'company_benefits_benefit',
+    joinColumn: { name: 'companyId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'benefitId', referencedColumnName: 'id' },
+  })
+  benefits: Benefit[];
+
+  @ManyToMany(() => Value, (value) => value.companies, { cascade: true })
+  @JoinTable({
+    name: 'company_values_value',
+    joinColumn: { name: 'companyId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'valueId', referencedColumnName: 'id' },
+  })
+  values: Value[];
+
+  @ManyToMany(() => CareerScope, (careerScope) => careerScope.companies)
+  @JoinTable()
+  careerScopes: CareerScope[];
+
+  @OneToMany(
+    () => CompanyFavoriteEmployee,
+    (cmpFavoriteEmp) => cmpFavoriteEmp.company,
+  )
+  favorites: CompanyFavoriteEmployee[];
+
+  @OneToMany(() => Social, (social) => social.company, { cascade: true })
+  socials: Social[];
+
+  @CreateDateColumn()
+  createdAt: Date;
+}

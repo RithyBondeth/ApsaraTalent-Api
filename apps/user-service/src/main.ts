@@ -1,23 +1,49 @@
+import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import { UserServiceModule } from './user-service.module';
-import { Logger } from 'nestjs-pino';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { Logger } from 'nestjs-pino';
+import { UserServiceModule } from './user-service.module';
 
 async function bootstrap() {
+  const appContext =
+    await NestFactory.createApplicationContext(UserServiceModule);
+  const configService = appContext.get(ConfigService);
+
   // Microservices setup
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(UserServiceModule, {
-    transport: Transport.TCP,
-    options: {
-      host: 'localhost',
-      port: 3002,
-    }
-  })
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+    UserServiceModule,
+    {
+      transport: Transport.TCP,
+      options: {
+        host: configService.get<string>('services.user.host'),
+        port: configService.get<number>('services.user.port'),
+      },
+    },
+  );
+
+  // Pipe Validation Setup
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      enableDebugMessages: true,
+    }),
+  );
 
   //Setup Logger
   const logger = app.get(Logger);
   app.useLogger(logger);
 
   await app.listen();
-  logger.log('User service is runing on port ', process.env.USER_SERVICE_PORT);
+  const port = configService.get<number>('services.user.port');
+  logger.log(`User service is running on port ${port}`);
+
+  // Close the app context
+  await appContext.close();
 }
 bootstrap();

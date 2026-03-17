@@ -37,10 +37,23 @@ lerna-debug.log*
 
 # dotenv environment variable files
 .env
-.env.development.local
-.env.test.local
-.env.production.local
 .env.local
+.env.development
+.env.production
+.env.staging
+
+# Keep .env and environment-specific files tracked
+# .env (development template - tracked)
+# .env.production (production template - tracked)
+# .env.example (example template - tracked)
+
+# Storage directory
+storage/
+uploads/
+
+# Old environment files (to be removed)
+apps/*/.env
+libs/.env
 
 # temp directory
 .temp

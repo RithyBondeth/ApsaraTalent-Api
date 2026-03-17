@@ -1,16 +1,64 @@
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import { ApiGatewayModule } from './api-gateway.module';
+import { IoAdapter } from '@nestjs/platform-socket.io';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import cookieParser from 'cookie-parser';
+import session from 'express-session';
 import { Logger } from 'nestjs-pino';
+import { join } from 'path';
+import { ApiGatewayModule } from './api-gateway.module';
 
 async function bootstrap() {
+<<<<<<< HEAD
   const app = await NestFactory.create(ApiGatewayModule);
   app.enableCors();
   
+=======
+  const app = await NestFactory.create<NestExpressApplication>(ApiGatewayModule);
+
+  // Serve uploaded chat attachments as static files at /storage/**
+  // Files are written by the POST /chat/upload endpoint and read back by the frontend.
+  app.useStaticAssets(join(process.cwd(), 'storage'), { prefix: '/storage' });
+  const configService = app.get<ConfigService>(ConfigService);
+
+  // Enable socket.io WebSocket adapter — required for ChatGateway to work
+  app.useWebSocketAdapter(new IoAdapter(app));
+
+  // Enable Cookie Parser
+  app.use(cookieParser());
+
+  //Enable Express Session
+  const isProduction = process.env.NODE_ENV === 'production';
+  app.use(
+    session({
+      secret: configService.get<string>('session.secret'),
+      resave: false,
+      saveUninitialized: false, // Don't create session until something is stored
+      cookie: {
+        httpOnly: true,
+        secure: isProduction, // HTTPS-only in production
+        sameSite: 'strict',   // Stricter CSRF protection
+        maxAge: 1000 * 60 * 60 * 24, // 24 hours
+      },
+    }),
+  );
+
+  // Enable Frontend Cors
+  app.enableCors({
+    origin: configService.get<string>('frontend.origin'),
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control'],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+  });
+
+>>>>>>> c4eaba4638ff660126b81b33f459ea47796036af
   //Logger Setup
   const logger = app.get(Logger);
   app.useLogger(logger);
-  logger.log("Api gateway is running on port " + process.env.API_GATEWAY_PORT);
 
-  await app.listen(process.env.API_GATEWAY_PORT);
+  await app.startAllMicroservices();
+  const port = configService.get<number>('services.apiGateway.port');
+  await app.listen(port);
+  logger.log(`Api gateway is running on port ${port}`);
 }
 bootstrap();
