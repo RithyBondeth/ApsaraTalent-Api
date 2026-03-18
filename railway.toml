@@ -1,0 +1,30 @@
+# Railway deployment configuration for apsaratalent-api
+# Each service is deployed separately in Railway.
+# When creating a service in Railway, set the "Root Directory" and "Dockerfile Path" accordingly.
+#
+# Service         | Root Directory          | Dockerfile Path
+# ----------------|-------------------------|----------------------------------------------
+# api-gateway     | apsaratalent-api        | apps/api-gateway/Dockerfile
+# auth-service    | apsaratalent-api        | apps/auth-service/Dockerfile
+# user-service    | apsaratalent-api        | apps/user-service/Dockerfile
+# resume-service  | apsaratalent-api        | apps/resume-builder-service/Dockerfile
+# chat-service    | apsaratalent-api        | apps/chat-service/Dockerfile
+# job-service     | apsaratalent-api        | apps/job-service/Dockerfile
+# payment-service | apsaratalent-api        | apps/payment-service/Dockerfile
+# notification    | apsaratalent-api        | apps/notification-service/Dockerfile
+#
+# All services share the same environment variables (set in Railway project settings).
+# Internal services communicate via Railway's private networking using service hostnames.
+# Only api-gateway needs a public domain exposed.
+#
+# IMPORTANT - api-gateway storage:
+# The api-gateway serves uploaded chat files from /app/storage.
+# In Railway, add a Volume to the api-gateway service mounted at /app/storage
+# so uploaded files persist across deploys and restarts.
+
+[build]
+builder = "dockerfile"
+
+[deploy]
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3

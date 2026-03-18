@@ -2,11 +2,13 @@ import {
     CreateDateColumn,
     Entity,
     ManyToOne,
-    PrimaryGeneratedColumn
+    PrimaryGeneratedColumn,
+    Unique
 } from 'typeorm';
 import { Employee } from '../employee/employee.entity';
 import { Company } from './company.entity';
 
+@Unique(['company', 'employee'])
 @Entity()
 export class CompanyFavoriteEmployee {
   @PrimaryGeneratedColumn('uuid')

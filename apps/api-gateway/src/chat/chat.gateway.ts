@@ -565,11 +565,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         `[WS] Message ${messageId} marked as read by ${client.data.userId}`,
       );
 
-      // Notify the original sender in real time across all their tabs
+      // Notify the original sender in real time across all their tabs.
+      // Include readerId so the sender's client knows which chat row to patch.
       if (senderId) {
-        this.server.to(senderId).emit('messageRead', { messageId });
+        this.server.to(senderId).emit('messageRead', {
+          messageId,
+          readerId: client.data.userId,
+        });
         this.logger.log(
-          `[WS] Notified sender ${senderId} that message ${messageId} was seen`,
+          `[WS] Notified sender ${senderId} that message ${messageId} was seen by ${client.data.userId}`,
         );
       }
 

@@ -5,6 +5,7 @@ import { IUserController } from '@app/common/interfaces/user-controller.interfac
 import {
     Body,
     Controller,
+    ForbiddenException,
     Get,
     Inject,
     Param,
@@ -24,6 +25,52 @@ export class UserController implements IUserController {
   constructor(
     @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
   ) {}
+
+  private async getCurrentUserProfile(userId: string): Promise<any> {
+    return firstValueFrom(
+      this.userClient.send(USER_SERVICE.ACTIONS.GET_CURRENT_USER, {
+        userID: userId,
+      }),
+    );
+  }
+
+  private async assertEmployeeAccess(
+    requestUserId: string,
+    employeeId: string,
+  ): Promise<void> {
+    if (!requestUserId) {
+      throw new ForbiddenException('Unauthorized request.');
+    }
+    const profile = await this.getCurrentUserProfile(requestUserId);
+    if (
+      profile?.role !== 'employee' ||
+      !profile?.employee?.id ||
+      profile.employee.id !== employeeId
+    ) {
+      throw new ForbiddenException(
+        'You do not have permission to access this employee resource.',
+      );
+    }
+  }
+
+  private async assertCompanyAccess(
+    requestUserId: string,
+    companyId: string,
+  ): Promise<void> {
+    if (!requestUserId) {
+      throw new ForbiddenException('Unauthorized request.');
+    }
+    const profile = await this.getCurrentUserProfile(requestUserId);
+    if (
+      profile?.role !== 'company' ||
+      !profile?.company?.id ||
+      profile.company.id !== companyId
+    ) {
+      throw new ForbiddenException(
+        'You do not have permission to access this company resource.',
+      );
+    }
+  }
 
   @Get('all')
   async findAllUsers(): Promise<any> {
@@ -69,7 +116,9 @@ export class UserController implements IUserController {
   async employeeFavoriteCompany(
     @Param('eid', ParseUUIDPipe) eid: string,
     @Param('cid', ParseUUIDPipe) cid: string,
+    @Req() req?: any,
   ): Promise<any> {
+    await this.assertEmployeeAccess(req?.user?.id, eid);
     const payload = { eid, cid };
     return firstValueFrom(
       this.userClient.send(
@@ -84,7 +133,9 @@ export class UserController implements IUserController {
     @Param('eid', ParseUUIDPipe) eid: string,
     @Param('cid', ParseUUIDPipe) cid: string,
     @Param('favoriteId', ParseUUIDPipe) favoriteId: string,
+    @Req() req?: any,
   ): Promise<any> {
+    await this.assertEmployeeAccess(req?.user?.id, eid);
     const payload = { eid, cid, favoriteId };
     return firstValueFrom(
       this.userClient.send(
@@ -98,7 +149,9 @@ export class UserController implements IUserController {
   async companyFavoriteEmployee(
     @Param('cid', ParseUUIDPipe) cid: string,
     @Param('eid', ParseUUIDPipe) eid: string,
+    @Req() req?: any,
   ): Promise<any> {
+    await this.assertCompanyAccess(req?.user?.id, cid);
     const payload = { cid, eid };
     return firstValueFrom(
       this.userClient.send(
@@ -113,7 +166,9 @@ export class UserController implements IUserController {
     @Param('cid', ParseUUIDPipe) cid: string,
     @Param('eid', ParseUUIDPipe) eid: string,
     @Param('favoriteId', ParseUUIDPipe) favoriteId: string,
+    @Req() req?: any,
   ): Promise<any> {
+    await this.assertCompanyAccess(req?.user?.id, cid);
     const payload = { cid, eid, favoriteId };
     return firstValueFrom(
       this.userClient.send(
@@ -126,7 +181,9 @@ export class UserController implements IUserController {
   @Get('employee/all-favorites/:eid')
   async findAllEmployeeFavorite(
     @Param('eid', ParseUUIDPipe) eid: string,
+    @Req() req?: any,
   ): Promise<any> {
+    await this.assertEmployeeAccess(req?.user?.id, eid);
     const payload = { eid };
     return firstValueFrom(
       this.userClient.send(
@@ -139,7 +196,9 @@ export class UserController implements IUserController {
   @Get('company/all-favorites/:cid')
   async findAllCompanyFavorite(
     @Param('cid', ParseUUIDPipe) cid: string,
+    @Req() req?: any,
   ): Promise<any> {
+    await this.assertCompanyAccess(req?.user?.id, cid);
     const payload = { cid };
     return firstValueFrom(
       this.userClient.send(
@@ -152,7 +211,9 @@ export class UserController implements IUserController {
   @Get('employee/count-favorite/:eid')
   async countEmployeeFavorite(
     @Param('eid', ParseUUIDPipe) eid: string,
+    @Req() req?: any,
   ): Promise<any> {
+    await this.assertEmployeeAccess(req?.user?.id, eid);
     const payload = { eid };
     return firstValueFrom(
       this.userClient.send(
@@ -165,7 +226,9 @@ export class UserController implements IUserController {
   @Get('company/count-favorite/:cid')
   async countCompanyFavorite(
     @Param('cid', ParseUUIDPipe) cid: string,
+    @Req() req?: any,
   ): Promise<any> {
+    await this.assertCompanyAccess(req?.user?.id, cid);
     const payload = { cid };
     return firstValueFrom(
       this.userClient.send(

@@ -256,6 +256,12 @@ export class UserService {
         (error as Error).message ||
           'An error occurred while favoriting company.',
       );
+      if ((error as any)?.code === '23505') {
+        throw new RpcException({
+          statusCode: 400,
+          message: 'Already favorited!',
+        });
+      }
       if (error instanceof RpcException) throw error;
       throw new RpcException({
         statusCode: 500,
@@ -380,6 +386,12 @@ export class UserService {
         (error as Error).message ||
           'An error occurred while favoriting employee.',
       );
+      if ((error as any)?.code === '23505') {
+        throw new RpcException({
+          statusCode: 400,
+          message: 'Already favorited',
+        });
+      }
       if (error instanceof RpcException) throw error;
       throw new RpcException({
         statusCode: 500,
