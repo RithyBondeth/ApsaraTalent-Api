@@ -41,6 +41,8 @@ export const USER_SERVICE = {
 
     FIND_ALL_CAREER_SCOPES: { cmd: 'findAllCareerScopes' },
 
+    UPDATE_PUSH_TOKEN: { cmd: 'updatePushNotificationToken' },
+
     CLEAR_CURRENT_USER_CACHE: { cmd: 'clearCurrentUserCache' },
   },
 };

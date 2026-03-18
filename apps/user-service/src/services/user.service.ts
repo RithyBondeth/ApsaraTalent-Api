@@ -10,10 +10,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import {
-    CompanyResponseDTO,
-    EmployeeResponseDTO,
-    JobPositionDTO,
-    UserResponseDTO
+  CompanyResponseDTO,
+  EmployeeResponseDTO,
+  JobPositionDTO,
+  UserResponseDTO,
 } from '../dtos/user-response.dto';
 
 @Injectable()
@@ -163,6 +163,42 @@ export class UserService {
         message:
           (error as Error).message ||
           'An error occurred while finding user by id.',
+      });
+    }
+  }
+
+  async updatePushNotificationToken(
+    userId: string,
+    token: string | null,
+  ): Promise<{ success: boolean }> {
+    const normalizedToken =
+      typeof token === 'string' && token.trim().length > 0
+        ? token.trim()
+        : null;
+
+    try {
+      const result = await this.userRepository.update(
+        { id: userId },
+        { pushNotificationToken: normalizedToken },
+      );
+
+      if (!result.affected) {
+        throw new RpcException({
+          statusCode: 404,
+          message: 'There is no user with this id!',
+        });
+      }
+
+      await this.redisService.clearUserDetailCache(userId);
+
+      return { success: true };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to update push token: ${errorMessage}`);
+      throw new RpcException({
+        statusCode: 500,
+        message: errorMessage || 'An error occurred while updating push token.',
       });
     }
   }

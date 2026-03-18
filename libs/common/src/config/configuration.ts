@@ -132,6 +132,10 @@ export default () => ({
     apiKey: process.env.OPENAI_API_KEY,
   },
 
+  firebase: {
+    serviceAccount: process.env.FIREBASE_SERVICE_ACCOUNT,
+  },
+
   bakong: {
     developerToken: process.env.BAKONG_DEVELOPER_TOKEN,
     apiBaseUrl: process.env.BAKONG_API_BASE_URL,

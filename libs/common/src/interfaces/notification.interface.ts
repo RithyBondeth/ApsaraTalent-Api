@@ -4,6 +4,9 @@ export interface CreateNotificationPayload {
   message: string;
   type?: string | null;
   data?: Record<string, any> | null;
+  sendPush?: boolean;
+  /** Sender's avatar URL — used to show the sender's photo in the push notification */
+  senderAvatar?: string | null;
 }
 
 export interface ListNotificationsPayload {

@@ -27,6 +27,16 @@ export class UserController implements IUserController {
     return this.userService.findOneUserByID(payload.userID);
   }
 
+  @MessagePattern(USER_SERVICE.ACTIONS.UPDATE_PUSH_TOKEN)
+  async updatePushNotificationToken(
+    @Payload() payload: { userId: string; token: string | null },
+  ): Promise<any> {
+    return this.userService.updatePushNotificationToken(
+      payload.userId,
+      payload.token,
+    );
+  }
+
   @MessagePattern(USER_SERVICE.ACTIONS.ADD_COMPANY_TO_FAVORITE)
   async employeeFavoriteCompany(
     @Payload() payload: { eid: string; cid: string },

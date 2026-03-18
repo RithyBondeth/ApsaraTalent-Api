@@ -19,4 +19,5 @@ export interface IUserController {
   findAllCompanyFavorite(cid?: any): Promise<any>;
   countEmployeeFavorite(eid?: any): Promise<any>;
   countCompanyFavorite(cid?: any): Promise<any>;
+  updatePushNotificationToken?(...args: any[]): Promise<any>;
 }

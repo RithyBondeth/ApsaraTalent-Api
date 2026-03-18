@@ -18,6 +18,7 @@ import { firstValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
 import { Repository } from 'typeorm';
 import { CHAT_SERVICE } from '../../../../utils/constants/chat-service.constant';
+import { NOTIFICATION_SERVICE } from '../../../../utils/constants/notification.constant';
 
 @WebSocketGateway({
   // No port specified — gateway attaches to the same HTTP server as the API Gateway (port 3000)
@@ -75,6 +76,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private jwtService: JwtService,
     private configService: ConfigService,
     @Inject(CHAT_SERVICE.NAME) private chatServiceClient: ClientProxy,
+    @Inject(NOTIFICATION_SERVICE.NAME)
+    private readonly notificationClient: ClientProxy,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
   ) {}
 
@@ -97,6 +100,83 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return { name, avatar };
     } catch {
       return { name: 'Unknown', avatar: '/avatars/default.png' };
+    }
+  }
+
+  private buildChatNotificationPreview(params: {
+    messageType: string;
+    content: string;
+    hasAttachment: boolean;
+    attachmentFilename?: string | null;
+  }) {
+    const type = (params.messageType || 'text').toLowerCase();
+
+    if (type === 'audio') return 'Audio message';
+    if (type === 'image') return 'Photo';
+    if (type === 'document') return params.attachmentFilename || 'Attachment';
+    if (type === 'call') return 'Call';
+
+    const trimmed = params.content?.trim() ?? '';
+    if (!trimmed && params.hasAttachment) {
+      return params.attachmentFilename || 'Attachment';
+    }
+    if (!trimmed) return 'New message';
+
+    return trimmed.length > 140 ? `${trimmed.slice(0, 140)}...` : trimmed;
+  }
+
+  private async notifyChatMessage(params: {
+    senderId: string;
+    receiverId: string;
+    messageType: string;
+    content: string;
+    hasAttachment: boolean;
+    attachmentFilename?: string | null;
+    messageId: string;
+  }) {
+    try {
+      const senderProfile = await this.getCallerProfile(params.senderId);
+      const receiverOnline =
+        (this.connectedUsers.get(params.receiverId)?.size || 0) > 0;
+      this.logger.log(
+        `[Push] receiverOnline=${receiverOnline} receiverId=${params.receiverId}`,
+      );
+
+      const preview = this.buildChatNotificationPreview({
+        messageType: params.messageType,
+        content: params.content,
+        hasAttachment: params.hasAttachment,
+        attachmentFilename: params.attachmentFilename ?? null,
+      });
+
+      await firstValueFrom(
+        this.notificationClient.send(
+          NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION,
+          {
+            userId: params.receiverId,
+            title: senderProfile?.name || 'New message',
+            message: preview,
+            type: 'chat',
+            data: {
+              senderId: params.senderId,
+              receiverId: params.receiverId,
+              messageId: params.messageId,
+              messageType: params.messageType,
+              // Pass url so notification click deep-links to the correct chat thread
+              url: `/message?chat=${params.senderId}`,
+            },
+            sendPush: !receiverOnline,
+            // Pass sender avatar so it appears in the push notification popup
+            senderAvatar: senderProfile?.avatar || null,
+          },
+        ),
+      );
+    } catch (error: any) {
+      this.logger.warn(
+        `[WS] Failed to create chat notification: ${
+          error?.message || 'Unknown error'
+        }`,
+      );
     }
   }
 
@@ -364,6 +444,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server.to(usersData.sender.id).emit('newMessage', {
         ...savedMessage,
         isMe: true,
+      });
+
+      void this.notifyChatMessage({
+        senderId: usersData.sender.id,
+        receiverId: usersData.receiver.id,
+        messageType,
+        content: trimmedContent,
+        hasAttachment,
+        attachmentFilename: payload.attachmentFilename ?? null,
+        messageId: savedMessage.id,
       });
 
       // Confirm to current tab (ack callback)

@@ -100,6 +100,9 @@ export const validationSchema = Joi.object({
   // OpenAI
   OPENAI_API_KEY: Joi.string().optional(),
 
+  // Firebase (Push Notifications)
+  FIREBASE_SERVICE_ACCOUNT: Joi.string().optional(),
+
   // Bakong KHQR Configuration
   BAKONG_DEVELOPER_TOKEN: Joi.string(),
   BAKONG_API_BASE_URL: Joi.string().uri(),

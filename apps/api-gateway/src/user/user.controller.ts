@@ -3,12 +3,14 @@ import { AuthGuard } from '@app/common/guards/auth.guard';
 import { UserInterceptor } from '@app/common/interceptors/user.interceptor';
 import { IUserController } from '@app/common/interfaces/user-controller.interface';
 import {
+    Body,
     Controller,
     Get,
     Inject,
     Param,
     ParseUUIDPipe,
     Post,
+    Req,
     UseGuards,
     UseInterceptors
 } from '@nestjs/common';
@@ -47,6 +49,19 @@ export class UserController implements IUserController {
     const payload = { userID };
     return firstValueFrom(
       this.userClient.send(USER_SERVICE.ACTIONS.GET_CURRENT_USER, payload),
+    );
+  }
+
+  @Post('push-token')
+  async updatePushNotificationToken(
+    @Req() req,
+    @Body() body: { token: string | null },
+  ): Promise<any> {
+    return firstValueFrom(
+      this.userClient.send(USER_SERVICE.ACTIONS.UPDATE_PUSH_TOKEN, {
+        userId: req.user.id,
+        token: body?.token ?? null,
+      }),
     );
   }
 
