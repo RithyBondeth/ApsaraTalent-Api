@@ -9,7 +9,8 @@ import { join } from 'path';
 import { ApiGatewayModule } from './api-gateway.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(ApiGatewayModule);
+  const app =
+    await NestFactory.create<NestExpressApplication>(ApiGatewayModule);
 
   // Serve uploaded chat attachments as static files at /storage/**
   // Files are written by the POST /chat/upload endpoint and read back by the frontend.
@@ -32,7 +33,7 @@ async function bootstrap() {
       cookie: {
         httpOnly: true,
         secure: isProduction, // HTTPS-only in production
-        sameSite: 'strict',   // Stricter CSRF protection
+        sameSite: 'strict', // Stricter CSRF protection
         maxAge: 1000 * 60 * 60 * 24, // 24 hours
       },
     }),
@@ -40,7 +41,10 @@ async function bootstrap() {
 
   // Enable Frontend Cors
   app.enableCors({
-    origin: configService.get<string>('frontend.origin'),
+    origin:
+      configService.get<string>('frontend.origin') ||
+      'https://apsaratalent-api-production.up.railway.app' ||
+      'http://localhost:4000',
     allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
