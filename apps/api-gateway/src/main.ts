@@ -43,7 +43,7 @@ async function bootstrap() {
   app.enableCors({
     origin:
       configService.get<string>('frontend.origin') ||
-      'https://apsaratalent-api-production.up.railway.app' ||
+      'https://apsaratalent-api-prod.up.railway.app' ||
       'http://localhost:4000',
     allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
