@@ -35,6 +35,7 @@ const CHAT_ALLOW_ALL_CORS = process.env.CORS_ALLOW_ALL === 'true';
   // No port specified — gateway attaches to the same HTTP server as the API Gateway (port 3000)
   // CHAT_SERVICE_PORT is for the internal TCP microservice, not the WebSocket server
   namespace: '/chat',
+  transports: ['websocket'],
   cors: {
     origin: (
       origin: string,
