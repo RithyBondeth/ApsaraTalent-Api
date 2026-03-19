@@ -30,4 +30,4 @@ RUN mkdir -p storage
 
 EXPOSE 3000
 
-CMD ["node", "dist/apps/api-gateway/main"]
+CMD ["node", "dist/apps/api-gateway/main.js"]

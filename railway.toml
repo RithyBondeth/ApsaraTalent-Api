@@ -24,6 +24,7 @@
 
 [build]
 builder = "dockerfile"
+dockerfilePath = "apps/api-gateway/Dockerfile"
 
 [deploy]
 restartPolicyType = "on_failure"

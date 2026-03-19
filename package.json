@@ -9,10 +9,10 @@
   "scripts": {
     "build": "nest build api-gateway",
     "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\"",
-    "start": "nest start api-gateway",
+    "start": "test -f dist/apps/api-gateway/main.js || npm run build && node dist/apps/api-gateway/main.js",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/apps/api-gateway/main.js",
+    "start:prod": "test -f dist/apps/api-gateway/main.js || npm run build && node dist/apps/api-gateway/main.js",
     "build:api": "nest build api-gateway",
     "start:prod:api": "node dist/apps/api-gateway/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
