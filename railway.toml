@@ -24,7 +24,21 @@
 
 [build]
 builder = "dockerfile"
-dockerfilePath = "apps/api-gateway/Dockerfile"
+# IMPORTANT:
+# Do not set a single shared `dockerfilePath` in this root file for a
+# multi-service Railway project. If set here, every service may build the same
+# Dockerfile (for example api-gateway), which causes internal TCP services to
+# be unreachable (ECONNREFUSED on 3001/3002/...).
+#
+# Instead, configure Dockerfile Path per Railway service in the UI:
+# - api-gateway     -> apps/api-gateway/Dockerfile
+# - auth-service    -> apps/auth-service/Dockerfile
+# - user-service    -> apps/user-service/Dockerfile
+# - resume-service  -> apps/resume-builder-service/Dockerfile
+# - chat-service    -> apps/chat-service/Dockerfile
+# - job-service     -> apps/job-service/Dockerfile
+# - payment-service -> apps/payment-service/Dockerfile
+# - notification    -> apps/notification-service/Dockerfile
 
 [deploy]
 restartPolicyType = "on_failure"
