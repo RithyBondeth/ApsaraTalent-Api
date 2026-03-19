@@ -18,6 +18,7 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV AUTH_SERVICE_PORT=3001
 
 COPY --from=builder /app/dist/apps/auth-service ./dist/apps/auth-service
 COPY --from=builder /app/node_modules ./node_modules

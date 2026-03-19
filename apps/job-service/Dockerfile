@@ -18,6 +18,7 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV JOB_SERVICE_PORT=3005
 
 COPY --from=builder /app/dist/apps/job-service ./dist/apps/job-service
 COPY --from=builder /app/node_modules ./node_modules

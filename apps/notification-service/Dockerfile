@@ -17,6 +17,7 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV NOTIFICATION_SERVICE_PORT=3007
 
 COPY --from=builder /app/dist/apps/notification-service ./dist/apps/notification-service
 COPY --from=builder /app/node_modules ./node_modules

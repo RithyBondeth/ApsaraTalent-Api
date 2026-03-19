@@ -18,6 +18,20 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV PORT=3000
+ENV API_GATEWAY_PORT=3000
+ENV AUTH_SERVICE_HOST=auth-service.railway.internal
+ENV AUTH_SERVICE_PORT=3001
+ENV USER_SERVICE_HOST=user-service.railway.internal
+ENV USER_SERVICE_PORT=3002
+ENV RESUME_SERVICE_HOST=resume-builder-service.railway.internal
+ENV RESUME_SERVICE_PORT=3003
+ENV CHAT_SERVICE_HOST=chat-service.railway.internal
+ENV CHAT_SERVICE_PORT=3004
+ENV JOB_SERVICE_HOST=job-service.railway.internal
+ENV JOB_SERVICE_PORT=3005
+ENV NOTIFICATION_SERVICE_HOST=notification-service.railway.internal
+ENV NOTIFICATION_SERVICE_PORT=3007
 
 COPY --from=builder /app/dist/apps/api-gateway ./dist/apps/api-gateway
 COPY --from=builder /app/node_modules ./node_modules

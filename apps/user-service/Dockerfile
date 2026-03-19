@@ -17,6 +17,7 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV USER_SERVICE_PORT=3002
 
 COPY --from=builder /app/dist/apps/user-service ./dist/apps/user-service
 COPY --from=builder /app/node_modules ./node_modules
