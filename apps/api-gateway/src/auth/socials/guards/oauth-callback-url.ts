@@ -35,4 +35,3 @@ export function buildPublicCallbackUrl(
 
   return `${protocol}://${host}/social/${provider}/callback`;
 }
-

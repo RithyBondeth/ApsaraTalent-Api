@@ -7,6 +7,10 @@ import session from 'express-session';
 import { Logger } from 'nestjs-pino';
 import { join } from 'path';
 import { ApiGatewayModule } from './api-gateway.module';
+import {
+  isOriginAllowed,
+  parseAllowedOrigins,
+} from './utils/cors-origin.util';
 
 async function bootstrap() {
   const app =
@@ -39,12 +43,10 @@ async function bootstrap() {
     }),
   );
 
-  const configuredOrigins = (
-    configService.get<string>('frontend.origin') || ''
-  )
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean);
+  const configuredOrigins = parseAllowedOrigins(
+    configService.get<string>('frontend.origin'),
+    process.env.ALLOWED_ORIGINS,
+  );
   const allowedOrigins =
     configuredOrigins.length > 0
       ? configuredOrigins
@@ -53,15 +55,13 @@ async function bootstrap() {
   // Enable Frontend CORS
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow requests without Origin header (mobile apps, cURL, health checks)
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (isOriginAllowed(origin, allowedOrigins)) {
         callback(null, true);
         return;
       }
       callback(new Error(`CORS: origin ${origin} not allowed`), false);
     },
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control'],
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
 

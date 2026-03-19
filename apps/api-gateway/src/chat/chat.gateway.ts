@@ -19,6 +19,20 @@ import { Server, Socket } from 'socket.io';
 import { Repository } from 'typeorm';
 import { CHAT_SERVICE } from '../../../../utils/constants/chat-service.constant';
 import { NOTIFICATION_SERVICE } from '../../../../utils/constants/notification.constant';
+import {
+  isOriginAllowed,
+  parseAllowedOrigins,
+} from '../utils/cors-origin.util';
+
+const CHAT_ALLOWED_ORIGINS = parseAllowedOrigins(
+  process.env.ALLOWED_ORIGINS,
+  process.env.FRONTEND_ORIGIN,
+);
+const CHAT_FALLBACK_ORIGINS = ['http://localhost:4000'];
+const RESOLVED_CHAT_ALLOWED_ORIGINS =
+  CHAT_ALLOWED_ORIGINS.length > 0
+    ? CHAT_ALLOWED_ORIGINS
+    : CHAT_FALLBACK_ORIGINS;
 
 @WebSocketGateway({
   // No port specified — gateway attaches to the same HTTP server as the API Gateway (port 3000)
@@ -29,17 +43,7 @@ import { NOTIFICATION_SERVICE } from '../../../../utils/constants/notification.c
       origin: string,
       callback: (err: Error | null, allow: boolean) => void,
     ) => {
-      const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
-        .split(',')
-        .map((o) => o.trim())
-        .filter(Boolean);
-
-      // Allow mobile/server requests with no origin, or any explicitly listed origin
-      if (
-        !origin ||
-        allowedOrigins.length === 0 ||
-        allowedOrigins.includes(origin)
-      ) {
+      if (isOriginAllowed(origin, RESOLVED_CHAT_ALLOWED_ORIGINS)) {
         callback(null, true);
       } else {
         callback(new Error(`CORS: origin ${origin} not allowed`), false);
