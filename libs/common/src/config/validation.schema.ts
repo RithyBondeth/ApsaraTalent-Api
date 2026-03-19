@@ -71,7 +71,9 @@ export const validationSchema = Joi.object({
   REDIS_CACHING_TTL: Joi.number(),
 
   // Frontend
-  FRONTEND_ORIGIN: Joi.string().uri(),
+  // May contain one origin, comma-separated origins, or wildcard domains
+  // (e.g. https://app.netlify.app,https://*.netlify.app).
+  FRONTEND_ORIGIN: Joi.string().allow(''),
 
   // Social Auth - Google
   GOOGLE_CLIENT_ID: Joi.string(),
