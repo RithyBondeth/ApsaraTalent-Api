@@ -18,6 +18,8 @@ import { Logger } from '@nestjs/common';
 @Injectable()
 export class ChatServiceService {
   private readonly logger = new Logger('ChatServiceService');
+  private static readonly UUID_REGEX =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
   constructor(
     @InjectRepository(Chat) private readonly chatRepository: Repository<Chat>,
@@ -52,6 +54,23 @@ export class ChatServiceService {
       message: `Could not resolve user ID from: ${id}`,
       statusCode: 404,
     });
+  }
+
+  private isUuid(value: string): boolean {
+    return ChatServiceService.UUID_REGEX.test(value);
+  }
+
+  private async resolveUserIdSafe(id: string): Promise<string | null> {
+    try {
+      return await this.resolveUserId(id);
+    } catch (error) {
+      this.logger.warn(
+        `resolveUserIdSafe failed for "${id}": ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+      );
+      return null;
+    }
   }
 
   async createOrGetChat(data: { senderId: string; receiverId: string }) {
@@ -463,27 +482,42 @@ export class ChatServiceService {
   }
 
   async getRecentChats(u: string) {
-    const userId = await this.resolveUserId(u);
-    this.logger.log(`Fetching recent chats for: ${userId} (Original: ${u})`);
-    const conditions = [];
-    conditions.push({ sender: { id: userId } });
-    conditions.push({ receiver: { id: userId } });
-    if (userId !== u) {
-      conditions.push({ sender: { id: u } });
-      conditions.push({ receiver: { id: u } });
+    const rawId = (u || '').trim();
+    const candidateUserIds = new Set<string>();
+
+    if (this.isUuid(rawId)) {
+      candidateUserIds.add(rawId);
     }
-    return await this.chatRepository.find({
-      where: conditions,
-      relations: [
-        'sender',
-        'sender.employee',
-        'sender.company',
-        'receiver',
-        'receiver.employee',
-        'receiver.company',
-      ],
-      order: { sentAt: 'DESC' },
-      take: 100,
-    });
+
+    const resolvedUserId = await this.resolveUserIdSafe(rawId);
+    if (resolvedUserId && this.isUuid(resolvedUserId)) {
+      candidateUserIds.add(resolvedUserId);
+    }
+
+    const userIds = Array.from(candidateUserIds);
+    if (userIds.length === 0) {
+      this.logger.warn(
+        `getRecentChats: no valid userId could be resolved for "${u}"`,
+      );
+      return [];
+    }
+
+    this.logger.log(
+      `Fetching recent chats for candidates: ${userIds.join(', ')} (original: ${u})`,
+    );
+
+    return await this.chatRepository
+      .createQueryBuilder('chat')
+      .leftJoinAndSelect('chat.sender', 'sender')
+      .leftJoinAndSelect('sender.employee', 'senderEmployee')
+      .leftJoinAndSelect('sender.company', 'senderCompany')
+      .leftJoinAndSelect('chat.receiver', 'receiver')
+      .leftJoinAndSelect('receiver.employee', 'receiverEmployee')
+      .leftJoinAndSelect('receiver.company', 'receiverCompany')
+      .where('sender.id IN (:...userIds)', { userIds })
+      .orWhere('receiver.id IN (:...userIds)', { userIds })
+      .orderBy('chat.sentAt', 'DESC')
+      .take(100)
+      .getMany();
   }
 }

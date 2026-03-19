@@ -1,12 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import { diskStorage, StorageEngine } from 'multer';
 import * as path from 'path';
 
 @Injectable()
 export class UploadfileService {
-  constructor(private readonly configService: ConfigService) {}
+  constructor() {}
 
   static storageOptions = (folderName: string): StorageEngine => {
     // Use relative path from project root
@@ -28,11 +27,9 @@ export class UploadfileService {
     });
   };
   getUploadFile(folderName: string, file: Express.Multer.File): string {
-    return (
-      this.configService.get<string>('baseUrl') +
-      `storage/${folderName}/` +
-      file.filename
-    );
+    // Store a relative public path in DB so environments can move freely
+    // (localhost / staging / production) without hardcoded hostnames.
+    return `/storage/${folderName}/${file.filename}`;
   }
 
   static deleteFile(filePath: string, fileType: string) {

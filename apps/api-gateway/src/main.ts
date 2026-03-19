@@ -39,12 +39,27 @@ async function bootstrap() {
     }),
   );
 
-  // Enable Frontend Cors
+  const configuredOrigins = (
+    configService.get<string>('frontend.origin') || ''
+  )
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  const allowedOrigins =
+    configuredOrigins.length > 0
+      ? configuredOrigins
+      : ['http://localhost:4000'];
+
+  // Enable Frontend CORS
   app.enableCors({
-    origin:
-      configService.get<string>('frontend.origin') ||
-      'https://apsaratalent-api-prod.up.railway.app' ||
-      'http://localhost:4000',
+    origin: (origin, callback) => {
+      // Allow requests without Origin header (mobile apps, cURL, health checks)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error(`CORS: origin ${origin} not allowed`), false);
+    },
     allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
@@ -55,8 +70,13 @@ async function bootstrap() {
   app.useLogger(logger);
 
   await app.startAllMicroservices();
-  const port = configService.get<number>('services.apiGateway.port');
+  const port =
+    Number(process.env.PORT) ||
+    configService.get<number>('services.apiGateway.port') ||
+    3000;
   await app.listen(port);
-  logger.log(`Api gateway is running on port ${port}`);
+  logger.log(
+    `Api gateway is running on port ${port} (origins: ${allowedOrigins.join(', ')})`,
+  );
 }
 bootstrap();
