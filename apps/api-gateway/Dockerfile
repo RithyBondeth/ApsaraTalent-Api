@@ -7,6 +7,7 @@ COPY nest-cli.json ./
 COPY tsconfig*.json ./
 COPY apps/api-gateway ./apps/api-gateway
 COPY libs ./libs
+COPY utils ./utils
 
 RUN npm ci
 RUN npx nest build api-gateway

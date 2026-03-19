@@ -7,6 +7,7 @@ COPY nest-cli.json ./
 COPY tsconfig*.json ./
 COPY apps/auth-service ./apps/auth-service
 COPY libs ./libs
+COPY utils ./utils
 
 RUN npm ci
 RUN npx nest build auth-service

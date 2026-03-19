@@ -35,7 +35,11 @@ import { NOTIFICATION_SERVICE } from '../../../../utils/constants/notification.c
         .filter(Boolean);
 
       // Allow mobile/server requests with no origin, or any explicitly listed origin
-      if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+      if (
+        !origin ||
+        allowedOrigins.length === 0 ||
+        allowedOrigins.includes(origin)
+      ) {
         callback(null, true);
       } else {
         callback(new Error(`CORS: origin ${origin} not allowed`), false);
@@ -368,7 +372,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       // Validate receiverId
       if (!payload?.receiverId || typeof payload.receiverId !== 'string') {
-        client.emit('error', { message: 'Invalid message payload: missing receiverId' });
+        client.emit('error', {
+          message: 'Invalid message payload: missing receiverId',
+        });
         return;
       }
 
@@ -700,7 +706,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       };
 
       // Notify the sender across all their tabs
-      this.server.to(client.data.userId).emit('messageEdited', broadcastPayload);
+      this.server
+        .to(client.data.userId)
+        .emit('messageEdited', broadcastPayload);
 
       // Notify the receiver so their view updates in real time
       if (data.receiverId) {
@@ -757,11 +765,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const broadcastPayload = { messageId: data.messageId };
 
       // Notify the sender (all tabs) so the message tombstone appears immediately
-      this.server.to(client.data.userId).emit('messageDeleted', broadcastPayload);
+      this.server
+        .to(client.data.userId)
+        .emit('messageDeleted', broadcastPayload);
 
       // Notify the receiver if provided, so their view also updates in real time
       if (data.receiverId) {
-        this.server.to(data.receiverId).emit('messageDeleted', broadcastPayload);
+        this.server
+          .to(data.receiverId)
+          .emit('messageDeleted', broadcastPayload);
       }
 
       this.logger.log(
@@ -781,7 +793,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('callOffer')
   async handleCallOffer(
     client: Socket,
-    data: { callId: string; receiverId: string; offer: RTCSessionDescriptionInit },
+    data: {
+      callId: string;
+      receiverId: string;
+      offer: RTCSessionDescriptionInit;
+    },
   ) {
     if (!client.data.userId) {
       client.emit('error', { message: 'Unauthorized' });
@@ -809,7 +825,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('callAnswer')
   async handleCallAnswer(
     client: Socket,
-    data: { callId: string; callerId: string; answer: RTCSessionDescriptionInit },
+    data: {
+      callId: string;
+      callerId: string;
+      answer: RTCSessionDescriptionInit;
+    },
   ) {
     if (!client.data.userId) {
       client.emit('error', { message: 'Unauthorized' });
@@ -831,7 +851,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('iceCandidate')
   async handleIceCandidate(
     client: Socket,
-    data: { callId: string; targetUserId: string; candidate: RTCIceCandidateInit },
+    data: {
+      callId: string;
+      targetUserId: string;
+      candidate: RTCIceCandidateInit;
+    },
   ) {
     if (!client.data.userId) {
       client.emit('error', { message: 'Unauthorized' });

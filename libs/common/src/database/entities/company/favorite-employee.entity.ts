@@ -1,9 +1,9 @@
 import {
-    CreateDateColumn,
-    Entity,
-    ManyToOne,
-    PrimaryGeneratedColumn,
-    Unique
+  CreateDateColumn,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  Unique,
 } from 'typeorm';
 import { Employee } from '../employee/employee.entity';
 import { Company } from './company.entity';

@@ -7,6 +7,7 @@ COPY nest-cli.json ./
 COPY tsconfig*.json ./
 COPY apps/payment-service ./apps/payment-service
 COPY libs ./libs
+COPY utils ./utils
 
 RUN npm ci
 RUN npx nest build payment-service

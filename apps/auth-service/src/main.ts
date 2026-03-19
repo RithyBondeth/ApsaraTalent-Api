@@ -16,7 +16,7 @@ async function bootstrap() {
     {
       transport: Transport.TCP,
       options: {
-        host: configService.get<string>('services.auth.host'),
+        host: '0.0.0.0',
         port: configService.get<number>('services.auth.port'),
       },
     },

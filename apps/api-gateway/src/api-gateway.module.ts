@@ -11,7 +11,6 @@ import { ChatModule } from './chat/chat.module';
 import { HealthController } from './health/health.controller';
 import { JobModule } from './job/job.module';
 import { NotificationModule } from './notification/notification.module';
-import { PaymentModule } from './payment/payment.module';
 import { ResumeBuilderModule } from './resume-builder/resume-builder.module';
 import { UserModule } from './user/user.module';
 
@@ -31,7 +30,6 @@ import { UserModule } from './user/user.module';
     JwtModule,
     ChatModule,
     JobModule,
-    //PaymentModule,
     NotificationModule,
   ],
   controllers: [HealthController],

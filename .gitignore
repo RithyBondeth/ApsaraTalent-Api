@@ -35,12 +35,12 @@ lerna-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# dotenv environment variable files - ignore local/secret files, keep templates
+# dotenv environment variable files - never commit secrets
 .env
 .env.local
 .env.development
 .env.staging
-!.env.production
+.env.production
 !.env.example
 
 # Storage directory

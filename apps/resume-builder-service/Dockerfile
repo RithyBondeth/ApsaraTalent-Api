@@ -7,6 +7,7 @@ COPY nest-cli.json ./
 COPY tsconfig*.json ./
 COPY apps/resume-builder-service ./apps/resume-builder-service
 COPY libs ./libs
+COPY utils ./utils
 
 RUN npm ci
 RUN npx nest build resume-builder-service
