@@ -28,11 +28,8 @@ const CHAT_ALLOWED_ORIGINS = parseAllowedOrigins(
   process.env.ALLOWED_ORIGINS,
   process.env.FRONTEND_ORIGIN,
 );
-const CHAT_FALLBACK_ORIGINS = ['http://localhost:4000'];
-const RESOLVED_CHAT_ALLOWED_ORIGINS =
-  CHAT_ALLOWED_ORIGINS.length > 0
-    ? CHAT_ALLOWED_ORIGINS
-    : CHAT_FALLBACK_ORIGINS;
+const RESOLVED_CHAT_ALLOWED_ORIGINS = CHAT_ALLOWED_ORIGINS;
+const CHAT_ALLOW_ALL_CORS = process.env.CORS_ALLOW_ALL === 'true';
 
 @WebSocketGateway({
   // No port specified — gateway attaches to the same HTTP server as the API Gateway (port 3000)
@@ -43,7 +40,10 @@ const RESOLVED_CHAT_ALLOWED_ORIGINS =
       origin: string,
       callback: (err: Error | null, allow: boolean) => void,
     ) => {
-      if (isOriginAllowed(origin, RESOLVED_CHAT_ALLOWED_ORIGINS)) {
+      if (
+        CHAT_ALLOW_ALL_CORS ||
+        isOriginAllowed(origin, RESOLVED_CHAT_ALLOWED_ORIGINS)
+      ) {
         callback(null, true);
       } else {
         callback(new Error(`CORS: origin ${origin} not allowed`), false);

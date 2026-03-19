@@ -47,15 +47,13 @@ async function bootstrap() {
     configService.get<string>('frontend.origin'),
     process.env.ALLOWED_ORIGINS,
   );
-  const allowedOrigins =
-    configuredOrigins.length > 0
-      ? configuredOrigins
-      : ['http://localhost:4000'];
+  const allowedOrigins = configuredOrigins;
+  const allowAllCors = process.env.CORS_ALLOW_ALL === 'true';
 
   // Enable Frontend CORS
   app.enableCors({
     origin: (origin, callback) => {
-      if (isOriginAllowed(origin, allowedOrigins)) {
+      if (allowAllCors || isOriginAllowed(origin, allowedOrigins)) {
         callback(null, true);
         return;
       }
@@ -76,7 +74,9 @@ async function bootstrap() {
     3000;
   await app.listen(port);
   logger.log(
-    `Api gateway is running on port ${port} (origins: ${allowedOrigins.join(', ')})`,
+    `Api gateway is running on port ${port} (origins: ${
+      allowedOrigins.length > 0 ? allowedOrigins.join(', ') : 'ALL'
+    }, allowAllCors=${allowAllCors})`,
   );
 }
 bootstrap();
