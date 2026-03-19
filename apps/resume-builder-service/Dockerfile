@@ -9,7 +9,7 @@ COPY apps/resume-builder-service ./apps/resume-builder-service
 COPY libs ./libs
 COPY utils ./utils
 
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 RUN npx nest build resume-builder-service
 
 # Stage 2: Production

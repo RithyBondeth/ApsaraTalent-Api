@@ -9,7 +9,7 @@ COPY apps/job-service ./apps/job-service
 COPY libs ./libs
 COPY utils ./utils
 
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 RUN npx nest build job-service
 
 # Stage 2: Production

@@ -9,7 +9,7 @@ COPY apps/auth-service ./apps/auth-service
 COPY libs ./libs
 COPY utils ./utils
 
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 RUN npx nest build auth-service
 
 # Stage 2: Production

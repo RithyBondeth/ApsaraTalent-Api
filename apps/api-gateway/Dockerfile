@@ -9,7 +9,7 @@ COPY apps/api-gateway ./apps/api-gateway
 COPY libs ./libs
 COPY utils ./utils
 
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 RUN npx nest build api-gateway
 
 # Stage 2: Production
