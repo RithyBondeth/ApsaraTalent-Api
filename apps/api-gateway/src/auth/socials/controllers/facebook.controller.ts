@@ -65,7 +65,7 @@ export class FacebookController implements IFacebookAuthController {
       const cookieOptions = {
         httpOnly: true, // Prevents JavaScript access
         secure: isProduction,
-        sameSite: 'lax' as const, // 'lax' is better for OAuth redirects
+        sameSite: 'none' as const, // 'lax' is better for OAuth redirects
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
         path: '/',
       };
@@ -81,7 +81,7 @@ export class FacebookController implements IFacebookAuthController {
       res.cookie('auth-remember', remember ? 'true' : 'false', {
         httpOnly: false, // Frontend needs to read this
         secure: isProduction,
-        sameSite: 'lax' as const,
+        sameSite: 'none' as const,
         maxAge: 30 * 24 * 60 * 60 * 1000,
         path: '/',
       });

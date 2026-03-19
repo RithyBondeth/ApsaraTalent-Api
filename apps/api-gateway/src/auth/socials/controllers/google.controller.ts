@@ -62,7 +62,7 @@ export class GoogleController implements IGoogleAuthController {
       const cookieOptions = {
         httpOnly: true,
         secure: isProduction,
-        sameSite: 'lax' as const,
+        sameSite: 'none' as const,
         maxAge,
         path: '/',
       };
@@ -78,7 +78,7 @@ export class GoogleController implements IGoogleAuthController {
       res.cookie('auth-remember', remember ? 'true' : 'false', {
         httpOnly: false,
         secure: isProduction,
-        sameSite: 'lax',
+        sameSite: 'none',
         maxAge,
         path: '/',
       });

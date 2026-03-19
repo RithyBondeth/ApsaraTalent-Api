@@ -59,7 +59,7 @@ export class AuthController implements IBasicAuthController {
     res.cookie('auth-token', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'none',
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
     });
@@ -67,7 +67,7 @@ export class AuthController implements IBasicAuthController {
     res.cookie('refresh-token', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'none',
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
     });
@@ -105,7 +105,7 @@ export class AuthController implements IBasicAuthController {
     res.cookie('auth-token', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'none',
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
     });
@@ -113,7 +113,7 @@ export class AuthController implements IBasicAuthController {
     res.cookie('refresh-token', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'none',
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
     });
@@ -164,7 +164,7 @@ export class AuthController implements IBasicAuthController {
     res.cookie('auth-token', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'none',
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
     });
@@ -172,7 +172,7 @@ export class AuthController implements IBasicAuthController {
     res.cookie('refresh-token', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'none',
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
     });

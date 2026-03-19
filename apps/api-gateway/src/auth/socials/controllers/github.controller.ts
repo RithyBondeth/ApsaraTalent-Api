@@ -64,7 +64,7 @@ export class GithubController implements IGithubAuthController {
       const cookieOptions = {
         httpOnly: true, // Prevents JavaScript access
         secure: isProduction,
-        sameSite: 'lax' as const, // 'lax' is better for OAuth redirects
+        sameSite: 'none' as const, // 'lax' is better for OAuth redirects
         maxAge,
         path: '/',
       };
@@ -80,7 +80,7 @@ export class GithubController implements IGithubAuthController {
       res.cookie('auth-remember', remember ? 'true' : 'false', {
         httpOnly: false, // Frontend needs to read this
         secure: isProduction,
-        sameSite: 'lax' as const,
+        sameSite: 'none' as const,
         maxAge,
         path: '/',
       });
