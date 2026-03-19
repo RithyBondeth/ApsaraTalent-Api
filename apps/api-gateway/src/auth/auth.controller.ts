@@ -3,6 +3,7 @@ import { ThrottlerGuard } from '@app/common/throttler/guards/throttler.guard';
 import {
     Body,
     Controller,
+    Get,
     HttpCode,
     HttpStatus,
     Inject,
@@ -58,7 +59,7 @@ export class AuthController implements IBasicAuthController {
     // Set HTTP-only cookies
     res.cookie('auth-token', accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV !== 'development',
       sameSite: 'none',
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
@@ -66,7 +67,7 @@ export class AuthController implements IBasicAuthController {
 
     res.cookie('refresh-token', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV !== 'development',
       sameSite: 'none',
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
@@ -104,7 +105,7 @@ export class AuthController implements IBasicAuthController {
 
     res.cookie('auth-token', accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV !== 'development',
       sameSite: 'none',
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
@@ -112,7 +113,7 @@ export class AuthController implements IBasicAuthController {
 
     res.cookie('refresh-token', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV !== 'development',
       sameSite: 'none',
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
@@ -163,7 +164,7 @@ export class AuthController implements IBasicAuthController {
 
     res.cookie('auth-token', accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV !== 'development',
       sameSite: 'none',
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
@@ -171,7 +172,7 @@ export class AuthController implements IBasicAuthController {
 
     res.cookie('refresh-token', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV !== 'development',
       sameSite: 'none',
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
@@ -197,5 +198,36 @@ export class AuthController implements IBasicAuthController {
         emailVerificationToken,
       ),
     );
+  }
+
+  /** Returns Twilio TURN credentials for WebRTC peer connections. */
+  @Get('ice-servers')
+  @HttpCode(HttpStatus.OK)
+  async getIceServers(): Promise<{ iceServers: object[] }> {
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const fallback = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+      ],
+    };
+
+    if (!accountSid || !authToken) return fallback;
+
+    try {
+      const credentials = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
+      const response = await fetch(
+        `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Tokens.json`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Basic ${credentials}` },
+        },
+      );
+      const data = await response.json() as any;
+      return { iceServers: data.ice_servers ?? fallback.iceServers };
+    } catch {
+      return fallback;
+    }
   }
 }
