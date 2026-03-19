@@ -37,6 +37,10 @@ export class LinkedInController implements ILinkedInAuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(LinkedInAuthGuard)
   async linkedInCallback(@Req() req: any, @Res() res: Response) {
+    const frontendOriginConfig = this.configService.get<string>('frontend.origin');
+    const FRONTEND_ORIGIN =
+      frontendOriginConfig?.split(',')[0]?.trim() || 'http://localhost:4000';
+
     try {
       const remember = req.session.remember;
 
@@ -58,8 +62,6 @@ export class LinkedInController implements ILinkedInAuthController {
       if (!result?.accessToken) {
         throw new BadRequestException('LinkedIn authentication failed');
       }
-
-      const FRONTEND_ORIGIN = this.configService.get<string>('frontend.origin');
 
       const isProduction =
         this.configService.get<string>('NODE_ENV') === 'production';
@@ -94,7 +96,9 @@ export class LinkedInController implements ILinkedInAuthController {
         path: '/',
       });
 
-      // Send user info using postMessage (no tokens)
+      // Send user info using postMessage.
+      // Include tokens so frontend can persist first-party auth cookies
+      // on the web domain (required when API and Web use different domains).
       const html = `
         <!doctype html>
         <html>
@@ -110,6 +114,9 @@ export class LinkedInController implements ILinkedInAuthController {
               const message = {
                 type: 'LINKEDIN_AUTH_SUCCESS',
                 newUser: ${result.newUser || false},
+                accessToken: ${JSON.stringify(result.accessToken)},
+                refreshToken: ${JSON.stringify(result.refreshToken ?? null)},
+                remember: ${JSON.stringify(remember === 'true')},
                 user: {
                   email: ${JSON.stringify(result.email)},
                   firstname: ${JSON.stringify(result.firstname)},
@@ -150,8 +157,6 @@ export class LinkedInController implements ILinkedInAuthController {
       res.send(html);
     } catch (error) {
       console.error('LinkedIn authentication error:', error);
-
-      const FRONTEND_ORIGIN = this.configService.get<string>('frontend.origin');
 
       const errorHtml = `
         <!doctype html>

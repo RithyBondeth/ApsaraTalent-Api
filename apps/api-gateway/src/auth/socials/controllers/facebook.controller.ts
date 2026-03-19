@@ -37,6 +37,10 @@ export class FacebookController implements IFacebookAuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(FacebookAuthGuard)
   async facebookCallback(@Req() req: any, @Res() res: Response) {
+    const frontendOriginConfig = this.configService.get<string>('frontend.origin');
+    const FRONTEND_ORIGIN =
+      frontendOriginConfig?.split(',')[0]?.trim() || 'http://localhost:4000';
+
     try {
       const remember = req.session.remember;
 
@@ -49,9 +53,6 @@ export class FacebookController implements IFacebookAuthController {
       if (!result?.accessToken) {
         throw new BadRequestException('Facebook authentication failed');
       }
-
-      // Determine frontend URL
-      const FRONTEND_ORIGIN = this.configService.get<string>('frontend.origin');
 
       const isProduction =
         this.configService.get<string>('NODE_ENV') === 'production';
@@ -66,7 +67,7 @@ export class FacebookController implements IFacebookAuthController {
         httpOnly: true, // Prevents JavaScript access
         secure: isProduction,
         sameSite: 'none' as const, // 'lax' is better for OAuth redirects
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        maxAge,
         path: '/',
       };
 
@@ -82,11 +83,13 @@ export class FacebookController implements IFacebookAuthController {
         httpOnly: false, // Frontend needs to read this
         secure: isProduction,
         sameSite: 'none' as const,
-        maxAge: 30 * 24 * 60 * 60 * 1000,
+        maxAge,
         path: '/',
       });
 
-      // Send user info using postMessage (no tokens)
+      // Send user info using postMessage.
+      // Include tokens so frontend can persist first-party auth cookies
+      // on the web domain (required when API and Web use different domains).
       const html = `
         <!doctype html>
         <html>
@@ -102,6 +105,9 @@ export class FacebookController implements IFacebookAuthController {
               const message = {
                 type: 'FACEBOOK_AUTH_SUCCESS', // Fixed: was 'FACEBOOK_AUTH_'
                 newUser: ${result.newUser || false},
+                accessToken: ${JSON.stringify(result.accessToken)},
+                refreshToken: ${JSON.stringify(result.refreshToken ?? null)},
+                remember: ${JSON.stringify(remember === 'true')},
                 user: {
                   email: ${JSON.stringify(result.email)},
                   firstname: ${JSON.stringify(result.firstname)},
@@ -142,8 +148,6 @@ export class FacebookController implements IFacebookAuthController {
       res.send(html);
     } catch (error) {
       console.error('Facebook authentication error:', error);
-
-      const FRONTEND_ORIGIN = this.configService.get<string>('frontend.origin');
 
       const errorHtml = `
         <!doctype html>

@@ -37,6 +37,10 @@ export class GithubController implements IGithubAuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(GithubAuthGuard)
   async githubCallback(@Req() req: any, @Res() res: Response) {
+    const frontendOriginConfig = this.configService.get<string>('frontend.origin');
+    const FRONTEND_ORIGIN =
+      frontendOriginConfig?.split(',')[0]?.trim() || 'http://localhost:4000';
+
     try {
       const remember = req.session.remember;
 
@@ -49,8 +53,6 @@ export class GithubController implements IGithubAuthController {
       if (!result?.accessToken) {
         throw new BadRequestException('GitHub authentication failed');
       }
-
-      const FRONTEND_ORIGIN = this.configService.get<string>('frontend.origin');
 
       const isProduction =
         this.configService.get<string>('NODE_ENV') === 'production';
@@ -85,7 +87,9 @@ export class GithubController implements IGithubAuthController {
         path: '/',
       });
 
-      // Send user info using postMessage (no tokens)
+      // Send user info using postMessage.
+      // Include tokens so frontend can persist first-party auth cookies
+      // on the web domain (required when API and Web use different domains).
       const html = `
         <!doctype html>
         <html>
@@ -101,6 +105,9 @@ export class GithubController implements IGithubAuthController {
               const message = {
                 type: 'GITHUB_AUTH_SUCCESS',
                 newUser: ${result.newUser || false},
+                accessToken: ${JSON.stringify(result.accessToken)},
+                refreshToken: ${JSON.stringify(result.refreshToken ?? null)},
+                remember: ${JSON.stringify(remember === 'true')},
                 user: {
                   email: ${JSON.stringify(result.email)},
                   firstname: ${JSON.stringify(result.firstname)},
@@ -141,8 +148,6 @@ export class GithubController implements IGithubAuthController {
       res.send(html);
     } catch (error) {
       console.error('GitHub authentication error:', error);
-
-      const FRONTEND_ORIGIN = this.configService.get<string>('frontend.origin');
 
       const errorHtml = `
         <!doctype html>
