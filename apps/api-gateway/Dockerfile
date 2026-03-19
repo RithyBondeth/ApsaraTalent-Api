@@ -6,6 +6,7 @@ COPY package*.json ./
 COPY nest-cli.json ./
 COPY tsconfig*.json ./
 COPY apps/api-gateway ./apps/api-gateway
+COPY apps/resume-builder-service ./apps/resume-builder-service
 COPY libs ./libs
 COPY utils ./utils
 
