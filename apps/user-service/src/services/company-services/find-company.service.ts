@@ -8,8 +8,8 @@ import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { UserPaginationDTO } from '../../dtos/user-pagination.dto';
 import {
-    CompanyResponseDTO,
-    JobPositionDTO
+  CompanyResponseDTO,
+  JobPositionDTO,
 } from '../../dtos/user-response.dto';
 
 @Injectable()
