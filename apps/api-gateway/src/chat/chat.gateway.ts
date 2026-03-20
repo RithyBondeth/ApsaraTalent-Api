@@ -35,7 +35,7 @@ const CHAT_ALLOW_ALL_CORS = process.env.CORS_ALLOW_ALL === 'true';
   // No port specified — gateway attaches to the same HTTP server as the API Gateway (port 3000)
   // CHAT_SERVICE_PORT is for the internal TCP microservice, not the WebSocket server
   namespace: '/chat',
-  transports: ['websocket'],
+  transports: ['websocket', 'polling'],
   cors: {
     origin: (
       origin: string,
@@ -234,14 +234,36 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   /** Extracts JWT from handshake (auth object → Bearer header → cookie) */
   private extractToken(client: Socket): string | null {
+    const normalizeToken = (value?: string | null): string | null => {
+      if (!value) return null;
+      const trimmed = value.trim();
+      if (!trimmed) return null;
+      if (trimmed.toLowerCase().startsWith('bearer ')) {
+        const bearerToken = trimmed.slice(7).trim();
+        return bearerToken || null;
+      }
+      return trimmed;
+    };
+
     const auth = client.handshake.auth as Record<string, string> | undefined;
-    if (auth?.token) return auth.token;
+    const authToken = normalizeToken(auth?.token);
+    if (authToken) return authToken;
 
     const authHeader = client.handshake.headers?.authorization;
-    if (authHeader?.startsWith('Bearer ')) return authHeader.slice(7);
+    const headerToken = normalizeToken(
+      Array.isArray(authHeader) ? authHeader[0] : authHeader,
+    );
+    if (headerToken) return headerToken;
+
+    const queryToken = client.handshake.query?.token;
+    const parsedQueryToken = normalizeToken(
+      Array.isArray(queryToken) ? queryToken[0] : (queryToken as string),
+    );
+    if (parsedQueryToken) return parsedQueryToken;
 
     const cookieHeader = (client.handshake.headers?.cookie as string) || '';
-    return cookieHeader.match(/auth-token=([^;]+)/)?.[1] ?? null;
+    const cookieToken = cookieHeader.match(/auth-token=([^;]+)/)?.[1];
+    return cookieToken ? decodeURIComponent(cookieToken) : null;
   }
 
   async handleConnection(client: Socket) {

@@ -1,16 +1,17 @@
 import { IBasicAuthController } from '@app/common/interfaces/auth-controller.interface';
 import { ThrottlerGuard } from '@app/common/throttler/guards/throttler.guard';
 import {
-    Body,
-    Controller,
-    Get,
-    HttpCode,
-    HttpStatus,
-    Inject,
-    Param,
-    Post,
-    Res,
-    UseGuards
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Param,
+  Post,
+  Res,
+  UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
@@ -23,14 +24,84 @@ export class AuthController implements IBasicAuthController {
     @Inject(AUTH_SERVICE.NAME) private readonly authClient: ClientProxy,
   ) {}
 
+  private normalizeErrorPayload(error: unknown): {
+    statusCode: number;
+    message: string;
+  } {
+    const fallback = {
+      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      message: 'Internal server error',
+    };
+
+    if (!error || typeof error !== 'object') return fallback;
+
+    const err = error as Record<string, unknown>;
+    const candidates: unknown[] = [err, err.response, err.error, err.cause];
+
+    for (const candidate of candidates) {
+      if (!candidate || typeof candidate !== 'object') continue;
+      const payload = candidate as Record<string, unknown>;
+      const rawStatus = payload.statusCode;
+      const rawMessage = payload.message;
+      const statusCode =
+        typeof rawStatus === 'number' && rawStatus >= 100 && rawStatus <= 599
+          ? rawStatus
+          : null;
+
+      const message =
+        typeof rawMessage === 'string'
+          ? rawMessage
+          : Array.isArray(rawMessage)
+            ? rawMessage.find((item) => typeof item === 'string')
+            : null;
+
+      if (statusCode || message) {
+        return {
+          statusCode: statusCode ?? fallback.statusCode,
+          message: message ?? fallback.message,
+        };
+      }
+    }
+
+    // Some RPC errors bubble up as a JSON string in error.message.
+    if (typeof err.message === 'string') {
+      try {
+        const parsed = JSON.parse(err.message) as Record<string, unknown>;
+        const parsedStatus = parsed.statusCode;
+        const parsedMessage = parsed.message;
+        if (typeof parsedStatus === 'number' && typeof parsedMessage === 'string') {
+          return { statusCode: parsedStatus, message: parsedMessage };
+        }
+      } catch {
+        // ignore JSON parse failures and fall back below
+      }
+    }
+
+    return fallback;
+  }
+
+  private rethrowAsHttpError(error: unknown): never {
+    const normalized = this.normalizeErrorPayload(error);
+    throw new HttpException(normalized.message, normalized.statusCode);
+  }
+
+  private async sendAuthRequest<T = any>(
+    action: unknown,
+    payload: unknown,
+  ): Promise<T> {
+    try {
+      return await firstValueFrom(this.authClient.send<T>(action, payload));
+    } catch (error) {
+      this.rethrowAsHttpError(error);
+    }
+  }
+
   @Post('register-company')
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(ThrottlerGuard)
   async registerCompany(@Body() companyRegisterDTO: any): Promise<any> {
     const payload = { ...companyRegisterDTO };
-    return await firstValueFrom(
-      this.authClient.send(AUTH_SERVICE.ACTIONS.REGISTER_COMPANY, payload),
-    );
+    return await this.sendAuthRequest(AUTH_SERVICE.ACTIONS.REGISTER_COMPANY, payload);
   }
 
   @Post('register-employee')
@@ -38,9 +109,7 @@ export class AuthController implements IBasicAuthController {
   @UseGuards(ThrottlerGuard)
   async registerEmployee(@Body() employeeRegisterDTO: any): Promise<any> {
     const payload = { ...employeeRegisterDTO };
-    return await firstValueFrom(
-      this.authClient.send(AUTH_SERVICE.ACTIONS.REGISTER_EMPLOYEE, payload),
-    );
+    return await this.sendAuthRequest(AUTH_SERVICE.ACTIONS.REGISTER_EMPLOYEE, payload);
   }
 
   @Post('login')
@@ -52,9 +121,11 @@ export class AuthController implements IBasicAuthController {
   ): Promise<any> {
     const payload = { ...loginDTO };
 
-    const { accessToken, refreshToken, user, message } = await firstValueFrom(
-      this.authClient.send(AUTH_SERVICE.ACTIONS.LOGIN, payload),
-    );
+    const { accessToken, refreshToken, user, message } =
+      await this.sendAuthRequest(
+        AUTH_SERVICE.ACTIONS.LOGIN,
+        payload,
+      );
 
     // Set HTTP-only cookies
     res.cookie('auth-token', accessToken, {
@@ -85,8 +156,9 @@ export class AuthController implements IBasicAuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
   async loginOtp(@Body() loginOtpDTO: any): Promise<any> {
-    return await firstValueFrom(
-      this.authClient.send(AUTH_SERVICE.ACTIONS.LOGIN_OTP, loginOtpDTO),
+    return await this.sendAuthRequest(
+      AUTH_SERVICE.ACTIONS.LOGIN_OTP,
+      loginOtpDTO,
     );
   }
 
@@ -97,8 +169,9 @@ export class AuthController implements IBasicAuthController {
     @Body() verifyOtpDTO: any,
     @Res({ passthrough: true }) res: Response,
   ): Promise<any> {
-    const response = await firstValueFrom(
-      this.authClient.send(AUTH_SERVICE.ACTIONS.VERIFY_OTP, verifyOtpDTO),
+    const response = await this.sendAuthRequest(
+      AUTH_SERVICE.ACTIONS.VERIFY_OTP,
+      verifyOtpDTO,
     );
 
     const { accessToken, refreshToken, user, message } = response;
@@ -132,9 +205,7 @@ export class AuthController implements IBasicAuthController {
   @UseGuards(ThrottlerGuard)
   async forgotPassword(@Body() forgotPasswordDTO: any): Promise<any> {
     const payload = { ...forgotPasswordDTO };
-    return await firstValueFrom(
-      this.authClient.send(AUTH_SERVICE.ACTIONS.FORGOT_PASSWORD, payload),
-    );
+    return await this.sendAuthRequest(AUTH_SERVICE.ACTIONS.FORGOT_PASSWORD, payload);
   }
 
   @Post('reset-password/:token')
@@ -145,9 +216,7 @@ export class AuthController implements IBasicAuthController {
     @Param('token') token: string,
   ): Promise<any> {
     const payload = { ...resetPasswordDTO, token };
-    return await firstValueFrom(
-      this.authClient.send(AUTH_SERVICE.ACTIONS.RESET_PASSWORD, payload),
-    );
+    return await this.sendAuthRequest(AUTH_SERVICE.ACTIONS.RESET_PASSWORD, payload);
   }
 
   @Post('refresh')
@@ -155,12 +224,14 @@ export class AuthController implements IBasicAuthController {
   @UseGuards(ThrottlerGuard)
   async refreshToken(
     @Body() refreshTokenDTO: any,
-    @Res() res: Response,
+    @Res({ passthrough: true }) res: Response,
   ): Promise<any> {
     const payload = { ...refreshTokenDTO };
-    const { accessToken, refreshToken, user, message } = await firstValueFrom(
-      this.authClient.send(AUTH_SERVICE.ACTIONS.REFRESH_TOKEN, payload),
-    );
+    const { accessToken, refreshToken, user, message } =
+      await this.sendAuthRequest(
+        AUTH_SERVICE.ACTIONS.REFRESH_TOKEN,
+        payload,
+      );
 
     res.cookie('auth-token', accessToken, {
       httpOnly: true,
@@ -192,11 +263,9 @@ export class AuthController implements IBasicAuthController {
   async verifyEmail(
     @Param('emailVerificationToken') emailVerificationToken: string,
   ): Promise<any> {
-    return await firstValueFrom(
-      this.authClient.send(
-        AUTH_SERVICE.ACTIONS.VERIFY_EMAIL,
-        emailVerificationToken,
-      ),
+    return await this.sendAuthRequest(
+      AUTH_SERVICE.ACTIONS.VERIFY_EMAIL,
+      emailVerificationToken,
     );
   }
 
