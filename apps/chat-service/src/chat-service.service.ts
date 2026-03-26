@@ -5,6 +5,7 @@ import {
   IChatMessage,
   TChatContent,
 } from '@app/common/interfaces/chat.interface';
+import { RedisService } from '@app/common/redis/redis.service';
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -25,6 +26,7 @@ export class ChatServiceService {
     @InjectRepository(Chat) private readonly chatRepository: Repository<Chat>,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     @Inject(USER_SERVICE.NAME) private readonly userServiceClient: ClientProxy,
+    private readonly redisService: RedisService,
   ) {}
 
   /**
@@ -118,6 +120,8 @@ export class ChatServiceService {
         messageType: EMessageType.TEXT,
       });
       const saved = await this.chatRepository.save(message);
+      // Invalidate recent-chats for both participants
+      await this.redisService.invalidateChatCaches(senderUserId, receiverUserId);
       return {
         ...partnerProfile,
         id: receiverUserId,
@@ -151,6 +155,8 @@ export class ChatServiceService {
         attachmentAmplitude: data.attachmentAmplitude ?? null,
       });
       const savedMessage = await this.chatRepository.save(message);
+      // Invalidate recent-chats and unread count for both participants
+      await this.redisService.invalidateChatCaches(senderUserId, receiverUserId);
       const chat = await this.chatRepository.findOne({
         where: { id: savedMessage.id },
         relations: [
@@ -342,6 +348,8 @@ export class ChatServiceService {
     if (result.affected === 0) {
       throw new Error('Message not found or user not authorized');
     }
+    // Invalidate unread count for the reader
+    await this.redisService.del(this.redisService.generateUnreadCountKey(data.readerId));
     return { success: true };
   }
 
@@ -457,9 +465,15 @@ export class ChatServiceService {
 
   async getUnreadCount(u: string) {
     const userId = await this.resolveUserId(u);
-    return await this.chatRepository.count({
+    const cacheKey = this.redisService.generateUnreadCountKey(userId);
+    const cached = await this.redisService.get<number>(cacheKey);
+    if (cached !== null && cached !== undefined) return cached;
+
+    const count = await this.chatRepository.count({
       where: { receiver: { id: userId }, isRead: false },
     });
+    await this.redisService.set(cacheKey, count, 15000); // 15s TTL
+    return count;
   }
 
   async updateReaction(data: {
@@ -502,11 +516,17 @@ export class ChatServiceService {
       return [];
     }
 
+    // Use the resolved user ID (most canonical) as cache key
+    const cacheUserId = resolvedUserId || rawId;
+    const cacheKey = this.redisService.generateRecentChatsKey(cacheUserId);
+    const cached = await this.redisService.get<any[]>(cacheKey);
+    if (cached) return cached;
+
     this.logger.log(
       `Fetching recent chats for candidates: ${userIds.join(', ')} (original: ${u})`,
     );
 
-    return await this.chatRepository
+    const result = await this.chatRepository
       .createQueryBuilder('chat')
       .leftJoinAndSelect('chat.sender', 'sender')
       .leftJoinAndSelect('sender.employee', 'senderEmployee')
@@ -519,5 +539,8 @@ export class ChatServiceService {
       .orderBy('chat.sentAt', 'DESC')
       .take(100)
       .getMany();
+
+    await this.redisService.set(cacheKey, result, 30000); // 30s TTL
+    return result;
   }
 }

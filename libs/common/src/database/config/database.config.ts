@@ -13,6 +13,7 @@ import { Employee } from '../entities/employee/employee.entity';
 import { Experience } from '../entities/employee/experience.entity';
 import { EmployeeFavoriteCompany } from '../entities/employee/favorite-company.entity';
 import { Skill } from '../entities/employee/skill.entity';
+import { Interview } from '../entities/interview.entity';
 import { JobMatching } from '../entities/job-matching.entity';
 import { Notification } from '../entities/notification.entity';
 import { ResumeTemplate } from '../entities/resume-template.entity';
@@ -44,5 +45,13 @@ export const databaseConfig = async (
     ResumeTemplate,
     CompanyFavoriteEmployee,
     EmployeeFavoriteCompany,
+    Interview,
   ],
+  // Connection pool optimized for Neon PostgreSQL (remote, high-latency)
+  extra: {
+    max: 20, // Max pool connections (default was 10)
+    min: 2, // Keep 2 warm connections ready
+    idleTimeoutMillis: 60000, // Close idle connections after 60s
+    connectionTimeoutMillis: 10000, // Wait up to 10s for connection (default 1s)
+  },
 });

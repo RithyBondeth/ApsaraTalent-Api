@@ -1,4 +1,5 @@
 import { ResumeTemplate } from '@app/common/database/entities/resume-template.entity';
+import { RedisService } from '@app/common/redis/redis.service';
 import { UploadfileService } from '@app/common/uploadfile/uploadfile.service';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
@@ -8,6 +9,9 @@ import { Repository } from 'typeorm';
 import { CreateResumeTemplateDTO } from '../dtos/create-resume-template.dto';
 import { SearchTemplateDTO } from '../dtos/search-resume-template.dto';
 
+const TEMPLATE_TTL = 60 * 60 * 1000;        // 1 hour — static data
+const TEMPLATE_SEARCH_TTL = 30 * 60 * 1000; // 30 min
+
 @Injectable()
 export class ResumeTemplateService {
   constructor(
@@ -15,9 +19,18 @@ export class ResumeTemplateService {
     private readonly resumeTemplateRepository: Repository<ResumeTemplate>,
     private readonly uploadFileService: UploadfileService,
     private readonly logger: PinoLogger,
+    private readonly redisService: RedisService,
   ) {}
 
   async findAllResumeTemplate(): Promise<any> {
+    const cacheKey = this.redisService.generateTemplateListKey();
+    const cached = await this.redisService.get<ResumeTemplate[]>(cacheKey);
+    if (cached) {
+      this.logger.info('All resume templates cache HIT');
+      return cached;
+    }
+    this.logger.info('All resume templates cache MISS');
+
     try {
       const templates = await this.resumeTemplateRepository.find();
       if (!templates || templates.length === 0)
@@ -26,10 +39,10 @@ export class ResumeTemplateService {
           statusCode: 404,
         });
 
+      await this.redisService.set(cacheKey, templates, TEMPLATE_TTL);
       return templates;
     } catch (error) {
       if (error instanceof RpcException) throw error;
-      // Handle error
       this.logger.error(
         (error as Error).message ||
           "An error occurred while fetching all resume's templates.",
@@ -44,6 +57,14 @@ export class ResumeTemplateService {
   }
 
   async findOneResumeTemplate(resumeId: string): Promise<any> {
+    const cacheKey = this.redisService.generateTemplateDetailKey(resumeId);
+    const cached = await this.redisService.get<ResumeTemplate>(cacheKey);
+    if (cached) {
+      this.logger.info(`Resume template ${resumeId} cache HIT`);
+      return cached;
+    }
+    this.logger.info(`Resume template ${resumeId} cache MISS`);
+
     try {
       const template = await this.resumeTemplateRepository.findOne({
         where: { id: resumeId },
@@ -54,10 +75,10 @@ export class ResumeTemplateService {
           statusCode: 404,
         });
 
+      await this.redisService.set(cacheKey, template, TEMPLATE_TTL);
       return template;
     } catch (error) {
       if (error instanceof RpcException) throw error;
-      // Handle error
       this.logger.error(
         (error as Error).message ||
           "An error occurred while fetching a resume's templates.",
@@ -93,9 +114,11 @@ export class ResumeTemplateService {
 
       await this.resumeTemplateRepository.save(template);
 
+      // Invalidate list cache so the new template appears immediately
+      await this.redisService.invalidateTemplateCaches();
+
       return { message: "Resume's template was successfully created." };
     } catch (error) {
-      // Handle error
       this.logger.error(
         (error as Error).message ||
           "An error occurred while creating the resume's template.",
@@ -112,6 +135,14 @@ export class ResumeTemplateService {
   async searchResumeTemplate(
     searchTemplateDTO: SearchTemplateDTO,
   ): Promise<any> {
+    const cacheKey = this.redisService.generateTemplateSearchKey(searchTemplateDTO);
+    const cached = await this.redisService.get<ResumeTemplate[]>(cacheKey);
+    if (cached) {
+      this.logger.info('Resume template search cache HIT');
+      return cached;
+    }
+    this.logger.info('Resume template search cache MISS');
+
     try {
       const query = this.resumeTemplateRepository.createQueryBuilder('resume');
 
@@ -147,6 +178,7 @@ export class ResumeTemplateService {
         });
       }
 
+      await this.redisService.set(cacheKey, templates, TEMPLATE_SEARCH_TTL);
       return templates;
     } catch (error) {
       if (error instanceof RpcException) throw error;

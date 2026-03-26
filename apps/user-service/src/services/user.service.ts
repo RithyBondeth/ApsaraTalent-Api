@@ -1,9 +1,12 @@
 import { CareerScope } from '@app/common/database/entities/career-scope.entity';
+import { Company } from '@app/common/database/entities/company/company.entity';
 import { CompanyFavoriteEmployee } from '@app/common/database/entities/company/favorite-employee.entity';
+import { Employee } from '@app/common/database/entities/employee/employee.entity';
 import { EmployeeFavoriteCompany } from '@app/common/database/entities/employee/favorite-company.entity';
+import { JobMatching } from '@app/common/database/entities/job-matching.entity';
 import { User } from '@app/common/database/entities/user.entity';
 import { RedisService } from '@app/common/redis/redis.service';
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -17,7 +20,7 @@ import {
 } from '../dtos/user-response.dto';
 
 @Injectable()
-export class UserService {
+export class UserService implements OnModuleInit {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     @InjectRepository(CareerScope)
@@ -26,13 +29,29 @@ export class UserService {
     private readonly empFavoriteCmpRepository: Repository<EmployeeFavoriteCompany>,
     @InjectRepository(CompanyFavoriteEmployee)
     private readonly cmpFavoriteEmpRepository: Repository<CompanyFavoriteEmployee>,
+    @InjectRepository(JobMatching)
+    private readonly jobMatchingRepository: Repository<JobMatching>,
     private readonly logger: PinoLogger,
     private readonly redisService: RedisService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async findAllUsers(): Promise<UserResponseDTO[]> {
-    const cacheKey = this.redisService.generateListKey('user', {});
+  // Cache warming — pre-load frequently accessed data on startup
+  async onModuleInit() {
+    try {
+      this.logger.info('Cache warming: loading career scopes and first page of users...');
+      await Promise.all([
+        this.findAllCareerScopes(),
+        this.findAllUsers(0, 20),
+      ]);
+      this.logger.info('Cache warming complete');
+    } catch (error) {
+      this.logger.warn(`Cache warming failed (non-fatal): ${(error as Error).message}`);
+    }
+  }
+
+  async findAllUsers(skip = 0, limit = 20): Promise<UserResponseDTO[]> {
+    const cacheKey = this.redisService.generateListKey('user', { skip, limit });
     const cached = await this.redisService.get<UserResponseDTO[]>(cacheKey);
 
     if (cached) {
@@ -43,24 +62,34 @@ export class UserService {
     this.logger.info('All users cache MISS');
 
     try {
-      const users = await this.userRepository.find({
-        relations: [
-          'employee',
-          'employee.skills',
-          'employee.experiences',
-          'employee.educations',
-          'employee.careerScopes',
-          'employee.socials',
-          'company',
-          'company.openPositions',
-          'company.careerScopes',
-          'company.benefits',
-          'company.values',
-          'company.socials',
-          'company.images',
-        ],
-      });
-      if (!users)
+      // Use QueryBuilder: paginated, excludes sensitive fields, lighter relations for list
+      const users = await this.userRepository
+        .createQueryBuilder('user')
+        .select([
+          'user.id',
+          'user.role',
+          'user.email',
+          'user.phone',
+          'user.profileCompleted',
+          'user.isEmailVerified',
+          'user.lastLoginAt',
+          'user.lastLoginMethod',
+          'user.createdAt',
+        ])
+        // Employee — only load essential fields for list view
+        .leftJoinAndSelect('user.employee', 'employee')
+        .leftJoinAndSelect('employee.skills', 'skills')
+        .leftJoinAndSelect('employee.careerScopes', 'empCareerScopes')
+        // Company — only load essential fields for list view
+        .leftJoinAndSelect('user.company', 'company')
+        .leftJoinAndSelect('company.openPositions', 'openPositions')
+        .leftJoinAndSelect('company.careerScopes', 'cmpCareerScopes')
+        .orderBy('user.createdAt', 'DESC')
+        .skip(skip)
+        .take(limit)
+        .getMany();
+
+      if (!users || users.length === 0)
         throw new RpcException({
           statusCode: 404,
           message: 'There are no users available!',
@@ -112,24 +141,36 @@ export class UserService {
     this.logger.info(`User ${userId} cache MISS`);
 
     try {
-      const user = await this.userRepository.findOne({
-        where: { id: userId },
-        relations: [
-          'employee',
-          'employee.skills',
-          'employee.experiences',
-          'employee.educations',
-          'employee.careerScopes',
-          'employee.socials',
-          'company',
-          'company.openPositions',
-          'company.careerScopes',
-          'company.benefits',
-          'company.values',
-          'company.socials',
-          'company.images',
-        ],
-      });
+      // Use QueryBuilder to exclude sensitive fields (password, tokens, OTP, etc.)
+      const user = await this.userRepository
+        .createQueryBuilder('user')
+        .select([
+          'user.id',
+          'user.role',
+          'user.email',
+          'user.phone',
+          'user.profileCompleted',
+          'user.isEmailVerified',
+          'user.lastLoginAt',
+          'user.lastLoginMethod',
+          'user.createdAt',
+        ])
+        .leftJoinAndSelect('user.employee', 'employee')
+        .leftJoinAndSelect('employee.skills', 'skills')
+        .leftJoinAndSelect('employee.experiences', 'experiences')
+        .leftJoinAndSelect('employee.educations', 'educations')
+        .leftJoinAndSelect('employee.careerScopes', 'empCareerScopes')
+        .leftJoinAndSelect('employee.socials', 'empSocials')
+        .leftJoinAndSelect('user.company', 'company')
+        .leftJoinAndSelect('company.openPositions', 'openPositions')
+        .leftJoinAndSelect('company.careerScopes', 'cmpCareerScopes')
+        .leftJoinAndSelect('company.benefits', 'benefits')
+        .leftJoinAndSelect('company.values', 'companyValues')
+        .leftJoinAndSelect('company.socials', 'cmpSocials')
+        .leftJoinAndSelect('company.images', 'images')
+        .where('user.id = :userId', { userId })
+        .getOne();
+
       if (!user)
         throw new RpcException({
           statusCode: 404,
@@ -476,36 +517,32 @@ export class UserService {
     this.logger.info(`All employee ${eid} favorites cache MISS`);
 
     try {
+      // Single query with JOIN — no N+1 loop for userId
       const allFavorites = await this.empFavoriteCmpRepository.find({
         where: { employee: { id: eid } },
-        relations: ['company', 'company.openPositions'],
+        relations: ['company', 'company.openPositions', 'company.user'],
       });
 
       if (!allFavorites || allFavorites.length === 0) {
-        const result = [];
-        // Cache empty result for 1 minute
+        const result: any[] = [];
         await this.redisService.set(cacheKey, result, 60000);
         return result;
       }
 
-      const allFavoritesWithUsersId = await Promise.all(
-        allFavorites.map(async (favorite) => {
-          const user = await this.userRepository.findOne({
-            where: {
-              company: {
-                id: favorite.company.id,
-              },
-            },
-            select: ['id'],
-          });
-          return { ...favorite, userId: user?.id || null };
-        }),
-      );
+      // userId is now available via the JOIN — no extra queries
+      const result = allFavorites.map((favorite) => ({
+        ...favorite,
+        userId: favorite.company?.user?.id || null,
+        company: {
+          ...favorite.company,
+          user: undefined, // Don't leak user entity to client
+        },
+      }));
 
       // Cache for 2 minutes
-      await this.redisService.set(cacheKey, allFavoritesWithUsersId, 120000);
+      await this.redisService.set(cacheKey, result, 120000);
 
-      return allFavoritesWithUsersId;
+      return result;
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
@@ -533,36 +570,32 @@ export class UserService {
     this.logger.info(`All company ${cid} favorites cache MISS`);
 
     try {
+      // Single query with JOIN — no N+1 loop for userId
       const allFavorites = await this.cmpFavoriteEmpRepository.find({
         where: { company: { id: cid } },
-        relations: ['employee', 'employee.skills'],
+        relations: ['employee', 'employee.skills', 'employee.user'],
       });
 
       if (!allFavorites || allFavorites.length === 0) {
-        const result = [];
-        // Cache empty result for 1 minute
+        const result: any[] = [];
         await this.redisService.set(cacheKey, result, 60000);
         return result;
       }
 
-      const allFavoritesWithUserId = await Promise.all(
-        allFavorites.map(async (favorite) => {
-          const user = await this.userRepository.findOne({
-            where: {
-              employee: {
-                id: favorite.employee.id,
-              },
-            },
-            select: ['id'],
-          });
-          return { ...favorite, userId: user?.id || null };
-        }),
-      );
+      // userId is now available via the JOIN — no extra queries
+      const result = allFavorites.map((favorite) => ({
+        ...favorite,
+        userId: favorite.employee?.user?.id || null,
+        employee: {
+          ...favorite.employee,
+          user: undefined, // Don't leak user entity to client
+        },
+      }));
 
       // Cache for 2 minutes
-      await this.redisService.set(cacheKey, allFavoritesWithUserId, 120000);
+      await this.redisService.set(cacheKey, result, 120000);
 
-      return allFavoritesWithUserId;
+      return result;
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
@@ -737,5 +770,204 @@ export class UserService {
       ),
     ]);
     return { ok: true };
+  }
+
+  async getEmployeeRecommendations(
+    employeeId: string,
+    limit = 10,
+  ): Promise<any[]> {
+    const cacheKey = this.redisService.generateListKey(
+      'employee-recommendations',
+      { employeeId, limit },
+    );
+    const cached = await this.redisService.get<any[]>(cacheKey);
+
+    if (cached) {
+      this.logger.info(
+        `Employee ${employeeId} recommendations cache HIT`,
+      );
+      return cached;
+    }
+
+    this.logger.info(
+      `Employee ${employeeId} recommendations cache MISS`,
+    );
+
+    try {
+      // 1. Get the employee's career scope IDs
+      const employee = await this.userRepository
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.employee', 'employee')
+        .leftJoinAndSelect('employee.careerScopes', 'empCareerScopes')
+        .where('employee.id = :employeeId', { employeeId })
+        .getOne();
+
+      if (
+        !employee?.employee?.careerScopes ||
+        employee.employee.careerScopes.length === 0
+      ) {
+        return [];
+      }
+
+      const careerScopeIds = employee.employee.careerScopes.map(
+        (cs) => cs.id,
+      );
+
+      // 2. Get company IDs the employee has already liked
+      const likedMatches = await this.jobMatchingRepository.find({
+        where: { employee: { id: employeeId }, employeeLiked: true },
+        relations: ['company'],
+      });
+      const likedCompanyIds = likedMatches.map((m) => m.company.id);
+
+      // 3. Query companies sharing career scopes, scored by overlap count
+      const qb = this.userRepository
+        .createQueryBuilder('user')
+        .innerJoinAndSelect('user.company', 'company')
+        .innerJoin(
+          'company.careerScopes',
+          'cs',
+          'cs.id IN (:...careerScopeIds)',
+          { careerScopeIds },
+        )
+        .leftJoinAndSelect('company.openPositions', 'openPositions')
+        .addSelect('COUNT(cs.id)', 'overlap_count')
+        .groupBy('user.id')
+        .addGroupBy('company.id')
+        .addGroupBy('openPositions.id')
+        .orderBy('overlap_count', 'DESC')
+        .take(limit);
+
+      if (likedCompanyIds.length > 0) {
+        qb.andWhere('company.id NOT IN (:...likedCompanyIds)', {
+          likedCompanyIds,
+        });
+      }
+
+      const results = await qb.getMany();
+
+      const recommendations = results.map((user) => ({
+        company: new CompanyResponseDTO({
+          ...user.company,
+          openPositions: user.company?.openPositions?.map(
+            (job) => new JobPositionDTO(job),
+          ),
+        }),
+      }));
+
+      // Cache for 5 minutes
+      await this.redisService.set(cacheKey, recommendations, 300000);
+
+      return recommendations;
+    } catch (error) {
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while getting employee recommendations.',
+      );
+      throw new RpcException({
+        statusCode: 500,
+        message:
+          (error as Error).message ||
+          'An error occurred while getting employee recommendations.',
+      });
+    }
+  }
+
+  async getCompanyRecommendations(
+    companyId: string,
+    limit = 10,
+  ): Promise<any[]> {
+    const cacheKey = this.redisService.generateListKey(
+      'company-recommendations',
+      { companyId, limit },
+    );
+    const cached = await this.redisService.get<any[]>(cacheKey);
+
+    if (cached) {
+      this.logger.info(
+        `Company ${companyId} recommendations cache HIT`,
+      );
+      return cached;
+    }
+
+    this.logger.info(
+      `Company ${companyId} recommendations cache MISS`,
+    );
+
+    try {
+      // 1. Get the company's career scope IDs
+      const company = await this.userRepository
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.company', 'company')
+        .leftJoinAndSelect('company.careerScopes', 'cmpCareerScopes')
+        .where('company.id = :companyId', { companyId })
+        .getOne();
+
+      if (
+        !company?.company?.careerScopes ||
+        company.company.careerScopes.length === 0
+      ) {
+        return [];
+      }
+
+      const careerScopeIds = company.company.careerScopes.map(
+        (cs) => cs.id,
+      );
+
+      // 2. Get employee IDs the company has already liked
+      const likedMatches = await this.jobMatchingRepository.find({
+        where: { company: { id: companyId }, companyLiked: true },
+        relations: ['employee'],
+      });
+      const likedEmployeeIds = likedMatches.map((m) => m.employee.id);
+
+      // 3. Query employees sharing career scopes, scored by overlap count
+      const qb = this.userRepository
+        .createQueryBuilder('user')
+        .innerJoinAndSelect('user.employee', 'employee')
+        .innerJoin(
+          'employee.careerScopes',
+          'cs',
+          'cs.id IN (:...careerScopeIds)',
+          { careerScopeIds },
+        )
+        .leftJoinAndSelect('employee.skills', 'skills')
+        .addSelect('COUNT(cs.id)', 'overlap_count')
+        .groupBy('user.id')
+        .addGroupBy('employee.id')
+        .addGroupBy('skills.id')
+        .orderBy('overlap_count', 'DESC')
+        .take(limit);
+
+      if (likedEmployeeIds.length > 0) {
+        qb.andWhere('employee.id NOT IN (:...likedEmployeeIds)', {
+          likedEmployeeIds,
+        });
+      }
+
+      const results = await qb.getMany();
+
+      const recommendations = results.map((user) => ({
+        employee: user.employee
+          ? new EmployeeResponseDTO(user.employee)
+          : undefined,
+      }));
+
+      // Cache for 5 minutes
+      await this.redisService.set(cacheKey, recommendations, 300000);
+
+      return recommendations;
+    } catch (error) {
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while getting company recommendations.',
+      );
+      throw new RpcException({
+        statusCode: 500,
+        message:
+          (error as Error).message ||
+          'An error occurred while getting company recommendations.',
+      });
+    }
   }
 }

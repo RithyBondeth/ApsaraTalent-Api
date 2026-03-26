@@ -137,4 +137,78 @@ export class RedisService {
   async clearUserDetailCache(userId: string): Promise<void> {
     await this.del(this.generateUserKey('detail', userId));
   }
+
+  // ===== JOB SERVICE KEYS =====
+  private readonly JOB_PREFIX = 'apsaratalent:job-service';
+
+  generateJobListKey(): string {
+    return `${this.JOB_PREFIX}:job:list:all`;
+  }
+
+  generateJobSearchKey(query: any): string {
+    return `${this.JOB_PREFIX}:job:search:${JSON.stringify(query)}`;
+  }
+
+  generateMatchingKey(type: string, id: string): string {
+    return `${this.JOB_PREFIX}:matching:${type}:${id}`;
+  }
+
+  async invalidateMatchingCaches(eid: string, cid: string): Promise<void> {
+    await Promise.all([
+      this.del(this.generateMatchingKey('employee-liked', eid)),
+      this.del(this.generateMatchingKey('company-liked', cid)),
+      this.del(this.generateMatchingKey('employee-matching', eid)),
+      this.del(this.generateMatchingKey('company-matching', cid)),
+      this.del(this.generateMatchingKey('employee-matching-count', eid)),
+      this.del(this.generateMatchingKey('company-matching-count', cid)),
+    ]);
+  }
+
+  // ===== CHAT SERVICE KEYS =====
+  private readonly CHAT_PREFIX = 'apsaratalent:chat-service';
+
+  generateRecentChatsKey(userId: string): string {
+    return `${this.CHAT_PREFIX}:chat:recent:${userId}`;
+  }
+
+  generateUnreadCountKey(userId: string): string {
+    return `${this.CHAT_PREFIX}:chat:unread-count:${userId}`;
+  }
+
+  async invalidateChatCaches(userId1: string, userId2?: string): Promise<void> {
+    const deletions = [
+      this.del(this.generateRecentChatsKey(userId1)),
+      this.del(this.generateUnreadCountKey(userId1)),
+    ];
+    if (userId2) {
+      deletions.push(
+        this.del(this.generateRecentChatsKey(userId2)),
+        this.del(this.generateUnreadCountKey(userId2)),
+      );
+    }
+    await Promise.all(deletions);
+  }
+
+  // ===== RESUME SERVICE KEYS =====
+  private readonly RESUME_PREFIX = 'apsaratalent:resume-service';
+
+  generateTemplateListKey(): string {
+    return `${this.RESUME_PREFIX}:templates:all`;
+  }
+
+  generateTemplateDetailKey(templateId: string): string {
+    return `${this.RESUME_PREFIX}:templates:detail:${templateId}`;
+  }
+
+  generateTemplateSearchKey(query: any): string {
+    return `${this.RESUME_PREFIX}:templates:search:${JSON.stringify(query)}`;
+  }
+
+  async invalidateTemplateCaches(templateId?: string): Promise<void> {
+    const deletions: Promise<void>[] = [this.del(this.generateTemplateListKey())];
+    if (templateId) {
+      deletions.push(this.del(this.generateTemplateDetailKey(templateId)));
+    }
+    await Promise.all(deletions);
+  }
 }

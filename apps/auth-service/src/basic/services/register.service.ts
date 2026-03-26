@@ -24,7 +24,7 @@ import {
   UserResponseDTO,
 } from 'apps/user-service/src/dtos/user-response.dto';
 import { PinoLogger } from 'nestjs-pino';
-import { Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { CompanyRegisterDTO } from '../dtos/company-register.dto';
 import { EmployeeRegisterDTO } from '../dtos/employee-register.dto';
 @Injectable()
@@ -54,7 +54,82 @@ export class RegisterService {
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
     private readonly logger: PinoLogger,
+    private readonly dataSource: DataSource,
   ) {}
+
+  // ── Helper: Bulk find-or-create for lookup entities ──────────────
+  private async findOrCreateBenefits(
+    labels: string[],
+    queryRunner: import('typeorm').QueryRunner,
+  ): Promise<Benefit[]> {
+    if (!labels.length) return [];
+    const existing = await queryRunner.manager.find(Benefit, {
+      where: { label: In(labels) },
+    });
+    const existingLabels = new Set(existing.map((b) => b.label));
+    const toCreate = labels
+      .filter((l) => !existingLabels.has(l))
+      .map((l) => queryRunner.manager.create(Benefit, { label: l }));
+    const created = toCreate.length
+      ? await queryRunner.manager.save(Benefit, toCreate)
+      : [];
+    return [...existing, ...created];
+  }
+
+  private async findOrCreateValues(
+    labels: string[],
+    queryRunner: import('typeorm').QueryRunner,
+  ): Promise<Value[]> {
+    if (!labels.length) return [];
+    const existing = await queryRunner.manager.find(Value, {
+      where: { label: In(labels) },
+    });
+    const existingLabels = new Set(existing.map((v) => v.label));
+    const toCreate = labels
+      .filter((l) => !existingLabels.has(l))
+      .map((l) => queryRunner.manager.create(Value, { label: l }));
+    const created = toCreate.length
+      ? await queryRunner.manager.save(Value, toCreate)
+      : [];
+    return [...existing, ...created];
+  }
+
+  private async findOrCreateCareerScopes(
+    names: string[],
+    queryRunner: import('typeorm').QueryRunner,
+  ): Promise<CareerScope[]> {
+    if (!names.length) return [];
+    const existing = await queryRunner.manager.find(CareerScope, {
+      where: { name: In(names) },
+    });
+    const existingNames = new Set(existing.map((cs) => cs.name));
+    const toCreate = names
+      .filter((n) => !existingNames.has(n))
+      .map((n) => queryRunner.manager.create(CareerScope, { name: n }));
+    const created = toCreate.length
+      ? await queryRunner.manager.save(CareerScope, toCreate)
+      : [];
+    return [...existing, ...created];
+  }
+
+  private async findOrCreateSkills(
+    skills: { name: string; description?: string }[],
+    queryRunner: import('typeorm').QueryRunner,
+  ): Promise<Skill[]> {
+    if (!skills.length) return [];
+    const names = skills.map((s) => s.name);
+    const existing = await queryRunner.manager.find(Skill, {
+      where: { name: In(names) },
+    });
+    const existingNames = new Set(existing.map((s) => s.name));
+    const toCreate = skills
+      .filter((s) => !existingNames.has(s.name))
+      .map((s) => queryRunner.manager.create(Skill, s));
+    const created = toCreate.length
+      ? await queryRunner.manager.save(Skill, toCreate)
+      : [];
+    return [...existing, ...created];
+  }
 
   async companyRegister(companyRegisterDTO: CompanyRegisterDTO): Promise<{
     message: string;
@@ -62,38 +137,37 @@ export class RegisterService {
     refreshToken: string;
     user: UserResponseDTO;
   }> {
-    try {
-      // Check if a company with this email already exists
-      let company = await this.userRepository.findOne({
-        where: companyRegisterDTO.authEmail
-          ? { email: companyRegisterDTO.email }
-          : { phone: companyRegisterDTO.phone },
-        relations: [
-          'company',
-          'company.openPositions',
-          'company.benefits',
-          'company.values',
-          'company.careerScopes',
-          'company.socials',
-        ],
+    // Lightweight existence check — no relations loaded
+    const exists = await this.userRepository.exists({
+      where: companyRegisterDTO.authEmail
+        ? { email: companyRegisterDTO.email }
+        : { phone: companyRegisterDTO.phone },
+    });
+
+    if (exists)
+      throw new RpcException({
+        message: 'This credential already registered!',
+        statusCode: 401,
       });
 
-      if (company)
-        throw new RpcException({
-          message: 'This credential already registered!',
-          statusCode: 401,
-        });
+    // Generate email verification token in parallel with nothing blocking
+    const emailVerificationToken =
+      await this.jwtService.generateEmailVerificationToken(
+        companyRegisterDTO.authEmail
+          ? companyRegisterDTO.email
+          : companyRegisterDTO.phone,
+      );
 
-      // Generate email verification token
-      const emailVerificationToken =
-        await this.jwtService.generateEmailVerificationToken(
-          companyRegisterDTO.authEmail
-            ? companyRegisterDTO.email
-            : companyRegisterDTO.phone,
-        );
+    // ── Transaction: all DB writes are atomic ──────────────────────
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-      // Create company entity
-      const newCompany = this.companyRepository.create({
+    let company: User;
+
+    try {
+      // Create and save company entity
+      const newCompany = queryRunner.manager.create(Company, {
         name: companyRegisterDTO.name,
         description: companyRegisterDTO.description,
         phone: companyRegisterDTO.phone,
@@ -102,84 +176,64 @@ export class RegisterService {
         companySize: companyRegisterDTO.companySize,
         foundedYear: companyRegisterDTO.foundedYear,
       });
+      await queryRunner.manager.save(Company, newCompany);
 
-      // Save company first to get the ID
-      await this.companyRepository.save(newCompany);
+      // ── Parallel: create all related entities at once ────────────
+      const [newJobs, newBenefits, newValues, newCareerScopes, newSocials] =
+        await Promise.all([
+          // Jobs
+          (async () => {
+            const jobs =
+              companyRegisterDTO.jobs?.map((job) =>
+                queryRunner.manager.create(Job, {
+                  ...job,
+                  company: newCompany,
+                }),
+              ) || [];
+            return jobs.length
+              ? queryRunner.manager.save(Job, jobs)
+              : [];
+          })(),
+          // Benefits — bulk find-or-create (1-2 queries instead of N)
+          this.findOrCreateBenefits(
+            companyRegisterDTO.benefits?.map((b) => b.label) || [],
+            queryRunner,
+          ),
+          // Values — bulk find-or-create
+          this.findOrCreateValues(
+            companyRegisterDTO.values?.map((v) => v.label) || [],
+            queryRunner,
+          ),
+          // Career scopes — bulk find-or-create
+          this.findOrCreateCareerScopes(
+            companyRegisterDTO.careerScopes?.map((c) => c.name) || [],
+            queryRunner,
+          ),
+          // Socials
+          (async () => {
+            const socials =
+              companyRegisterDTO.socials?.map((social) =>
+                queryRunner.manager.create(Social, {
+                  ...social,
+                  company: newCompany,
+                }),
+              ) || [];
+            return socials.length
+              ? queryRunner.manager.save(Social, socials)
+              : [];
+          })(),
+        ]);
 
-      // Create jobs and associate them with company
-      const newJobs =
-        companyRegisterDTO.jobs?.map((job) => {
-          return this.jobRepository.create({
-            ...job,
-            company: newCompany,
-          });
-        }) || [];
-      await this.jobRepository.save(newJobs);
-
-      // Create or find existing benefits and associate them with the company
-      const newBenefits = await Promise.all(
-        companyRegisterDTO.benefits?.map(async (benefit) => {
-          let existingBenefit = await this.benefitRepository.findOne({
-            where: { label: benefit.label },
-          });
-          if (!existingBenefit) {
-            existingBenefit = this.benefitRepository.create(benefit);
-            await this.benefitRepository.save(existingBenefit);
-          }
-          return existingBenefit;
-        }) || [],
-      );
-
-      // Create or find existing values and associate them with the company
-      const newValues = await Promise.all(
-        companyRegisterDTO.values?.map(async (value) => {
-          let existingValue = await this.valueRepository.findOne({
-            where: { label: value.label },
-          });
-          if (!existingValue) {
-            existingValue = this.valueRepository.create(value);
-            await this.valueRepository.save(existingValue);
-          }
-          return existingValue;
-        }) || [],
-      );
-
-      // Create or find existing career scopes and associate them with the company
-      const newCareerScopes = await Promise.all(
-        companyRegisterDTO.careerScopes?.map(async (career) => {
-          let existingCareerScope = await this.careerScopeRepository.findOne({
-            where: { name: career.name },
-          });
-          if (!existingCareerScope) {
-            existingCareerScope = this.careerScopeRepository.create(career);
-            await this.careerScopeRepository.save(existingCareerScope);
-          }
-          return existingCareerScope;
-        }) || [],
-      );
-
-      // Create socials and associate them with the company
-      const newSocials =
-        companyRegisterDTO.socials?.map((social) => {
-          return this.socialRepository.create({
-            ...social,
-            company: newCompany,
-          });
-        }) || [];
-      await this.socialRepository.save(newSocials);
-
-      // Update the company entity with the new relations
+      // Update company relations in a single save
       newCompany.openPositions = newJobs;
       newCompany.benefits = newBenefits;
       newCompany.values = newValues;
       newCompany.careerScopes = newCareerScopes;
       newCompany.socials = newSocials;
+      await queryRunner.manager.save(Company, newCompany);
 
-      // Save the updated company entity
-      await this.companyRepository.save(newCompany);
-
-      // Create user role company in database
-      company = this.userRepository.create({
+      // Create user
+      company = queryRunner.manager.create(User, {
         role: EUserRole.COMPANY,
         email: companyRegisterDTO.email,
         password: companyRegisterDTO.password,
@@ -190,56 +244,11 @@ export class RegisterService {
           : null,
         profileCompleted: true,
       });
+      await queryRunner.manager.save(User, company);
 
-      // Save user role company in database
-      await this.userRepository.save(company);
-
-      // Send verification email
-      if (companyRegisterDTO.authEmail) {
-        await this.emailService.sendEmail({
-          to: company.email,
-          subject: 'Apsara Talent - Verify Your Email Address',
-          text: `Hello, ${company.company.name}. Please verify your email address by clicking on the following link: 
-          ${this.configService.get<string>('CLIENT_URL')}/login/email-verification/${emailVerificationToken}`,
-        });
-      }
-
-      // Generate Tokens
-      const payload: IPayload = {
-        id: company.id,
-        info: companyRegisterDTO.authEmail ? company.email : company.phone,
-        role: company.role,
-      };
-      const [accessToken, refreshToken] = await Promise.all([
-        this.jwtService.generateToken(payload),
-        this.jwtService.generateRefreshToken(company.id),
-      ]);
-
-      // Return company profile
-      return {
-        message: companyRegisterDTO.authEmail
-          ? 'Signup as company successfully. Please verify your email before login.'
-          : 'Signup as company successfully.',
-        accessToken: accessToken,
-        refreshToken: refreshToken,
-        user: new UserResponseDTO({
-          ...company,
-          employee: company.employee
-            ? new EmployeeResponseDTO({
-                ...company.employee,
-                userId: company.id,
-              })
-            : undefined,
-          company: new CompanyResponseDTO({
-            ...company.company,
-            openPositions: company.company.openPositions?.map(
-              (job) => new JobPositionDTO(job),
-            ),
-          }),
-        }),
-      };
+      await queryRunner.commitTransaction();
     } catch (error) {
-      // Handle error
+      await queryRunner.rollbackTransaction();
       this.logger.error(
         (error as Error).message ||
           'An error occurred while registering company.',
@@ -248,7 +257,58 @@ export class RegisterService {
         message: (error as Error).message,
         statusCode: 500,
       });
+    } finally {
+      await queryRunner.release();
     }
+
+    // ── Non-blocking: email + tokens in parallel ───────────────────
+    const payload: IPayload = {
+      id: company.id,
+      info: companyRegisterDTO.authEmail ? company.email : company.phone,
+      role: company.role,
+    };
+
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.generateToken(payload),
+      this.jwtService.generateRefreshToken(company.id),
+    ]);
+
+    // Fire-and-forget: don't block response for email delivery
+    if (companyRegisterDTO.authEmail) {
+      this.emailService
+        .sendEmail({
+          to: company.email,
+          subject: 'Apsara Talent - Verify Your Email Address',
+          text: `Hello, ${company.company.name}. Please verify your email address by clicking on the following link:
+          ${this.configService.get<string>('CLIENT_URL')}/login/email-verification/${emailVerificationToken}`,
+        })
+        .catch((err) =>
+          this.logger.error(`Failed to send verification email: ${err.message}`),
+        );
+    }
+
+    return {
+      message: companyRegisterDTO.authEmail
+        ? 'Signup as company successfully. Please verify your email before login.'
+        : 'Signup as company successfully.',
+      accessToken,
+      refreshToken,
+      user: new UserResponseDTO({
+        ...company,
+        employee: company.employee
+          ? new EmployeeResponseDTO({
+              ...company.employee,
+              userId: company.id,
+            })
+          : undefined,
+        company: new CompanyResponseDTO({
+          ...company.company,
+          openPositions: company.company.openPositions?.map(
+            (job) => new JobPositionDTO(job),
+          ),
+        }),
+      }),
+    };
   }
 
   async employeeRegister(employeeRegisterDTO: EmployeeRegisterDTO): Promise<{
@@ -257,38 +317,37 @@ export class RegisterService {
     refreshToken: string;
     user: UserResponseDTO;
   }> {
-    try {
-      // Check if employee with this email already exists
-      let employee = await this.userRepository.findOne({
-        where: employeeRegisterDTO.authEmail
-          ? { email: employeeRegisterDTO.email }
-          : { phone: employeeRegisterDTO.phone },
-        relations: [
-          'employee',
-          'employee.skills',
-          'employee.experiences',
-          'employee.careerScopes',
-          'employee.socials',
-          'employee.educations',
-        ],
+    // Lightweight existence check — no relations loaded
+    const exists = await this.userRepository.exists({
+      where: employeeRegisterDTO.authEmail
+        ? { email: employeeRegisterDTO.email }
+        : { phone: employeeRegisterDTO.phone },
+    });
+
+    if (exists)
+      throw new RpcException({
+        message: 'This credential already registered!',
+        statusCode: 401,
       });
 
-      if (employee)
-        throw new RpcException({
-          message: 'This credential already registered!',
-          statusCode: 401,
-        });
+    // Generate email verification token
+    const emailVerificationToken =
+      await this.jwtService.generateEmailVerificationToken(
+        employeeRegisterDTO.authEmail
+          ? employeeRegisterDTO.email
+          : employeeRegisterDTO.phone,
+      );
 
-      // Generate email verification token
-      const emailVerificationToken =
-        await this.jwtService.generateEmailVerificationToken(
-          employeeRegisterDTO.authEmail
-            ? employeeRegisterDTO.email
-            : employeeRegisterDTO.phone,
-        );
+    // ── Transaction: all DB writes are atomic ──────────────────────
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-      // Create employee entity
-      const newEmployee = this.employeeRepository.create({
+    let employee: User;
+
+    try {
+      // Create and save employee entity
+      const newEmployee = queryRunner.manager.create(Employee, {
         firstname: employeeRegisterDTO.firstname,
         lastname: employeeRegisterDTO.lastname,
         dob: employeeRegisterDTO.dob,
@@ -301,96 +360,78 @@ export class RegisterService {
         location: employeeRegisterDTO.location,
         phone: employeeRegisterDTO.phone,
       });
+      await queryRunner.manager.save(Employee, newEmployee);
 
-      // Save employee first to get the ID
-      await this.employeeRepository.save(newEmployee);
+      // ── Parallel: create all related entities at once ────────────
+      const [
+        newEducations,
+        newSkills,
+        newExperiences,
+        newCareerScopes,
+        newSocials,
+      ] = await Promise.all([
+        // Educations — always create new (unique per employee)
+        (async () => {
+          const edus =
+            employeeRegisterDTO.educations?.map((edu) =>
+              queryRunner.manager.create(Education, {
+                ...edu,
+                employee: newEmployee,
+              }),
+            ) || [];
+          return edus.length
+            ? queryRunner.manager.save(Education, edus)
+            : [];
+        })(),
+        // Skills — bulk find-or-create (1-2 queries instead of N)
+        this.findOrCreateSkills(
+          employeeRegisterDTO.skills || [],
+          queryRunner,
+        ),
+        // Experiences — always create new (unique per employee)
+        (async () => {
+          const exps =
+            employeeRegisterDTO.experiences?.map((exp) =>
+              queryRunner.manager.create(Experience, {
+                ...exp,
+                employee: newEmployee,
+              }),
+            ) || [];
+          return exps.length
+            ? queryRunner.manager.save(Experience, exps)
+            : [];
+        })(),
+        // Career scopes — bulk find-or-create
+        this.findOrCreateCareerScopes(
+          employeeRegisterDTO.careerScopes?.map((c) => c.name) || [],
+          queryRunner,
+        ),
+        // Socials
+        (async () => {
+          const socials =
+            employeeRegisterDTO.socials?.map((social) =>
+              queryRunner.manager.create(Social, {
+                platform: social.platform,
+                url: social.url,
+                employee: newEmployee,
+              }),
+            ) || [];
+          return socials.length
+            ? queryRunner.manager.save(Social, socials)
+            : [];
+        })(),
+      ]);
 
-      // Create or find existing educations and associate them with the employee
-      const newEducations = await Promise.all(
-        employeeRegisterDTO.educations?.map(async (edu) => {
-          let education = await this.educationRepository.findOne({
-            where: { school: edu.school, degree: edu.degree, year: edu.year },
-          });
-          if (!education) {
-            education = this.educationRepository.create({
-              ...edu,
-              employee: newEmployee,
-            });
-            await this.educationRepository.save(education);
-          }
-          return education;
-        }) || [],
-      );
-
-      // Create or find existing skills and associate them with the employee
-      const newSkills = await Promise.all(
-        employeeRegisterDTO.skills?.map(async (skill) => {
-          let existingSkill = await this.skillRepository.findOne({
-            where: { name: skill.name },
-          });
-          if (!existingSkill) {
-            existingSkill = this.skillRepository.create(skill);
-            await this.skillRepository.save(existingSkill);
-          }
-          return existingSkill;
-        }) || [],
-      );
-
-      // Create or find existing experiences and associate them with the employee
-      const newExperiences = await Promise.all(
-        employeeRegisterDTO.experiences?.map(async (exp) => {
-          let experience = await this.experienceRepository.findOne({
-            where: { title: exp.title, description: exp.description },
-          });
-          if (!experience) {
-            experience = this.experienceRepository.create({
-              ...exp,
-              employee: newEmployee,
-            });
-            await this.experienceRepository.save(experience);
-          }
-          return experience;
-        }) || [],
-      );
-
-      // Create or find existing career scopes and associate them with the employee
-      const newCareerScopes = await Promise.all(
-        employeeRegisterDTO.careerScopes?.map(async (csp) => {
-          let careerScope = await this.careerScopeRepository.findOne({
-            where: { name: csp.name },
-          });
-          if (!careerScope) {
-            careerScope = this.careerScopeRepository.create(csp);
-            await this.careerScopeRepository.save(careerScope);
-          }
-          return careerScope;
-        }) || [],
-      );
-
-      // Create socials and related them with the employee
-      const newSocials =
-        employeeRegisterDTO.socials?.map((social) => {
-          return this.socialRepository.create({
-            platform: social.platform,
-            url: social.url,
-            employee: newEmployee,
-          });
-        }) || [];
-
-      await this.socialRepository.save(newSocials);
-
-      // Update the employee entity with the new relations
+      // Update employee relations in a single save
       newEmployee.educations = newEducations;
       newEmployee.skills = newSkills;
       newEmployee.experiences = newExperiences;
       newEmployee.careerScopes = newCareerScopes;
       newEmployee.socials = newSocials;
+      await queryRunner.manager.save(Employee, newEmployee);
 
-      // Save the updated employee entity
-      await this.employeeRepository.save(newEmployee);
-
-      // Create user role employee in database
-      employee = this.userRepository.create({
+      // Create user
+      employee = queryRunner.manager.create(User, {
         role: EUserRole.EMPLOYEE,
         email: employeeRegisterDTO.email,
         password: employeeRegisterDTO.password,
@@ -401,56 +442,11 @@ export class RegisterService {
           : null,
         profileCompleted: true,
       });
+      await queryRunner.manager.save(User, employee);
 
-      // Save user role employee in database
-      await this.userRepository.save(employee);
-
-      // Send verification email
-      if (employeeRegisterDTO.authEmail)
-        await this.emailService.sendEmail({
-          to: employee.email,
-          subject: 'Apsara Talent - Verify Your Email Address',
-          text: `Hello, ${employee.employee.username}. Please verify your email address by clicking on the following link: 
-          ${this.configService.get<string>('CLIENT_URL')}/login/email-verification/${emailVerificationToken}`,
-        });
-
-      // Generate Tokens
-      const payload: IPayload = {
-        id: employee.id,
-        info: employeeRegisterDTO.authEmail ? employee.email : employee.phone,
-        role: employee.role,
-      };
-
-      const [accessToken, refreshToken] = await Promise.all([
-        this.jwtService.generateToken(payload),
-        this.jwtService.generateRefreshToken(employee.id),
-      ]);
-
-      // Return employee profile
-      return {
-        message: employeeRegisterDTO.authEmail
-          ? 'Signup as employee successfully. Please verify your email before login.'
-          : 'Signup as employee successfully.',
-        accessToken: accessToken,
-        refreshToken: refreshToken,
-        user: new UserResponseDTO({
-          ...employee,
-          employee: new EmployeeResponseDTO({
-            ...employee.employee,
-            userId: employee.id,
-          }),
-          company: employee.company
-            ? new CompanyResponseDTO({
-                ...employee.company,
-                openPositions: employee.company.openPositions?.map(
-                  (job) => new JobPositionDTO(job),
-                ),
-              })
-            : undefined,
-        }),
-      };
+      await queryRunner.commitTransaction();
     } catch (error) {
-      // Handle error
+      await queryRunner.rollbackTransaction();
       this.logger.error(
         (error as Error).message ||
           'An error occurred while registering employee.',
@@ -459,6 +455,57 @@ export class RegisterService {
         message: (error as Error).message,
         statusCode: 500,
       });
+    } finally {
+      await queryRunner.release();
     }
+
+    // ── Non-blocking: email + tokens in parallel ───────────────────
+    const payload: IPayload = {
+      id: employee.id,
+      info: employeeRegisterDTO.authEmail ? employee.email : employee.phone,
+      role: employee.role,
+    };
+
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.generateToken(payload),
+      this.jwtService.generateRefreshToken(employee.id),
+    ]);
+
+    // Fire-and-forget: don't block response for email delivery
+    if (employeeRegisterDTO.authEmail) {
+      this.emailService
+        .sendEmail({
+          to: employee.email,
+          subject: 'Apsara Talent - Verify Your Email Address',
+          text: `Hello, ${employee.employee.username}. Please verify your email address by clicking on the following link:
+          ${this.configService.get<string>('CLIENT_URL')}/login/email-verification/${emailVerificationToken}`,
+        })
+        .catch((err) =>
+          this.logger.error(`Failed to send verification email: ${err.message}`),
+        );
+    }
+
+    return {
+      message: employeeRegisterDTO.authEmail
+        ? 'Signup as employee successfully. Please verify your email before login.'
+        : 'Signup as employee successfully.',
+      accessToken,
+      refreshToken,
+      user: new UserResponseDTO({
+        ...employee,
+        employee: new EmployeeResponseDTO({
+          ...employee.employee,
+          userId: employee.id,
+        }),
+        company: employee.company
+          ? new CompanyResponseDTO({
+              ...employee.company,
+              openPositions: employee.company.openPositions?.map(
+                (job) => new JobPositionDTO(job),
+              ),
+            })
+          : undefined,
+      }),
+    };
   }
 }

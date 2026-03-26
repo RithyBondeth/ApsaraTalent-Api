@@ -11,8 +11,10 @@ export class UserController implements IUserController {
   constructor(private readonly userService: UserService) {}
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL)
-  async findAllUsers(): Promise<UserResponseDTO[]> {
-    return this.userService.findAllUsers();
+  async findAllUsers(
+    @Payload() payload: { skip?: number; limit?: number },
+  ): Promise<UserResponseDTO[]> {
+    return this.userService.findAllUsers(payload?.skip, payload?.limit);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ONE_BY_ID)
@@ -110,5 +112,25 @@ export class UserController implements IUserController {
   async clearUserCache(@Payload() payload: { userId: string }) {
     console.log('[USER-SERVICE] CLEAR_USER_CACHE received', payload.userId);
     return this.userService.clearCurrentUserCache(payload.userId);
+  }
+
+  @MessagePattern(USER_SERVICE.ACTIONS.GET_EMPLOYEE_RECOMMENDATIONS)
+  async getEmployeeRecommendations(
+    @Payload() payload: { employeeId: string; limit?: number },
+  ) {
+    return this.userService.getEmployeeRecommendations(
+      payload.employeeId,
+      payload.limit,
+    );
+  }
+
+  @MessagePattern(USER_SERVICE.ACTIONS.GET_COMPANY_RECOMMENDATIONS)
+  async getCompanyRecommendations(
+    @Payload() payload: { companyId: string; limit?: number },
+  ) {
+    return this.userService.getCompanyRecommendations(
+      payload.companyId,
+      payload.limit,
+    );
   }
 }

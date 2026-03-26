@@ -1,4 +1,5 @@
 import { DatabaseModule, LoggerModule, UploadfileModule } from '@app/common';
+import { RedisModule } from '@app/common/redis/redis.module';
 import { ConfigModule } from '@app/common/config';
 import { ResumeTemplate } from '@app/common/database/entities/resume-template.entity';
 import { Module } from '@nestjs/common';
@@ -16,6 +17,7 @@ import { ResumeTemplateService } from './services/resume-template.service';
     LoggerModule,
     DatabaseModule,
     UploadfileModule,
+    RedisModule,
     TypeOrmModule.forFeature([ResumeTemplate]),
   ],
   controllers: [ResumeBuilderController, ResumeTemplateController],

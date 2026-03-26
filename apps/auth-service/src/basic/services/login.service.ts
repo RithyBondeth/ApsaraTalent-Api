@@ -42,7 +42,7 @@ export class LoginService {
         statusCode: 401,
       });
 
-      if (!user) throw invalidCredentialsError;
+      if (!user || !user.password) throw invalidCredentialsError;
 
       //Compare password
       const validPassword: boolean = await bcrypt.compare(
@@ -77,14 +77,20 @@ export class LoginService {
       await this.userRepository.save(user);
 
       // Clear Cache in USER SERVICE
-      this.logger.info(
-        `[AUTH] Clearing user cache after login for userId=${user.id}`,
-      );
-      await firstValueFrom(
-        this.userClient.send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, {
-          userId: user.id,
-        }),
-      );
+      try {
+        this.logger.info(
+          `[AUTH] Clearing user cache after login for userId=${user.id}`,
+        );
+        await firstValueFrom(
+          this.userClient.send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, {
+            userId: user.id,
+          }),
+        );
+      } catch (cacheError) {
+        this.logger.warn(
+          `[AUTH] Failed to clear user cache for userId=${user.id}: ${(cacheError as Error).message}`,
+        );
+      }
 
       //Return token and user details
       return new LoginResponseDTO({

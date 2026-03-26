@@ -61,4 +61,14 @@ export class MatchingController implements IMatchingController {
   ): Promise<any> {
     return this.matchingService.findCurrentCompanyMatchingCount(payload.cid);
   }
+
+  @MessagePattern(JOB_SERVICE.ACTIONS.GET_ANALYTICS)
+  async getAnalytics(
+    @Payload() payload: { userId: string; role: string },
+  ) {
+    return this.matchingService.getAnalytics(
+      payload.userId,
+      payload.role as 'employee' | 'company',
+    );
+  }
 }

@@ -44,5 +44,8 @@ export const USER_SERVICE = {
     UPDATE_PUSH_TOKEN: { cmd: 'updatePushNotificationToken' },
 
     CLEAR_CURRENT_USER_CACHE: { cmd: 'clearCurrentUserCache' },
+
+    GET_EMPLOYEE_RECOMMENDATIONS: { cmd: 'getEmployeeRecommendations' },
+    GET_COMPANY_RECOMMENDATIONS: { cmd: 'getCompanyRecommendations' },
   },
 };

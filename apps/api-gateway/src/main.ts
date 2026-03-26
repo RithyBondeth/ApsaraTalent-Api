@@ -2,15 +2,13 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
 import { Logger } from 'nestjs-pino';
 import { join } from 'path';
 import { ApiGatewayModule } from './api-gateway.module';
-import {
-  isOriginAllowed,
-  parseAllowedOrigins,
-} from './utils/cors-origin.util';
+import { isOriginAllowed, parseAllowedOrigins } from './utils/cors-origin.util';
 
 async function bootstrap() {
   const app =
@@ -23,6 +21,9 @@ async function bootstrap() {
 
   // Enable socket.io WebSocket adapter — required for ChatGateway to work
   app.useWebSocketAdapter(new IoAdapter(app));
+
+  // Gzip compression — reduces JSON payload size by 60-80%
+  app.use(compression());
 
   // Enable Cookie Parser
   app.use(cookieParser());

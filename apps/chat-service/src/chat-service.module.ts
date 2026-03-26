@@ -1,4 +1,5 @@
 import { DatabaseModule, JwtModule, LoggerModule } from '@app/common';
+import { RedisModule } from '@app/common/redis/redis.module';
 import { ConfigModule } from '@app/common/config';
 import { Chat } from '@app/common/database/entities/chat.entity';
 import { User } from '@app/common/database/entities/user.entity';
@@ -16,6 +17,7 @@ import { ChatServiceController } from './chat-service.controller';
     LoggerModule,
     DatabaseModule,
     JwtModule,
+    RedisModule,
     TypeOrmModule.forFeature([User, Chat]),
     ClientsModule.registerAsync([
       {

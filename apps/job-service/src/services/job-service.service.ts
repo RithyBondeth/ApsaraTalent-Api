@@ -1,4 +1,5 @@
 import { Job } from '@app/common/database/entities/company/job.entity';
+import { RedisService } from '@app/common/redis/redis.service';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -8,14 +9,26 @@ import { extractSalaryRange } from 'utils/functions/extract-salary-range';
 import { JobResponseDTO } from '../dtos/job-response.dto';
 import { SearchJobDto } from '../dtos/job-search.dto';
 
+const JOB_LIST_TTL = 5 * 60 * 1000;   // 5 min
+const JOB_SEARCH_TTL = 2 * 60 * 1000; // 2 min
+
 @Injectable()
 export class JobServiceService {
   constructor(
     @InjectRepository(Job) private readonly jobRepo: Repository<Job>,
     private readonly logger: PinoLogger,
+    private readonly redisService: RedisService,
   ) {}
 
   async findAllJobs(): Promise<JobResponseDTO[]> {
+    const cacheKey = this.redisService.generateJobListKey();
+    const cached = await this.redisService.get<JobResponseDTO[]>(cacheKey);
+    if (cached) {
+      this.logger.info('All jobs cache HIT');
+      return cached;
+    }
+    this.logger.info('All jobs cache MISS');
+
     try {
       const jobs = await this.jobRepo.find({
         relations: ['company', 'company.user'],
@@ -25,7 +38,9 @@ export class JobServiceService {
           message: "There's no job available.",
           statusCode: 400,
         });
-      return jobs.map((job) => new JobResponseDTO(job));
+      const result = jobs.map((job) => new JobResponseDTO(job));
+      await this.redisService.set(cacheKey, result, JOB_LIST_TTL);
+      return result;
     } catch (error) {
       this.logger.error(
         (error as Error).message || 'An error occurred while fetching the job.',
@@ -39,6 +54,14 @@ export class JobServiceService {
   }
 
   async searchJobs(searchParams: SearchJobDto): Promise<JobResponseDTO[]> {
+    const cacheKey = this.redisService.generateJobSearchKey(searchParams);
+    const cached = await this.redisService.get<JobResponseDTO[]>(cacheKey);
+    if (cached) {
+      this.logger.info('Job search cache HIT');
+      return cached;
+    }
+    this.logger.info('Job search cache MISS');
+
     try {
       const {
         keyword,
@@ -210,7 +233,9 @@ export class JobServiceService {
         });
       }
 
-      return jobs.map((job) => new JobResponseDTO(job));
+      const result = jobs.map((job) => new JobResponseDTO(job));
+      await this.redisService.set(cacheKey, result, JOB_SEARCH_TTL);
+      return result;
     } catch (error) {
       this.logger.error(
         (error as Error).message ||

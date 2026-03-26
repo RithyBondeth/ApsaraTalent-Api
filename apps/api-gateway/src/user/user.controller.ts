@@ -11,6 +11,7 @@ import {
     Param,
     ParseUUIDPipe,
     Post,
+    Query,
     Req,
     UseGuards,
     UseInterceptors
@@ -242,6 +243,36 @@ export class UserController implements IUserController {
   async findAllCareerScopes(): Promise<any> {
     return firstValueFrom(
       this.userClient.send(USER_SERVICE.ACTIONS.FIND_ALL_CAREER_SCOPES, {}),
+    );
+  }
+
+  @Get('recommendation/employee/:employeeId')
+  async getEmployeeRecommendations(
+    @Param('employeeId', ParseUUIDPipe) employeeId: string,
+    @Query('limit') limit?: number,
+    @Req() req?: any,
+  ): Promise<any> {
+    await this.assertEmployeeAccess(req?.user?.id, employeeId);
+    return firstValueFrom(
+      this.userClient.send(
+        USER_SERVICE.ACTIONS.GET_EMPLOYEE_RECOMMENDATIONS,
+        { employeeId, limit: limit ? Number(limit) : 10 },
+      ),
+    );
+  }
+
+  @Get('recommendation/company/:companyId')
+  async getCompanyRecommendations(
+    @Param('companyId', ParseUUIDPipe) companyId: string,
+    @Query('limit') limit?: number,
+    @Req() req?: any,
+  ): Promise<any> {
+    await this.assertCompanyAccess(req?.user?.id, companyId);
+    return firstValueFrom(
+      this.userClient.send(
+        USER_SERVICE.ACTIONS.GET_COMPANY_RECOMMENDATIONS,
+        { companyId, limit: limit ? Number(limit) : 10 },
+      ),
     );
   }
 }

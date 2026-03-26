@@ -17,6 +17,7 @@ import { Employee } from '@app/common/database/entities/employee/employee.entity
 import { Experience } from '@app/common/database/entities/employee/experience.entity';
 import { EmployeeFavoriteCompany } from '@app/common/database/entities/employee/favorite-company.entity';
 import { Skill } from '@app/common/database/entities/employee/skill.entity';
+import { JobMatching } from '@app/common/database/entities/job-matching.entity';
 import { Social } from '@app/common/database/entities/social.entity';
 import { User } from '@app/common/database/entities/user.entity';
 import { CacheInvalidationService } from '@app/common/redis/cache-invalidation.service';
@@ -67,6 +68,7 @@ import { UserService } from './services/user.service';
       Image,
       EmployeeFavoriteCompany,
       CompanyFavoriteEmployee,
+      JobMatching,
     ]),
     LoggerModule,
     UploadfileModule,
