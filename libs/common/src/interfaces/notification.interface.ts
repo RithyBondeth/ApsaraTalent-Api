@@ -28,3 +28,12 @@ export interface MarkAllReadPayload {
 export interface UnreadCountPayload {
   userId: string;
 }
+
+export interface DeleteNotificationPayload {
+  userId: string;
+  notificationId: string;
+}
+
+export interface DeleteAllNotificationsPayload {
+  userId: string;
+}

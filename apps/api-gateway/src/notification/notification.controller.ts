@@ -2,6 +2,7 @@ import { AuthGuard } from '@app/common/guards/auth.guard';
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
@@ -81,6 +82,31 @@ export class NotificationController {
     return firstValueFrom(
       this.notificationClient.send(
         NOTIFICATION_SERVICE.ACTIONS.MARK_ALL_READ,
+        { userId: req.user.id },
+      ),
+    );
+  }
+
+  @Delete(':id')
+  @UseGuards(AuthGuard)
+  async deleteNotification(@Req() req, @Param('id') id: string) {
+    return firstValueFrom(
+      this.notificationClient.send(
+        NOTIFICATION_SERVICE.ACTIONS.DELETE_NOTIFICATION,
+        {
+          userId: req.user.id,
+          notificationId: id,
+        },
+      ),
+    );
+  }
+
+  @Delete()
+  @UseGuards(AuthGuard)
+  async deleteAllNotifications(@Req() req) {
+    return firstValueFrom(
+      this.notificationClient.send(
+        NOTIFICATION_SERVICE.ACTIONS.DELETE_ALL_NOTIFICATIONS,
         { userId: req.user.id },
       ),
     );

@@ -7,5 +7,7 @@ export const NOTIFICATION_SERVICE = {
     MARK_READ: { cmd: 'markNotificationRead' },
     MARK_ALL_READ: { cmd: 'markAllNotificationsRead' },
     GET_UNREAD_COUNT: { cmd: 'getUnreadNotificationCount' },
+    DELETE_NOTIFICATION: { cmd: 'deleteNotification' },
+    DELETE_ALL_NOTIFICATIONS: { cmd: 'deleteAllNotifications' },
   },
 };

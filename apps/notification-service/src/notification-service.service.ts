@@ -2,6 +2,8 @@ import { Notification } from '@app/common/database/entities/notification.entity'
 import { User } from '@app/common/database/entities/user.entity';
 import {
   CreateNotificationPayload,
+  DeleteAllNotificationsPayload,
+  DeleteNotificationPayload,
   ListNotificationsPayload,
   MarkAllReadPayload,
   MarkReadPayload,
@@ -118,5 +120,20 @@ export class NotificationServiceService {
       where: { user: { id: payload.userId } as any, isRead: false },
     });
     return { unreadCount: count };
+  }
+
+  async deleteNotification(payload: DeleteNotificationPayload) {
+    const result = await this.notificationRepo.delete({
+      id: payload.notificationId,
+      user: { id: payload.userId } as any,
+    });
+    return { success: result.affected > 0 };
+  }
+
+  async deleteAllNotifications(payload: DeleteAllNotificationsPayload) {
+    const result = await this.notificationRepo.delete({
+      user: { id: payload.userId } as any,
+    });
+    return { success: true, affected: result.affected ?? 0 };
   }
 }

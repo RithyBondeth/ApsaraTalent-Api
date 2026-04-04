@@ -2,6 +2,8 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
   CreateNotificationPayload,
+  DeleteAllNotificationsPayload,
+  DeleteNotificationPayload,
   ListNotificationsPayload,
   MarkAllReadPayload,
   MarkReadPayload,
@@ -44,5 +46,17 @@ export class NotificationServiceController {
   @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.GET_UNREAD_COUNT)
   async getUnreadCount(@Payload() payload: UnreadCountPayload) {
     return this.notificationServiceService.getUnreadCount(payload);
+  }
+
+  @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.DELETE_NOTIFICATION)
+  async deleteNotification(@Payload() payload: DeleteNotificationPayload) {
+    return this.notificationServiceService.deleteNotification(payload);
+  }
+
+  @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.DELETE_ALL_NOTIFICATIONS)
+  async deleteAllNotifications(
+    @Payload() payload: DeleteAllNotificationsPayload,
+  ) {
+    return this.notificationServiceService.deleteAllNotifications(payload);
   }
 }
