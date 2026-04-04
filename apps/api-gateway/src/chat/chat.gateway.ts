@@ -158,7 +158,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         attachmentFilename: params.attachmentFilename ?? null,
       });
 
-      await firstValueFrom(
+      const savedNotification = await firstValueFrom(
         this.notificationClient.send(
           NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION,
           {
@@ -180,6 +180,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           },
         ),
       );
+
+      // Emit the confirmed DB record to the receiver so their badge and
+      // notification list update instantly — no race condition, no polling.
+      if (savedNotification?.id) {
+        this.server.to(params.receiverId).emit('newNotification', savedNotification);
+      }
     } catch (error: any) {
       this.logger.warn(
         `[WS] Failed to create chat notification: ${
