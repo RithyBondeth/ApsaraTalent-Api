@@ -2,6 +2,8 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { ValidationPipe } from '@nestjs/common';
+import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
@@ -24,6 +26,20 @@ async function bootstrap() {
 
   // Gzip compression — reduces JSON payload size by 60-80%
   app.use(compression());
+
+  // Security Headers
+  app.use(helmet());
+
+  // Global Validation Pipe for DTO validation and transformation
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+    }),
+  );
+
+  // Set global API routing prefix
+  app.setGlobalPrefix('api/v1');
 
   // Enable Cookie Parser
   app.use(cookieParser());
