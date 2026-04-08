@@ -3,7 +3,14 @@ export interface IJobController {
   findAllJobs(data?: any): Promise<any>;
 }
 
-export interface IMatchingController {
+export interface IInterviewController {
+  createInterview(dto?: any, req?: any): Promise<any>;
+  getInterviewsByEmployee(employeeId?: any, req?: any): Promise<any>;
+  getInterviewsByCompany(companyId?: any, req?: any): Promise<any>;
+  updateInterviewStatus(dto?: any, req?: any): Promise<any>;
+}
+
+export interface IMatchingController extends IInterviewController {
   employeeLikes(data?: any, id?: any): Promise<any>;
   companyLikes(data?: any, id?: any): Promise<any>;
   findCurrentEmployeeLiked(data?: any, id?: any): Promise<any>;
@@ -13,8 +20,4 @@ export interface IMatchingController {
   findCurrentEmployeeMatchingCount(data?: any, id?: any): Promise<any>;
   findCurrentCompanyMatchingCount(data?: any, id?: any): Promise<any>;
   getAnalytics(id?: any, role?: any): Promise<any>;
-  createInterview(dto?: any, req?: any): Promise<any>;
-  getInterviewsByEmployee(employeeId?: any, req?: any): Promise<any>;
-  getInterviewsByCompany(companyId?: any, req?: any): Promise<any>;
-  updateInterviewStatus(dto?: any, req?: any): Promise<any>;
 }

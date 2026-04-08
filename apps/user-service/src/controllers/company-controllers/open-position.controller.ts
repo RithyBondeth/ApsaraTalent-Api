@@ -3,8 +3,10 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { OpenPositionService } from '../../services/company-services/open-position.service';
 
+import { IOpenPositionController } from '@app/common/interfaces/company.interface';
+
 @Controller()
-export class OpenPositionController {
+export class OpenPositionController implements IOpenPositionController {
   constructor(private readonly openPositionService: OpenPositionService) {}
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_OPEN_POSITION)

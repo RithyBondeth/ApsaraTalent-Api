@@ -3,20 +3,22 @@ import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ChatServiceService } from './chat-service.service';
 
+import { IChatController } from '@app/common/interfaces/chat.interface';
+
 @Controller()
-export class ChatServiceController {
+export class ChatServiceController implements IChatController {
   private readonly logger = new Logger('ChatServiceController');
 
   constructor(private readonly chatService: ChatServiceService) {}
 
   @MessagePattern('createOrGetChat')
-  async createOrGetChat(
-    @Payload() data: { senderId: string; receiverId: string },
+  async initiateChat(
+    @Payload() payload: { senderId: string; receiverId: string },
   ) {
     this.logger.log(
-      `[CHAT] createOrGetChat: sender=${data.senderId}, receiver=${data.receiverId}`,
+      `[CHAT] createOrGetChat: sender=${payload.senderId}, receiver=${payload.receiverId}`,
     );
-    return this.chatService.createOrGetChat(data);
+    return this.chatService.createOrGetChat(payload);
   }
 
   @MessagePattern('createMessage')

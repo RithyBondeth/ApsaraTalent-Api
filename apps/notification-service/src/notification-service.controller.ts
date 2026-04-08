@@ -12,19 +12,21 @@ import {
 import { NOTIFICATION_SERVICE } from 'utils/constants/notification.constant';
 import { NotificationServiceService } from './notification-service.service';
 
+import { INotificationController } from '@app/common/interfaces/notification.interface';
+
 @Controller()
-export class NotificationServiceController {
+export class NotificationServiceController implements INotificationController {
   constructor(
     private readonly notificationServiceService: NotificationServiceService,
   ) {}
 
   @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION)
-  async createNotification(@Payload() payload: CreateNotificationPayload) {
+  async createForCurrentUser(@Payload() payload: CreateNotificationPayload) {
     return this.notificationServiceService.createNotification(payload);
   }
 
   @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.FIND_ALL_NOTIFICATIONS)
-  async findAllNotification(): Promise<any> {
+  async getAllNotification(): Promise<any> {
     return this.notificationServiceService.findAllNotification();
   }
 

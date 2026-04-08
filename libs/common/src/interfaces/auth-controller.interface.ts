@@ -43,22 +43,30 @@ export interface IBasicAuthController
     IBasicAuthIceServersController,
     IBasicAuthLoginOTPController {}
 
-export interface IGoogleAuthController {
+export interface IGoogleAuthMicroserviceController {
   googleAuth(params?: any): Promise<any>;
+}
+export interface IGoogleAuthController extends IGoogleAuthMicroserviceController {
   googleCallback(req: any, res: any, params?: any): Promise<any>;
 }
 
-export interface ILinkedInAuthController {
+export interface ILinkedInAuthMicroserviceController {
   linkedInAuth(params?: any): Promise<any>;
+}
+export interface ILinkedInAuthController extends ILinkedInAuthMicroserviceController {
   linkedInCallback(req: any, res: any): Promise<any>;
 }
 
-export interface IGithubAuthController {
+export interface IGithubAuthMicroserviceController {
   githubAuth(params?: any): Promise<any>;
+}
+export interface IGithubAuthController extends IGithubAuthMicroserviceController {
   githubCallback(req: any, res: any): Promise<any>;
 }
 
-export interface IFacebookAuthController {
+export interface IFacebookAuthMicroserviceController {
   facebookAuth(params?: any): Promise<any>;
+}
+export interface IFacebookAuthController extends IFacebookAuthMicroserviceController {
   facebookCallback(req: any, res: any): Promise<any>;
 }

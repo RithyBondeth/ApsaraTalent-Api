@@ -11,13 +11,15 @@ import { GenerateMerchantKhqrDTO } from './dtos/generate-merchant-khqr.dto';
 import { VerifyKhqrDTO } from './dtos/verify-khqr.dto';
 import { PaymentServiceService } from './payment-service.service';
 
+import { IPaymentController } from '@app/common/interfaces/payment.interface';
+
 @Controller()
-export class PaymentServiceController {
+export class PaymentServiceController implements IPaymentController {
   constructor(private readonly paymentServiceService: PaymentServiceService) {}
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.GENERATE_INDIVIDUAL_KHQR)
   @RateLimit(50) // Lower limit for QR generation
-  async generateIndividualKHQR(
+  async generateIndividualQr(
     @Payload() generateIndividualKhqrDTO: GenerateIndividualKhqrDTO,
   ): Promise<any> {
     return this.paymentServiceService.generateIndividualKhqrDTO(
@@ -27,7 +29,7 @@ export class PaymentServiceController {
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.GENERATE_MERCHANT_KHQR)
   @RateLimit(50) // Lower limit for QR generation
-  async generateMerchantKhqrDTO(
+  async generateMerchantQr(
     @Payload() generateMerchantKhqrDTO: GenerateMerchantKhqrDTO,
   ): Promise<any> {
     return this.paymentServiceService.generateMerchantKhqrDTO(

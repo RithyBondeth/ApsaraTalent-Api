@@ -58,5 +58,5 @@ export interface IChatMessage {
 export interface IChatController {
   initiateChat(body?: any, req?: any): Promise<any>;
   getRecentChats(req?: any): Promise<any>;
-  uploadAttachment(file?: any, req?: any): Promise<any>;
+  uploadAttachment?(file?: any, req?: any): Promise<any>;
 }

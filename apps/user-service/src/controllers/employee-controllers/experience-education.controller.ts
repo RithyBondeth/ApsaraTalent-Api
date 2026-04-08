@@ -3,8 +3,10 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { ExperienceAndEducationService } from '../../services/employee-services/experienc-education.service';
 
+import { IRemoveEmployeeItemsController } from '@app/common/interfaces/employee-controller.interface';
+
 @Controller()
-export class ExperienceAndEducationController {
+export class ExperienceAndEducationController implements IRemoveEmployeeItemsController {
   constructor(
     private readonly experienceAndEducationService: ExperienceAndEducationService,
   ) {}
