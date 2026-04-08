@@ -2,6 +2,7 @@ export const USER_SERVICE = {
   NAME: 'USER_SERVICE',
   ACTIONS: {
     FIND_ALL_EMPLOYEE: { cmd: 'findAllEmployee' },
+    COUNT_ALL_EMPLOYEE: { cmd: 'countAllEmployee' },
     FIND_ONE_EMPLOYEE_BY_ID: { cmd: 'findOneEmployeeById' },
     SEARCH_EMPLOYEES: { cmd: 'searchEmployees' },
     UPLOAD_EMPLOYEE_AVATAR: { cmd: 'uploadEmployeeAvatar' },
@@ -15,6 +16,7 @@ export const USER_SERVICE = {
     REMOVE_EMPLOYEE_EDUCATION: { cmd: 'removeEmployeeEducation' },
 
     FIND_ALL_COMPANY: { cmd: 'findAllCompany' },
+    COUNT_ALL_COMPANY: { cmd: 'countAllCompany' },
     FIND_ONE_COMPANY_BY_ID: { cmd: 'findOneCompanyById' },
     UPLOAD_COMPANY_AVATAR: { cmd: 'uploadCompanyAvatar' },
     UPDATE_COMPANY_INFO: { cmd: 'updateCompanyInfo' },
@@ -26,6 +28,7 @@ export const USER_SERVICE = {
     REMOVE_OPEN_POSITION: { cmd: 'removeOpenPosition' },
 
     FIND_ALL: { cmd: 'findAll' },
+    COUNT_ALL_USERS: { cmd: 'countAllUsers' },
     FIND_ONE_BY_ID: { cmd: 'findOneById' },
     FIND_ONE_BY_NAME: { cmd: 'findOneByName' },
     GET_CURRENT_USER: { cmd: 'getCurrentUser' },

@@ -69,6 +69,41 @@ export class FindEmployeeService {
     }
   }
 
+  async countAllEmployees(): Promise<{ totalEmployees: number }> {
+    const cacheKey = 'apsaratalent:user-service:employee:count:all';
+    const cached = await this.redisService.get<{ totalEmployees: number }>(
+      cacheKey,
+    );
+
+    if (cached) {
+      this.logger.info('All employees count cache HIT');
+      return cached;
+    }
+
+    this.logger.info('All employees count cache MISS');
+
+    try {
+      const totalEmployees = await this.employeeRepository.count();
+      const result = { totalEmployees };
+
+      // Cache for 2 minutes
+      await this.redisService.set(cacheKey, result, 120000);
+
+      return result;
+    } catch (error) {
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while counting all employees',
+      );
+      throw new RpcException({
+        message:
+          (error as Error).message ||
+          'An error occurred while counting all employees',
+        statusCode: 500,
+      });
+    }
+  }
+
   async findOneById(employeeId: string): Promise<EmployeeResponseDTO> {
     const cacheKey = this.redisService.generateEmployeeKey(
       'detail',

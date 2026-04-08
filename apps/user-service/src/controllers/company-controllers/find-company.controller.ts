@@ -17,6 +17,11 @@ export class FindCompanyController implements IFindCompanyController {
     return this.findCompanyService.findAll(payload.pagination);
   }
 
+  @MessagePattern(USER_SERVICE.ACTIONS.COUNT_ALL_COMPANY)
+  async countAllCompanies(): Promise<{ totalCompanies: number }> {
+    return this.findCompanyService.countAllCompanies();
+  }
+
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ONE_COMPANY_BY_ID)
   async findOneById(
     @Payload() payload: { companyId: string },

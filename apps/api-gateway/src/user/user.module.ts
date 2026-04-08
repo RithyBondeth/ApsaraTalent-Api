@@ -7,6 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { CompanyController } from './company.controller';
 import { EmployeeController } from './employee.controller';
+import { PublicUserController } from './public-user.controller';
 import { UserController } from './user.controller';
 
 @Module({
@@ -29,7 +30,12 @@ import { UserController } from './user.controller';
     JwtModule,
     TypeOrmModule.forFeature([User]),
   ],
-  controllers: [UserController, EmployeeController, CompanyController],
+  controllers: [
+    UserController,
+    EmployeeController,
+    CompanyController,
+    PublicUserController,
+  ],
   providers: [],
 })
 export class UserModule {}

@@ -17,6 +17,11 @@ export class FindEmployeeController implements IFindEmployeeController {
     return this.findEmployeeService.findAll(payload.pagination);
   }
 
+  @MessagePattern(USER_SERVICE.ACTIONS.COUNT_ALL_EMPLOYEE)
+  async countAllEmployees(): Promise<{ totalEmployees: number }> {
+    return this.findEmployeeService.countAllEmployees();
+  }
+
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ONE_EMPLOYEE_BY_ID)
   async findOneById(
     @Payload() payload: { employeeId: string },

@@ -17,6 +17,11 @@ export class UserController implements IUserController {
     return this.userService.findAllUsers(payload?.skip, payload?.limit);
   }
 
+  @MessagePattern(USER_SERVICE.ACTIONS.COUNT_ALL_USERS)
+  async countAllUsers(): Promise<{ totalUsers: number }> {
+    return this.userService.countAllUsers();
+  }
+
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ONE_BY_ID)
   async findOneUserById(
     @Payload() payload: { userId: string },

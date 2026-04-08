@@ -80,6 +80,41 @@ export class FindCompanyService {
     }
   }
 
+  async countAllCompanies(): Promise<{ totalCompanies: number }> {
+    const cacheKey = 'apsaratalent:user-service:company:count:all';
+    const cached = await this.redisService.get<{ totalCompanies: number }>(
+      cacheKey,
+    );
+
+    if (cached) {
+      this.logger.info('All companies count cache HIT');
+      return cached;
+    }
+
+    this.logger.info('All companies count cache MISS');
+
+    try {
+      const totalCompanies = await this.companyRepository.count();
+      const result = { totalCompanies };
+
+      // Cache for 2 minutes
+      await this.redisService.set(cacheKey, result, 120000);
+
+      return result;
+    } catch (error) {
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while counting all companies.',
+      );
+      throw new RpcException({
+        message:
+          (error as Error).message ||
+          'An error occurred while counting all companies.',
+        statusCode: 500,
+      });
+    }
+  }
+
   async findOneById(companyId: string): Promise<CompanyResponseDTO> {
     const cacheKey = this.redisService.generateCompanyKey('detail', companyId);
     const cached = await this.redisService.get<CompanyResponseDTO>(cacheKey);

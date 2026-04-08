@@ -129,6 +129,39 @@ export class UserService implements OnModuleInit {
     }
   }
 
+  async countAllUsers(): Promise<{ totalUsers: number }> {
+    const cacheKey = 'apsaratalent:user-service:user:count:all';
+    const cached = await this.redisService.get<{ totalUsers: number }>(cacheKey);
+
+    if (cached) {
+      this.logger.info('All users count cache HIT');
+      return cached;
+    }
+
+    this.logger.info('All users count cache MISS');
+
+    try {
+      const totalUsers = await this.userRepository.count();
+      const result = { totalUsers };
+
+      // Cache for 2 minutes
+      await this.redisService.set(cacheKey, result, 120000);
+
+      return result;
+    } catch (error) {
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while counting all users.',
+      );
+      throw new RpcException({
+        statusCode: 500,
+        message:
+          (error as Error).message ||
+          'An error occurred while counting all users.',
+      });
+    }
+  }
+
   async findOneUserByID(userId: string): Promise<UserResponseDTO> {
     const cacheKey = this.redisService.generateUserKey('detail', userId);
     const cached = await this.redisService.get<UserResponseDTO>(cacheKey);
