@@ -14,7 +14,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { CHAT_SERVICE } from 'utils/constants/chat-service.constant';
+import { CHAT_SERVICE } from '@app/contracts/constants/chat-service.constant';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
@@ -42,7 +42,7 @@ const ALLOWED_MIME_TYPES = [
   'text/plain',
 ];
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
-import { IChatController } from '@app/common/interfaces/chat.interface';
+import { IChatController } from '@app/contracts/interfaces/chat.interface';
 
 @Controller('chat')
 export class ChatController implements IChatController {

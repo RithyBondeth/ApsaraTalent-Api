@@ -1,7 +1,7 @@
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { IsBoolean, IsNumber, IsString } from 'class-validator';
-import { formatDateToDDMMYYYY } from 'utils/functions/date-formatter';
+import { formatDateToDDMMYYYY } from '@app/utils/functions/date-formatter';
 
 export class UserInJobResponseDTO {
   @IsString()

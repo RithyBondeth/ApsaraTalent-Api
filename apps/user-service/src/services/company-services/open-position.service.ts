@@ -7,7 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 
-import { IOpenPositionService } from '@app/common/interfaces/user-service.interface';
+import { IOpenPositionService } from '@app/contracts/interfaces/user-service.interface';
 
 @Injectable()
 export class OpenPositionService implements IOpenPositionService {

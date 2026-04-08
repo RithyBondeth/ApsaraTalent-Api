@@ -7,10 +7,10 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
 import { ChatServiceService } from './chat-service.service';
 import { ChatServiceController } from './chat-service.controller';
-import { I_CHAT_SERVICE } from '@app/common/interfaces/chat-service.interface';
+import { I_CHAT_SERVICE } from '@app/contracts/interfaces/chat-service.interface';
 
 @Module({
   imports: [

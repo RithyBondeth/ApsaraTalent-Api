@@ -1,5 +1,5 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
-import { IResumeTemplateController } from '@app/common/interfaces/resume-controller.interface';
+import { IResumeTemplateController } from '@app/contracts/interfaces/resume-controller.interface';
 import { UploadFileInterceptor } from '@app/common/uploadfile/uploadfile.interceptor';
 import {
     Body,
@@ -16,7 +16,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { RESUME_BUILDER_SERVICE } from 'utils/constants/resume-builder-service.constant';
+import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/resume-builder-service.constant';
 
 @Controller('resume/template')
 @UseGuards(AuthGuard)

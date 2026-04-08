@@ -1,6 +1,6 @@
 import { EMessageType } from '@app/common/database/enums/message-type.enum';
 import { User } from '@app/common/database/entities/user.entity';
-import { TChatPayload } from '@app/common/interfaces/chat.interface';
+import { TChatPayload } from '@app/contracts/interfaces/chat.interface';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
 import { Inject, Logger } from '@nestjs/common';
@@ -17,8 +17,8 @@ import {
 import { firstValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
 import { Repository } from 'typeorm';
-import { CHAT_SERVICE } from '../../../../utils/constants/chat-service.constant';
-import { NOTIFICATION_SERVICE } from '../../../../utils/constants/notification.constant';
+import { CHAT_SERVICE } from '@app/contracts/constants/chat-service.constant';
+import { NOTIFICATION_SERVICE } from '@app/contracts/constants/notification.constant';
 import {
   isOriginAllowed,
   parseAllowedOrigins,

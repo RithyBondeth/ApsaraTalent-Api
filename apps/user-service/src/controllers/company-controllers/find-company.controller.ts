@@ -1,7 +1,7 @@
-import { IFindCompanyController } from '@app/common/interfaces/company.interface';
+import { IFindCompanyController } from '@app/contracts/interfaces/company.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
 import { UserPaginationDTO } from '../../dtos/user-pagination.dto';
 import {
   CompanyResponseDTO,
@@ -12,7 +12,7 @@ import { FindCompanyService } from '../../services/company-services/find-company
 import {
   I_FIND_COMPANY_SERVICE,
   IFindCompanyService,
-} from '@app/common/interfaces/user-service.interface';
+} from '@app/contracts/interfaces/user-service.interface';
 
 @Controller()
 export class FindCompanyController implements IFindCompanyController {

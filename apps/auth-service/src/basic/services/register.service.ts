@@ -27,7 +27,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { DataSource, In, Repository } from 'typeorm';
 import { CompanyRegisterDTO } from '../dtos/company-register.dto';
 import { EmployeeRegisterDTO } from '../dtos/employee-register.dto';
-import { IRegisterService } from '@app/common/interfaces/auth-service.interface';
+import { IRegisterService } from '@app/contracts/interfaces/auth-service.interface';
 
 @Injectable()
 export class RegisterService implements IRegisterService {

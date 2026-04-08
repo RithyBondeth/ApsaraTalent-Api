@@ -8,10 +8,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
 import { FacebookAuthDTO } from '../dtos/facebook-auth.dto';
 
-import { IFacebookAuthService } from '@app/common/interfaces/auth-service.interface';
+import { IFacebookAuthService } from '@app/contracts/interfaces/auth-service.interface';
 
 @Injectable()
 export class FacebookAuthService implements IFacebookAuthService {

@@ -1,7 +1,7 @@
-import { IResumeTemplateController } from '@app/common/interfaces/resume-controller.interface';
+import { IResumeTemplateController } from '@app/contracts/interfaces/resume-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { RESUME_BUILDER_SERVICE } from 'utils/constants/resume-builder-service.constant';
+import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/resume-builder-service.constant';
 import { CreateResumeTemplateDTO } from '../dtos/create-resume-template.dto';
 import { SearchTemplateDTO } from '../dtos/search-resume-template.dto';
 import { ResumeTemplateService } from '../services/resume-template.service';
@@ -9,7 +9,7 @@ import { ResumeTemplateService } from '../services/resume-template.service';
 import {
   I_RESUME_TEMPLATE_SERVICE,
   IResumeTemplateService,
-} from '@app/common/interfaces/resume-builder-service.interface';
+} from '@app/contracts/interfaces/resume-builder-service.interface';
 
 @Controller()
 export class ResumeTemplateController implements IResumeTemplateController {

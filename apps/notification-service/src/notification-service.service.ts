@@ -8,13 +8,13 @@ import {
   MarkAllReadPayload,
   MarkReadPayload,
   UnreadCountPayload,
-} from '@app/common/interfaces/notification.interface';
+} from '@app/contracts/interfaces/notification.interface';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PushNotificationService } from './push-notification.service';
 
-import { INotificationService } from '@app/common/interfaces/notification-service.interface';
+import { INotificationService } from '@app/contracts/interfaces/notification-service.interface';
 
 @Injectable()
 export class NotificationServiceService implements INotificationService {

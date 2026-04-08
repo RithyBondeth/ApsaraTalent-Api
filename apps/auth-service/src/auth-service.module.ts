@@ -21,7 +21,7 @@ import { ConfigService } from '@nestjs/config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
 import { ForgotPasswordController } from './basic/controllers/forgot-password.controller';
 import { LoginOTPController } from './basic/controllers/login-otp.controller';
 import { LoginController } from './basic/controllers/login.controller';
@@ -57,7 +57,7 @@ import {
   I_REGISTER_SERVICE,
   I_RESET_PASSWORD_SERVICE,
   I_VERIFY_EMAIL_SERVICE,
-} from '@app/common/interfaces/auth-service.interface';
+} from '@app/contracts/interfaces/auth-service.interface';
 
 @Module({
   imports: [

@@ -1,6 +1,6 @@
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { PAYMENT_SERVICE } from 'utils/constants/payment-service.constant';
+import { PAYMENT_SERVICE } from '@app/contracts/constants/payment-service.constant';
 import { RateLimit } from './decorators/rate-limit.decorator';
 import { CheckPaymentBulkStatusDTO } from './dtos/check-payment-bulk-status.dto';
 import { CheckPaymentStatusDTO } from './dtos/check-payment-status.dto';
@@ -11,11 +11,11 @@ import { GenerateMerchantKhqrDTO } from './dtos/generate-merchant-khqr.dto';
 import { VerifyKhqrDTO } from './dtos/verify-khqr.dto';
 import { PaymentServiceService } from './payment-service.service';
 
-import { IPaymentController } from '@app/common/interfaces/payment.interface';
+import { IPaymentController } from '@app/contracts/interfaces/payment.interface';
 import {
   I_PAYMENT_SERVICE,
   IPaymentService,
-} from '@app/common/interfaces/payment-service.interface';
+} from '@app/contracts/interfaces/payment-service.interface';
 
 @Controller()
 export class PaymentServiceController implements IPaymentController {

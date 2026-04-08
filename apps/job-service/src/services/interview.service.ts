@@ -7,7 +7,7 @@ import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Logger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
-import { NOTIFICATION_SERVICE } from 'utils/constants/notification.constant';
+import { NOTIFICATION_SERVICE } from '@app/contracts/constants/notification.constant';
 import {
   CreateInterviewDto,
   InterviewStatus,
@@ -15,7 +15,7 @@ import {
   VALID_STATUS_TRANSITIONS,
 } from '../dtos/interview.dto';
 
-import { IInterviewService } from '@app/common/interfaces/job-service.interface';
+import { IInterviewService } from '@app/contracts/interfaces/job-service.interface';
 
 @Injectable()
 export class InterviewService implements IInterviewService {

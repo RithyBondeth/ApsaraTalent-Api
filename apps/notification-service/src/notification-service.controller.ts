@@ -8,15 +8,15 @@ import {
   MarkAllReadPayload,
   MarkReadPayload,
   UnreadCountPayload,
-} from '@app/common/interfaces/notification.interface';
-import { NOTIFICATION_SERVICE } from 'utils/constants/notification.constant';
+} from '@app/contracts/interfaces/notification.interface';
+import { NOTIFICATION_SERVICE } from '@app/contracts/constants/notification.constant';
 import { NotificationServiceService } from './notification-service.service';
 
-import { INotificationController } from '@app/common/interfaces/notification.interface';
+import { INotificationController } from '@app/contracts/interfaces/notification.interface';
 import {
   I_NOTIFICATION_SERVICE,
   INotificationService,
-} from '@app/common/interfaces/notification-service.interface';
+} from '@app/contracts/interfaces/notification-service.interface';
 
 @Controller()
 export class NotificationServiceController implements INotificationController {

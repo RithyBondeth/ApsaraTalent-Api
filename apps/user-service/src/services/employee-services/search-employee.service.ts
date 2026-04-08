@@ -9,7 +9,7 @@ import { Brackets, Repository } from 'typeorm';
 import { SearchEmployeeDto } from '../../dtos/employee/search-employee.dto';
 import { EmployeeResponseDTO } from '../../dtos/user-response.dto';
 
-import { ISearchEmployeeService } from '@app/common/interfaces/user-service.interface';
+import { ISearchEmployeeService } from '@app/contracts/interfaces/user-service.interface';
 
 @Injectable()
 export class SearchEmployeeService implements ISearchEmployeeService {

@@ -1,5 +1,5 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
-import { IResumeBuilderController } from '@app/common/interfaces/resume-controller.interface';
+import { IResumeBuilderController } from '@app/contracts/interfaces/resume-controller.interface';
 import {
   Body,
   Controller,
@@ -14,7 +14,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { TimeoutError, firstValueFrom, timeout } from 'rxjs';
 import { BuildResumeDTO } from '../../../../resume-builder-service/src/dtos/resume-builder.dto';
-import { RESUME_BUILDER_SERVICE } from 'utils/constants/resume-builder-service.constant';
+import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/resume-builder-service.constant';
 
 @Controller('resume')
 @UseGuards(AuthGuard)

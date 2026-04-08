@@ -17,7 +17,7 @@ import {
   JobPositionDTO,
 } from '../../dtos/user-response.dto';
 
-import { IUpdateCompanyInfoService } from '@app/common/interfaces/user-service.interface';
+import { IUpdateCompanyInfoService } from '@app/contracts/interfaces/user-service.interface';
 
 @Injectable()
 export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {

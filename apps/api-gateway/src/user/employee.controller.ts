@@ -1,5 +1,5 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
-import { IEmployeeController } from '@app/common/interfaces/employee-controller.interface';
+import { IEmployeeController } from '@app/contracts/interfaces/employee-controller.interface';
 import { UploadFileInterceptor } from '@app/common/uploadfile/uploadfile.interceptor';
 import {
   BadRequestException,
@@ -19,7 +19,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
 
 @Controller('user/employee')
 @UseGuards(AuthGuard)

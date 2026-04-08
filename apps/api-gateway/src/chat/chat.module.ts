@@ -4,9 +4,9 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { CHAT_SERVICE } from 'utils/constants/chat-service.constant';
-import { NOTIFICATION_SERVICE } from 'utils/constants/notification.constant';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { CHAT_SERVICE } from '@app/contracts/constants/chat-service.constant';
+import { NOTIFICATION_SERVICE } from '@app/contracts/constants/notification.constant';
+import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
 import { ChatController } from './chat.controller';
 import { ChatGateway } from './chat.gateway';
 

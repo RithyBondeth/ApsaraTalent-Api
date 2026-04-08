@@ -8,7 +8,7 @@ import { PinoLogger } from 'nestjs-pino';
 import * as path from 'path';
 import { Repository } from 'typeorm';
 
-import { IUploadEmployeeReferenceService } from '@app/common/interfaces/user-service.interface';
+import { IUploadEmployeeReferenceService } from '@app/contracts/interfaces/user-service.interface';
 
 @Injectable()
 export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceService {

@@ -12,7 +12,7 @@ import {
   EmployeeResponseDTO,
 } from '../../dtos/user-response.dto';
 
-import { IFindEmployeeService } from '@app/common/interfaces/user-service.interface';
+import { IFindEmployeeService } from '@app/contracts/interfaces/user-service.interface';
 
 @Injectable()
 export class FindEmployeeService implements IFindEmployeeService {

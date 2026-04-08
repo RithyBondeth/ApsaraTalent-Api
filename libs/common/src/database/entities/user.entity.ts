@@ -8,7 +8,7 @@ import {
     OneToOne,
     PrimaryGeneratedColumn
 } from 'typeorm';
-import { SALT_ROUNDS } from 'utils/constants/password.constant';
+import { SALT_ROUNDS } from '@app/contracts/constants/password.constant';
 import { ELoginMethod } from '../enums/login-method.enum';
 import { EUserRole } from '../enums/user-role.enum';
 import { Company } from './company/company.entity';

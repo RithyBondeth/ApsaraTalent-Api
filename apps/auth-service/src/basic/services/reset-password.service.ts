@@ -6,11 +6,11 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { PinoLogger } from 'nestjs-pino';
 import { MoreThan, Repository } from 'typeorm';
-import { SALT_ROUNDS } from 'utils/constants/password.constant';
+import { SALT_ROUNDS } from '@app/contracts/constants/password.constant';
 import { ResetPasswordResponseDTO } from '../dtos/reset-password-response.dto';
 import { ResetPasswordDTO } from '../dtos/reset-password.dto';
 
-import { IResetPasswordService } from '@app/common/interfaces/auth-service.interface';
+import { IResetPasswordService } from '@app/contracts/interfaces/auth-service.interface';
 
 @Injectable()
 export class ResetPasswordService implements IResetPasswordService {

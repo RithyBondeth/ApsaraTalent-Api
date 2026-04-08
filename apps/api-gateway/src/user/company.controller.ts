@@ -1,5 +1,5 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
-import { ICompanyController } from '@app/common/interfaces/company.interface';
+import { ICompanyController } from '@app/contracts/interfaces/company.interface';
 import { UploadFileInterceptor } from '@app/common/uploadfile/uploadfile.interceptor';
 import { UploadFilesInterceptor } from '@app/common/uploadfile/uploadfiles.interceptor';
 import {
@@ -20,7 +20,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
 
 @Controller('user/company')
 @UseGuards(AuthGuard)

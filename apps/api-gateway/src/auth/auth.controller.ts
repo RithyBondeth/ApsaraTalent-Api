@@ -1,4 +1,4 @@
-import { IBasicAuthController } from '@app/common/interfaces/auth-controller.interface';
+import { IBasicAuthController } from '@app/contracts/interfaces/auth-controller.interface';
 import { ThrottlerGuard } from '@app/common/throttler/guards/throttler.guard';
 import {
   Body,
@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
-import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
+import { AUTH_SERVICE } from '@app/contracts/constants/auth-service.constant';
 import { setAuthTokenCookies } from './utils/auth-cookie.util';
 import { sendAuthServiceRequest } from './utils/auth-rpc.util';
 

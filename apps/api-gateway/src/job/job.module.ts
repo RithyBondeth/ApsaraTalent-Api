@@ -4,8 +4,8 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { JOB_SERVICE } from 'utils/constants/job-service.constant';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { JOB_SERVICE } from '@app/contracts/constants/job-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
 import { JobController } from './controllers/job.controller';
 import { JobMatchingController } from './controllers/matching.controller';
 

@@ -14,7 +14,7 @@ import { ResumeTemplateService } from './services/resume-template.service';
 import {
   I_RESUME_BUILDER_SERVICE,
   I_RESUME_TEMPLATE_SERVICE,
-} from '@app/common/interfaces/resume-builder-service.interface';
+} from '@app/contracts/interfaces/resume-builder-service.interface';
 
 @Module({
   imports: [

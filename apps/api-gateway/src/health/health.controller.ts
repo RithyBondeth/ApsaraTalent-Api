@@ -6,9 +6,9 @@ import {
   HealthCheckService,
   MicroserviceHealthIndicator,
 } from '@nestjs/terminus';
-import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
-import { IHealthController } from '@app/common/interfaces/health.interface';
+import { AUTH_SERVICE } from '@app/contracts/constants/auth-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
+import { IHealthController } from '@app/contracts/interfaces/health.interface';
 
 @Controller('health')
 export class HealthController implements IHealthController {

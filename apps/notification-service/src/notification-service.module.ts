@@ -8,7 +8,7 @@ import { NotificationServiceController } from './notification-service.controller
 import { NotificationServiceService } from './notification-service.service';
 import { PushNotificationService } from './push-notification.service';
 
-import { I_NOTIFICATION_SERVICE } from '@app/common/interfaces/notification-service.interface';
+import { I_NOTIFICATION_SERVICE } from '@app/contracts/interfaces/notification-service.interface';
 
 @Module({
   imports: [

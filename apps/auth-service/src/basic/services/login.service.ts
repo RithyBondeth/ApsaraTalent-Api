@@ -9,12 +9,12 @@ import * as bcrypt from 'bcrypt';
 import { PinoLogger } from 'nestjs-pino';
 import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
-import { checkEmail } from 'utils/functions/check-email';
+import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
+import { checkEmail } from '@app/utils/functions/check-email';
 import { LoginResponseDTO } from '../dtos/login-response.dto';
 import { LoginDTO } from '../dtos/login.dto';
 
-import { ILoginService } from '@app/common/interfaces/auth-service.interface';
+import { ILoginService } from '@app/contracts/interfaces/auth-service.interface';
 
 @Injectable()
 export class LoginService implements ILoginService {

@@ -1,5 +1,5 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
-import { IMatchingController } from '@app/common/interfaces/job-controller.interface';
+import { IMatchingController } from '@app/contracts/interfaces/job-controller.interface';
 import {
     Body,
     Controller,
@@ -16,8 +16,8 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { JOB_SERVICE } from 'utils/constants/job-service.constant';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { JOB_SERVICE } from '@app/contracts/constants/job-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
 
 @Controller('match')
 @UseGuards(AuthGuard)

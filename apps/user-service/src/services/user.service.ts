@@ -19,7 +19,7 @@ import {
   JobPositionDTO,
   UserResponseDTO,
 } from '../dtos/user-response.dto';
-import { IUserService } from '@app/common/interfaces/user-service.interface';
+import { IUserService } from '@app/contracts/interfaces/user-service.interface';
 
 @Injectable()
 export class UserService implements IUserService, OnModuleInit {

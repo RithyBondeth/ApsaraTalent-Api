@@ -8,7 +8,7 @@ import { Repository } from 'typeorm';
 import { RefreshTokenResponseDTO } from '../dtos/refresh-token-response.dto';
 import { RefreshTokenDTO } from '../dtos/refresh-token.dto';
 
-import { IRefreshTokenService } from '@app/common/interfaces/auth-service.interface';
+import { IRefreshTokenService } from '@app/contracts/interfaces/auth-service.interface';
 
 @Injectable()
 export class RefreshTokenService implements IRefreshTokenService {

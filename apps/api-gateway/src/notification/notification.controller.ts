@@ -14,8 +14,8 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { NOTIFICATION_SERVICE } from 'utils/constants/notification.constant';
-import { INotificationController } from '@app/common/interfaces/notification.interface';
+import { NOTIFICATION_SERVICE } from '@app/contracts/constants/notification.constant';
+import { INotificationController } from '@app/contracts/interfaces/notification.interface';
 
 @Controller('notification')
 export class NotificationController implements INotificationController {

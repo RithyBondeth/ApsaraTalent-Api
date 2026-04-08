@@ -1,7 +1,7 @@
-import { IUpdateCompanyInfoController } from '@app/common/interfaces/company.interface';
+import { IUpdateCompanyInfoController } from '@app/contracts/interfaces/company.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
 import { UpdateCompanyInfoDTO } from '../../dtos/company/update-company-info.dto';
 import { CompanyResponseDTO } from '../../dtos/user-response.dto';
 import { UpdateCompanyInfoService } from '../../services/company-services/update-company-info.service';
@@ -9,7 +9,7 @@ import { UpdateCompanyInfoService } from '../../services/company-services/update
 import {
   I_UPDATE_COMPANY_INFO_SERVICE,
   IUpdateCompanyInfoService,
-} from '@app/common/interfaces/user-service.interface';
+} from '@app/contracts/interfaces/user-service.interface';
 
 @Controller()
 export class UpdateCompanyInfoController implements IUpdateCompanyInfoController {

@@ -32,7 +32,7 @@ import {
   BakongQRValidationException,
 } from './exceptions/bakong.exceptions';
 
-import { IPaymentService } from '@app/common/interfaces/payment-service.interface';
+import { IPaymentService } from '@app/contracts/interfaces/payment-service.interface';
 
 @Injectable()
 export class PaymentServiceService implements IPaymentService {

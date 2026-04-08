@@ -1,12 +1,12 @@
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
 import {
   I_EXPERIENCE_AND_EDUCATION_SERVICE,
   IExperienceAndEducationService,
-} from '@app/common/interfaces/user-service.interface';
+} from '@app/contracts/interfaces/user-service.interface';
 
-import { IRemoveEmployeeItemsController } from '@app/common/interfaces/employee-controller.interface';
+import { IRemoveEmployeeItemsController } from '@app/contracts/interfaces/employee-controller.interface';
 
 @Controller()
 export class ExperienceAndEducationController implements IRemoveEmployeeItemsController {

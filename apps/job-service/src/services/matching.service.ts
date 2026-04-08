@@ -7,14 +7,14 @@ import { EmailService } from '@app/common/email/email.service';
 import { RedisService } from '@app/common/redis/redis.service';
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
-import { NOTIFICATION_SERVICE } from 'utils/constants/notification.constant';
+import { NOTIFICATION_SERVICE } from '@app/contracts/constants/notification.constant';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
 import { Logger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { MatchDto } from '../dtos/match.dto';
 
-import { IMatchingService } from '@app/common/interfaces/job-service.interface';
+import { IMatchingService } from '@app/contracts/interfaces/job-service.interface';
 
 @Injectable()
 export class MatchingService implements IMatchingService {

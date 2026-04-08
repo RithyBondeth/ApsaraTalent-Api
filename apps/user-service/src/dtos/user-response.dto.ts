@@ -13,7 +13,7 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
-import { formatDateToDDMMYYYY } from 'utils/functions/date-formatter';
+import { formatDateToDDMMYYYY } from '@app/utils/functions/date-formatter';
 
 export class EmployeeResponseDTO {
   userId: string;

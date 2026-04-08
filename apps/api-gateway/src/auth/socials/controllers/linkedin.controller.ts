@@ -1,4 +1,4 @@
-import { ILinkedInAuthController } from '@app/common/interfaces/auth-controller.interface';
+import { ILinkedInAuthController } from '@app/contracts/interfaces/auth-controller.interface';
 import {
   Controller,
   Get,
@@ -13,7 +13,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
-import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
+import { AUTH_SERVICE } from '@app/contracts/constants/auth-service.constant';
 import { LinkedInAuthGuard } from '../guards/linkedin-auth.guard';
 import { handleSocialAuthCallback } from '../utils/social-auth.util';
 

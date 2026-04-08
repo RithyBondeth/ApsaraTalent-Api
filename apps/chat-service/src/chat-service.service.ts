@@ -4,18 +4,18 @@ import { EMessageType } from '@app/common/database/enums/message-type.enum';
 import {
   IChatMessage,
   TChatContent,
-} from '@app/common/interfaces/chat.interface';
+} from '@app/contracts/interfaces/chat.interface';
 import { RedisService } from '@app/common/redis/redis.service';
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
 import { User } from '@app/common/database/entities/user.entity';
 
 import { Logger } from '@nestjs/common';
-import { IChatService } from '@app/common/interfaces/chat-service.interface';
+import { IChatService } from '@app/contracts/interfaces/chat-service.interface';
 
 @Injectable()
 export class ChatServiceService implements IChatService {

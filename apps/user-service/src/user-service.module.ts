@@ -61,7 +61,7 @@ import {
   I_USER_SERVICE,
   I_OPEN_POSITION_SERVICE,
   I_EXPERIENCE_AND_EDUCATION_SERVICE,
-} from '@app/common/interfaces/user-service.interface';
+} from '@app/contracts/interfaces/user-service.interface';
 
 @Module({
   imports: [

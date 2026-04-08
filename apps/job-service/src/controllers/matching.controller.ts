@@ -1,15 +1,15 @@
-import { IMatchingController } from '@app/common/interfaces/job-controller.interface';
+import { IMatchingController } from '@app/contracts/interfaces/job-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
-import { JOB_SERVICE } from 'utils/constants/job-service.constant';
+import { JOB_SERVICE } from '@app/contracts/constants/job-service.constant';
 import { MatchDto } from '../dtos/match.dto';
 import { MatchingService } from '../services/matching.service';
 
 import {
   I_MATCHING_SERVICE,
   IMatchingService,
-} from '@app/common/interfaces/job-service.interface';
+} from '@app/contracts/interfaces/job-service.interface';
 
 @Controller()
 export class MatchingController implements IMatchingController {
