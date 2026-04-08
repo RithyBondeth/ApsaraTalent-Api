@@ -37,3 +37,19 @@ export interface DeleteNotificationPayload {
 export interface DeleteAllNotificationsPayload {
   userId: string;
 }
+
+export interface INotificationController {
+  getAllNotification(): Promise<any>;
+  listByUser(
+    req?: any,
+    page?: any,
+    limit?: any,
+    unreadOnly?: any,
+  ): Promise<any>;
+  getUnreadCount(req?: any): Promise<any>;
+  markRead(req?: any, id?: any): Promise<any>;
+  markAllRead(req?: any): Promise<any>;
+  deleteNotification(req?: any, id?: any): Promise<any>;
+  deleteAllNotifications(req?: any): Promise<any>;
+  createForCurrentUser(req?: any, body?: any): Promise<any>;
+}

@@ -15,9 +15,10 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { NOTIFICATION_SERVICE } from 'utils/constants/notification.constant';
+import { INotificationController } from '@app/common/interfaces/notification.interface';
 
 @Controller('notification')
-export class NotificationController {
+export class NotificationController implements INotificationController {
   constructor(
     @Inject(NOTIFICATION_SERVICE.NAME)
     private readonly notificationClient: ClientProxy,
@@ -42,15 +43,12 @@ export class NotificationController {
     @Query('unreadOnly') unreadOnly?: string,
   ) {
     return firstValueFrom(
-      this.notificationClient.send(
-        NOTIFICATION_SERVICE.ACTIONS.LIST_BY_USER,
-        {
-          userId: req.user.id,
-          page: page ? Number(page) : undefined,
-          limit: limit ? Number(limit) : undefined,
-          unreadOnly: unreadOnly === 'true',
-        },
-      ),
+      this.notificationClient.send(NOTIFICATION_SERVICE.ACTIONS.LIST_BY_USER, {
+        userId: req.user.id,
+        page: page ? Number(page) : undefined,
+        limit: limit ? Number(limit) : undefined,
+        unreadOnly: unreadOnly === 'true',
+      }),
     );
   }
 
@@ -80,10 +78,9 @@ export class NotificationController {
   @UseGuards(AuthGuard)
   async markAllRead(@Req() req) {
     return firstValueFrom(
-      this.notificationClient.send(
-        NOTIFICATION_SERVICE.ACTIONS.MARK_ALL_READ,
-        { userId: req.user.id },
-      ),
+      this.notificationClient.send(NOTIFICATION_SERVICE.ACTIONS.MARK_ALL_READ, {
+        userId: req.user.id,
+      }),
     );
   }
 

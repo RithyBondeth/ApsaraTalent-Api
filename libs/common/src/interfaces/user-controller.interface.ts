@@ -20,4 +20,14 @@ export interface IUserController {
   countEmployeeFavorite(eid?: any): Promise<any>;
   countCompanyFavorite(cid?: any): Promise<any>;
   updatePushNotificationToken?(...args: any[]): Promise<any>;
+  getEmployeeRecommendations(
+    employeeId?: any,
+    limit?: any,
+    req?: any,
+  ): Promise<any>;
+  getCompanyRecommendations(
+    companyId?: any,
+    limit?: any,
+    req?: any,
+  ): Promise<any>;
 }

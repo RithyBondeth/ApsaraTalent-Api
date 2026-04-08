@@ -23,10 +23,16 @@ export interface IUploadEmployeeController {
   removeEmployeeCoverLetter(data?: any): Promise<any>;
 }
 
+export interface IRemoveEmployeeItemsController {
+  removeEmployeeEducation(employeeId?: any, educationId?: any): Promise<any>;
+  removeEmployeeExperience(employeeId?: any, experienceId?: any): Promise<any>;
+}
+
 export interface IEmployeeController
   extends
     IFindEmployeeController,
     IImageEmployeeController,
     ISearchEmployeeController,
     IUpdateEmployeeController,
-    IUploadEmployeeController {}
+    IUploadEmployeeController,
+    IRemoveEmployeeItemsController {}

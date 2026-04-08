@@ -42,9 +42,10 @@ const ALLOWED_MIME_TYPES = [
   'text/plain',
 ];
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+import { IChatController } from '@app/common/interfaces/chat.interface';
 
 @Controller('chat')
-export class ChatController {
+export class ChatController implements IChatController {
   constructor(@Inject(CHAT_SERVICE.NAME) private chatClient: ClientProxy) {}
 
   @Post('initiate')

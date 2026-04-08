@@ -28,6 +28,10 @@ export interface IBasicAuthLoginOTPController {
   verifyOtp(verifyOtpDTO: any, res: any): Promise<any>;
 }
 
+export interface IBasicAuthIceServersController {
+  getIceServers(): Promise<any>;
+}
+
 export interface IBasicAuthController
   extends
     IBasicAuthRegisterController,
@@ -36,6 +40,7 @@ export interface IBasicAuthController
     IBasicAuthResetPasswordController,
     IBasicAuthRefreshTokenController,
     IBasicAuthVerifyEmailController,
+    IBasicAuthIceServersController,
     IBasicAuthLoginOTPController {}
 
 export interface IGoogleAuthController {

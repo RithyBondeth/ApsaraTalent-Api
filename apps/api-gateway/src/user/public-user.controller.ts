@@ -2,9 +2,10 @@ import { Controller, Get, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { IPublicUserController } from '@app/common/interfaces/public-user-controller.interface';
 
 @Controller('public/user')
-export class PublicUserController {
+export class PublicUserController implements IPublicUserController {
   constructor(
     @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
   ) {}

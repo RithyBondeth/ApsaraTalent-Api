@@ -2,6 +2,7 @@ export interface IResumeTemplateController {
   findAllResumeTemplate(data?: any): Promise<any>;
   findOneResumeTemplateById(data?: any): Promise<any>;
   createResumeTemplate(data?: any, file?: any): Promise<any>;
+  searchResumeTemplate(data?: any): Promise<any>;
 }
 
 export interface IResumeBuilderController {

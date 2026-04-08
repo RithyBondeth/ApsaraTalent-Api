@@ -1,18 +1,19 @@
 import {
-    Body,
-    Controller,
-    Get,
-    Inject,
-    Param,
-    Post,
-    Query
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  Post,
+  Query,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { PAYMENT_SERVICE } from 'utils/constants/payment-service.constant';
+import { IPaymentController } from '@app/common/interfaces/payment.interface';
 
 @Controller('bakong')
-export class PaymentController {
+export class PaymentController implements IPaymentController {
   constructor(
     @Inject(PAYMENT_SERVICE.NAME) private readonly paymentClient: ClientProxy,
   ) {}
