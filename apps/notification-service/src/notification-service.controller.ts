@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
   CreateNotificationPayload,
@@ -13,11 +13,16 @@ import { NOTIFICATION_SERVICE } from 'utils/constants/notification.constant';
 import { NotificationServiceService } from './notification-service.service';
 
 import { INotificationController } from '@app/common/interfaces/notification.interface';
+import {
+  I_NOTIFICATION_SERVICE,
+  INotificationService,
+} from '@app/common/interfaces/notification-service.interface';
 
 @Controller()
 export class NotificationServiceController implements INotificationController {
   constructor(
-    private readonly notificationServiceService: NotificationServiceService,
+    @Inject(I_NOTIFICATION_SERVICE)
+    private readonly notificationServiceService: INotificationService,
   ) {}
 
   @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION)

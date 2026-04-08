@@ -8,10 +8,17 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Logger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { NOTIFICATION_SERVICE } from 'utils/constants/notification.constant';
-import { CreateInterviewDto, InterviewStatus, UpdateInterviewStatusDto, VALID_STATUS_TRANSITIONS } from '../dtos/interview.dto';
+import {
+  CreateInterviewDto,
+  InterviewStatus,
+  UpdateInterviewStatusDto,
+  VALID_STATUS_TRANSITIONS,
+} from '../dtos/interview.dto';
+
+import { IInterviewService } from '@app/common/interfaces/job-service.interface';
 
 @Injectable()
-export class InterviewService {
+export class InterviewService implements IInterviewService {
   constructor(
     @InjectRepository(Interview)
     private readonly interviewRepo: Repository<Interview>,
@@ -91,7 +98,7 @@ export class InterviewService {
       const senderName =
         dto.createdBy === 'company'
           ? company.name
-          : (employee.username || employee.firstname);
+          : employee.username || employee.firstname;
 
       if (targetUserId) {
         this.notificationClient.emit(
@@ -115,7 +122,8 @@ export class InterviewService {
     } catch (error: any) {
       this.logger.error(error?.message || error);
       throw new RpcException({
-        message: error?.message || 'An error occurred while creating the interview.',
+        message:
+          error?.message || 'An error occurred while creating the interview.',
         statusCode: error?.statusCode || 500,
       });
     }
@@ -131,7 +139,8 @@ export class InterviewService {
     } catch (error: any) {
       this.logger.error(error?.message || error);
       throw new RpcException({
-        message: error?.message || 'An error occurred while fetching interviews.',
+        message:
+          error?.message || 'An error occurred while fetching interviews.',
         statusCode: 500,
       });
     }
@@ -147,13 +156,16 @@ export class InterviewService {
     } catch (error: any) {
       this.logger.error(error?.message || error);
       throw new RpcException({
-        message: error?.message || 'An error occurred while fetching interviews.',
+        message:
+          error?.message || 'An error occurred while fetching interviews.',
         statusCode: 500,
       });
     }
   }
 
-  async updateInterviewStatus(dto: UpdateInterviewStatusDto): Promise<Interview> {
+  async updateInterviewStatus(
+    dto: UpdateInterviewStatusDto,
+  ): Promise<Interview> {
     try {
       const interview = await this.interviewRepo.findOne({
         where: { id: dto.interviewId },
@@ -171,7 +183,10 @@ export class InterviewService {
       const employeeUserId = interview.employee?.user?.id;
       const companyUserId = interview.company?.user?.id;
 
-      if (dto.requestUserId !== employeeUserId && dto.requestUserId !== companyUserId) {
+      if (
+        dto.requestUserId !== employeeUserId &&
+        dto.requestUserId !== companyUserId
+      ) {
         throw new RpcException({
           message: 'You are not involved in this interview.',
           statusCode: 403,
@@ -183,7 +198,12 @@ export class InterviewService {
       const isCompany = dto.requestUserId === companyUserId;
 
       // Employees can only accept or decline pending interviews
-      if (isEmployee && ![InterviewStatus.ACCEPTED, InterviewStatus.DECLINED].includes(dto.status)) {
+      if (
+        isEmployee &&
+        ![InterviewStatus.ACCEPTED, InterviewStatus.DECLINED].includes(
+          dto.status,
+        )
+      ) {
         throw new RpcException({
           message: 'Employees can only accept or decline interviews.',
           statusCode: 403,
@@ -191,7 +211,12 @@ export class InterviewService {
       }
 
       // Companies can only cancel or mark as completed
-      if (isCompany && ![InterviewStatus.CANCELLED, InterviewStatus.COMPLETED].includes(dto.status)) {
+      if (
+        isCompany &&
+        ![InterviewStatus.CANCELLED, InterviewStatus.COMPLETED].includes(
+          dto.status,
+        )
+      ) {
         throw new RpcException({
           message: 'Companies can only cancel or complete interviews.',
           statusCode: 403,
@@ -199,7 +224,8 @@ export class InterviewService {
       }
 
       // ── Status transition validation ──
-      const allowedTransitions = VALID_STATUS_TRANSITIONS[interview.status] || [];
+      const allowedTransitions =
+        VALID_STATUS_TRANSITIONS[interview.status] || [];
       if (!allowedTransitions.includes(dto.status)) {
         throw new RpcException({
           message: `Cannot transition from "${interview.status}" to "${dto.status}".`,
@@ -211,7 +237,8 @@ export class InterviewService {
       const saved = await this.interviewRepo.save(interview);
 
       // Notify both parties about the status change
-      const statusLabel = dto.status.charAt(0).toUpperCase() + dto.status.slice(1);
+      const statusLabel =
+        dto.status.charAt(0).toUpperCase() + dto.status.slice(1);
 
       [employeeUserId, companyUserId].filter(Boolean).forEach((userId) => {
         this.notificationClient.emit(
@@ -231,7 +258,9 @@ export class InterviewService {
     } catch (error: any) {
       this.logger.error(error?.message || error);
       throw new RpcException({
-        message: error?.message || 'An error occurred while updating interview status.',
+        message:
+          error?.message ||
+          'An error occurred while updating interview status.',
         statusCode: error?.statusCode || 500,
       });
     }

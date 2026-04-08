@@ -1,8 +1,8 @@
 import {
-    DatabaseModule,
-    JwtModule,
-    LoggerModule,
-    UploadfileModule
+  DatabaseModule,
+  JwtModule,
+  LoggerModule,
+  UploadfileModule,
 } from '@app/common';
 import { ConfigModule } from '@app/common/config';
 import { CareerScope } from '@app/common/database/entities/career-scope.entity';
@@ -48,6 +48,20 @@ import { SearchEmployeeService } from './services/employee-services/search-emplo
 import { UpdateEmployeeInfoService } from './services/employee-services/update-employee-info.service';
 import { UploadEmployeeReferenceService } from './services/employee-services/upload-employee-reference.service';
 import { UserService } from './services/user.service';
+
+import {
+  I_UPDATE_EMPLOYEE_INFO_SERVICE,
+  I_IMAGE_EMPLOYEE_SERVICE,
+  I_UPDATE_COMPANY_INFO_SERVICE,
+  I_FIND_EMPLOYEE_SERVICE,
+  I_FIND_COMPANY_SERVICE,
+  I_IMAGE_COMPANY_SERVICE,
+  I_UPLOAD_EMPLOYEE_REFERENCE_SERVICE,
+  I_SEARCH_EMPLOYEE_SERVICE,
+  I_USER_SERVICE,
+  I_OPEN_POSITION_SERVICE,
+  I_EXPERIENCE_AND_EDUCATION_SERVICE,
+} from '@app/common/interfaces/user-service.interface';
 
 @Module({
   imports: [
@@ -98,17 +112,29 @@ import { UserService } from './services/user.service';
     ExperienceAndEducationController,
   ],
   providers: [
-    UpdateEmployeeInfoService,
-    ImageEmployeeService,
-    UpdateCompanyInfoService,
-    FindEmployeeService,
-    FindCompanyService,
-    ImageCompanyService,
-    UploadEmployeeReferenceService,
-    SearchEmployeeService,
-    UserService,
-    OpenPositionService,
-    ExperienceAndEducationService,
+    {
+      provide: I_UPDATE_EMPLOYEE_INFO_SERVICE,
+      useClass: UpdateEmployeeInfoService,
+    },
+    { provide: I_IMAGE_EMPLOYEE_SERVICE, useClass: ImageEmployeeService },
+    {
+      provide: I_UPDATE_COMPANY_INFO_SERVICE,
+      useClass: UpdateCompanyInfoService,
+    },
+    { provide: I_FIND_EMPLOYEE_SERVICE, useClass: FindEmployeeService },
+    { provide: I_FIND_COMPANY_SERVICE, useClass: FindCompanyService },
+    { provide: I_IMAGE_COMPANY_SERVICE, useClass: ImageCompanyService },
+    {
+      provide: I_UPLOAD_EMPLOYEE_REFERENCE_SERVICE,
+      useClass: UploadEmployeeReferenceService,
+    },
+    { provide: I_SEARCH_EMPLOYEE_SERVICE, useClass: SearchEmployeeService },
+    { provide: I_USER_SERVICE, useClass: UserService },
+    { provide: I_OPEN_POSITION_SERVICE, useClass: OpenPositionService },
+    {
+      provide: I_EXPERIENCE_AND_EDUCATION_SERVICE,
+      useClass: ExperienceAndEducationService,
+    },
     CacheInvalidationService,
     {
       provide: APP_INTERCEPTOR,

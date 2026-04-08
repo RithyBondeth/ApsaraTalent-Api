@@ -9,11 +9,13 @@ import { extractSalaryRange } from 'utils/functions/extract-salary-range';
 import { JobResponseDTO } from '../dtos/job-response.dto';
 import { SearchJobDto } from '../dtos/job-search.dto';
 
-const JOB_LIST_TTL = 5 * 60 * 1000;   // 5 min
+const JOB_LIST_TTL = 5 * 60 * 1000; // 5 min
 const JOB_SEARCH_TTL = 2 * 60 * 1000; // 2 min
 
+import { IJobServiceService } from '@app/common/interfaces/job-service.interface';
+
 @Injectable()
-export class JobServiceService {
+export class JobServiceService implements IJobServiceService {
   constructor(
     @InjectRepository(Job) private readonly jobRepo: Repository<Job>,
     private readonly logger: PinoLogger,

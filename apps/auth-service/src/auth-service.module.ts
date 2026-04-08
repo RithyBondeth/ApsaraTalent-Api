@@ -45,6 +45,20 @@ import { GithubAuthService } from './socials/services/github-auth.service';
 import { GoogleAuthService } from './socials/services/google-auth.service';
 import { LinkedInAuthService } from './socials/services/linkedin-auth.service';
 
+import {
+  I_FACEBOOK_AUTH_SERVICE,
+  I_FORGOT_PASSWORD_SERVICE,
+  I_GITHUB_AUTH_SERVICE,
+  I_GOOGLE_AUTH_SERVICE,
+  I_LINKEDIN_AUTH_SERVICE,
+  I_LOGIN_OTP_SERVICE,
+  I_LOGIN_SERVICE,
+  I_REFRESH_TOKEN_SERVICE,
+  I_REGISTER_SERVICE,
+  I_RESET_PASSWORD_SERVICE,
+  I_VERIFY_EMAIL_SERVICE,
+} from '@app/common/interfaces/auth-service.interface';
+
 @Module({
   imports: [
     ConfigModule,
@@ -95,17 +109,17 @@ import { LinkedInAuthService } from './socials/services/linkedin-auth.service';
     LoginOTPController,
   ],
   providers: [
-    RegisterService,
-    LoginService,
-    ForgotPasswordService,
-    ResetPasswordService,
-    RefreshTokenService,
-    VerifyEmailService,
-    GoogleAuthService,
-    LinkedInAuthService,
-    GithubAuthService,
-    FacebookAuthService,
-    LoginOTPService,
+    { provide: I_REGISTER_SERVICE, useClass: RegisterService },
+    { provide: I_LOGIN_SERVICE, useClass: LoginService },
+    { provide: I_FORGOT_PASSWORD_SERVICE, useClass: ForgotPasswordService },
+    { provide: I_RESET_PASSWORD_SERVICE, useClass: ResetPasswordService },
+    { provide: I_REFRESH_TOKEN_SERVICE, useClass: RefreshTokenService },
+    { provide: I_VERIFY_EMAIL_SERVICE, useClass: VerifyEmailService },
+    { provide: I_GOOGLE_AUTH_SERVICE, useClass: GoogleAuthService },
+    { provide: I_LINKEDIN_AUTH_SERVICE, useClass: LinkedInAuthService },
+    { provide: I_GITHUB_AUTH_SERVICE, useClass: GithubAuthService },
+    { provide: I_FACEBOOK_AUTH_SERVICE, useClass: FacebookAuthService },
+    { provide: I_LOGIN_OTP_SERVICE, useClass: LoginOTPService },
     {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor,

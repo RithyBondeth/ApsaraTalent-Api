@@ -14,8 +14,10 @@ import { Logger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { MatchDto } from '../dtos/match.dto';
 
+import { IMatchingService } from '@app/common/interfaces/job-service.interface';
+
 @Injectable()
-export class MatchingService {
+export class MatchingService implements IMatchingService {
   constructor(
     @InjectRepository(JobMatching)
     private readonly jobMatchingRepo: Repository<JobMatching>,
@@ -91,8 +93,12 @@ export class MatchingService {
       // Invalidate matching + favorites caches for both sides
       await Promise.all([
         this.redisService.invalidateMatchingCaches(matchDto.eid, matchDto.cid),
-        this.redisService.del(this.redisService.generateEmployeeFavoritesKey(matchDto.eid)),
-        this.redisService.del(this.redisService.generateEmployeeFavoriteCountKey(matchDto.eid)),
+        this.redisService.del(
+          this.redisService.generateEmployeeFavoritesKey(matchDto.eid),
+        ),
+        this.redisService.del(
+          this.redisService.generateEmployeeFavoriteCountKey(matchDto.eid),
+        ),
       ]);
 
       // Notify the company about the like/match
@@ -124,14 +130,18 @@ export class MatchingService {
       }
 
       if (becameMatched) {
-        this.emailService.sendEmail({
-          from: company.user.email,
-          to: employee.user.email,
-          subject: 'Matched Message',
-          text: `🎉 Match! ${employee.username} likes your company.`,
-        }).catch((err) =>
-          this.logger.warn(`Failed to send match notification: ${err?.message || err}`),
-        );
+        this.emailService
+          .sendEmail({
+            from: company.user.email,
+            to: employee.user.email,
+            subject: 'Matched Message',
+            text: `🎉 Match! ${employee.username} likes your company.`,
+          })
+          .catch((err) =>
+            this.logger.warn(
+              `Failed to send match notification: ${err?.message || err}`,
+            ),
+          );
       }
 
       return saved;
@@ -201,8 +211,12 @@ export class MatchingService {
       // Invalidate matching + favorites caches for both sides
       await Promise.all([
         this.redisService.invalidateMatchingCaches(matchDto.eid, matchDto.cid),
-        this.redisService.del(this.redisService.generateCompanyFavoritesKey(matchDto.cid)),
-        this.redisService.del(this.redisService.generateCompanyFavoriteCountKey(matchDto.cid)),
+        this.redisService.del(
+          this.redisService.generateCompanyFavoritesKey(matchDto.cid),
+        ),
+        this.redisService.del(
+          this.redisService.generateCompanyFavoriteCountKey(matchDto.cid),
+        ),
       ]);
 
       // Notify the employee about the like/match
@@ -234,14 +248,18 @@ export class MatchingService {
       }
 
       if (becameMatched) {
-        this.emailService.sendEmail({
-          from: employee.user.email,
-          to: company.user.email,
-          subject: 'Apsara Talent - Matched Messages',
-          text: `🎉 Match! ${company.name} likes your profile.`,
-        }).catch((err) =>
-          this.logger.warn(`Failed to send match notification: ${err?.message || err}`),
-        );
+        this.emailService
+          .sendEmail({
+            from: employee.user.email,
+            to: company.user.email,
+            subject: 'Apsara Talent - Matched Messages',
+            text: `🎉 Match! ${company.name} likes your profile.`,
+          })
+          .catch((err) =>
+            this.logger.warn(
+              `Failed to send match notification: ${err?.message || err}`,
+            ),
+          );
       }
 
       return saved;
@@ -255,7 +273,10 @@ export class MatchingService {
   }
 
   async findCurrentEmployeeLiked(eid: string): Promise<UserResponseDTO[]> {
-    const cacheKey = this.redisService.generateMatchingKey('employee-liked', eid);
+    const cacheKey = this.redisService.generateMatchingKey(
+      'employee-liked',
+      eid,
+    );
     const cached = await this.redisService.get<UserResponseDTO[]>(cacheKey);
     if (cached) return cached;
 
@@ -266,21 +287,31 @@ export class MatchingService {
       });
 
       if (!employeeLiked)
-        throw new RpcException({ message: 'Employee Liked not found', statusCode: 404 });
+        throw new RpcException({
+          message: 'Employee Liked not found',
+          statusCode: 404,
+        });
 
       const result = employeeLiked.map((e) => new UserResponseDTO(e.company));
       await this.redisService.set(cacheKey, result, 300000);
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message || 'An error occurred while fetching the employee liked.',
+        (error as Error).message ||
+          'An error occurred while fetching the employee liked.',
       );
-      throw new RpcException({ message: (error as Error).message, statusCode: 500 });
+      throw new RpcException({
+        message: (error as Error).message,
+        statusCode: 500,
+      });
     }
   }
 
   async findCurrentCompanyLiked(cid: string): Promise<UserResponseDTO[]> {
-    const cacheKey = this.redisService.generateMatchingKey('company-liked', cid);
+    const cacheKey = this.redisService.generateMatchingKey(
+      'company-liked',
+      cid,
+    );
     const cached = await this.redisService.get<UserResponseDTO[]>(cacheKey);
     if (cached) return cached;
 
@@ -291,21 +322,31 @@ export class MatchingService {
       });
 
       if (!companyLiked)
-        throw new RpcException({ message: 'Company Liked not found', statusCode: 404 });
+        throw new RpcException({
+          message: 'Company Liked not found',
+          statusCode: 404,
+        });
 
       const result = companyLiked.map((c) => new UserResponseDTO(c.employee));
       await this.redisService.set(cacheKey, result, 300000);
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message || 'An error occurred while fetching the company liked.',
+        (error as Error).message ||
+          'An error occurred while fetching the company liked.',
       );
-      throw new RpcException({ message: (error as Error).message, statusCode: 500 });
+      throw new RpcException({
+        message: (error as Error).message,
+        statusCode: 500,
+      });
     }
   }
 
   async findCurrentEmployeeMatching(eid: string): Promise<UserResponseDTO[]> {
-    const cacheKey = this.redisService.generateMatchingKey('employee-matching', eid);
+    const cacheKey = this.redisService.generateMatchingKey(
+      'employee-matching',
+      eid,
+    );
     const cached = await this.redisService.get<UserResponseDTO[]>(cacheKey);
     if (cached) return cached;
 
@@ -316,21 +357,33 @@ export class MatchingService {
       });
 
       if (!currentEmployeeMatching)
-        throw new RpcException({ message: 'There is no matching.', statusCode: 404 });
+        throw new RpcException({
+          message: 'There is no matching.',
+          statusCode: 404,
+        });
 
-      const result = currentEmployeeMatching.map((u) => new UserResponseDTO(u.company));
+      const result = currentEmployeeMatching.map(
+        (u) => new UserResponseDTO(u.company),
+      );
       await this.redisService.set(cacheKey, result, 300000);
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message || 'An error occurred while fetching the employee matching.',
+        (error as Error).message ||
+          'An error occurred while fetching the employee matching.',
       );
-      throw new RpcException({ message: (error as Error).message, statusCode: 500 });
+      throw new RpcException({
+        message: (error as Error).message,
+        statusCode: 500,
+      });
     }
   }
 
   async findCurrentCompanyMatching(cid: string): Promise<UserResponseDTO[]> {
-    const cacheKey = this.redisService.generateMatchingKey('company-matching', cid);
+    const cacheKey = this.redisService.generateMatchingKey(
+      'company-matching',
+      cid,
+    );
     const cached = await this.redisService.get<UserResponseDTO[]>(cacheKey);
     if (cached) return cached;
 
@@ -341,22 +394,36 @@ export class MatchingService {
       });
 
       if (!currentCompanyMatching)
-        throw new RpcException({ message: 'There is no matching.', statusCode: 404 });
+        throw new RpcException({
+          message: 'There is no matching.',
+          statusCode: 404,
+        });
 
-      const result = currentCompanyMatching.map((u) => new UserResponseDTO(u.employee));
+      const result = currentCompanyMatching.map(
+        (u) => new UserResponseDTO(u.employee),
+      );
       await this.redisService.set(cacheKey, result, 300000);
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message || 'An error occurred while fetching the company matching.',
+        (error as Error).message ||
+          'An error occurred while fetching the company matching.',
       );
-      throw new RpcException({ message: (error as Error).message, statusCode: 500 });
+      throw new RpcException({
+        message: (error as Error).message,
+        statusCode: 500,
+      });
     }
   }
 
   async findCurrentEmployeeMatchingCount(eid: string): Promise<any> {
-    const cacheKey = this.redisService.generateMatchingKey('employee-matching-count', eid);
-    const cached = await this.redisService.get<{ totalMatching: number }>(cacheKey);
+    const cacheKey = this.redisService.generateMatchingKey(
+      'employee-matching-count',
+      eid,
+    );
+    const cached = await this.redisService.get<{ totalMatching: number }>(
+      cacheKey,
+    );
     if (cached) return cached;
 
     try {
@@ -368,16 +435,17 @@ export class MatchingService {
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message || 'An error occurred while counting the current employee matching.',
+        (error as Error).message ||
+          'An error occurred while counting the current employee matching.',
       );
-      throw new RpcException({ message: (error as Error).message, statusCode: 500 });
+      throw new RpcException({
+        message: (error as Error).message,
+        statusCode: 500,
+      });
     }
   }
 
-  async getAnalytics(
-    userId: string,
-    role: 'employee' | 'company',
-  ) {
+  async getAnalytics(userId: string, role: 'employee' | 'company') {
     // No caching — dashboard should always show real-time data.
     try {
       const isEmployee = role === 'employee';
@@ -389,21 +457,25 @@ export class MatchingService {
         : this.companyFavoriteEmployeeRepo;
 
       // ── Summary counts (parallel) ──
-      const [totalLikesGiven, totalLikesReceived, totalMatches, totalFavorites] =
-        await Promise.all([
-          this.jobMatchingRepo.count({
-            where: { [entityField]: { id: userId }, [likeGivenField]: true },
-          }),
-          this.jobMatchingRepo.count({
-            where: { [entityField]: { id: userId }, [likeReceivedField]: true },
-          }),
-          this.jobMatchingRepo.count({
-            where: { [entityField]: { id: userId }, isMatched: true },
-          }),
-          favoriteRepo.count({
-            where: { [entityField]: { id: userId } },
-          }),
-        ]);
+      const [
+        totalLikesGiven,
+        totalLikesReceived,
+        totalMatches,
+        totalFavorites,
+      ] = await Promise.all([
+        this.jobMatchingRepo.count({
+          where: { [entityField]: { id: userId }, [likeGivenField]: true },
+        }),
+        this.jobMatchingRepo.count({
+          where: { [entityField]: { id: userId }, [likeReceivedField]: true },
+        }),
+        this.jobMatchingRepo.count({
+          where: { [entityField]: { id: userId }, isMatched: true },
+        }),
+        favoriteRepo.count({
+          where: { [entityField]: { id: userId } },
+        }),
+      ]);
 
       const matchRate =
         totalLikesGiven > 0
@@ -411,10 +483,19 @@ export class MatchingService {
           : 0;
 
       // ── Weekly activity (last 7 days) for bar chart ──
-      const weeklyActivity = await this.getWeeklyActivity(userId, entityField, likeGivenField, likeReceivedField);
+      const weeklyActivity = await this.getWeeklyActivity(
+        userId,
+        entityField,
+        likeGivenField,
+        likeReceivedField,
+      );
 
       // ── Recent matches (last 5) for list ──
-      const recentMatches = await this.getRecentMatches(userId, entityField, isEmployee);
+      const recentMatches = await this.getRecentMatches(
+        userId,
+        entityField,
+        isEmployee,
+      );
 
       return {
         totalLikesGiven,
@@ -427,9 +508,13 @@ export class MatchingService {
       };
     } catch (error) {
       this.logger.error(
-        (error as Error).message || 'An error occurred while fetching analytics.',
+        (error as Error).message ||
+          'An error occurred while fetching analytics.',
       );
-      throw new RpcException({ message: (error as Error).message, statusCode: 500 });
+      throw new RpcException({
+        message: (error as Error).message,
+        statusCode: 500,
+      });
     }
   }
 
@@ -440,14 +525,23 @@ export class MatchingService {
     likeReceivedField: string,
   ) {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const result: { day: string; likes: number; received: number; matches: number }[] = [];
+    const result: {
+      day: string;
+      likes: number;
+      received: number;
+      matches: number;
+    }[] = [];
 
     // Get date range for last 7 days
     const now = new Date();
     for (let i = 6; i >= 0; i--) {
       const date = new Date(now);
       date.setDate(date.getDate() - i);
-      const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const dayStart = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+      );
       const dayEnd = new Date(dayStart);
       dayEnd.setDate(dayEnd.getDate() + 1);
 
@@ -481,9 +575,7 @@ export class MatchingService {
     entityField: string,
     isEmployee: boolean,
   ) {
-    const relations = isEmployee
-      ? ['company']
-      : ['employee'];
+    const relations = isEmployee ? ['company'] : ['employee'];
 
     const matches = await this.jobMatchingRepo.find({
       where: { [entityField]: { id: userId }, isMatched: true },
@@ -512,8 +604,13 @@ export class MatchingService {
   }
 
   async findCurrentCompanyMatchingCount(cid: string): Promise<any> {
-    const cacheKey = this.redisService.generateMatchingKey('company-matching-count', cid);
-    const cached = await this.redisService.get<{ totalMatching: number }>(cacheKey);
+    const cacheKey = this.redisService.generateMatchingKey(
+      'company-matching-count',
+      cid,
+    );
+    const cached = await this.redisService.get<{ totalMatching: number }>(
+      cacheKey,
+    );
     if (cached) return cached;
 
     try {
@@ -525,9 +622,13 @@ export class MatchingService {
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message || 'An error occurred while counting the current company matching.',
+        (error as Error).message ||
+          'An error occurred while counting the current company matching.',
       );
-      throw new RpcException({ message: (error as Error).message, statusCode: 500 });
+      throw new RpcException({
+        message: (error as Error).message,
+        statusCode: 500,
+      });
     }
   }
 }

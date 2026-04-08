@@ -8,6 +8,8 @@ import { NotificationServiceController } from './notification-service.controller
 import { NotificationServiceService } from './notification-service.service';
 import { PushNotificationService } from './push-notification.service';
 
+import { I_NOTIFICATION_SERVICE } from '@app/common/interfaces/notification-service.interface';
+
 @Module({
   imports: [
     ConfigModule,
@@ -16,6 +18,12 @@ import { PushNotificationService } from './push-notification.service';
     TypeOrmModule.forFeature([Notification, User]),
   ],
   controllers: [NotificationServiceController],
-  providers: [NotificationServiceService, PushNotificationService],
+  providers: [
+    {
+      provide: I_NOTIFICATION_SERVICE,
+      useClass: NotificationServiceService,
+    },
+    PushNotificationService,
+  ],
 })
 export class NotificationServiceModule {}

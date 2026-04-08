@@ -1,6 +1,6 @@
 import { CareerScope } from '@app/common/database/entities/career-scope.entity';
 import { IUserController } from '@app/common/interfaces/user-controller.interface';
-import { Controller } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import {
@@ -9,9 +9,16 @@ import {
 } from '../dtos/user-response.dto';
 import { UserService } from '../services/user.service';
 
+import {
+  I_USER_SERVICE,
+  IUserService,
+} from '@app/common/interfaces/user-service.interface';
+
 @Controller()
 export class UserController implements IUserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    @Inject(I_USER_SERVICE) private readonly userService: IUserService,
+  ) {}
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL)
   async findAllUsers(

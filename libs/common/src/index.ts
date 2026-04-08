@@ -1,6 +1,7 @@
 export * from './config/config.module';
 export * from './database/database.module';
 export * from './email/email.module';
+export * from './filters/rpc-exception.filter';
 export * from './guards/auth.guard';
 export * from './jwt/jwt.module';
 export * from './logger/logger.module';

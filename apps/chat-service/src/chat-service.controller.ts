@@ -1,15 +1,21 @@
 import { TChatContent } from '@app/common/interfaces/chat.interface';
-import { Controller, Logger } from '@nestjs/common';
+import { Controller, Logger, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ChatServiceService } from './chat-service.service';
 
 import { IChatController } from '@app/common/interfaces/chat.interface';
+import {
+  I_CHAT_SERVICE,
+  IChatService,
+} from '@app/common/interfaces/chat-service.interface';
 
 @Controller()
 export class ChatServiceController implements IChatController {
   private readonly logger = new Logger('ChatServiceController');
 
-  constructor(private readonly chatService: ChatServiceService) {}
+  constructor(
+    @Inject(I_CHAT_SERVICE) private readonly chatService: IChatService,
+  ) {}
 
   @MessagePattern('createOrGetChat')
   async initiateChat(

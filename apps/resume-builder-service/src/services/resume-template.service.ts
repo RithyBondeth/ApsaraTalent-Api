@@ -9,11 +9,13 @@ import { Repository } from 'typeorm';
 import { CreateResumeTemplateDTO } from '../dtos/create-resume-template.dto';
 import { SearchTemplateDTO } from '../dtos/search-resume-template.dto';
 
-const TEMPLATE_TTL = 60 * 60 * 1000;        // 1 hour — static data
+const TEMPLATE_TTL = 60 * 60 * 1000; // 1 hour — static data
 const TEMPLATE_SEARCH_TTL = 30 * 60 * 1000; // 30 min
 
+import { IResumeTemplateService } from '@app/common/interfaces/resume-builder-service.interface';
+
 @Injectable()
-export class ResumeTemplateService {
+export class ResumeTemplateService implements IResumeTemplateService {
   constructor(
     @InjectRepository(ResumeTemplate)
     private readonly resumeTemplateRepository: Repository<ResumeTemplate>,
@@ -135,7 +137,8 @@ export class ResumeTemplateService {
   async searchResumeTemplate(
     searchTemplateDTO: SearchTemplateDTO,
   ): Promise<any> {
-    const cacheKey = this.redisService.generateTemplateSearchKey(searchTemplateDTO);
+    const cacheKey =
+      this.redisService.generateTemplateSearchKey(searchTemplateDTO);
     const cached = await this.redisService.get<ResumeTemplate[]>(cacheKey);
     if (cached) {
       this.logger.info('Resume template search cache HIT');

@@ -1,14 +1,18 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
-import { ExperienceAndEducationService } from '../../services/employee-services/experienc-education.service';
+import {
+  I_EXPERIENCE_AND_EDUCATION_SERVICE,
+  IExperienceAndEducationService,
+} from '@app/common/interfaces/user-service.interface';
 
 import { IRemoveEmployeeItemsController } from '@app/common/interfaces/employee-controller.interface';
 
 @Controller()
 export class ExperienceAndEducationController implements IRemoveEmployeeItemsController {
   constructor(
-    private readonly experienceAndEducationService: ExperienceAndEducationService,
+    @Inject(I_EXPERIENCE_AND_EDUCATION_SERVICE)
+    private readonly experienceAndEducationService: IExperienceAndEducationService,
   ) {}
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_EXPERIENCE)

@@ -23,6 +23,12 @@ import { InterviewService } from './services/interview.service';
 import { JobServiceService } from './services/job-service.service';
 import { MatchingService } from './services/matching.service';
 
+import {
+  I_INTERVIEW_SERVICE,
+  I_JOB_SERVICE_SERVICE,
+  I_MATCHING_SERVICE,
+} from '@app/common/interfaces/job-service.interface';
+
 @Module({
   imports: [
     ConfigModule,
@@ -57,9 +63,9 @@ import { MatchingService } from './services/matching.service';
   ],
   controllers: [JobServiceController, MatchingController, InterviewController],
   providers: [
-    JobServiceService,
-    MatchingService,
-    InterviewService,
+    { provide: I_JOB_SERVICE_SERVICE, useClass: JobServiceService },
+    { provide: I_MATCHING_SERVICE, useClass: MatchingService },
+    { provide: I_INTERVIEW_SERVICE, useClass: InterviewService },
     {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor,

@@ -11,6 +11,11 @@ import { ResumeBuilderService } from './services/resume-builder.service';
 import { ResumeTemplateSeedService } from './services/resume-template-seed.service';
 import { ResumeTemplateService } from './services/resume-template.service';
 
+import {
+  I_RESUME_BUILDER_SERVICE,
+  I_RESUME_TEMPLATE_SERVICE,
+} from '@app/common/interfaces/resume-builder-service.interface';
+
 @Module({
   imports: [
     ConfigModule,
@@ -21,6 +26,11 @@ import { ResumeTemplateService } from './services/resume-template.service';
     TypeOrmModule.forFeature([ResumeTemplate]),
   ],
   controllers: [ResumeBuilderController, ResumeTemplateController],
-  providers: [ResumeBuilderService, ImageService, ResumeTemplateService, ResumeTemplateSeedService],
+  providers: [
+    { provide: I_RESUME_BUILDER_SERVICE, useClass: ResumeBuilderService },
+    ImageService,
+    { provide: I_RESUME_TEMPLATE_SERVICE, useClass: ResumeTemplateService },
+    ResumeTemplateSeedService,
+  ],
 })
 export class ResumeBuilderServiceModule {}

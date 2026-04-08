@@ -11,8 +11,10 @@ import { Repository } from 'typeorm';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { GoogleAuthDTO } from '../dtos/google-auth.dto';
 
+import { IGoogleAuthService } from '@app/common/interfaces/auth-service.interface';
+
 @Injectable()
-export class GoogleAuthService {
+export class GoogleAuthService implements IGoogleAuthService {
   constructor(
     @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
     @InjectRepository(User) private readonly userRepository: Repository<User>,

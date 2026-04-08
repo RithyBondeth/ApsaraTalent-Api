@@ -1,5 +1,5 @@
 import { IFindCompanyController } from '@app/common/interfaces/company.interface';
-import { Controller } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { UserPaginationDTO } from '../../dtos/user-pagination.dto';
@@ -9,9 +9,17 @@ import {
 } from '../../dtos/user-response.dto';
 import { FindCompanyService } from '../../services/company-services/find-company.service';
 
+import {
+  I_FIND_COMPANY_SERVICE,
+  IFindCompanyService,
+} from '@app/common/interfaces/user-service.interface';
+
 @Controller()
 export class FindCompanyController implements IFindCompanyController {
-  constructor(private readonly findCompanyService: FindCompanyService) {}
+  constructor(
+    @Inject(I_FIND_COMPANY_SERVICE)
+    private readonly findCompanyService: IFindCompanyService,
+  ) {}
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_COMPANY)
   async findAll(

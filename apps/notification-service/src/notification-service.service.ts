@@ -14,8 +14,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PushNotificationService } from './push-notification.service';
 
+import { INotificationService } from '@app/common/interfaces/notification-service.interface';
+
 @Injectable()
-export class NotificationServiceService {
+export class NotificationServiceService implements INotificationService {
   private readonly logger = new Logger(NotificationServiceService.name);
 
   constructor(

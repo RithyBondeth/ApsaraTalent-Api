@@ -1,14 +1,22 @@
 import { IResumeTemplateController } from '@app/common/interfaces/resume-controller.interface';
-import { Controller } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { RESUME_BUILDER_SERVICE } from 'utils/constants/resume-builder-service.constant';
 import { CreateResumeTemplateDTO } from '../dtos/create-resume-template.dto';
 import { SearchTemplateDTO } from '../dtos/search-resume-template.dto';
 import { ResumeTemplateService } from '../services/resume-template.service';
 
+import {
+  I_RESUME_TEMPLATE_SERVICE,
+  IResumeTemplateService,
+} from '@app/common/interfaces/resume-builder-service.interface';
+
 @Controller()
 export class ResumeTemplateController implements IResumeTemplateController {
-  constructor(private readonly resumeTemplateService: ResumeTemplateService) {}
+  constructor(
+    @Inject(I_RESUME_TEMPLATE_SERVICE)
+    private readonly resumeTemplateService: IResumeTemplateService,
+  ) {}
 
   @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.FIND_ALL_RESUME_TEMPLATES)
   async findAllResumeTemplate(): Promise<any> {

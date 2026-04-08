@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
@@ -95,7 +96,21 @@ async function bootstrap() {
   app.useStaticAssets(join(process.cwd(), 'storage'), { prefix: '/storage' });
 
   // =========================================================
-  // 5. LOGGER & BOOTSTRAP
+  // 5. SWAGGER API DOCUMENTATION
+  // =========================================================
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('ApsaraTalent API')
+    .setDescription('Microservices-based Talent recruitment platform API')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('docs', app, document);
+
+  // =========================================================
+  // 6. LOGGER & BOOTSTRAP
   // =========================================================
 
   // Attach centralized logging via nestjs-pino

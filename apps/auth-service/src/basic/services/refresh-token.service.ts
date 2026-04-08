@@ -8,8 +8,10 @@ import { Repository } from 'typeorm';
 import { RefreshTokenResponseDTO } from '../dtos/refresh-token-response.dto';
 import { RefreshTokenDTO } from '../dtos/refresh-token.dto';
 
+import { IRefreshTokenService } from '@app/common/interfaces/auth-service.interface';
+
 @Injectable()
-export class RefreshTokenService {
+export class RefreshTokenService implements IRefreshTokenService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,

@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { JOB_SERVICE } from 'utils/constants/job-service.constant';
 import {
@@ -9,9 +9,17 @@ import { InterviewService } from '../services/interview.service';
 
 import { IInterviewController } from '@app/common/interfaces/job-controller.interface';
 
+import {
+  I_INTERVIEW_SERVICE,
+  IInterviewService,
+} from '@app/common/interfaces/job-service.interface';
+
 @Controller()
 export class InterviewController implements IInterviewController {
-  constructor(private readonly interviewService: InterviewService) {}
+  constructor(
+    @Inject(I_INTERVIEW_SERVICE)
+    private readonly interviewService: IInterviewService,
+  ) {}
 
   @MessagePattern(JOB_SERVICE.ACTIONS.CREATE_INTERVIEW)
   async createInterview(@Payload() dto: CreateInterviewDto) {

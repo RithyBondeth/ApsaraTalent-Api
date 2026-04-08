@@ -7,8 +7,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 
+import { IExperienceAndEducationService } from '@app/common/interfaces/user-service.interface';
+
 @Injectable()
-export class ExperienceAndEducationService {
+export class ExperienceAndEducationService implements IExperienceAndEducationService {
   constructor(
     private readonly logger: PinoLogger,
     @InjectRepository(Experience)

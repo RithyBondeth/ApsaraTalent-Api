@@ -19,9 +19,10 @@ import {
   JobPositionDTO,
   UserResponseDTO,
 } from '../dtos/user-response.dto';
+import { IUserService } from '@app/common/interfaces/user-service.interface';
 
 @Injectable()
-export class UserService implements OnModuleInit {
+export class UserService implements IUserService, OnModuleInit {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     @InjectRepository(CareerScope)

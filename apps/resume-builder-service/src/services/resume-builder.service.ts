@@ -7,8 +7,10 @@ import * as puppeteer from 'puppeteer';
 import { BuildResumeDTO } from '../dtos/resume-builder.dto';
 import { ImageService } from './image.service';
 
+import { IResumeBuilderService } from '@app/common/interfaces/resume-builder-service.interface';
+
 @Injectable()
-export class ResumeBuilderService {
+export class ResumeBuilderService implements IResumeBuilderService {
   private openAI: OpenAI;
 
   constructor(

@@ -8,19 +8,28 @@ const ds = new DataSource({
 });
 
 ds.initialize().then(async () => {
-    try {
-        const qb = ds.getRepository(Chat).createQueryBuilder('chat');
-        qb.leftJoin('chat.sender', 'sender').leftJoin('chat.receiver', 'receiver');
-        qb.select(['chat.id', 'chat.content', 'chat.sentAt', 'chat.isRead', 'sender.id', 'sender.email', 'receiver.id', 'receiver.email']);
-        qb.where('chat.sender.id = :userId', { userId: '123' });
-        
-        qb.orderBy('"chat"."sentAt"', 'DESC');
-        console.log("Quoted SQL:", qb.getSql());
-        await qb.getMany();
-        console.log("Success with quoted!");
-    } catch(e) {
-        console.error("Error:", e.message);
-    } finally {
-        await ds.destroy();
-    }
+  try {
+    const qb = ds.getRepository(Chat).createQueryBuilder('chat');
+    qb.leftJoin('chat.sender', 'sender').leftJoin('chat.receiver', 'receiver');
+    qb.select([
+      'chat.id',
+      'chat.content',
+      'chat.sentAt',
+      'chat.isRead',
+      'sender.id',
+      'sender.email',
+      'receiver.id',
+      'receiver.email',
+    ]);
+    qb.where('chat.sender.id = :userId', { userId: '123' });
+
+    qb.orderBy('"chat"."sentAt"', 'DESC');
+    console.log('Quoted SQL:', qb.getSql());
+    await qb.getMany();
+    console.log('Success with quoted!');
+  } catch (e: any) {
+    console.error('Error:', e.message);
+  } finally {
+    await ds.destroy();
+  }
 });

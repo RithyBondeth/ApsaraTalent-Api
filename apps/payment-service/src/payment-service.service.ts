@@ -1,10 +1,13 @@
 import {
-    Currency, PaymentTransaction,
-    TransactionStatus,
-    TransactionType
+  Currency,
+  PaymentTransaction,
+  TransactionStatus,
+  TransactionType,
 } from '@app/common/database/entities/payment/payment-transaction.entity';
 import {
-    Payment, PaymentStatus, PaymentType
+  Payment,
+  PaymentStatus,
+  PaymentType,
 } from '@app/common/database/entities/payment/payment.entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -22,11 +25,17 @@ import { GenerateIndividualKhqrDTO } from './dtos/generate-individual-khqr.dto';
 import { GenerateMerchantKhqrDTO } from './dtos/generate-merchant-khqr.dto';
 import { VerifyKhqrDTO } from './dtos/verify-khqr.dto';
 import {
-    BakongApiConnectionException, BakongConfigurationException, BakongPaymentNotFoundException, BakongQRGenerationException, BakongQRValidationException
+  BakongApiConnectionException,
+  BakongConfigurationException,
+  BakongPaymentNotFoundException,
+  BakongQRGenerationException,
+  BakongQRValidationException,
 } from './exceptions/bakong.exceptions';
 
+import { IPaymentService } from '@app/common/interfaces/payment-service.interface';
+
 @Injectable()
-export class PaymentServiceService {
+export class PaymentServiceService implements IPaymentService {
   private readonly logger = new Logger(PaymentServiceService.name);
   private readonly httpClient: AxiosInstance;
   private readonly bakongConfig: any;

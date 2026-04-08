@@ -10,7 +10,7 @@ export interface IInterviewController {
   updateInterviewStatus(dto?: any, req?: any): Promise<any>;
 }
 
-export interface IMatchingController extends IInterviewController {
+export interface IMatchingController {
   employeeLikes(data?: any, id?: any): Promise<any>;
   companyLikes(data?: any, id?: any): Promise<any>;
   findCurrentEmployeeLiked(data?: any, id?: any): Promise<any>;

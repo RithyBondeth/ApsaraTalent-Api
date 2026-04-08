@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PAYMENT_SERVICE } from 'utils/constants/payment-service.constant';
 import { RateLimit } from './decorators/rate-limit.decorator';
@@ -12,10 +12,17 @@ import { VerifyKhqrDTO } from './dtos/verify-khqr.dto';
 import { PaymentServiceService } from './payment-service.service';
 
 import { IPaymentController } from '@app/common/interfaces/payment.interface';
+import {
+  I_PAYMENT_SERVICE,
+  IPaymentService,
+} from '@app/common/interfaces/payment-service.interface';
 
 @Controller()
 export class PaymentServiceController implements IPaymentController {
-  constructor(private readonly paymentServiceService: PaymentServiceService) {}
+  constructor(
+    @Inject(I_PAYMENT_SERVICE)
+    private readonly paymentServiceService: IPaymentService,
+  ) {}
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.GENERATE_INDIVIDUAL_KHQR)
   @RateLimit(50) // Lower limit for QR generation

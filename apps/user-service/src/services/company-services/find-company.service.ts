@@ -13,8 +13,10 @@ import {
   JobPositionDTO,
 } from '../../dtos/user-response.dto';
 
+import { IFindCompanyService } from '@app/common/interfaces/user-service.interface';
+
 @Injectable()
-export class FindCompanyService {
+export class FindCompanyService implements IFindCompanyService {
   constructor(
     @InjectRepository(Company)
     private readonly companyRepository: Repository<Company>,

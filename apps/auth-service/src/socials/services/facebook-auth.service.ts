@@ -11,8 +11,10 @@ import { Repository } from 'typeorm';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { FacebookAuthDTO } from '../dtos/facebook-auth.dto';
 
+import { IFacebookAuthService } from '@app/common/interfaces/auth-service.interface';
+
 @Injectable()
-export class FacebookAuthService {
+export class FacebookAuthService implements IFacebookAuthService {
   constructor(
     @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
     @InjectRepository(User) private readonly userRepository: Repository<User>,

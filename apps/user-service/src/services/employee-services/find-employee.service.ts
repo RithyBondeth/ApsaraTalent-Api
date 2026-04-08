@@ -12,8 +12,10 @@ import {
   EmployeeResponseDTO,
 } from '../../dtos/user-response.dto';
 
+import { IFindEmployeeService } from '@app/common/interfaces/user-service.interface';
+
 @Injectable()
-export class FindEmployeeService {
+export class FindEmployeeService implements IFindEmployeeService {
   constructor(
     @InjectRepository(Employee)
     private readonly employeeRepository: Repository<Employee>,

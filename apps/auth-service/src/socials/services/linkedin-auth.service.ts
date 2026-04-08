@@ -11,8 +11,10 @@ import { Repository } from 'typeorm';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { LinkedInAuthDTO } from '../dtos/linkedin-auth.dto';
 
+import { ILinkedInAuthService } from '@app/common/interfaces/auth-service.interface';
+
 @Injectable()
-export class LinkedInAuthService {
+export class LinkedInAuthService implements ILinkedInAuthService {
   constructor(
     @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
     @InjectRepository(User) private users: Repository<User>,

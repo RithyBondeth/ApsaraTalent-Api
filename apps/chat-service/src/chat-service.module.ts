@@ -10,6 +10,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { ChatServiceService } from './chat-service.service';
 import { ChatServiceController } from './chat-service.controller';
+import { I_CHAT_SERVICE } from '@app/common/interfaces/chat-service.interface';
 
 @Module({
   imports: [
@@ -34,6 +35,11 @@ import { ChatServiceController } from './chat-service.controller';
     ]),
   ],
   controllers: [ChatServiceController],
-  providers: [ChatServiceService],
+  providers: [
+    {
+      provide: I_CHAT_SERVICE,
+      useClass: ChatServiceService,
+    },
+  ],
 })
 export class ChatServiceModule {}

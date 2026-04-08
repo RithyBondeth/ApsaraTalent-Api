@@ -1,14 +1,22 @@
 import { IMatchingController } from '@app/common/interfaces/job-controller.interface';
-import { Controller } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
 import { JOB_SERVICE } from 'utils/constants/job-service.constant';
 import { MatchDto } from '../dtos/match.dto';
 import { MatchingService } from '../services/matching.service';
 
+import {
+  I_MATCHING_SERVICE,
+  IMatchingService,
+} from '@app/common/interfaces/job-service.interface';
+
 @Controller()
 export class MatchingController implements IMatchingController {
-  constructor(private readonly matchingService: MatchingService) {}
+  constructor(
+    @Inject(I_MATCHING_SERVICE)
+    private readonly matchingService: IMatchingService,
+  ) {}
 
   @MessagePattern(JOB_SERVICE.ACTIONS.EMPLOYEE_LIKES)
   async employeeLikes(@Payload() payload: MatchDto): Promise<any> {
@@ -63,9 +71,7 @@ export class MatchingController implements IMatchingController {
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.GET_ANALYTICS)
-  async getAnalytics(
-    @Payload() payload: { userId: string; role: string },
-  ) {
+  async getAnalytics(@Payload() payload: { userId: string; role: string }) {
     return this.matchingService.getAnalytics(
       payload.userId,
       payload.role as 'employee' | 'company',

@@ -1,12 +1,20 @@
 import { IImageCompanyController } from '@app/common/interfaces/company.interface';
-import { Controller } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { ImageCompanyService } from '../../services/company-services/image-company.service';
 
+import {
+  I_IMAGE_COMPANY_SERVICE,
+  IImageCompanyService,
+} from '@app/common/interfaces/user-service.interface';
+
 @Controller()
 export class ImageCompanyController implements IImageCompanyController {
-  constructor(private readonly imageCompanyService: ImageCompanyService) {}
+  constructor(
+    @Inject(I_IMAGE_COMPANY_SERVICE)
+    private readonly imageCompanyService: IImageCompanyService,
+  ) {}
 
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_AVATAR)
   async uploadCompanyAvatar(

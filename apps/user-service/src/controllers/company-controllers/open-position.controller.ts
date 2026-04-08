@@ -1,13 +1,21 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { OpenPositionService } from '../../services/company-services/open-position.service';
 
 import { IOpenPositionController } from '@app/common/interfaces/company.interface';
 
+import {
+  I_OPEN_POSITION_SERVICE,
+  IOpenPositionService,
+} from '@app/common/interfaces/user-service.interface';
+
 @Controller()
 export class OpenPositionController implements IOpenPositionController {
-  constructor(private readonly openPositionService: OpenPositionService) {}
+  constructor(
+    @Inject(I_OPEN_POSITION_SERVICE)
+    private readonly openPositionService: IOpenPositionService,
+  ) {}
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_OPEN_POSITION)
   async removeOpenPosition(

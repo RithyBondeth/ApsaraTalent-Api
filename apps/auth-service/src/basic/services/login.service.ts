@@ -14,8 +14,10 @@ import { checkEmail } from 'utils/functions/check-email';
 import { LoginResponseDTO } from '../dtos/login-response.dto';
 import { LoginDTO } from '../dtos/login.dto';
 
+import { ILoginService } from '@app/common/interfaces/auth-service.interface';
+
 @Injectable()
-export class LoginService {
+export class LoginService implements ILoginService {
   constructor(
     @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
     @InjectRepository(User) private readonly userRepository: Repository<User>,

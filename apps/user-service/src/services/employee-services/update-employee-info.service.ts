@@ -15,8 +15,10 @@ import { Repository } from 'typeorm';
 import { UpdateEmployeeInfoDTO } from '../../dtos/employee/update-employee-info.dto';
 import { EmployeeResponseDTO } from '../../dtos/user-response.dto';
 
+import { IUpdateEmployeeInfoService } from '@app/common/interfaces/user-service.interface';
+
 @Injectable()
-export class UpdateEmployeeInfoService {
+export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
   constructor(
     @InjectRepository(Employee)
     private readonly employeeRepository: Repository<Employee>,

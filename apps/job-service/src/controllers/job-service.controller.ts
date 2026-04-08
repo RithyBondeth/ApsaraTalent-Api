@@ -1,14 +1,22 @@
 import { IJobController } from '@app/common/interfaces/job-controller.interface';
-import { Controller } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { JOB_SERVICE } from 'utils/constants/job-service.constant';
 import { JobResponseDTO } from '../dtos/job-response.dto';
 import { SearchJobDto } from '../dtos/job-search.dto';
 import { JobServiceService } from '../services/job-service.service';
 
+import {
+  I_JOB_SERVICE_SERVICE,
+  IJobServiceService,
+} from '@app/common/interfaces/job-service.interface';
+
 @Controller()
 export class JobServiceController implements IJobController {
-  constructor(private readonly jobServiceService: JobServiceService) {}
+  constructor(
+    @Inject(I_JOB_SERVICE_SERVICE)
+    private readonly jobServiceService: IJobServiceService,
+  ) {}
 
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_ALL_JOBS)
   findAllJobs(): Promise<JobResponseDTO[]> {

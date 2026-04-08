@@ -27,8 +27,10 @@ import { PinoLogger } from 'nestjs-pino';
 import { DataSource, In, Repository } from 'typeorm';
 import { CompanyRegisterDTO } from '../dtos/company-register.dto';
 import { EmployeeRegisterDTO } from '../dtos/employee-register.dto';
+import { IRegisterService } from '@app/common/interfaces/auth-service.interface';
+
 @Injectable()
-export class RegisterService {
+export class RegisterService implements IRegisterService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     @InjectRepository(Employee)
@@ -190,9 +192,7 @@ export class RegisterService {
                   company: newCompany,
                 }),
               ) || [];
-            return jobs.length
-              ? queryRunner.manager.save(Job, jobs)
-              : [];
+            return jobs.length ? queryRunner.manager.save(Job, jobs) : [];
           })(),
           // Benefits — bulk find-or-create (1-2 queries instead of N)
           this.findOrCreateBenefits(
@@ -283,7 +283,9 @@ export class RegisterService {
           ${this.configService.get<string>('CLIENT_URL')}/login/email-verification/${emailVerificationToken}`,
         })
         .catch((err) =>
-          this.logger.error(`Failed to send verification email: ${err.message}`),
+          this.logger.error(
+            `Failed to send verification email: ${err.message}`,
+          ),
         );
     }
 
@@ -379,15 +381,10 @@ export class RegisterService {
                 employee: newEmployee,
               }),
             ) || [];
-          return edus.length
-            ? queryRunner.manager.save(Education, edus)
-            : [];
+          return edus.length ? queryRunner.manager.save(Education, edus) : [];
         })(),
         // Skills — bulk find-or-create (1-2 queries instead of N)
-        this.findOrCreateSkills(
-          employeeRegisterDTO.skills || [],
-          queryRunner,
-        ),
+        this.findOrCreateSkills(employeeRegisterDTO.skills || [], queryRunner),
         // Experiences — always create new (unique per employee)
         (async () => {
           const exps =
@@ -397,9 +394,7 @@ export class RegisterService {
                 employee: newEmployee,
               }),
             ) || [];
-          return exps.length
-            ? queryRunner.manager.save(Experience, exps)
-            : [];
+          return exps.length ? queryRunner.manager.save(Experience, exps) : [];
         })(),
         // Career scopes — bulk find-or-create
         this.findOrCreateCareerScopes(
@@ -481,7 +476,9 @@ export class RegisterService {
           ${this.configService.get<string>('CLIENT_URL')}/login/email-verification/${emailVerificationToken}`,
         })
         .catch((err) =>
-          this.logger.error(`Failed to send verification email: ${err.message}`),
+          this.logger.error(
+            `Failed to send verification email: ${err.message}`,
+          ),
         );
     }
 

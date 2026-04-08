@@ -10,8 +10,10 @@ import { SALT_ROUNDS } from 'utils/constants/password.constant';
 import { ResetPasswordResponseDTO } from '../dtos/reset-password-response.dto';
 import { ResetPasswordDTO } from '../dtos/reset-password.dto';
 
+import { IResetPasswordService } from '@app/common/interfaces/auth-service.interface';
+
 @Injectable()
-export class ResetPasswordService {
+export class ResetPasswordService implements IResetPasswordService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly logger: PinoLogger,

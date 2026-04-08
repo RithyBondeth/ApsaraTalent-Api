@@ -13,12 +13,14 @@ import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { UpdateCompanyInfoDTO } from '../../dtos/company/update-company-info.dto';
 import {
-    CompanyResponseDTO,
-    JobPositionDTO
+  CompanyResponseDTO,
+  JobPositionDTO,
 } from '../../dtos/user-response.dto';
 
+import { IUpdateCompanyInfoService } from '@app/common/interfaces/user-service.interface';
+
 @Injectable()
-export class UpdateCompanyInfoService {
+export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
   constructor(
     @InjectRepository(Company)
     private readonly companyRepository: Repository<Company>,

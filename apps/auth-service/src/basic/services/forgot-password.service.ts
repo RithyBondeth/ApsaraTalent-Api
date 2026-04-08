@@ -11,8 +11,10 @@ import { checkEmail } from 'utils/functions/check-email';
 import { ForgotPasswordResponseDTO } from '../dtos/forgot-password-response.dto';
 import { ForgotPasswordDTO } from '../dtos/forgot-password.dto';
 
+import { IForgotPasswordService } from '@app/common/interfaces/auth-service.interface';
+
 @Injectable()
-export class ForgotPasswordService {
+export class ForgotPasswordService implements IForgotPasswordService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly emailService: EmailService,

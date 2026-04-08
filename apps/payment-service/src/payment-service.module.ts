@@ -13,6 +13,8 @@ import { BakongLoggingInterceptor } from './interceptors/bakong.interceptor';
 import { PaymentServiceController } from './payment-service.controller';
 import { PaymentServiceService } from './payment-service.service';
 
+import { I_PAYMENT_SERVICE } from '@app/common/interfaces/payment-service.interface';
+
 @Module({
   imports: [
     ConfigModule,
@@ -22,7 +24,10 @@ import { PaymentServiceService } from './payment-service.service';
   ],
   controllers: [PaymentServiceController],
   providers: [
-    PaymentServiceService,
+    {
+      provide: I_PAYMENT_SERVICE,
+      useClass: PaymentServiceService,
+    },
     // Apply Bakong rate limiting globally to this service
     {
       provide: APP_GUARD,

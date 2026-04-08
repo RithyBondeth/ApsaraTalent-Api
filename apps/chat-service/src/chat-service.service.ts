@@ -15,9 +15,10 @@ import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { User } from '@app/common/database/entities/user.entity';
 
 import { Logger } from '@nestjs/common';
+import { IChatService } from '@app/common/interfaces/chat-service.interface';
 
 @Injectable()
-export class ChatServiceService {
+export class ChatServiceService implements IChatService {
   private readonly logger = new Logger('ChatServiceService');
   private static readonly UUID_REGEX =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -121,7 +122,10 @@ export class ChatServiceService {
       });
       const saved = await this.chatRepository.save(message);
       // Invalidate recent-chats for both participants
-      await this.redisService.invalidateChatCaches(senderUserId, receiverUserId);
+      await this.redisService.invalidateChatCaches(
+        senderUserId,
+        receiverUserId,
+      );
       return {
         ...partnerProfile,
         id: receiverUserId,
@@ -156,7 +160,10 @@ export class ChatServiceService {
       });
       const savedMessage = await this.chatRepository.save(message);
       // Invalidate recent-chats and unread count for both participants
-      await this.redisService.invalidateChatCaches(senderUserId, receiverUserId);
+      await this.redisService.invalidateChatCaches(
+        senderUserId,
+        receiverUserId,
+      );
       const chat = await this.chatRepository.findOne({
         where: { id: savedMessage.id },
         relations: [
@@ -349,7 +356,9 @@ export class ChatServiceService {
       throw new Error('Message not found or user not authorized');
     }
     // Invalidate unread count for the reader
-    await this.redisService.del(this.redisService.generateUnreadCountKey(data.readerId));
+    await this.redisService.del(
+      this.redisService.generateUnreadCountKey(data.readerId),
+    );
     return { success: true };
   }
 

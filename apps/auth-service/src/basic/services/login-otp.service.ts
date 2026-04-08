@@ -14,8 +14,10 @@ import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { LoginOtpDTO } from '../dtos/login-otp.dto';
 import { VerifyOtpDTO } from '../dtos/verify-otp.dto';
 
+import { ILoginOTPService } from '@app/common/interfaces/auth-service.interface';
+
 @Injectable()
-export class LoginOTPService {
+export class LoginOTPService implements ILoginOTPService {
   constructor(
     @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
     @InjectRepository(User) private readonly userRepo: Repository<User>,
