@@ -3,7 +3,10 @@ import { IUserController } from '@app/common/interfaces/user-controller.interfac
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
-import { UserResponseDTO } from '../dtos/user-response.dto';
+import {
+  CountAllUsersResponseDTO,
+  UserResponseDTO,
+} from '../dtos/user-response.dto';
 import { UserService } from '../services/user.service';
 
 @Controller()
@@ -18,7 +21,7 @@ export class UserController implements IUserController {
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.COUNT_ALL_USERS)
-  async countAllUsers(): Promise<{ totalUsers: number }> {
+  async countAllUsers(): Promise<CountAllUsersResponseDTO> {
     return this.userService.countAllUsers();
   }
 
@@ -115,7 +118,6 @@ export class UserController implements IUserController {
 
   @MessagePattern(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE)
   async clearUserCache(@Payload() payload: { userId: string }) {
-    console.log('[USER-SERVICE] CLEAR_USER_CACHE received', payload.userId);
     return this.userService.clearCurrentUserCache(payload.userId);
   }
 

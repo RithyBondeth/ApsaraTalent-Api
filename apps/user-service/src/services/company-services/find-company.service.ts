@@ -9,6 +9,7 @@ import { Repository } from 'typeorm';
 import { UserPaginationDTO } from '../../dtos/user-pagination.dto';
 import {
   CompanyResponseDTO,
+  CountAllUsersResponseDTO,
   JobPositionDTO,
 } from '../../dtos/user-response.dto';
 
@@ -80,11 +81,10 @@ export class FindCompanyService {
     }
   }
 
-  async countAllCompanies(): Promise<{ totalCompanies: number }> {
+  async countAllCompanies(): Promise<CountAllUsersResponseDTO> {
     const cacheKey = 'apsaratalent:user-service:company:count:all';
-    const cached = await this.redisService.get<{ totalCompanies: number }>(
-      cacheKey,
-    );
+    const cached =
+      await this.redisService.get<CountAllUsersResponseDTO>(cacheKey);
 
     if (cached) {
       this.logger.info('All companies count cache HIT');
@@ -100,7 +100,7 @@ export class FindCompanyService {
       // Cache for 2 minutes
       await this.redisService.set(cacheKey, result, 120000);
 
-      return result;
+      return new CountAllUsersResponseDTO(result);
     } catch (error) {
       this.logger.error(
         (error as Error).message ||

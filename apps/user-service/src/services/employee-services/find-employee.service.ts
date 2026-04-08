@@ -7,7 +7,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { UserPaginationDTO } from '../../dtos/user-pagination.dto';
-import { EmployeeResponseDTO } from '../../dtos/user-response.dto';
+import {
+  CountAllUsersResponseDTO,
+  EmployeeResponseDTO,
+} from '../../dtos/user-response.dto';
 
 @Injectable()
 export class FindEmployeeService {
@@ -69,11 +72,10 @@ export class FindEmployeeService {
     }
   }
 
-  async countAllEmployees(): Promise<{ totalEmployees: number }> {
+  async countAllEmployees(): Promise<CountAllUsersResponseDTO> {
     const cacheKey = 'apsaratalent:user-service:employee:count:all';
-    const cached = await this.redisService.get<{ totalEmployees: number }>(
-      cacheKey,
-    );
+    const cached =
+      await this.redisService.get<CountAllUsersResponseDTO>(cacheKey);
 
     if (cached) {
       this.logger.info('All employees count cache HIT');
@@ -89,7 +91,7 @@ export class FindEmployeeService {
       // Cache for 2 minutes
       await this.redisService.set(cacheKey, result, 120000);
 
-      return result;
+      return new CountAllUsersResponseDTO(result);
     } catch (error) {
       this.logger.error(
         (error as Error).message ||

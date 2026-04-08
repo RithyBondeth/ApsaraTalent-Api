@@ -473,3 +473,24 @@ export class UserResponseDTO {
     return Object.assign(this, partial);
   }
 }
+
+export class CountAllUsersResponseDTO {
+  @IsNumber()
+  @IsPositive()
+  @IsOptional()
+  totalUsers?: number;
+
+  @IsNumber()
+  @IsPositive()
+  @IsOptional()
+  totalEmployees?: number;
+
+  @IsNumber()
+  @IsPositive()
+  @IsOptional()
+  totalCompanies?: number;
+
+  constructor(partial: Partial<CountAllUsersResponseDTO>) {
+    return Object.assign(this, partial);
+  }
+}

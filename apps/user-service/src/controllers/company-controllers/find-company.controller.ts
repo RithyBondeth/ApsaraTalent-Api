@@ -3,7 +3,10 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { UserPaginationDTO } from '../../dtos/user-pagination.dto';
-import { CompanyResponseDTO } from '../../dtos/user-response.dto';
+import {
+  CompanyResponseDTO,
+  CountAllUsersResponseDTO,
+} from '../../dtos/user-response.dto';
 import { FindCompanyService } from '../../services/company-services/find-company.service';
 
 @Controller()
@@ -18,7 +21,7 @@ export class FindCompanyController implements IFindCompanyController {
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.COUNT_ALL_COMPANY)
-  async countAllCompanies(): Promise<{ totalCompanies: number }> {
+  async countAllCompanies(): Promise<CountAllUsersResponseDTO> {
     return this.findCompanyService.countAllCompanies();
   }
 

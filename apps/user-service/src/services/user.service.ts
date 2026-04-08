@@ -14,6 +14,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import {
   CompanyResponseDTO,
+  CountAllUsersResponseDTO,
   EmployeeResponseDTO,
   JobPositionDTO,
   UserResponseDTO,
@@ -39,14 +40,15 @@ export class UserService implements OnModuleInit {
   // Cache warming — pre-load frequently accessed data on startup
   async onModuleInit() {
     try {
-      this.logger.info('Cache warming: loading career scopes and first page of users...');
-      await Promise.all([
-        this.findAllCareerScopes(),
-        this.findAllUsers(0, 20),
-      ]);
+      this.logger.info(
+        'Cache warming: loading career scopes and first page of users...',
+      );
+      await Promise.all([this.findAllCareerScopes(), this.findAllUsers(0, 20)]);
       this.logger.info('Cache warming complete');
     } catch (error) {
-      this.logger.warn(`Cache warming failed (non-fatal): ${(error as Error).message}`);
+      this.logger.warn(
+        `Cache warming failed (non-fatal): ${(error as Error).message}`,
+      );
     }
   }
 
@@ -129,9 +131,10 @@ export class UserService implements OnModuleInit {
     }
   }
 
-  async countAllUsers(): Promise<{ totalUsers: number }> {
+  async countAllUsers(): Promise<CountAllUsersResponseDTO> {
     const cacheKey = 'apsaratalent:user-service:user:count:all';
-    const cached = await this.redisService.get<{ totalUsers: number }>(cacheKey);
+    const cached =
+      await this.redisService.get<CountAllUsersResponseDTO>(cacheKey);
 
     if (cached) {
       this.logger.info('All users count cache HIT');
@@ -147,7 +150,7 @@ export class UserService implements OnModuleInit {
       // Cache for 2 minutes
       await this.redisService.set(cacheKey, result, 120000);
 
-      return result;
+      return new CountAllUsersResponseDTO(result);
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
@@ -816,15 +819,11 @@ export class UserService implements OnModuleInit {
     const cached = await this.redisService.get<any[]>(cacheKey);
 
     if (cached) {
-      this.logger.info(
-        `Employee ${employeeId} recommendations cache HIT`,
-      );
+      this.logger.info(`Employee ${employeeId} recommendations cache HIT`);
       return cached;
     }
 
-    this.logger.info(
-      `Employee ${employeeId} recommendations cache MISS`,
-    );
+    this.logger.info(`Employee ${employeeId} recommendations cache MISS`);
 
     try {
       // 1. Get the employee's career scope IDs
@@ -842,9 +841,7 @@ export class UserService implements OnModuleInit {
         return [];
       }
 
-      const careerScopeIds = employee.employee.careerScopes.map(
-        (cs) => cs.id,
-      );
+      const careerScopeIds = employee.employee.careerScopes.map((cs) => cs.id);
 
       // 2. Get company IDs the employee has already liked
       const likedMatches = await this.jobMatchingRepository.find({
@@ -917,15 +914,11 @@ export class UserService implements OnModuleInit {
     const cached = await this.redisService.get<any[]>(cacheKey);
 
     if (cached) {
-      this.logger.info(
-        `Company ${companyId} recommendations cache HIT`,
-      );
+      this.logger.info(`Company ${companyId} recommendations cache HIT`);
       return cached;
     }
 
-    this.logger.info(
-      `Company ${companyId} recommendations cache MISS`,
-    );
+    this.logger.info(`Company ${companyId} recommendations cache MISS`);
 
     try {
       // 1. Get the company's career scope IDs
@@ -943,9 +936,7 @@ export class UserService implements OnModuleInit {
         return [];
       }
 
-      const careerScopeIds = company.company.careerScopes.map(
-        (cs) => cs.id,
-      );
+      const careerScopeIds = company.company.careerScopes.map((cs) => cs.id);
 
       // 2. Get employee IDs the company has already liked
       const likedMatches = await this.jobMatchingRepository.find({

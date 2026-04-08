@@ -3,12 +3,6 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 
-type TLandingStatsResponse = {
-  users: number;
-  companies: number;
-  employees: number;
-};
-
 @Controller('public/user')
 export class PublicUserController {
   constructor(
@@ -16,7 +10,7 @@ export class PublicUserController {
   ) {}
 
   @Get('landing-stats')
-  async getLandingStats(): Promise<TLandingStatsResponse> {
+  async getLandingStats() {
     const [users, companies, employees] = await Promise.all([
       firstValueFrom(
         this.userClient.send<{ totalUsers: number }>(

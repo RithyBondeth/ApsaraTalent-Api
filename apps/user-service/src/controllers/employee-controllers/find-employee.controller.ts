@@ -3,7 +3,10 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from 'utils/constants/user-service.constant';
 import { UserPaginationDTO } from '../../dtos/user-pagination.dto';
-import { EmployeeResponseDTO } from '../../dtos/user-response.dto';
+import {
+  CountAllUsersResponseDTO,
+  EmployeeResponseDTO,
+} from '../../dtos/user-response.dto';
 import { FindEmployeeService } from '../../services/employee-services/find-employee.service';
 
 @Controller()
@@ -18,7 +21,7 @@ export class FindEmployeeController implements IFindEmployeeController {
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.COUNT_ALL_EMPLOYEE)
-  async countAllEmployees(): Promise<{ totalEmployees: number }> {
+  async countAllEmployees(): Promise<CountAllUsersResponseDTO> {
     return this.findEmployeeService.countAllEmployees();
   }
 
