@@ -5,7 +5,6 @@ import {
   Controller,
   Get,
   HttpCode,
-  HttpException,
   HttpStatus,
   Inject,
   Param,
@@ -15,8 +14,9 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
-import { firstValueFrom } from 'rxjs';
 import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
+import { setAuthTokenCookies } from './utils/auth-cookie.util';
+import { sendAuthServiceRequest } from './utils/auth-rpc.util';
 
 @Controller('auth')
 export class AuthController implements IBasicAuthController {
@@ -24,87 +24,13 @@ export class AuthController implements IBasicAuthController {
     @Inject(AUTH_SERVICE.NAME) private readonly authClient: ClientProxy,
   ) {}
 
-  private normalizeErrorPayload(error: unknown): {
-    statusCode: number;
-    message: string;
-  } {
-    const fallback = {
-      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      message: 'Internal server error',
-    };
-
-    if (!error || typeof error !== 'object') return fallback;
-
-    const err = error as Record<string, unknown>;
-    const candidates: unknown[] = [err, err.response, err.error, err.cause];
-
-    for (const candidate of candidates) {
-      if (!candidate || typeof candidate !== 'object') continue;
-      const payload = candidate as Record<string, unknown>;
-      const rawStatus = payload.statusCode;
-      const rawMessage = payload.message;
-      const statusCode =
-        typeof rawStatus === 'number' && rawStatus >= 100 && rawStatus <= 599
-          ? rawStatus
-          : null;
-
-      const message =
-        typeof rawMessage === 'string'
-          ? rawMessage
-          : Array.isArray(rawMessage)
-            ? rawMessage.find((item) => typeof item === 'string')
-            : null;
-
-      if (statusCode || message) {
-        return {
-          statusCode: statusCode ?? fallback.statusCode,
-          message: message ?? fallback.message,
-        };
-      }
-    }
-
-    // Some RPC errors bubble up as a JSON string in error.message.
-    if (typeof err.message === 'string') {
-      try {
-        const parsed = JSON.parse(err.message) as Record<string, unknown>;
-        const parsedStatus = parsed.statusCode;
-        const parsedMessage = parsed.message;
-        if (
-          typeof parsedStatus === 'number' &&
-          typeof parsedMessage === 'string'
-        ) {
-          return { statusCode: parsedStatus, message: parsedMessage };
-        }
-      } catch {
-        // ignore JSON parse failures and fall back below
-      }
-    }
-
-    return fallback;
-  }
-
-  private rethrowAsHttpError(error: unknown): never {
-    const normalized = this.normalizeErrorPayload(error);
-    throw new HttpException(normalized.message, normalized.statusCode);
-  }
-
-  private async sendAuthRequest<T = any>(
-    action: unknown,
-    payload: unknown,
-  ): Promise<T> {
-    try {
-      return await firstValueFrom(this.authClient.send<T>(action, payload));
-    } catch (error) {
-      this.rethrowAsHttpError(error);
-    }
-  }
-
   @Post('register-company')
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(ThrottlerGuard)
   async registerCompany(@Body() companyRegisterDTO: any): Promise<any> {
     const payload = { ...companyRegisterDTO };
-    return await this.sendAuthRequest(
+    return await sendAuthServiceRequest(
+      this.authClient,
       AUTH_SERVICE.ACTIONS.REGISTER_COMPANY,
       payload,
     );
@@ -115,7 +41,8 @@ export class AuthController implements IBasicAuthController {
   @UseGuards(ThrottlerGuard)
   async registerEmployee(@Body() employeeRegisterDTO: any): Promise<any> {
     const payload = { ...employeeRegisterDTO };
-    return await this.sendAuthRequest(
+    return await sendAuthServiceRequest(
+      this.authClient,
       AUTH_SERVICE.ACTIONS.REGISTER_EMPLOYEE,
       payload,
     );
@@ -131,24 +58,15 @@ export class AuthController implements IBasicAuthController {
     const payload = { ...loginDTO };
 
     const { accessToken, refreshToken, user, message } =
-      await this.sendAuthRequest(AUTH_SERVICE.ACTIONS.LOGIN, payload);
+      await sendAuthServiceRequest(
+        this.authClient,
+        AUTH_SERVICE.ACTIONS.LOGIN,
+        payload,
+      );
 
-    // Set HTTP-only cookies
-    res.cookie('auth-token', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV !== 'development',
-      sameSite: 'none',
-      path: '/',
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-    });
-
-    res.cookie('refresh-token', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV !== 'development',
-      sameSite: 'none',
-      path: '/',
-      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
-    });
+    // Mirror the issued tokens into cookies so browser clients can use cookie-
+    // based auth while still receiving the raw tokens in the JSON response.
+    setAuthTokenCookies(res, { accessToken, refreshToken });
 
     return {
       message,
@@ -162,7 +80,8 @@ export class AuthController implements IBasicAuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
   async loginOtp(@Body() loginOtpDTO: any): Promise<any> {
-    return await this.sendAuthRequest(
+    return await sendAuthServiceRequest(
+      this.authClient,
       AUTH_SERVICE.ACTIONS.LOGIN_OTP,
       loginOtpDTO,
     );
@@ -175,28 +94,17 @@ export class AuthController implements IBasicAuthController {
     @Body() verifyOtpDTO: any,
     @Res({ passthrough: true }) res: Response,
   ): Promise<any> {
-    const response = await this.sendAuthRequest(
+    const response = await sendAuthServiceRequest(
+      this.authClient,
       AUTH_SERVICE.ACTIONS.VERIFY_OTP,
       verifyOtpDTO,
     );
 
     const { accessToken, refreshToken, user, message } = response;
 
-    res.cookie('auth-token', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV !== 'development',
-      sameSite: 'none',
-      path: '/',
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-    });
-
-    res.cookie('refresh-token', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV !== 'development',
-      sameSite: 'none',
-      path: '/',
-      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
-    });
+    // OTP login finishes with the same cookie contract as password login so
+    // the frontend can treat both flows identically after verification.
+    setAuthTokenCookies(res, { accessToken, refreshToken });
 
     return {
       message,
@@ -211,7 +119,8 @@ export class AuthController implements IBasicAuthController {
   @UseGuards(ThrottlerGuard)
   async forgotPassword(@Body() forgotPasswordDTO: any): Promise<any> {
     const payload = { ...forgotPasswordDTO };
-    return await this.sendAuthRequest(
+    return await sendAuthServiceRequest(
+      this.authClient,
       AUTH_SERVICE.ACTIONS.FORGOT_PASSWORD,
       payload,
     );
@@ -225,7 +134,8 @@ export class AuthController implements IBasicAuthController {
     @Param('token') token: string,
   ): Promise<any> {
     const payload = { ...resetPasswordDTO, token };
-    return await this.sendAuthRequest(
+    return await sendAuthServiceRequest(
+      this.authClient,
       AUTH_SERVICE.ACTIONS.RESET_PASSWORD,
       payload,
     );
@@ -240,23 +150,15 @@ export class AuthController implements IBasicAuthController {
   ): Promise<any> {
     const payload = { ...refreshTokenDTO };
     const { accessToken, refreshToken, user, message } =
-      await this.sendAuthRequest(AUTH_SERVICE.ACTIONS.REFRESH_TOKEN, payload);
+      await sendAuthServiceRequest(
+        this.authClient,
+        AUTH_SERVICE.ACTIONS.REFRESH_TOKEN,
+        payload,
+      );
 
-    res.cookie('auth-token', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV !== 'development',
-      sameSite: 'none',
-      path: '/',
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-    });
-
-    res.cookie('refresh-token', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV !== 'development',
-      sameSite: 'none',
-      path: '/',
-      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
-    });
+    // Refresh updates both cookies so subsequent browser requests continue to
+    // carry the newest token pair without extra frontend coordination.
+    setAuthTokenCookies(res, { accessToken, refreshToken });
 
     return {
       message,
@@ -272,7 +174,8 @@ export class AuthController implements IBasicAuthController {
   async verifyEmail(
     @Param('emailVerificationToken') emailVerificationToken: string,
   ): Promise<any> {
-    return await this.sendAuthRequest(
+    return await sendAuthServiceRequest(
+      this.authClient,
       AUTH_SERVICE.ACTIONS.VERIFY_EMAIL,
       emailVerificationToken,
     );
@@ -294,6 +197,8 @@ export class AuthController implements IBasicAuthController {
     if (!accountSid || !authToken) return fallback;
 
     try {
+      // Ask Twilio for short-lived TURN credentials. If that fails, callers can
+      // still connect with public STUN servers for best-effort WebRTC setup.
       const credentials = Buffer.from(`${accountSid}:${authToken}`).toString(
         'base64',
       );

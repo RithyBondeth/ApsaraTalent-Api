@@ -18,6 +18,8 @@ import { LinkedInStrategy } from './socials/strategies/linkedin.strategy';
 
 @Module({
   imports: [
+    // The gateway does not implement auth logic itself; it forwards requests
+    // to the internal auth microservice over Nest TCP transport.
     ClientsModule.registerAsync([
       {
         name: AUTH_SERVICE.NAME,
@@ -31,7 +33,9 @@ import { LinkedInStrategy } from './socials/strategies/linkedin.strategy';
         inject: [ConfigService],
       },
     ]),
+    // Shared rate limiting is applied to login / signup style routes.
     ThrottlerModule,
+    // Passport powers the social OAuth guards and strategies in this module.
     PassportModule,
     JwtModule,
     TypeOrmModule.forFeature([User]),
