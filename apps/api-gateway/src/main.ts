@@ -15,61 +15,65 @@ import { isOriginAllowed, parseAllowedOrigins } from './utils/cors-origin.util';
 async function bootstrap() {
   const app =
     await NestFactory.create<NestExpressApplication>(ApiGatewayModule);
-
-  // Serve uploaded chat attachments as static files at /storage/**
-  // Files are written by the POST /chat/upload endpoint and read back by the frontend.
-  app.useStaticAssets(join(process.cwd(), 'storage'), { prefix: '/storage' });
   const configService = app.get<ConfigService>(ConfigService);
+  const isProduction = process.env.NODE_ENV === 'production';
 
-  // Enable socket.io WebSocket adapter — required for ChatGateway to work
-  app.useWebSocketAdapter(new IoAdapter(app));
+  // =========================================================
+  // 1. GLOBAL CONFIGURATION
+  // =========================================================
 
-  // Gzip compression — reduces JSON payload size by 60-80%
-  app.use(compression());
+  // Set global prefix for all routes (e.g., /api/v1/user)
+  app.setGlobalPrefix('api/v1');
 
-  // Security Headers
-  app.use(helmet());
-
-  // Global Validation Pipe for DTO validation and transformation
+  // Ensure request payload validation and transformation via DTOs
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,
-      transform: true,
+      whitelist: true, // Strips non-DTO properties automatically
+      transform: true, // Transforms payloads to instances of their DTO classes
     }),
   );
 
-  // Set global API routing prefix
-  app.setGlobalPrefix('api/v1');
+  // =========================================================
+  // 2. SECURITY & MIDDLEWARE
+  // =========================================================
 
-  // Enable Cookie Parser
+  // Secure HTTP headers against common vulnerabilities
+  app.use(helmet());
+
+  // Gzip compression for faster payload delivery
+  app.use(compression());
+
+  // Parse cookies attached to client requests
   app.use(cookieParser());
 
-  //Enable Express Session
-  const isProduction = process.env.NODE_ENV === 'production';
+  // Handle Express sessions securely
   app.use(
     session({
-      secret: configService.get<string>('session.secret'),
+      secret: configService.get<string>('session.secret') || 'default-secret',
       resave: false,
-      saveUninitialized: false, // Don't create session until something is stored
+      saveUninitialized: false, // Don't create session until stored
       cookie: {
         httpOnly: true,
-        secure: isProduction, // HTTPS-only in production
-        sameSite: 'strict', // Stricter CSRF protection
+        secure: isProduction, // HTTPS required in production
+        sameSite: 'strict', // Strict CSRF protection
         maxAge: 1000 * 60 * 60 * 24, // 24 hours
       },
     }),
   );
 
-  const configuredOrigins = parseAllowedOrigins(
+  // =========================================================
+  // 3. CORS CONFIGURATION
+  // =========================================================
+
+  const allowedOrigins = parseAllowedOrigins(
     configService.get<string>('frontend.origin'),
     process.env.ALLOWED_ORIGINS,
   );
-  const allowedOrigins = configuredOrigins;
   const allowAllCors = process.env.CORS_ALLOW_ALL === 'true';
 
-  // Enable Frontend CORS
   app.enableCors({
     origin: (origin, callback) => {
+      // Allow unrestricted or validate against allowed origins
       if (allowAllCors || isOriginAllowed(origin, allowedOrigins)) {
         callback(null, true);
         return;
@@ -77,19 +81,37 @@ async function bootstrap() {
       callback(new Error(`CORS: origin ${origin} not allowed`), false);
     },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    credentials: true,
+    credentials: true, // Required for secure cookie transmission
   });
 
-  //Logger Setup
+  // =========================================================
+  // 4. WEBSOCKETS & STATIC ASSETS
+  // =========================================================
+
+  // Enable Socket.IO WS adapter — required for ChatGateway realtime sync
+  app.useWebSocketAdapter(new IoAdapter(app));
+
+  // Serve uploaded chat attachments publicly via /storage path
+  app.useStaticAssets(join(process.cwd(), 'storage'), { prefix: '/storage' });
+
+  // =========================================================
+  // 5. LOGGER & BOOTSTRAP
+  // =========================================================
+
+  // Attach centralized logging via nestjs-pino
   const logger = app.get(Logger);
   app.useLogger(logger);
 
+  // Connect downstream microservices (TCP, Redis, gRPC, etc.)
   await app.startAllMicroservices();
+
+  // Expose API Gateway to the network
   const port =
     Number(process.env.PORT) ||
     configService.get<number>('services.apiGateway.port') ||
     3000;
   await app.listen(port);
+
   logger.log(
     `Api gateway is running on port ${port} (origins: ${
       allowedOrigins.length > 0 ? allowedOrigins.join(', ') : 'ALL'
