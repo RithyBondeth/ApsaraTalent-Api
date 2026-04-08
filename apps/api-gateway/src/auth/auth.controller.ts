@@ -69,7 +69,10 @@ export class AuthController implements IBasicAuthController {
         const parsed = JSON.parse(err.message) as Record<string, unknown>;
         const parsedStatus = parsed.statusCode;
         const parsedMessage = parsed.message;
-        if (typeof parsedStatus === 'number' && typeof parsedMessage === 'string') {
+        if (
+          typeof parsedStatus === 'number' &&
+          typeof parsedMessage === 'string'
+        ) {
           return { statusCode: parsedStatus, message: parsedMessage };
         }
       } catch {
@@ -101,7 +104,10 @@ export class AuthController implements IBasicAuthController {
   @UseGuards(ThrottlerGuard)
   async registerCompany(@Body() companyRegisterDTO: any): Promise<any> {
     const payload = { ...companyRegisterDTO };
-    return await this.sendAuthRequest(AUTH_SERVICE.ACTIONS.REGISTER_COMPANY, payload);
+    return await this.sendAuthRequest(
+      AUTH_SERVICE.ACTIONS.REGISTER_COMPANY,
+      payload,
+    );
   }
 
   @Post('register-employee')
@@ -109,7 +115,10 @@ export class AuthController implements IBasicAuthController {
   @UseGuards(ThrottlerGuard)
   async registerEmployee(@Body() employeeRegisterDTO: any): Promise<any> {
     const payload = { ...employeeRegisterDTO };
-    return await this.sendAuthRequest(AUTH_SERVICE.ACTIONS.REGISTER_EMPLOYEE, payload);
+    return await this.sendAuthRequest(
+      AUTH_SERVICE.ACTIONS.REGISTER_EMPLOYEE,
+      payload,
+    );
   }
 
   @Post('login')
@@ -122,10 +131,7 @@ export class AuthController implements IBasicAuthController {
     const payload = { ...loginDTO };
 
     const { accessToken, refreshToken, user, message } =
-      await this.sendAuthRequest(
-        AUTH_SERVICE.ACTIONS.LOGIN,
-        payload,
-      );
+      await this.sendAuthRequest(AUTH_SERVICE.ACTIONS.LOGIN, payload);
 
     // Set HTTP-only cookies
     res.cookie('auth-token', accessToken, {
@@ -205,7 +211,10 @@ export class AuthController implements IBasicAuthController {
   @UseGuards(ThrottlerGuard)
   async forgotPassword(@Body() forgotPasswordDTO: any): Promise<any> {
     const payload = { ...forgotPasswordDTO };
-    return await this.sendAuthRequest(AUTH_SERVICE.ACTIONS.FORGOT_PASSWORD, payload);
+    return await this.sendAuthRequest(
+      AUTH_SERVICE.ACTIONS.FORGOT_PASSWORD,
+      payload,
+    );
   }
 
   @Post('reset-password/:token')
@@ -216,7 +225,10 @@ export class AuthController implements IBasicAuthController {
     @Param('token') token: string,
   ): Promise<any> {
     const payload = { ...resetPasswordDTO, token };
-    return await this.sendAuthRequest(AUTH_SERVICE.ACTIONS.RESET_PASSWORD, payload);
+    return await this.sendAuthRequest(
+      AUTH_SERVICE.ACTIONS.RESET_PASSWORD,
+      payload,
+    );
   }
 
   @Post('refresh')
@@ -228,10 +240,7 @@ export class AuthController implements IBasicAuthController {
   ): Promise<any> {
     const payload = { ...refreshTokenDTO };
     const { accessToken, refreshToken, user, message } =
-      await this.sendAuthRequest(
-        AUTH_SERVICE.ACTIONS.REFRESH_TOKEN,
-        payload,
-      );
+      await this.sendAuthRequest(AUTH_SERVICE.ACTIONS.REFRESH_TOKEN, payload);
 
     res.cookie('auth-token', accessToken, {
       httpOnly: true,
@@ -285,7 +294,9 @@ export class AuthController implements IBasicAuthController {
     if (!accountSid || !authToken) return fallback;
 
     try {
-      const credentials = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
+      const credentials = Buffer.from(`${accountSid}:${authToken}`).toString(
+        'base64',
+      );
       const response = await fetch(
         `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Tokens.json`,
         {
@@ -293,7 +304,7 @@ export class AuthController implements IBasicAuthController {
           headers: { Authorization: `Basic ${credentials}` },
         },
       );
-      const data = await response.json() as any;
+      const data = (await response.json()) as any;
       return { iceServers: data.ice_servers ?? fallback.iceServers };
     } catch {
       return fallback;
