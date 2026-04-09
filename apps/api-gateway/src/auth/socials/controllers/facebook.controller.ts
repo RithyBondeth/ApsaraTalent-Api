@@ -17,14 +17,14 @@ import { AUTH_SERVICE } from '@app/contracts/constants/auth-service.constant';
 import { FacebookAuthGuard } from '../guards/facebook-auth.guard';
 import { handleSocialAuthCallback } from '../utils/social-auth.util';
 
-@Controller('social')
+@Controller('social/facebook')
 export class FacebookController implements IFacebookAuthController {
   constructor(
     @Inject(AUTH_SERVICE.NAME) private readonly authService: ClientProxy,
     private readonly configService: ConfigService,
   ) {}
 
-  @Get('facebook/login')
+  @Get('login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(FacebookAuthGuard)
   async facebookAuth(@Query('remember') remember: string) {
@@ -32,7 +32,7 @@ export class FacebookController implements IFacebookAuthController {
     // FacebookAuthGuard saves remember flag for callback
   }
 
-  @Get('facebook/callback')
+  @Get('callback')
   @HttpCode(HttpStatus.OK)
   @UseGuards(FacebookAuthGuard)
   async facebookCallback(@Req() req: any, @Res() res: Response) {

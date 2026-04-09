@@ -34,7 +34,6 @@ export class LinkedInStrategy extends PassportStrategy(Strategy, 'linkedin') {
   }
 
   async validate(_: string, __: string, profile: any) {
-    console.log('LinkedIn validate():', profile);
     return profile;
   }
 }

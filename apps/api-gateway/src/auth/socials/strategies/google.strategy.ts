@@ -16,8 +16,6 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     profile: any,
     done: VerifyCallback,
   ) {
-    // Keep the Passport user payload intentionally small. The auth service will
-    // decide whether this profile maps to an existing account and issue tokens.
     const user = {
       id: profile.id,
       firstName: profile.name.givenName,

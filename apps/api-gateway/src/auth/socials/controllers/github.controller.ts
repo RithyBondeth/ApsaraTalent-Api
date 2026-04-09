@@ -17,14 +17,14 @@ import { AUTH_SERVICE } from '@app/contracts/constants/auth-service.constant';
 import { GithubAuthGuard } from '../guards/github-auth.guard';
 import { handleSocialAuthCallback } from '../utils/social-auth.util';
 
-@Controller('social')
+@Controller('social/github')
 export class GithubController implements IGithubAuthController {
   constructor(
     @Inject(AUTH_SERVICE.NAME) private readonly authService: ClientProxy,
     private readonly configService: ConfigService,
   ) {}
 
-  @Get('github/login')
+  @Get('login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(GithubAuthGuard)
   async githubAuth(@Query('remember') remember: string) {
@@ -32,7 +32,7 @@ export class GithubController implements IGithubAuthController {
     // GithubAuthGuard saves remember flag for callback
   }
 
-  @Get('github/callback')
+  @Get('callback')
   @HttpCode(HttpStatus.OK)
   @UseGuards(GithubAuthGuard)
   async githubCallback(@Req() req: any, @Res() res: Response) {

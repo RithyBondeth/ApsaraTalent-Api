@@ -1,4 +1,8 @@
-import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 import { buildPublicCallbackUrl } from './oauth-callback-url';
@@ -8,7 +12,6 @@ export class FacebookAuthGuard extends AuthGuard('facebook') {
   canActivate(context: ExecutionContext) {
     const req = context.switchToHttp().getRequest<Request>();
 
-    // Save remember query
     const remember = req.query.remember;
     if (typeof remember === 'string') {
       (req.session as any).remember = remember === 'true';

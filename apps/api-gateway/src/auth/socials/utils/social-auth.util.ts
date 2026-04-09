@@ -1,6 +1,5 @@
 import { BadRequestException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
 import { firstValueFrom, timeout } from 'rxjs';
 import {
@@ -8,47 +7,12 @@ import {
   setAuthTokenCookies,
   setRememberCookie,
 } from '../../utils/auth-cookie.util';
-
-type SocialAuthResult = {
-  accessToken: string;
-  refreshToken?: string | null;
-  newUser?: boolean;
-  email?: string | null;
-  firstname?: string | null;
-  lastname?: string | null;
-  picture?: string | null;
-  role?: string | null;
-  provider?: string | null;
-  lastLoginMethod?: string | null;
-  lastLoginAt?: string | Date | null;
-};
-
-type SuccessHtmlOptions = {
-  targetOrigin: string;
-  successType: string;
-  remember: boolean;
-  result: SocialAuthResult;
-};
-
-type ErrorHtmlOptions = {
-  targetOrigin: string;
-  errorType: string;
-  errorMessage: string;
-};
-
-type SocialAuthCallbackOptions = {
-  authService: ClientProxy;
-  configService: ConfigService;
-  req: any;
-  res: Response;
-  action: unknown;
-  payload: unknown;
-  providerLabel: string;
-  successType: string;
-  errorType: string;
-  failureMessage: string;
-  timeoutMs?: number;
-};
+import {
+  TErrorHtmlOptions,
+  TSocialAuthCallbackOptions,
+  TSocialAuthResult,
+  TSuccessHtmlOptions,
+} from '@app/contracts/types/auth.type';
 
 export function getFrontendOrigin(configService: ConfigService): string {
   const frontendOriginConfig = configService.get<string>('frontend.origin');
@@ -63,7 +27,7 @@ export function setSocialAuthCookies(
   res: Response,
   configService: ConfigService,
   remember: unknown,
-  result: SocialAuthResult,
+  result: TSocialAuthResult,
 ): void {
   const rememberMe = getRememberFlag(remember);
   const maxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
@@ -86,7 +50,7 @@ export function buildSocialAuthSuccessHtml({
   successType,
   remember,
   result,
-}: SuccessHtmlOptions): string {
+}: TSuccessHtmlOptions): string {
   return `
     <!doctype html>
     <html>
@@ -132,7 +96,7 @@ export function buildSocialAuthErrorHtml({
   targetOrigin,
   errorType,
   errorMessage,
-}: ErrorHtmlOptions): string {
+}: TErrorHtmlOptions): string {
   return `
     <!doctype html>
     <html>
@@ -173,7 +137,7 @@ export async function handleSocialAuthCallback({
   errorType,
   failureMessage,
   timeoutMs = 10000,
-}: SocialAuthCallbackOptions): Promise<void> {
+}: TSocialAuthCallbackOptions): Promise<void> {
   const frontendOrigin = getFrontendOrigin(configService);
 
   try {
@@ -194,7 +158,7 @@ export async function handleSocialAuthCallback({
 
     const result = await firstValueFrom(
       authService
-        .send<SocialAuthResult>(action, payload)
+        .send<TSocialAuthResult>(action, payload)
         .pipe(timeout(timeoutMs)),
     );
 

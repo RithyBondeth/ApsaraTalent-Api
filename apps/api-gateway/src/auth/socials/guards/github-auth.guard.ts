@@ -12,7 +12,6 @@ export class GithubAuthGuard extends AuthGuard('github') {
   canActivate(context: ExecutionContext) {
     const req = context.switchToHttp().getRequest<Request>();
 
-    // Save remember query
     const remember = req.query.remember;
     if (typeof remember === 'string') {
       (req.session as any).remember = remember === 'true';

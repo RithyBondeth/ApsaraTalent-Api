@@ -1,6 +1,5 @@
+import { TOAuthProvider } from '@app/contracts/types/auth.type';
 import type { Request } from 'express';
-
-type OAuthProvider = 'google' | 'linkedin' | 'github' | 'facebook';
 
 /**
  * Build an absolute callback URL from the public request origin.
@@ -13,7 +12,7 @@ type OAuthProvider = 'google' | 'linkedin' | 'github' | 'facebook';
  */
 export function buildPublicCallbackUrl(
   req: Request,
-  provider: OAuthProvider,
+  provider: TOAuthProvider,
 ): string {
   const forwardedProtoHeader = req.headers['x-forwarded-proto'];
   const forwardedHostHeader = req.headers['x-forwarded-host'];
