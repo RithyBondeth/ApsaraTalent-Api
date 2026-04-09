@@ -6,6 +6,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JOB_SERVICE } from '@app/contracts/constants/job-service.constant';
 import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
+import { InterviewController } from './controllers/interview.controller';
 import { JobController } from './controllers/job.controller';
 import { JobMatchingController } from './controllers/matching.controller';
 
@@ -39,7 +40,7 @@ import { JobMatchingController } from './controllers/matching.controller';
     JwtModule,
     TypeOrmModule.forFeature([User]),
   ],
-  controllers: [JobController, JobMatchingController],
+  controllers: [JobController, JobMatchingController, InterviewController],
   providers: [],
 })
 export class JobModule {}

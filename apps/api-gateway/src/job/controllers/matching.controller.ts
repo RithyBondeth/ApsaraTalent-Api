@@ -1,14 +1,11 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
 import { IMatchingController } from '@app/contracts/interfaces/job-controller.interface';
 import {
-  Body,
   Controller,
-  ForbiddenException,
   Get,
   Inject,
   Param,
   ParseUUIDPipe,
-  Patch,
   Post,
   Query,
   Req,
@@ -18,59 +15,16 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { JOB_SERVICE } from '@app/contracts/constants/job-service.constant';
 import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
+import { JobAccessBase } from '../shared/job-access.base';
 
 @Controller('match')
 @UseGuards(AuthGuard)
-export class JobMatchingController implements IMatchingController {
+export class JobMatchingController extends JobAccessBase implements IMatchingController {
   constructor(
     @Inject(JOB_SERVICE.NAME) private readonly jobClient: ClientProxy,
-    @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
-  ) {}
-
-  private async getCurrentUserProfile(userId: string): Promise<any> {
-    return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.GET_CURRENT_USER, {
-        userID: userId,
-      }),
-    );
-  }
-
-  private async assertEmployeeAccess(
-    requestUserId: string,
-    employeeId: string,
-  ): Promise<void> {
-    if (!requestUserId) {
-      throw new ForbiddenException('Unauthorized request.');
-    }
-    const profile = await this.getCurrentUserProfile(requestUserId);
-    if (
-      profile?.role !== 'employee' ||
-      !profile?.employee?.id ||
-      profile.employee.id !== employeeId
-    ) {
-      throw new ForbiddenException(
-        'You do not have permission to access this employee resource.',
-      );
-    }
-  }
-
-  private async assertCompanyAccess(
-    requestUserId: string,
-    companyId: string,
-  ): Promise<void> {
-    if (!requestUserId) {
-      throw new ForbiddenException('Unauthorized request.');
-    }
-    const profile = await this.getCurrentUserProfile(requestUserId);
-    if (
-      profile?.role !== 'company' ||
-      !profile?.company?.id ||
-      profile.company.id !== companyId
-    ) {
-      throw new ForbiddenException(
-        'You do not have permission to access this company resource.',
-      );
-    }
+    @Inject(USER_SERVICE.NAME) userClient: ClientProxy,
+  ) {
+    super(userClient);
   }
 
   @Post('employee/:eid/like/:cid')
@@ -195,69 +149,6 @@ export class JobMatchingController implements IMatchingController {
       this.jobClient.send(JOB_SERVICE.ACTIONS.GET_ANALYTICS, {
         userId: id,
         role,
-      }),
-    );
-  }
-
-  /* ── Interview Endpoints ── */
-
-  @Post('interview')
-  async createInterview(@Body() dto: any, @Req() req?: any) {
-    // Only companies can create interviews
-    await this.assertCompanyAccess(req?.user?.id, dto.companyId);
-    return firstValueFrom(
-      this.jobClient.send(JOB_SERVICE.ACTIONS.CREATE_INTERVIEW, {
-        ...dto,
-        createdBy: 'company', // enforce server-side
-      }),
-    );
-  }
-
-  @Get('interview/employee/:employeeId')
-  async getInterviewsByEmployee(
-    @Param('employeeId', ParseUUIDPipe) employeeId: string,
-    @Req() req?: any,
-  ) {
-    await this.assertEmployeeAccess(req?.user?.id, employeeId);
-    return firstValueFrom(
-      this.jobClient.send(JOB_SERVICE.ACTIONS.GET_INTERVIEWS_BY_EMPLOYEE, {
-        employeeId,
-      }),
-    );
-  }
-
-  @Get('interview/company/:companyId')
-  async getInterviewsByCompany(
-    @Param('companyId', ParseUUIDPipe) companyId: string,
-    @Req() req?: any,
-  ) {
-    await this.assertCompanyAccess(req?.user?.id, companyId);
-    return firstValueFrom(
-      this.jobClient.send(JOB_SERVICE.ACTIONS.GET_INTERVIEWS_BY_COMPANY, {
-        companyId,
-      }),
-    );
-  }
-
-  @Patch('interview/status')
-  async updateInterviewStatus(@Body() dto: any, @Req() req?: any) {
-    if (!req?.user?.id) {
-      throw new ForbiddenException('Unauthorized request.');
-    }
-
-    // Resolve the caller's role and profile ID
-    const profile = await this.getCurrentUserProfile(req.user.id);
-    const role = profile?.role; // 'employee' | 'company'
-
-    if (!role || !['employee', 'company'].includes(role)) {
-      throw new ForbiddenException('Invalid user role.');
-    }
-
-    return firstValueFrom(
-      this.jobClient.send(JOB_SERVICE.ACTIONS.UPDATE_INTERVIEW_STATUS, {
-        ...dto,
-        requestUserId: req.user.id, // inject server-side
-        requestUserRole: role, // inject server-side
       }),
     );
   }
