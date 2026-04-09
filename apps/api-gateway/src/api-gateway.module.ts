@@ -4,11 +4,10 @@ import { UploadfileModule } from '@app/common/uploadfile/uploadfile.module';
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ServeStaticModule } from '@nestjs/serve-static';
-import { TerminusModule } from '@nestjs/terminus';
 import * as path from 'path';
 import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './chat/chat.module';
-import { HealthController } from './health/health.controller';
+import { HealthModule } from './health/health.module';
 import { JobModule } from './job/job.module';
 import { NotificationModule } from './notification/notification.module';
 import { ResumeBuilderModule } from './resume-builder/resume-builder.module';
@@ -20,7 +19,7 @@ import { UserModule } from './user/user.module';
     LoggerModule,
     AuthModule,
     UploadfileModule,
-    TerminusModule,
+    HealthModule,
     ResumeBuilderModule,
     ServeStaticModule.forRoot({
       rootPath: path.join(process.cwd(), 'storage'),
@@ -32,7 +31,6 @@ import { UserModule } from './user/user.module';
     JobModule,
     NotificationModule,
   ],
-  controllers: [HealthController],
   providers: [
     {
       provide: APP_INTERCEPTOR,

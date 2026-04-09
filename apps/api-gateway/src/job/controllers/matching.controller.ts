@@ -1,18 +1,18 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
 import { IMatchingController } from '@app/contracts/interfaces/job-controller.interface';
 import {
-    Body,
-    Controller,
-    ForbiddenException,
-    Get,
-    Inject,
-    Param,
-    ParseUUIDPipe,
-    Patch,
-    Post,
-    Query,
-    Req,
-    UseGuards
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  Inject,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -190,12 +190,12 @@ export class JobMatchingController implements IMatchingController {
   }
 
   @Get('analytics/:id')
-  async getAnalytics(
-    @Param('id') id: string,
-    @Query('role') role: string,
-  ) {
+  async getAnalytics(@Param('id') id: string, @Query('role') role: string) {
     return firstValueFrom(
-      this.jobClient.send(JOB_SERVICE.ACTIONS.GET_ANALYTICS, { userId: id, role }),
+      this.jobClient.send(JOB_SERVICE.ACTIONS.GET_ANALYTICS, {
+        userId: id,
+        role,
+      }),
     );
   }
 
@@ -220,7 +220,9 @@ export class JobMatchingController implements IMatchingController {
   ) {
     await this.assertEmployeeAccess(req?.user?.id, employeeId);
     return firstValueFrom(
-      this.jobClient.send(JOB_SERVICE.ACTIONS.GET_INTERVIEWS_BY_EMPLOYEE, { employeeId }),
+      this.jobClient.send(JOB_SERVICE.ACTIONS.GET_INTERVIEWS_BY_EMPLOYEE, {
+        employeeId,
+      }),
     );
   }
 
@@ -231,7 +233,9 @@ export class JobMatchingController implements IMatchingController {
   ) {
     await this.assertCompanyAccess(req?.user?.id, companyId);
     return firstValueFrom(
-      this.jobClient.send(JOB_SERVICE.ACTIONS.GET_INTERVIEWS_BY_COMPANY, { companyId }),
+      this.jobClient.send(JOB_SERVICE.ACTIONS.GET_INTERVIEWS_BY_COMPANY, {
+        companyId,
+      }),
     );
   }
 
@@ -252,8 +256,8 @@ export class JobMatchingController implements IMatchingController {
     return firstValueFrom(
       this.jobClient.send(JOB_SERVICE.ACTIONS.UPDATE_INTERVIEW_STATUS, {
         ...dto,
-        requestUserId: req.user.id,    // inject server-side
-        requestUserRole: role,          // inject server-side
+        requestUserId: req.user.id, // inject server-side
+        requestUserRole: role, // inject server-side
       }),
     );
   }
