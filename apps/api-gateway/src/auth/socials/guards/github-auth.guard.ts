@@ -1,4 +1,8 @@
-import { ExecutionContext, Injectable } from '@nestjs/common';
+import {
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 import { buildPublicCallbackUrl } from './oauth-callback-url';
@@ -24,6 +28,13 @@ export class GithubAuthGuard extends AuthGuard('github') {
     };
   }
 
-  // Allow OAuth to continue
-  handleRequest = (err: any, user: any) => user;
+  handleRequest(err: any, user: any, info?: any) {
+    if (err) throw err;
+    if (!user) {
+      throw new UnauthorizedException(
+        info?.message || 'Github authentication was not completed',
+      );
+    }
+    return user;
+  }
 }

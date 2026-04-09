@@ -179,13 +179,45 @@ export async function handleSocialAuthCallback({
   try {
     const remember = req.session?.remember;
     const rememberMe = getRememberFlag(remember);
+
+    if (!action) {
+      throw new BadRequestException(
+        `${providerLabel} authentication action is missing`,
+      );
+    }
+
+    if (!payload) {
+      throw new BadRequestException(
+        `${providerLabel} authentication payload is missing`,
+      );
+    }
+
     const result = await firstValueFrom(
       authService
         .send<SocialAuthResult>(action, payload)
         .pipe(timeout(timeoutMs)),
     );
 
-    if (!result?.accessToken) {
+    if (!result) {
+      throw new BadRequestException(failureMessage);
+    }
+
+    // New user: no tokens yet (they need to pick a role first).
+    // Still send a success postMessage so the frontend can redirect to signup.
+    if (result.newUser && !result.accessToken) {
+      const html = buildSocialAuthSuccessHtml({
+        targetOrigin: frontendOrigin,
+        successType,
+        remember: rememberMe,
+        result,
+      });
+
+      res.setHeader('Content-Type', 'text/html');
+      res.send(html);
+      return;
+    }
+
+    if (!result.accessToken) {
       throw new BadRequestException(failureMessage);
     }
 

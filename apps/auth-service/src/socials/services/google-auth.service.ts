@@ -6,7 +6,7 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, timeout } from 'rxjs';
 import { Repository } from 'typeorm';
 import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
 import { GoogleAuthDTO } from '../dtos/google-auth.dto';
@@ -64,13 +64,8 @@ export class GoogleAuthService implements IGoogleAuthService {
         this.jwtService.generateRefreshToken(user.id),
       ]);
 
-      // Clear Cache in USER SERVICE
-      console.log('[AUTH] sending CLEAR_USER_CACHE from GOOGLE LOGIN', user.id);
-      await firstValueFrom(
-        this.userClient.send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, {
-          userId: user.id,
-        }),
-      );
+      // Clear Cache in USER SERVICE (non-blocking — must not prevent login)
+      this.clearUserCacheSafe(user.id, 'Google');
 
       return {
         message: 'Successfully Logged in with Google',
@@ -94,5 +89,18 @@ export class GoogleAuthService implements IGoogleAuthService {
       });
       throw new UnauthorizedException('Failed to authenticate with Google');
     }
+  }
+
+  /** Fire-and-forget cache clear — never blocks the login response. */
+  private clearUserCacheSafe(userId: string, provider: string): void {
+    firstValueFrom(
+      this.userClient
+        .send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, { userId })
+        .pipe(timeout(3000)),
+    ).catch((err) => {
+      this.logger.warn(
+        `[AUTH] Cache clear after ${provider} login failed for userId=${userId}: ${(err as Error).message}`,
+      );
+    });
   }
 }

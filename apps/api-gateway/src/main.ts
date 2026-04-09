@@ -2,12 +2,13 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { ValidationPipe } from '@nestjs/common';
+import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
+import passport from 'passport';
 import { Logger } from 'nestjs-pino';
 import { join } from 'path';
 import { ApiGatewayModule } from './api-gateway.module';
@@ -24,7 +25,11 @@ async function bootstrap() {
   // =========================================================
 
   // Set global prefix for all routes (e.g., /api/v1/user)
-  app.setGlobalPrefix('api/v1');
+  // Exclude social OAuth routes — they use browser redirects (not Axios)
+  // and their callback URLs must remain stable for OAuth provider configs.
+  app.setGlobalPrefix('api/v1', {
+    exclude: [{ path: 'social/(.*)', method: RequestMethod.ALL }],
+  });
 
   // Ensure request payload validation and transformation via DTOs
   app.useGlobalPipes(
@@ -56,11 +61,14 @@ async function bootstrap() {
       cookie: {
         httpOnly: true,
         secure: isProduction, // HTTPS required in production
-        sameSite: 'strict', // Strict CSRF protection
+        sameSite: 'lax', // 'lax' required for OAuth redirect flows (Google, Facebook, etc.)
         maxAge: 1000 * 60 * 60 * 24, // 24 hours
       },
     }),
   );
+
+  // Initialize Passport for OAuth social login flows
+  app.use(passport.initialize());
 
   // =========================================================
   // 3. CORS CONFIGURATION
