@@ -27,15 +27,12 @@ export class FacebookController implements IFacebookAuthController {
   @Get('login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(FacebookAuthGuard)
-  async facebookAuth(@Query('remember') remember: string) {
-    // Passport automatically redirects to Facebook
-    // FacebookAuthGuard saves remember flag for callback
-  }
+  async facebookAuth(@Query('remember') remember: string): Promise<void> {}
 
   @Get('callback')
   @HttpCode(HttpStatus.OK)
   @UseGuards(FacebookAuthGuard)
-  async facebookCallback(@Req() req: any, @Res() res: Response) {
+  async facebookCallback(@Req() req: any, @Res() res: Response): Promise<void> {
     return await handleSocialAuthCallback({
       authService: this.authService,
       configService: this.configService,

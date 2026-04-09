@@ -27,15 +27,12 @@ export class GithubController implements IGithubAuthController {
   @Get('login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(GithubAuthGuard)
-  async githubAuth(@Query('remember') remember: string) {
-    // Passport automatically redirects to Github
-    // GithubAuthGuard saves remember flag for callback
-  }
+  async githubAuth(@Query('remember') remember: string): Promise<void> {}
 
   @Get('callback')
   @HttpCode(HttpStatus.OK)
   @UseGuards(GithubAuthGuard)
-  async githubCallback(@Req() req: any, @Res() res: Response) {
+  async githubCallback(@Req() req: any, @Res() res: Response): Promise<void> {
     return await handleSocialAuthCallback({
       authService: this.authService,
       configService: this.configService,

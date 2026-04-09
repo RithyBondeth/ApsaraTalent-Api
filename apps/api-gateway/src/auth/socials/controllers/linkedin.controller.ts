@@ -27,15 +27,12 @@ export class LinkedInController implements ILinkedInAuthController {
   @Get('login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(LinkedInAuthGuard)
-  async linkedInAuth(@Query('remember') remember: string) {
-    // Passport automatically redirects to LinkedIn
-    // LinkedInAuthGuard saves remember flag for callback
-  }
+  async linkedInAuth(@Query('remember') remember: string): Promise<void> {}
 
   @Get('callback')
   @HttpCode(HttpStatus.OK)
   @UseGuards(LinkedInAuthGuard)
-  async linkedInCallback(@Req() req: any, @Res() res: Response) {
+  async linkedInCallback(@Req() req: any, @Res() res: Response): Promise<void> {
     const linkedDataDTO = {
       id: req.user.id,
       email: req.user.emails?.[0]?.value ?? null,

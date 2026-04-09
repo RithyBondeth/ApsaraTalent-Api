@@ -27,15 +27,12 @@ export class GoogleController implements IGoogleAuthController {
   @Get('login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(GoogleAuthGuard)
-  async googleAuth(@Query('remember') remember: string) {
-    // Passport automatically redirects to Google
-    // GoogleAuthGuard saves remember flag for callback.
-  }
+  async googleAuth(@Query('remember') remember: string): Promise<void> {}
 
   @Get('callback')
   @HttpCode(HttpStatus.OK)
   @UseGuards(GoogleAuthGuard)
-  async googleCallback(@Req() req: any, @Res() res: Response) {
+  async googleCallback(@Req() req: any, @Res() res: Response): Promise<void> {
     return await handleSocialAuthCallback({
       authService: this.authService,
       configService: this.configService,
