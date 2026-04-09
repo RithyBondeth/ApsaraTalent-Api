@@ -64,8 +64,6 @@ export class AuthController implements IBasicAuthController {
         payload,
       );
 
-    // Mirror the issued tokens into cookies so browser clients can use cookie-
-    // based auth while still receiving the raw tokens in the JSON response.
     setAuthTokenCookies(res, { accessToken, refreshToken });
 
     return {
@@ -102,8 +100,6 @@ export class AuthController implements IBasicAuthController {
 
     const { accessToken, refreshToken, user, message } = response;
 
-    // OTP login finishes with the same cookie contract as password login so
-    // the frontend can treat both flows identically after verification.
     setAuthTokenCookies(res, { accessToken, refreshToken });
 
     return {
@@ -156,8 +152,6 @@ export class AuthController implements IBasicAuthController {
         payload,
       );
 
-    // Refresh updates both cookies so subsequent browser requests continue to
-    // carry the newest token pair without extra frontend coordination.
     setAuthTokenCookies(res, { accessToken, refreshToken });
 
     return {
