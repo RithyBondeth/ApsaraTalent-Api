@@ -1,4 +1,9 @@
-import { DatabaseModule, EmailModule, LoggerModule } from '@app/common';
+import {
+  DatabaseModule,
+  EmailModule,
+  LoggerModule,
+  RedisCacheHealthIndicator,
+} from '@app/common';
 import { RedisModule } from '@app/common/redis/redis.module';
 import { ConfigModule } from '@app/common/config';
 import { Company } from '@app/common/database/entities/company/company.entity';
@@ -14,8 +19,10 @@ import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { TerminusModule } from '@nestjs/terminus';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/notification.constant';
+import { JobHealthController } from './health/health.controller';
 import { InterviewController } from './controllers/interview.controller';
 import { JobServiceController } from './controllers/job-service.controller';
 import { MatchingController } from './controllers/matching.controller';
@@ -37,6 +44,7 @@ import {
     MessageModule,
     EmailModule,
     RedisModule,
+    TerminusModule,
     ClientsModule.registerAsync([
       {
         name: NOTIFICATION_SERVICE.NAME,
@@ -61,11 +69,17 @@ import {
       Interview,
     ]),
   ],
-  controllers: [JobServiceController, MatchingController, InterviewController],
+  controllers: [
+    JobServiceController,
+    MatchingController,
+    InterviewController,
+    JobHealthController,
+  ],
   providers: [
     { provide: I_JOB_SERVICE_SERVICE, useClass: JobServiceService },
     { provide: I_MATCHING_SERVICE, useClass: MatchingService },
     { provide: I_INTERVIEW_SERVICE, useClass: InterviewService },
+    RedisCacheHealthIndicator,
     {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor,

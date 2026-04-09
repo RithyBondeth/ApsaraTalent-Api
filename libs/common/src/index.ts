@@ -3,6 +3,8 @@ export * from './database/database.module';
 export * from './email/email.module';
 export * from './filters/rpc-exception.filter';
 export * from './guards/auth.guard';
+export * from './health/indicators/config-values.health';
+export * from './health/indicators/redis-cache.health';
 export * from './jwt/jwt.module';
 export * from './logger/logger.module';
 export * from './message/message.module';

@@ -20,6 +20,7 @@ import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { TerminusModule } from '@nestjs/terminus';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
 import { ForgotPasswordController } from './basic/controllers/forgot-password.controller';
@@ -36,6 +37,7 @@ import { RefreshTokenService } from './basic/services/refresh-token.service';
 import { RegisterService } from './basic/services/register.service';
 import { ResetPasswordService } from './basic/services/reset-password.service';
 import { VerifyEmailService } from './basic/services/verify-email.service';
+import { AuthHealthController } from './health/health.controller';
 import { FacebookAuthController } from './socials/controllers/facebook-auth.controller';
 import { GithubAuthController } from './socials/controllers/github-auth.controller';
 import { GoogleAuthController } from './socials/controllers/google-auth.controller';
@@ -68,6 +70,7 @@ import {
     UploadfileModule,
     EmailModule,
     MessageModule,
+    TerminusModule,
     TypeOrmModule.forFeature([
       User,
       Company,
@@ -102,6 +105,7 @@ import {
     ResetPasswordController,
     RefreshTokenController,
     VerifyEmailController,
+    AuthHealthController,
     GoogleAuthController,
     LinkedInAuthController,
     GithubAuthController,

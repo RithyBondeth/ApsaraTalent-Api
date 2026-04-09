@@ -78,6 +78,10 @@ export class PushNotificationService {
     return normalized;
   }
 
+  isConfigured(): boolean {
+    return this.firebaseApp !== null;
+  }
+
   async sendToToken(token: string, payload: PushPayload) {
     if (!token) {
       return { success: false, skipped: true, reason: 'missing token' };

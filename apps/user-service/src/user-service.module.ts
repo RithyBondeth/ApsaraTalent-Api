@@ -2,6 +2,7 @@ import {
   DatabaseModule,
   JwtModule,
   LoggerModule,
+  RedisCacheHealthIndicator,
   UploadfileModule,
 } from '@app/common';
 import { ConfigModule } from '@app/common/config';
@@ -25,6 +26,7 @@ import { RedisModule } from '@app/common/redis/redis.module';
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { TerminusModule } from '@nestjs/terminus';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FindCompanyController } from './controllers/company-controllers/find-company.controller';
 import { ImageCompanyController } from './controllers/company-controllers/image-company.controller';
@@ -37,6 +39,7 @@ import { SearchEmployeeController } from './controllers/employee-controllers/sea
 import { UpdateEmployeeInfoController } from './controllers/employee-controllers/update-employee-info.controller';
 import { UploadEmployeeReferenceController } from './controllers/employee-controllers/upload-employee-reference.controller';
 import { UserController } from './controllers/user.controller';
+import { UserHealthController } from './health/health.controller';
 import { FindCompanyService } from './services/company-services/find-company.service';
 import { ImageCompanyService } from './services/company-services/image-company.service';
 import { OpenPositionService } from './services/company-services/open-position.service';
@@ -88,6 +91,7 @@ import {
     UploadfileModule,
     JwtModule,
     RedisModule,
+    TerminusModule,
     EventEmitterModule.forRoot({
       wildcard: false,
       delimiter: '.',
@@ -108,6 +112,7 @@ import {
     UploadEmployeeReferenceController,
     SearchEmployeeController,
     UserController,
+    UserHealthController,
     OpenPositionController,
     ExperienceAndEducationController,
   ],
@@ -136,6 +141,7 @@ import {
       useClass: ExperienceAndEducationService,
     },
     CacheInvalidationService,
+    RedisCacheHealthIndicator,
     {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor,

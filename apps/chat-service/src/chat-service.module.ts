@@ -1,4 +1,9 @@
-import { DatabaseModule, JwtModule, LoggerModule } from '@app/common';
+import {
+  DatabaseModule,
+  JwtModule,
+  LoggerModule,
+  RedisCacheHealthIndicator,
+} from '@app/common';
 import { RedisModule } from '@app/common/redis/redis.module';
 import { ConfigModule } from '@app/common/config';
 import { Chat } from '@app/common/database/entities/chat.entity';
@@ -6,10 +11,12 @@ import { User } from '@app/common/database/entities/user.entity';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { TerminusModule } from '@nestjs/terminus';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
 import { ChatServiceService } from './chat-service.service';
 import { ChatServiceController } from './chat-service.controller';
+import { ChatHealthController } from './health/health.controller';
 import { I_CHAT_SERVICE } from '@app/contracts/interfaces/chat-service.interface';
 
 @Module({
@@ -19,6 +26,7 @@ import { I_CHAT_SERVICE } from '@app/contracts/interfaces/chat-service.interface
     DatabaseModule,
     JwtModule,
     RedisModule,
+    TerminusModule,
     TypeOrmModule.forFeature([User, Chat]),
     ClientsModule.registerAsync([
       {
@@ -34,12 +42,13 @@ import { I_CHAT_SERVICE } from '@app/contracts/interfaces/chat-service.interface
       },
     ]),
   ],
-  controllers: [ChatServiceController],
+  controllers: [ChatServiceController, ChatHealthController],
   providers: [
     {
       provide: I_CHAT_SERVICE,
       useClass: ChatServiceService,
     },
+    RedisCacheHealthIndicator,
   ],
 })
 export class ChatServiceModule {}

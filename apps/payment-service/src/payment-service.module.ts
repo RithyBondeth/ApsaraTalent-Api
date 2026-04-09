@@ -1,4 +1,4 @@
-import { LoggerModule } from '@app/common';
+import { ConfigValuesHealthIndicator, LoggerModule } from '@app/common';
 import { ConfigModule } from '@app/common/config';
 import { DatabaseModule } from '@app/common/database/database.module';
 import { Company } from '@app/common/database/entities/company/company.entity';
@@ -7,8 +7,10 @@ import { Payment } from '@app/common/database/entities/payment/payment.entity';
 import { User } from '@app/common/database/entities/user.entity';
 import { Module } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { TerminusModule } from '@nestjs/terminus';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BakongRateLimitGuard } from './guards/bakong-rate-limit.guard';
+import { PaymentHealthController } from './health/health.controller';
 import { BakongLoggingInterceptor } from './interceptors/bakong.interceptor';
 import { PaymentServiceController } from './payment-service.controller';
 import { PaymentServiceService } from './payment-service.service';
@@ -20,14 +22,16 @@ import { I_PAYMENT_SERVICE } from '@app/contracts/interfaces/payment-service.int
     ConfigModule,
     LoggerModule,
     DatabaseModule,
+    TerminusModule,
     TypeOrmModule.forFeature([Payment, PaymentTransaction, User, Company]),
   ],
-  controllers: [PaymentServiceController],
+  controllers: [PaymentServiceController, PaymentHealthController],
   providers: [
     {
       provide: I_PAYMENT_SERVICE,
       useClass: PaymentServiceService,
     },
+    ConfigValuesHealthIndicator,
     // Apply Bakong rate limiting globally to this service
     {
       provide: APP_GUARD,
