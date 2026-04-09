@@ -19,30 +19,11 @@ import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import { v4 as uuidv4 } from 'uuid';
-
-// ── Upload config ────────────────────────────────────────────────────────────
-// Files are saved to storage/chat/<date>/<uuid><ext> on the server.
-// The frontend uses the returned URL to attach the file to a message payload.
-//
-// Allowed types: images (jpg, png, gif, webp) + documents (pdf, doc, docx, txt) + audio (webm, ogg, mp4, mpeg, wav).
-// Max size: 10 MB.
-const ALLOWED_MIME_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-  'audio/webm',
-  'audio/ogg',
-  'audio/mp4',
-  'audio/mpeg',
-  'audio/wav',
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'text/plain',
-];
-const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 import { IChatController } from '@app/contracts/interfaces/chat.interface';
+import {
+  ALLOWED_MIME_TYPES_FOR_CHAT,
+  MAX_FILE_SIZE_BYTES_FOR_CHAT,
+} from '@app/contracts/constants/chat.constant';
 
 @Controller('chat')
 export class ChatController implements IChatController {
@@ -50,7 +31,10 @@ export class ChatController implements IChatController {
 
   @Post('initiate')
   @UseGuards(AuthGuard)
-  async initiateChat(@Body() body: { receiverId: string }, @Req() req) {
+  async initiateChat(
+    @Body() body: { receiverId: string },
+    @Req() req: any,
+  ): Promise<any> {
     return await firstValueFrom(
       this.chatClient.send('createOrGetChat', {
         senderId: req.user.id,
@@ -61,7 +45,7 @@ export class ChatController implements IChatController {
 
   @Get('recent')
   @UseGuards(AuthGuard)
-  async getRecentChats(@Req() req) {
+  async getRecentChats(@Req() req: any): Promise<any> {
     try {
       const userId = req.user.id;
       return await firstValueFrom(
@@ -73,32 +57,15 @@ export class ChatController implements IChatController {
     }
   }
 
-  /**
-   * Upload a file or image to attach to a message.
-   *
-   * Flow:
-   *  1. Frontend selects a file and POSTs it here (multipart/form-data).
-   *  2. Server validates type + size, saves to disk, returns the public URL.
-   *  3. Frontend includes that URL in the socket 'sendMessage' payload as `attachment`.
-   *  4. The socket handler stores the URL in the Chat.attachment column.
-   *
-   * Returns: { url: string, type: 'image' | 'document' | 'audio', filename: string }
-   *
-   * Security:
-   *  - Requires AuthGuard (JWT) — only logged-in users can upload.
-   *  - Validates MIME type server-side (not just file extension).
-   *  - Stores files with a UUID filename so originals are not guessable.
-   *  - Max 10 MB to prevent abuse.
-   */
   @Post('upload')
   @UseGuards(AuthGuard)
   @UseInterceptors(
     FileInterceptor('file', {
-      limits: { fileSize: MAX_FILE_SIZE_BYTES },
+      limits: { fileSize: MAX_FILE_SIZE_BYTES_FOR_CHAT },
       fileFilter: (_req, file, callback) => {
         const mime = (file.mimetype || '').split(';')[0].trim();
         // Reject disallowed MIME types immediately
-        if (!ALLOWED_MIME_TYPES.includes(mime)) {
+        if (!ALLOWED_MIME_TYPES_FOR_CHAT.includes(mime)) {
           return callback(
             new BadRequestException(
               `File type not allowed. Allowed: images (jpg/png/gif/webp), audio (webm/ogg/mp4/mpeg/wav), PDF, Word, TXT`,
@@ -126,8 +93,8 @@ export class ChatController implements IChatController {
   )
   async uploadAttachment(
     @UploadedFile() file: Express.Multer.File,
-    @Req() req,
-  ) {
+    @Req() req: any,
+  ): Promise<any> {
     if (!file) {
       throw new BadRequestException('No file provided');
     }

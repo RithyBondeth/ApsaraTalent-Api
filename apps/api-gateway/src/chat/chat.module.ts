@@ -9,6 +9,8 @@ import { NOTIFICATION_SERVICE } from '@app/contracts/constants/notification.cons
 import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
 import { ChatController } from './chat.controller';
 import { ChatGateway } from './chat.gateway';
+import { CallGateway } from './call.gateway';
+import { ChatGatewayService } from './chat-gateway.service';
 
 @Module({
   imports: [
@@ -52,6 +54,6 @@ import { ChatGateway } from './chat.gateway';
     TypeOrmModule.forFeature([User]),
   ],
   controllers: [ChatController],
-  providers: [ChatGateway], // ← was missing — gateway never started without this
+  providers: [ChatGateway, CallGateway, ChatGatewayService],
 })
 export class ChatModule {}
