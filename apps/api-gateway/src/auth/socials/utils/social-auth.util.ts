@@ -1,4 +1,4 @@
-import { BadRequestException, HttpStatus } from '@nestjs/common';
+import { BadRequestException, HttpStatus, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { firstValueFrom, timeout } from 'rxjs';
@@ -13,6 +13,8 @@ import {
   TSocialAuthResult,
   TSuccessHtmlOptions,
 } from '@app/contracts/types/auth.type';
+
+const logger = new Logger('SocialAuthUtil');
 
 export function getFrontendOrigin(configService: ConfigService): string {
   const frontendOriginConfig = configService.get<string>('frontend.origin');
@@ -197,7 +199,10 @@ export async function handleSocialAuthCallback({
     res.setHeader('Content-Type', 'text/html');
     res.send(html);
   } catch (error) {
-    console.error(`${providerLabel} authentication error:`, error);
+    logger.error(
+      `${providerLabel} authentication error`,
+      error instanceof Error ? error.stack : String(error),
+    );
 
     const errorHtml = buildSocialAuthErrorHtml({
       targetOrigin: frontendOrigin,

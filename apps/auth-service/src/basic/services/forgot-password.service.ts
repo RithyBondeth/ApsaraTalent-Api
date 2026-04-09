@@ -54,7 +54,10 @@ export class ForgotPasswordService implements IForgotPasswordService {
       user.resetPasswordExpires = expireDateToken;
       await this.userRepository.save(user);
 
-      console.log('reset token: ', resetToken);
+      this.logger.debug(
+        { identifier: forgotPasswordDTO.identifier, isEmail },
+        'Reset password token generated successfully',
+      );
 
       if ((user.email && !user.phone) || (user.email && user.phone)) {
         //Send reset password token to user email address

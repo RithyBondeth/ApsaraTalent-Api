@@ -1,5 +1,8 @@
+import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as redisStore from 'cache-manager-redis-store';
+
+const logger = new Logger('RedisConfig');
 
 export const getRedisCloudConfig = (configService: ConfigService) => {
   const host = configService.get<string>('REDIS_CACHING_HOST');
@@ -27,7 +30,7 @@ export const getRedisCloudConfig = (configService: ConfigService) => {
     retry_strategy: (options) => {
       // Exponential backoff for Redis Cloud
       if (options.error && options.error.code === 'ECONNREFUSED') {
-        console.error('Redis Cloud connection refused');
+        logger.error('Redis Cloud connection refused');
       }
       if (options.total_retry_time > 1000 * 60 * 5) {
         // 5 minutes

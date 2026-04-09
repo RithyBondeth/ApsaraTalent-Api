@@ -18,7 +18,6 @@ export class ImageEmployeeController implements IImageEmployeeController {
   async uploadEmployeeAvatar(
     @Payload() payload: { employeeId: string; avatar: Express.Multer.File },
   ) {
-    console.log(payload.avatar);
     return this.imageEmployeeService.uploadEmployeeAvatar(
       payload.employeeId,
       payload.avatar,

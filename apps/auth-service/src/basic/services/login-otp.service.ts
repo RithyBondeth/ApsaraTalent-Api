@@ -45,7 +45,10 @@ export class LoginOTPService implements ILoginOTPService {
       await this.userRepo.save(user);
 
       //await this.messageService.sendOtp(loginOtpDTO.phone, otpCode);
-      console.log('OTP code: ', otpCode);
+      this.logger.debug(
+        { phone: loginOtpDTO.phone },
+        'OTP generated and stored successfully',
+      );
 
       return {
         message: `OTP sent successfully to ${loginOtpDTO.phone}`,
@@ -103,7 +106,10 @@ export class LoginOTPService implements ILoginOTPService {
       await this.userRepo.save(user);
 
       // Clear Cache in USER SERVICE
-      console.log('[AUTH] sending CLEAR_USER_CACHE from LOGIN_OTP', user.id);
+      this.logger.debug(
+        { userId: user.id },
+        'Sending clear-current-user-cache after OTP login',
+      );
       await firstValueFrom(
         this.userClient.send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, {
           userId: user.id,
