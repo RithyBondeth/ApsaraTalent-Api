@@ -4,7 +4,6 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from '@app/contracts/constants/auth-service.constant';
 import { LoginResponseDTO } from '../dtos/login-response.dto';
 import { LoginDTO } from '../dtos/login.dto';
-import { LoginService } from '../services/login.service';
 
 import {
   I_LOGIN_SERVICE,

@@ -4,7 +4,6 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from '@app/contracts/constants/auth-service.constant';
 import { LoginOtpDTO } from '../dtos/login-otp.dto';
 import { VerifyOtpDTO } from '../dtos/verify-otp.dto';
-import { LoginOTPService } from '../services/login-otp.service';
 
 import {
   I_LOGIN_OTP_SERVICE,

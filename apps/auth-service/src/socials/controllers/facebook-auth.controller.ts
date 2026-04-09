@@ -2,7 +2,6 @@ import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from '@app/contracts/constants/auth-service.constant';
 import { FacebookAuthDTO } from '../dtos/facebook-auth.dto';
-import { FacebookAuthService } from '../services/facebook-auth.service';
 
 import { IFacebookAuthMicroserviceController } from '@app/contracts/interfaces/auth-controller.interface';
 

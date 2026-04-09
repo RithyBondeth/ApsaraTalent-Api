@@ -2,7 +2,6 @@ import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from '@app/contracts/constants/auth-service.constant';
 import { GithubAuthDTO } from '../dtos/github-auth.dto';
-import { GithubAuthService } from '../services/github-auth.service';
 
 import { IGithubAuthMicroserviceController } from '@app/contracts/interfaces/auth-controller.interface';
 

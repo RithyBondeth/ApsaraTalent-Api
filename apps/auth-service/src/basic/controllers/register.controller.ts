@@ -5,7 +5,6 @@ import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
 import { AUTH_SERVICE } from '@app/contracts/constants/auth-service.constant';
 import { CompanyRegisterDTO } from '../dtos/company-register.dto';
 import { EmployeeRegisterDTO } from '../dtos/employee-register.dto';
-import { RegisterService } from '../services/register.service';
 
 import {
   I_REGISTER_SERVICE,

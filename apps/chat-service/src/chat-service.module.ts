@@ -14,8 +14,8 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { TerminusModule } from '@nestjs/terminus';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
-import { ChatServiceService } from './chat-service.service';
-import { ChatServiceController } from './chat-service.controller';
+import { ChatService } from './chat-service.service';
+import { ChatController } from './chat-service.controller';
 import { ChatHealthController } from './health/health.controller';
 import { I_CHAT_SERVICE } from '@app/contracts/interfaces/chat-service.interface';
 
@@ -42,11 +42,11 @@ import { I_CHAT_SERVICE } from '@app/contracts/interfaces/chat-service.interface
       },
     ]),
   ],
-  controllers: [ChatServiceController, ChatHealthController],
+  controllers: [ChatController, ChatHealthController],
   providers: [
     {
       provide: I_CHAT_SERVICE,
-      useClass: ChatServiceService,
+      useClass: ChatService,
     },
     RedisCacheHealthIndicator,
   ],

@@ -5,7 +5,6 @@ import {
   CreateInterviewDto,
   UpdateInterviewStatusDto,
 } from '../dtos/interview.dto';
-import { InterviewService } from '../services/interview.service';
 
 import { IInterviewController } from '@app/contracts/interfaces/job-controller.interface';
 

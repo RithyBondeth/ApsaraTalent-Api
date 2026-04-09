@@ -2,7 +2,6 @@ import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from '@app/contracts/constants/auth-service.constant';
 import { LinkedInAuthDTO } from '../dtos/linkedin-auth.dto';
-import { LinkedInAuthService } from '../services/linkedin-auth.service';
 
 import { ILinkedInAuthMicroserviceController } from '@app/contracts/interfaces/auth-controller.interface';
 

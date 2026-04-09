@@ -3,7 +3,6 @@ import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from '@app/contracts/constants/auth-service.constant';
 import { RefreshTokenDTO } from '../dtos/refresh-token.dto';
-import { RefreshTokenService } from '../services/refresh-token.service';
 
 import {
   I_REFRESH_TOKEN_SERVICE,

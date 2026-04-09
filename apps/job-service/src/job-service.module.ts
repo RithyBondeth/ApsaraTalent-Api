@@ -24,10 +24,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/notification.constant';
 import { JobHealthController } from './health/health.controller';
 import { InterviewController } from './controllers/interview.controller';
-import { JobServiceController } from './controllers/job-service.controller';
+import { JobController } from './controllers/job-service.controller';
 import { MatchingController } from './controllers/matching.controller';
 import { InterviewService } from './services/interview.service';
-import { JobServiceService } from './services/job-service.service';
+import { JobService } from './services/job-service.service';
 import { MatchingService } from './services/matching.service';
 
 import {
@@ -70,13 +70,13 @@ import {
     ]),
   ],
   controllers: [
-    JobServiceController,
+    JobController,
     MatchingController,
     InterviewController,
     JobHealthController,
   ],
   providers: [
-    { provide: I_JOB_SERVICE_SERVICE, useClass: JobServiceService },
+    { provide: I_JOB_SERVICE_SERVICE, useClass: JobService },
     { provide: I_MATCHING_SERVICE, useClass: MatchingService },
     { provide: I_INTERVIEW_SERVICE, useClass: InterviewService },
     RedisCacheHealthIndicator,

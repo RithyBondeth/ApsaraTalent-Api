@@ -6,8 +6,8 @@ import { Module } from '@nestjs/common';
 import { TerminusModule } from '@nestjs/terminus';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NotificationHealthController } from './health/health.controller';
-import { NotificationServiceController } from './notification-service.controller';
-import { NotificationServiceService } from './notification-service.service';
+import { NotificationController } from './notification-service.controller';
+import { NotificationService } from './notification-service.service';
 import { PushNotificationService } from './push-notification.service';
 
 import { I_NOTIFICATION_SERVICE } from '@app/contracts/interfaces/notification-service.interface';
@@ -20,11 +20,11 @@ import { I_NOTIFICATION_SERVICE } from '@app/contracts/interfaces/notification-s
     TerminusModule,
     TypeOrmModule.forFeature([Notification, User]),
   ],
-  controllers: [NotificationServiceController, NotificationHealthController],
+  controllers: [NotificationController, NotificationHealthController],
   providers: [
     {
       provide: I_NOTIFICATION_SERVICE,
-      useClass: NotificationServiceService,
+      useClass: NotificationService,
     },
     PushNotificationService,
   ],

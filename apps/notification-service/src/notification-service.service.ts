@@ -9,24 +9,26 @@ import {
   MarkReadPayload,
   UnreadCountPayload,
 } from '@app/contracts/interfaces/notification.interface';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { PushNotificationService } from './push-notification.service';
 
 import { INotificationService } from '@app/contracts/interfaces/notification-service.interface';
 
 @Injectable()
-export class NotificationServiceService implements INotificationService {
-  private readonly logger = new Logger(NotificationServiceService.name);
-
+export class NotificationService implements INotificationService {
   constructor(
     @InjectRepository(Notification)
     private readonly notificationRepo: Repository<Notification>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly pushNotificationService: PushNotificationService,
-  ) {}
+    private readonly logger: PinoLogger,
+  ) {
+    this.logger.setContext(NotificationService.name);
+  }
 
   async findAllNotification(): Promise<any> {
     return this.notificationRepo.find({
@@ -64,7 +66,7 @@ export class NotificationServiceService implements INotificationService {
             senderAvatar: payload.senderAvatar ?? null,
           });
           if (result?.success) {
-            this.logger.log(
+            this.logger.info(
               `Push sent to userId=${payload.userId} (token length ${token.length})`,
             );
           } else if (result?.skipped) {

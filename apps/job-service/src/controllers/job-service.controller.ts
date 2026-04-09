@@ -4,7 +4,6 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { JOB_SERVICE } from '@app/contracts/constants/job-service.constant';
 import { JobResponseDTO } from '../dtos/job-response.dto';
 import { SearchJobDto } from '../dtos/job-search.dto';
-import { JobServiceService } from '../services/job-service.service';
 
 import {
   I_JOB_SERVICE_SERVICE,
@@ -12,19 +11,19 @@ import {
 } from '@app/contracts/interfaces/job-service.interface';
 
 @Controller()
-export class JobServiceController implements IJobController {
+export class JobController implements IJobController {
   constructor(
     @Inject(I_JOB_SERVICE_SERVICE)
-    private readonly jobServiceService: IJobServiceService,
+    private readonly jobService: IJobServiceService,
   ) {}
 
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_ALL_JOBS)
   findAllJobs(): Promise<JobResponseDTO[]> {
-    return this.jobServiceService.findAllJobs();
+    return this.jobService.findAllJobs();
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.SEARCH_JOBS)
   searchJobs(@Payload() searchJobDTO: SearchJobDto): Promise<JobResponseDTO[]> {
-    return this.jobServiceService.searchJobs(searchJobDTO);
+    return this.jobService.searchJobs(searchJobDTO);
   }
 }

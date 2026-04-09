@@ -9,11 +9,12 @@ import {
   PaymentStatus,
   PaymentType,
 } from '@app/common/database/entities/payment/payment.entity';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import axios, { AxiosInstance } from 'axios';
 import CryptoJS from 'crypto-js';
+import { PinoLogger } from 'nestjs-pino';
 import * as QRCode from 'qrcode';
 import { Repository } from 'typeorm';
 import { BAKONG_CONSTANTS } from './constants/bakong.constant';
@@ -35,18 +36,19 @@ import {
 import { IPaymentService } from '@app/contracts/interfaces/payment-service.interface';
 
 @Injectable()
-export class PaymentServiceService implements IPaymentService {
-  private readonly logger = new Logger(PaymentServiceService.name);
+export class PaymentService implements IPaymentService {
   private readonly httpClient: AxiosInstance;
   private readonly bakongConfig: any;
 
   constructor(
     private readonly configService: ConfigService,
+    private readonly logger: PinoLogger,
     @InjectRepository(Payment)
     private readonly paymentRepository: Repository<Payment>,
     @InjectRepository(PaymentTransaction)
     private readonly transactionRepository: Repository<PaymentTransaction>,
   ) {
+    this.logger.setContext(PaymentService.name);
     this.bakongConfig = this.configService.get<string>('bakong');
 
     if (!this.bakongConfig?.developerToken) {
@@ -68,9 +70,10 @@ export class PaymentServiceService implements IPaymentService {
     generateIndividualKhqrDTO: GenerateIndividualKhqrDTO,
   ): Promise<any> {
     try {
-      this.logger.log('Generating individual KHQR code', {
-        merchantName: generateIndividualKhqrDTO.merchantName,
-      });
+      this.logger.info(
+        { merchantName: generateIndividualKhqrDTO.merchantName },
+        'Generating individual KHQR code',
+      );
 
       const payload = {
         qr_type: 'individual',
@@ -147,10 +150,7 @@ export class PaymentServiceService implements IPaymentService {
         );
       }
     } catch (error) {
-      this.logger.error(
-        'Failed to generate individual KHQR',
-        (error as Error).message,
-      );
+      this.logger.error({ err: error }, 'Failed to generate individual KHQR');
       if (error instanceof BakongQRGenerationException) throw error;
       throw new BakongApiConnectionException(
         (error as Error).message || 'Failed to connect to Bakong API',
@@ -162,9 +162,10 @@ export class PaymentServiceService implements IPaymentService {
     generateMerchantKhqrDTO: GenerateMerchantKhqrDTO,
   ): Promise<any> {
     try {
-      this.logger.log('Generating merchant KHQR code', {
-        merchantName: generateMerchantKhqrDTO.merchantName,
-      });
+      this.logger.info(
+        { merchantName: generateMerchantKhqrDTO.merchantName },
+        'Generating merchant KHQR code',
+      );
 
       const payload = {
         qr_type: 'merchant',
@@ -237,10 +238,7 @@ export class PaymentServiceService implements IPaymentService {
         );
       }
     } catch (error) {
-      this.logger.error(
-        'Failed to generate merchant KHQR',
-        (error as Error).message,
-      );
+      this.logger.error({ err: error }, 'Failed to generate merchant KHQR');
       if (error instanceof BakongQRGenerationException) throw error;
       throw new BakongApiConnectionException(
         (error as Error).message || 'Failed to connect to Bakong API',
@@ -250,7 +248,7 @@ export class PaymentServiceService implements IPaymentService {
 
   async verifyKhqr(verifyKhqrDTO: VerifyKhqrDTO): Promise<any> {
     try {
-      this.logger.log('Verifying KHQR code');
+      this.logger.info('Verifying KHQR code');
 
       const response = await this.httpClient.post('/v1/verify_khqr', {
         qr_string: verifyKhqrDTO.qrString,
@@ -273,7 +271,7 @@ export class PaymentServiceService implements IPaymentService {
         };
       }
     } catch (error) {
-      this.logger.error('Failed to verify KHQR', (error as Error).message);
+      this.logger.error({ err: error }, 'Failed to verify KHQR');
       throw new BakongQRValidationException(
         (error as Error).message || 'Failed to verify KHQR code',
       );
@@ -282,7 +280,7 @@ export class PaymentServiceService implements IPaymentService {
 
   async decodeKhqr(decodeKhqrDTO: DecodeKhqrDTO): Promise<any> {
     try {
-      this.logger.log('Decoding KHQR code');
+      this.logger.info('Decoding KHQR code');
 
       const response = await this.httpClient.post('/v1/decode_khqr', {
         qr_string: decodeKhqrDTO.qrString,
@@ -310,7 +308,7 @@ export class PaymentServiceService implements IPaymentService {
         );
       }
     } catch (error) {
-      this.logger.error('Failed to decode KHQR', (error as Error).message);
+      this.logger.error({ err: error }, 'Failed to decode KHQR');
       if (error instanceof BakongQRValidationException) throw error;
       throw new BakongApiConnectionException(
         (error as Error).message || 'Failed to connect to Bakong API',
@@ -322,7 +320,7 @@ export class PaymentServiceService implements IPaymentService {
     generateDeepLinkDTO: GenerateDeepLinkDTO,
   ): Promise<any> {
     try {
-      this.logger.log('Generating payment deep link');
+      this.logger.info('Generating payment deep link');
 
       const response = await this.httpClient.post('/v1/generate_deeplink', {
         qr_string: generateDeepLinkDTO.qrString,
@@ -345,10 +343,7 @@ export class PaymentServiceService implements IPaymentService {
         );
       }
     } catch (error) {
-      this.logger.error(
-        'Failed to generate deep link',
-        (error as Error).message,
-      );
+      this.logger.error({ err: error }, 'Failed to generate deep link');
       if (error instanceof BakongQRGenerationException) throw error;
       throw new BakongApiConnectionException(
         (error as Error).message || 'Failed to connect to Bakong API',
@@ -360,9 +355,10 @@ export class PaymentServiceService implements IPaymentService {
     checkPaymentStatusDTO: CheckPaymentStatusDTO,
   ): Promise<any> {
     try {
-      this.logger.log('Checking payment status', {
-        md5Hash: checkPaymentStatusDTO.md5Hash.substring(0, 8) + '...',
-      });
+      this.logger.info(
+        { md5Hash: checkPaymentStatusDTO.md5Hash.substring(0, 8) + '...' },
+        'Checking payment status',
+      );
 
       // First, check our database for the payment
       const payment = await this.paymentRepository.findOne({
@@ -442,10 +438,7 @@ export class PaymentServiceService implements IPaymentService {
         throw new BakongPaymentNotFoundException(checkPaymentStatusDTO.md5Hash);
       }
     } catch (error) {
-      this.logger.error(
-        'Failed to check payment status',
-        (error as Error).message,
-      );
+      this.logger.error({ err: error }, 'Failed to check payment status');
       if (error instanceof BakongPaymentNotFoundException) throw error;
       throw new BakongApiConnectionException(
         (error as Error).message || 'Failed to connect to Bakong API',
@@ -457,9 +450,10 @@ export class PaymentServiceService implements IPaymentService {
     checkPaymentBulkStatusDTO: CheckPaymentBulkStatusDTO,
   ): Promise<any> {
     try {
-      this.logger.log('Checking bulk payment status', {
-        count: checkPaymentBulkStatusDTO.md5Hashes.length,
-      });
+      this.logger.info(
+        { count: checkPaymentBulkStatusDTO.md5Hashes.length },
+        'Checking bulk payment status',
+      );
 
       const response = await this.httpClient.post(
         '/v1/check_payment_bulk_status',
@@ -502,10 +496,7 @@ export class PaymentServiceService implements IPaymentService {
         );
       }
     } catch (error) {
-      this.logger.error(
-        'Failed to check bulk payment status',
-        (error as Error).message,
-      );
+      this.logger.error({ err: error }, 'Failed to check bulk payment status');
       throw new BakongApiConnectionException(
         (error as Error).message || 'Failed to connect to Bakong API',
       );
@@ -548,16 +539,16 @@ export class PaymentServiceService implements IPaymentService {
 
       await this.transactionRepository.save(transaction);
 
-      this.logger.log('Payment status updated successfully', {
-        paymentId: payment.id,
-        transactionId: paymentData.transaction_id,
-        status: 'paid',
-      });
-    } catch (error) {
-      this.logger.error(
-        'Failed to update payment status',
-        (error as Error).message,
+      this.logger.info(
+        {
+          paymentId: payment.id,
+          transactionId: paymentData.transaction_id,
+          status: 'paid',
+        },
+        'Payment status updated successfully',
       );
+    } catch (error) {
+      this.logger.error({ err: error }, 'Failed to update payment status');
       throw error;
     }
   }
@@ -575,10 +566,7 @@ export class PaymentServiceService implements IPaymentService {
 
       return qrImageBase64;
     } catch (error) {
-      this.logger.error(
-        'Failed to generate QR image',
-        (error as Error).message,
-      );
+      this.logger.error({ err: error }, 'Failed to generate QR image');
       throw new BakongQRGenerationException(
         (error as Error).message || 'Failed to generate QR code image',
       );

@@ -15,12 +15,14 @@ const JOB_SEARCH_TTL = 2 * 60 * 1000; // 2 min
 import { IJobServiceService } from '@app/contracts/interfaces/job-service.interface';
 
 @Injectable()
-export class JobServiceService implements IJobServiceService {
+export class JobService implements IJobServiceService {
   constructor(
     @InjectRepository(Job) private readonly jobRepo: Repository<Job>,
     private readonly logger: PinoLogger,
     private readonly redisService: RedisService,
-  ) {}
+  ) {
+    this.logger.setContext(JobService.name);
+  }
 
   async findAllJobs(): Promise<JobResponseDTO[]> {
     const cacheKey = this.redisService.generateJobListKey();

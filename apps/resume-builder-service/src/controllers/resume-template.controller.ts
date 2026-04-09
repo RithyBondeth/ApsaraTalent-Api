@@ -4,7 +4,6 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/resume-builder-service.constant';
 import { CreateResumeTemplateDTO } from '../dtos/create-resume-template.dto';
 import { SearchTemplateDTO } from '../dtos/search-resume-template.dto';
-import { ResumeTemplateService } from '../services/resume-template.service';
 
 import {
   I_RESUME_TEMPLATE_SERVICE,

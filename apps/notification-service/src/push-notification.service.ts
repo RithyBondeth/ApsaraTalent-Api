@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
+import { PinoLogger } from 'nestjs-pino';
 
 type PushPayload = {
   title: string;
@@ -12,10 +13,13 @@ type PushPayload = {
 
 @Injectable()
 export class PushNotificationService {
-  private readonly logger = new Logger(PushNotificationService.name);
   private firebaseApp: admin.app.App | null = null;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly logger: PinoLogger,
+  ) {
+    this.logger.setContext(PushNotificationService.name);
     this.initializeFirebase();
   }
 
@@ -53,7 +57,7 @@ export class PushNotificationService {
         credential: admin.credential.cert(serviceAccount),
         projectId,
       });
-      this.logger.log(
+      this.logger.info(
         `Firebase Admin initialized for project ${projectId} with ${clientEmail}`,
       );
     } catch (error: any) {

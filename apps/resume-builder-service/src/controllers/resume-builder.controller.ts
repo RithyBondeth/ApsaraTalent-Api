@@ -3,7 +3,6 @@ import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/resume-builder-service.constant';
 import { BuildResumeDTO } from '../dtos/resume-builder.dto';
-import { ResumeBuilderService } from '../services/resume-builder.service';
 
 const BUILD_RESUME_PATTERN = { cmd: 'build-resume' } as const;
 const LEGACY_BUILD_RESUME_PATTERN = { cmd: 'build-resume ' } as const;

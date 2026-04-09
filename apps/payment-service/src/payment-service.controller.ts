@@ -9,7 +9,6 @@ import { GenerateDeepLinkDTO } from './dtos/generate-deeplink.dto';
 import { GenerateIndividualKhqrDTO } from './dtos/generate-individual-khqr.dto';
 import { GenerateMerchantKhqrDTO } from './dtos/generate-merchant-khqr.dto';
 import { VerifyKhqrDTO } from './dtos/verify-khqr.dto';
-import { PaymentServiceService } from './payment-service.service';
 
 import { IPaymentController } from '@app/contracts/interfaces/payment.interface';
 import {
@@ -18,10 +17,10 @@ import {
 } from '@app/contracts/interfaces/payment-service.interface';
 
 @Controller()
-export class PaymentServiceController implements IPaymentController {
+export class PaymentController implements IPaymentController {
   constructor(
     @Inject(I_PAYMENT_SERVICE)
-    private readonly paymentServiceService: IPaymentService,
+    private readonly paymentService: IPaymentService,
   ) {}
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.GENERATE_INDIVIDUAL_KHQR)
@@ -29,7 +28,7 @@ export class PaymentServiceController implements IPaymentController {
   async generateIndividualQr(
     @Payload() generateIndividualKhqrDTO: GenerateIndividualKhqrDTO,
   ): Promise<any> {
-    return this.paymentServiceService.generateIndividualKhqrDTO(
+    return this.paymentService.generateIndividualKhqrDTO(
       generateIndividualKhqrDTO,
     );
   }
@@ -39,40 +38,40 @@ export class PaymentServiceController implements IPaymentController {
   async generateMerchantQr(
     @Payload() generateMerchantKhqrDTO: GenerateMerchantKhqrDTO,
   ): Promise<any> {
-    return this.paymentServiceService.generateMerchantKhqrDTO(
+    return this.paymentService.generateMerchantKhqrDTO(
       generateMerchantKhqrDTO,
     );
   }
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.VERIFY_KHQR)
   async verifyKhqr(@Payload() verifyKhqrDTO: VerifyKhqrDTO): Promise<any> {
-    return this.paymentServiceService.verifyKhqr(verifyKhqrDTO);
+    return this.paymentService.verifyKhqr(verifyKhqrDTO);
   }
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.DECODE_KHQR)
   async decodeKhqr(@Payload() decodeKhqrDTO: DecodeKhqrDTO): Promise<any> {
-    return this.paymentServiceService.decodeKhqr(decodeKhqrDTO);
+    return this.paymentService.decodeKhqr(decodeKhqrDTO);
   }
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.GENERATE_DEEP_LINK)
   async generateDeepLink(
     @Payload() generateDeepLinkDTO: GenerateDeepLinkDTO,
   ): Promise<any> {
-    return this.paymentServiceService.generateDeepLink(generateDeepLinkDTO);
+    return this.paymentService.generateDeepLink(generateDeepLinkDTO);
   }
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.CHECK_PAYMENT_STATUS)
   async checkPaymentStatus(
     @Payload() checkPaymentStatusDTO: CheckPaymentStatusDTO,
   ): Promise<any> {
-    return this.paymentServiceService.checkPaymentStatus(checkPaymentStatusDTO);
+    return this.paymentService.checkPaymentStatus(checkPaymentStatusDTO);
   }
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.CHECK_PAYMENT_BULK_STATUS)
   async checkPaymentBulkStatus(
     @Payload() checkPaymentBulkStatusDTO: CheckPaymentBulkStatusDTO,
   ): Promise<any> {
-    return this.paymentServiceService.checkPaymentBulkStatus(
+    return this.paymentService.checkPaymentBulkStatus(
       checkPaymentBulkStatusDTO,
     );
   }

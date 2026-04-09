@@ -7,7 +7,6 @@ import {
   CountAllUsersResponseDTO,
   UserResponseDTO,
 } from '../dtos/user-response.dto';
-import { UserService } from '../services/user.service';
 
 import {
   I_USER_SERVICE,

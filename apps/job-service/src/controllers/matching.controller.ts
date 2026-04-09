@@ -4,7 +4,6 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
 import { JOB_SERVICE } from '@app/contracts/constants/job-service.constant';
 import { MatchDto } from '../dtos/match.dto';
-import { MatchingService } from '../services/matching.service';
 
 import {
   I_MATCHING_SERVICE,

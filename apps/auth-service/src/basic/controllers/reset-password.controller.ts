@@ -4,7 +4,6 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from '@app/contracts/constants/auth-service.constant';
 import { ResetPasswordResponseDTO } from '../dtos/reset-password-response.dto';
 import { ResetPasswordDTO } from '../dtos/reset-password.dto';
-import { ResetPasswordService } from '../services/reset-password.service';
 
 import {
   I_RESET_PASSWORD_SERVICE,

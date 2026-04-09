@@ -9,17 +9,16 @@ import { RedisService } from '@app/common/redis/redis.service';
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
+import { PinoLogger } from 'nestjs-pino';
 import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
 import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
 import { User } from '@app/common/database/entities/user.entity';
 
-import { Logger } from '@nestjs/common';
 import { IChatService } from '@app/contracts/interfaces/chat-service.interface';
 
 @Injectable()
-export class ChatServiceService implements IChatService {
-  private readonly logger = new Logger('ChatServiceService');
+export class ChatService implements IChatService {
   private static readonly UUID_REGEX =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -28,7 +27,10 @@ export class ChatServiceService implements IChatService {
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     @Inject(USER_SERVICE.NAME) private readonly userServiceClient: ClientProxy,
     private readonly redisService: RedisService,
-  ) {}
+    private readonly logger: PinoLogger,
+  ) {
+    this.logger.setContext(ChatService.name);
+  }
 
   /**
    * Resolves the User.id from any combination of:
@@ -60,7 +62,7 @@ export class ChatServiceService implements IChatService {
   }
 
   private isUuid(value: string): boolean {
-    return ChatServiceService.UUID_REGEX.test(value);
+    return ChatService.UUID_REGEX.test(value);
   }
 
   private async resolveUserIdSafe(id: string): Promise<string | null> {
@@ -145,7 +147,9 @@ export class ChatServiceService implements IChatService {
     try {
       const senderUserId = await this.resolveUserId(data.senderId);
       const receiverUserId = await this.resolveUserId(data.receiverId);
-      this.logger.log(`Creating message: ${senderUserId} -> ${receiverUserId}`);
+      this.logger.info(
+        `Creating message: ${senderUserId} -> ${receiverUserId}`,
+      );
 
       // Build entity — store replyToId and attachment if provided
       const message = this.chatRepository.create({
@@ -300,7 +304,7 @@ export class ChatServiceService implements IChatService {
       isEdited: true,
     });
 
-    this.logger.log(
+    this.logger.info(
       `[CHAT] Message ${data.messageId} edited by ${requesterUserId}`,
     );
 
@@ -336,7 +340,7 @@ export class ChatServiceService implements IChatService {
       });
     }
     await this.chatRepository.update(data.messageId, { isDeleted: true });
-    this.logger.log(
+    this.logger.info(
       `[CHAT] Message ${data.messageId} soft-deleted by ${requesterUserId}`,
     );
     return {
@@ -390,7 +394,7 @@ export class ChatServiceService implements IChatService {
     offset = Math.min(Math.max(0, offset), 10_000);
     const userId1 = await this.resolveUserId(u1);
     const userId2 = await this.resolveUserId(u2);
-    this.logger.log(`Fetching history: ${userId1} <-> ${userId2}`);
+    this.logger.info(`Fetching history: ${userId1} <-> ${userId2}`);
 
     const conditions = [];
     conditions.push({ sender: { id: userId1 }, receiver: { id: userId2 } });
@@ -531,7 +535,7 @@ export class ChatServiceService implements IChatService {
     const cached = await this.redisService.get<any[]>(cacheKey);
     if (cached) return cached;
 
-    this.logger.log(
+    this.logger.info(
       `Fetching recent chats for candidates: ${userIds.join(', ')} (original: ${u})`,
     );
 
