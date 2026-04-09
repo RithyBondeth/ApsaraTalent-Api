@@ -17,7 +17,11 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ChatGatewayService } from './chat-gateway.service';
 import { extractChatToken } from './utils/chat-token.util';
 import { isOriginAllowed } from '../utils/cors-origin.util';
-import { CHAT_ALLOW_ALL_CORS, CHAT_ALLOWED_ORIGINS } from '@app/contracts';
+import {
+  CHAT_ALLOW_ALL_CORS,
+  CHAT_ALLOWED_ORIGINS,
+  CHAT_WEBSOCKET_EVENTS,
+} from '@app/contracts';
 
 @WebSocketGateway({
   namespace: '/chat',
@@ -78,7 +82,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       );
 
       if (isNewOnline) {
-        this.server.emit('userStatus', {
+        this.server.emit(CHAT_WEBSOCKET_EVENTS.USER_STATUS, {
           userId: payload.id,
           status: 'online',
         });
@@ -104,7 +108,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     );
 
     if (isFullyOffline) {
-      this.server.emit('userStatus', { userId, status: 'offline' });
+      this.server.emit(CHAT_WEBSOCKET_EVENTS.USER_STATUS, {
+        userId,
+        status: 'offline',
+      });
       this.logger.log(
         `[WS] User fully offline: ${userId} (socket ${client.id})`,
       );
@@ -115,7 +122,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @SubscribeMessage('getOnlineUsers')
+  @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.GET_ONLINE_USERS)
   handleGetOnlineUsers(userIds: string[]): Record<string, boolean> {
     if (!Array.isArray(userIds)) return {};
 
@@ -132,7 +139,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return result;
   }
 
-  @SubscribeMessage('sendMessage')
+  @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.SEND_MESSAGE)
   async handleMessage(client: Socket, payload: TChatPayload): Promise<any> {
     this.logger.log(
       `[WS] sendMessage received from userId=${client.data.userId}, receiverId=${payload?.receiverId}, content.length=${payload?.content?.length}`,
@@ -175,7 +182,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       const usersData = await firstValueFrom(
-        this.chatServiceClient.send('validateChatUsers', {
+        this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.VALIDATE_CHAT_USERS, {
           senderId: client.data.userId,
           receiverId: payload.receiverId,
         }),
@@ -195,18 +202,25 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       };
 
       const savedMessage = await firstValueFrom(
-        this.chatServiceClient.send('createMessage', messagePayload),
+        this.chatServiceClient.send(
+          CHAT_SERVICE.ACTIONS.CREATE_MESSAGE,
+          messagePayload,
+        ),
       );
 
-      this.server.to(usersData.receiver.id).emit('newMessage', {
-        ...savedMessage,
-        isMe: false,
-      });
+      this.server
+        .to(usersData.receiver.id)
+        .emit(CHAT_WEBSOCKET_EVENTS.NEW_MESSAGE, {
+          ...savedMessage,
+          isMe: false,
+        });
 
-      this.server.to(usersData.sender.id).emit('newMessage', {
-        ...savedMessage,
-        isMe: true,
-      });
+      this.server
+        .to(usersData.sender.id)
+        .emit(CHAT_WEBSOCKET_EVENTS.NEW_MESSAGE, {
+          ...savedMessage,
+          isMe: true,
+        });
 
       void this.chatGatewayService.notifyChatMessage(this.server, {
         senderId: usersData.sender.id,
@@ -237,13 +251,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @SubscribeMessage('getRecentChats')
+  @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.GET_RECENT_CHATS)
   async handleGetRecentChats(client: Socket): Promise<any> {
     const userId = client.data.userId;
     try {
       this.logger.log(`[WS] Fetching recent chats for userId=${userId}`);
       const chats = await firstValueFrom(
-        this.chatServiceClient.send('getRecentChats', userId),
+        this.chatServiceClient.send(
+          CHAT_SERVICE.ACTIONS.GET_RECENT_CHATS,
+          userId,
+        ),
       );
       return chats;
     } catch (error: any) {
@@ -252,7 +269,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @SubscribeMessage('getChatHistory')
+  @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.GET_CHAT_HISTORY)
   async handleGetChatHistory(
     client: Socket,
     payload: { userId2: string; limit?: number; offset?: number },
@@ -263,7 +280,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         `[WS] Fetching history: user1=${userId1}, user2=${payload.userId2}`,
       );
       const history = await firstValueFrom(
-        this.chatServiceClient.send('getChatHistory', {
+        this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.GET_CHAT_HISTORY, {
           userId1,
           userId2: payload.userId2,
           limit: Math.min(Math.max(1, payload.limit || 50), 100),
@@ -277,12 +294,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @SubscribeMessage('getUnreadCount')
+  @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.GET_UNREAD_COUNT)
   async handleGetUnreadCount(client: Socket): Promise<{ unreadCount: number }> {
     const userId = client.data.userId;
     try {
       const count = await firstValueFrom(
-        this.chatServiceClient.send('getUnreadCount', userId),
+        this.chatServiceClient.send(
+          CHAT_SERVICE.ACTIONS.GET_UNREAD_COUNT,
+          userId,
+        ),
       );
       return { unreadCount: typeof count === 'number' ? count : 0 };
     } catch (error: any) {
@@ -291,7 +311,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @SubscribeMessage('markAsRead')
+  @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.MARK_AS_READ)
   async handleRead(
     client: Socket,
     payload: { messageId: string; senderId?: string } | string,
@@ -313,7 +333,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       await firstValueFrom(
-        this.chatServiceClient.send('markMessageRead', {
+        this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.MARK_MESSAGE_READ, {
           messageId,
           readerId: client.data.userId,
         }),
@@ -324,7 +344,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       );
 
       if (senderId) {
-        this.server.to(senderId).emit('messageRead', {
+        this.server.to(senderId).emit(CHAT_WEBSOCKET_EVENTS.MESSAGE_READ, {
           messageId,
           readerId: client.data.userId,
         });
@@ -338,7 +358,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @SubscribeMessage('typing')
+  @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.TYPING)
   async handleTyping(
     client: Socket,
     data: { receiverId: string; isTyping: boolean },
@@ -348,7 +368,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
     try {
-      this.server.to(data.receiverId).emit('userTyping', {
+      this.server.to(data.receiverId).emit(CHAT_WEBSOCKET_EVENTS.USER_TYPING, {
         userId: client.data.userId,
         isTyping: data.isTyping,
       });
@@ -360,7 +380,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @SubscribeMessage('react')
+  @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.REACT)
   async handleReaction(
     client: Socket,
     data: { messageId: string; receiverId: string; emoji: string | null },
@@ -371,7 +391,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       );
 
       const result = await firstValueFrom(
-        this.chatServiceClient.send('updateReaction', {
+        this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.UPDATE_REACTION, {
           messageId: data.messageId,
           userId: client.data.userId,
           emoji: data.emoji,
@@ -383,8 +403,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         reactions: result.reactions,
       };
 
-      this.server.to(client.data.userId).emit('messageReaction', payload);
-      this.server.to(data.receiverId).emit('messageReaction', payload);
+      this.server
+        .to(client.data.userId)
+        .emit(CHAT_WEBSOCKET_EVENTS.MESSAGE_REACTION, payload);
+      this.server
+        .to(data.receiverId)
+        .emit(CHAT_WEBSOCKET_EVENTS.MESSAGE_REACTION, payload);
 
       this.logger.log(
         `[WS] Reaction broadcasted for message ${data.messageId}`,
@@ -397,7 +421,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @SubscribeMessage('editMessage')
+  @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.EDIT_MESSAGE)
   async handleEditMessage(
     client: Socket,
     data: { messageId: string; receiverId: string; newContent: string },
@@ -420,7 +444,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     try {
       const result = await firstValueFrom(
-        this.chatServiceClient.send('editMessage', {
+        this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.EDIT_MESSAGE, {
           messageId: data.messageId,
           requesterId: client.data.userId,
           newContent: trimmed,
@@ -435,10 +459,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       this.server
         .to(client.data.userId)
-        .emit('messageEdited', broadcastPayload);
+        .emit(CHAT_WEBSOCKET_EVENTS.MESSAGE_EDITED, broadcastPayload);
 
       if (data.receiverId) {
-        this.server.to(data.receiverId).emit('messageEdited', broadcastPayload);
+        this.server
+          .to(data.receiverId)
+          .emit(CHAT_WEBSOCKET_EVENTS.MESSAGE_EDITED, broadcastPayload);
       }
 
       return result;
@@ -449,7 +475,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @SubscribeMessage('deleteMessage')
+  @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.DELETE_MESSAGE)
   async handleDeleteMessage(
     client: Socket,
     data: { messageId: string; receiverId: string },
@@ -466,7 +492,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     try {
       const result = await firstValueFrom(
-        this.chatServiceClient.send('deleteMessage', {
+        this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.DELETE_MESSAGE, {
           messageId: data.messageId,
           requesterId: client.data.userId,
         }),
@@ -476,12 +502,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       this.server
         .to(client.data.userId)
-        .emit('messageDeleted', broadcastPayload);
+        .emit(CHAT_WEBSOCKET_EVENTS.MESSAGE_DELETED, broadcastPayload);
 
       if (data.receiverId) {
         this.server
           .to(data.receiverId)
-          .emit('messageDeleted', broadcastPayload);
+          .emit(CHAT_WEBSOCKET_EVENTS.MESSAGE_DELETED, broadcastPayload);
       }
 
       return result;

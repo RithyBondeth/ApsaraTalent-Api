@@ -7,6 +7,7 @@ import { Server } from 'socket.io';
 import { User } from '@app/common/database/entities/user.entity';
 import { CHAT_SERVICE } from '@app/contracts/constants/chat-service.constant';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/notification.constant';
+import { CHAT_WEBSOCKET_EVENTS } from '@app/contracts';
 
 @Injectable()
 export class ChatGatewayService {
@@ -157,7 +158,9 @@ export class ChatGatewayService {
       );
 
       if (savedNotification?.id)
-        server.to(params.receiverId).emit('newNotification', savedNotification);
+        server
+          .to(params.receiverId)
+          .emit(CHAT_WEBSOCKET_EVENTS.NEW_NOTIFICATION, savedNotification);
     } catch (error: any) {
       this.logger.warn(
         `[WS] Failed to create chat notification: ${error?.message || 'Unknown error'}`,
@@ -175,7 +178,7 @@ export class ChatGatewayService {
   ) {
     try {
       const savedMessage = await firstValueFrom(
-        this.chatServiceClient.send('createMessage', {
+        this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.CREATE_MESSAGE, {
           senderId: params.senderId,
           receiverId: params.receiverId,
           content: params.content,
@@ -184,11 +187,11 @@ export class ChatGatewayService {
         }),
       );
 
-      server.to(params.receiverId).emit('newMessage', {
+      server.to(params.receiverId).emit(CHAT_WEBSOCKET_EVENTS.NEW_MESSAGE, {
         ...savedMessage,
         isMe: false,
       });
-      server.to(params.senderId).emit('newMessage', {
+      server.to(params.senderId).emit(CHAT_WEBSOCKET_EVENTS.NEW_MESSAGE, {
         ...savedMessage,
         isMe: true,
       });

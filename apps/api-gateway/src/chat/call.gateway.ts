@@ -5,7 +5,11 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ChatGatewayService } from './chat-gateway.service';
-import { CHAT_ALLOWED_ORIGINS, CHAT_ALLOW_ALL_CORS } from '@app/contracts';
+import {
+  CHAT_ALLOW_ALL_CORS,
+  CHAT_ALLOWED_ORIGINS,
+  CHAT_WEBSOCKET_EVENTS,
+} from '@app/contracts';
 import { isOriginAllowed } from '../utils/cors-origin.util';
 
 @WebSocketGateway({
@@ -27,7 +31,7 @@ export class CallGateway {
   @WebSocketServer() server: Server;
   constructor(private readonly chatGatewayService: ChatGatewayService) {}
 
-  @SubscribeMessage('callOffer')
+  @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.CALL_OFFER)
   async handleCallOffer(
     client: Socket,
     data: {
@@ -48,7 +52,7 @@ export class CallGateway {
     const callerId = client.data.userId as string;
     const profile = await this.chatGatewayService.getCallerProfile(callerId);
 
-    this.server.to(data.receiverId).emit('incomingCall', {
+    this.server.to(data.receiverId).emit(CHAT_WEBSOCKET_EVENTS.INCOMING_CALL, {
       callId: data.callId,
       callerId,
       callerName: profile.name,
@@ -59,7 +63,7 @@ export class CallGateway {
     return { success: true };
   }
 
-  @SubscribeMessage('callAnswer')
+  @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.CALL_ANSWER)
   async handleCallAnswer(
     client: Socket,
     data: {
@@ -77,7 +81,7 @@ export class CallGateway {
       return { success: false };
     }
 
-    this.server.to(data.callerId).emit('callAnswered', {
+    this.server.to(data.callerId).emit(CHAT_WEBSOCKET_EVENTS.CALL_ANSWERED, {
       callId: data.callId,
       answer: data.answer,
     });
@@ -85,7 +89,7 @@ export class CallGateway {
     return { success: true };
   }
 
-  @SubscribeMessage('iceCandidate')
+  @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.ICE_CANDIDATE)
   async handleIceCandidate(
     client: Socket,
     data: {
@@ -103,13 +107,15 @@ export class CallGateway {
       return;
     }
 
-    this.server.to(data.targetUserId).emit('remoteIceCandidate', {
-      callId: data.callId,
-      candidate: data.candidate,
-    });
+    this.server
+      .to(data.targetUserId)
+      .emit(CHAT_WEBSOCKET_EVENTS.REMOTE_ICE_CANDIDATE, {
+        callId: data.callId,
+        candidate: data.candidate,
+      });
   }
 
-  @SubscribeMessage('callDecline')
+  @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.CALL_DECLINE)
   async handleCallDecline(
     client: Socket,
     data: { callId: string; callerId: string },
@@ -123,9 +129,10 @@ export class CallGateway {
       return;
     }
 
-    this.server.to(data.callerId).emit('callDeclined', { callId: data.callId });
+    this.server
+      .to(data.callerId)
+      .emit(CHAT_WEBSOCKET_EVENTS.CALL_DECLINED, { callId: data.callId });
 
-    // Log a call message in chat history for both participants
     await this.chatGatewayService.emitCallLogMessage(this.server, {
       senderId: client.data.userId,
       receiverId: data.callerId,
@@ -133,7 +140,7 @@ export class CallGateway {
     });
   }
 
-  @SubscribeMessage('callEnd')
+  @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.CALL_END)
   async handleCallEnd(
     client: Socket,
     data: { callId: string; targetUserId: string; reason?: string },
@@ -147,7 +154,7 @@ export class CallGateway {
       return;
     }
 
-    this.server.to(data.targetUserId).emit('callEnded', {
+    this.server.to(data.targetUserId).emit(CHAT_WEBSOCKET_EVENTS.CALL_ENDED, {
       callId: data.callId,
       reason: data.reason,
     });

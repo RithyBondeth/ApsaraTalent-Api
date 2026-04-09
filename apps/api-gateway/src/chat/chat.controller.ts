@@ -29,7 +29,7 @@ export class ChatController implements IChatController {
     @Req() req: any,
   ): Promise<any> {
     return await firstValueFrom(
-      this.chatClient.send('createOrGetChat', {
+      this.chatClient.send(CHAT_SERVICE.ACTIONS.CREATE_OR_GET_CHAT, {
         senderId: req.user.id,
         receiverId: body.receiverId,
       }),
@@ -42,7 +42,7 @@ export class ChatController implements IChatController {
     try {
       const userId = req.user.id;
       return await firstValueFrom(
-        this.chatClient.send('getRecentChats', userId),
+        this.chatClient.send(CHAT_SERVICE.ACTIONS.GET_RECENT_CHATS, userId),
       );
     } catch (error) {
       console.error('Failed to getRecentChats:', error);

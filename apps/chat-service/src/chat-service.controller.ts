@@ -4,6 +4,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ChatServiceService } from './chat-service.service';
 
 import { IChatController } from '@app/contracts/interfaces/chat.interface';
+import { CHAT_SERVICE } from '@app/contracts/constants/chat-service.constant';
 import {
   I_CHAT_SERVICE,
   IChatService,
@@ -17,7 +18,7 @@ export class ChatServiceController implements IChatController {
     @Inject(I_CHAT_SERVICE) private readonly chatService: IChatService,
   ) {}
 
-  @MessagePattern('createOrGetChat')
+  @MessagePattern(CHAT_SERVICE.ACTIONS.CREATE_OR_GET_CHAT)
   async initiateChat(
     @Payload() payload: { senderId: string; receiverId: string },
   ) {
@@ -27,7 +28,7 @@ export class ChatServiceController implements IChatController {
     return this.chatService.createOrGetChat(payload);
   }
 
-  @MessagePattern('createMessage')
+  @MessagePattern(CHAT_SERVICE.ACTIONS.CREATE_MESSAGE)
   async createMessage(@Payload() data: TChatContent) {
     this.logger.log(
       `[CHAT] createMessage: sender=${data.senderId}, receiver=${data.receiverId}, content="${data.content}"`,
@@ -37,7 +38,7 @@ export class ChatServiceController implements IChatController {
     return result;
   }
 
-  @MessagePattern('markMessageRead')
+  @MessagePattern(CHAT_SERVICE.ACTIONS.MARK_MESSAGE_READ)
   async markAsRead(@Payload() data: { messageId: string; readerId: string }) {
     this.logger.log(
       `[CHAT] markAsRead: messageId=${data.messageId}, reader=${data.readerId}`,
@@ -45,13 +46,13 @@ export class ChatServiceController implements IChatController {
     return this.chatService.markAsRead(data);
   }
 
-  @MessagePattern('getUserByIdForChat')
+  @MessagePattern(CHAT_SERVICE.ACTIONS.GET_USER_BY_ID_FOR_CHAT)
   async getUserByIdForChat(@Payload() userId: string) {
     this.logger.log(`[CHAT] getUserByIdForChat: userId=${userId}`);
     return this.chatService.getUserByIdForChat(userId);
   }
 
-  @MessagePattern('validateChatUsers')
+  @MessagePattern(CHAT_SERVICE.ACTIONS.VALIDATE_CHAT_USERS)
   async validateChatUsers(
     @Payload() data: { senderId: string; receiverId: string },
   ) {
@@ -68,7 +69,7 @@ export class ChatServiceController implements IChatController {
     return result;
   }
 
-  @MessagePattern('getChatHistory')
+  @MessagePattern(CHAT_SERVICE.ACTIONS.GET_CHAT_HISTORY)
   async getChatHistory(
     @Payload()
     data: {
@@ -91,13 +92,13 @@ export class ChatServiceController implements IChatController {
     return result;
   }
 
-  @MessagePattern('getUnreadCount')
+  @MessagePattern(CHAT_SERVICE.ACTIONS.GET_UNREAD_COUNT)
   async getUnreadCount(@Payload() userId: string) {
     this.logger.log(`[CHAT] getUnreadCount: userId=${userId}`);
     return this.chatService.getUnreadCount(userId);
   }
 
-  @MessagePattern('getRecentChats')
+  @MessagePattern(CHAT_SERVICE.ACTIONS.GET_RECENT_CHATS)
   async getRecentChats(@Payload() userId: string) {
     this.logger.log(`[CHAT] getRecentChats: userId=${userId}`);
     const result = await this.chatService.getRecentChats(userId);
@@ -105,7 +106,7 @@ export class ChatServiceController implements IChatController {
     return result;
   }
 
-  @MessagePattern('updateReaction')
+  @MessagePattern(CHAT_SERVICE.ACTIONS.UPDATE_REACTION)
   async updateReaction(
     @Payload()
     data: {
@@ -130,7 +131,7 @@ export class ChatServiceController implements IChatController {
    * Only the original sender may edit; deleted messages cannot be edited.
    * Sets isEdited=true so the UI shows "(edited)" label.
    */
-  @MessagePattern('editMessage')
+  @MessagePattern(CHAT_SERVICE.ACTIONS.EDIT_MESSAGE)
   async editMessage(
     @Payload()
     data: {
@@ -150,7 +151,7 @@ export class ChatServiceController implements IChatController {
    * Only the original sender can delete; the row stays in the DB
    * with isDeleted=true so reply references and read receipts are preserved.
    */
-  @MessagePattern('deleteMessage')
+  @MessagePattern(CHAT_SERVICE.ACTIONS.DELETE_MESSAGE)
   async deleteMessage(
     @Payload() data: { messageId: string; requesterId: string },
   ) {
