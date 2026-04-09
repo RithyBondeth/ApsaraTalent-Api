@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
-import { buildPublicCallbackUrl } from './oauth-callback-url';
+import { buildPublicCallbackUrl } from '../shared/oauth-callback-url.util';
 
 @Injectable()
 export class FacebookAuthGuard extends AuthGuard('facebook') {

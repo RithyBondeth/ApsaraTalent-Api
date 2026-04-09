@@ -15,7 +15,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
 import { AUTH_SERVICE } from '@app/contracts/constants/auth-service.constant';
 import { LinkedInAuthGuard } from '../guards/linkedin-auth.guard';
-import { handleSocialAuthCallback } from '../utils/social-auth.util';
+import { handleSocialAuthCallback } from '../shared/social-auth-callback.helper';
 
 @Controller('social/linkedin')
 export class LinkedInController implements ILinkedInAuthController {

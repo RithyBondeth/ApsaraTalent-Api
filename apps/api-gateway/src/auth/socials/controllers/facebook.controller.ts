@@ -15,7 +15,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
 import { AUTH_SERVICE } from '@app/contracts/constants/auth-service.constant';
 import { FacebookAuthGuard } from '../guards/facebook-auth.guard';
-import { handleSocialAuthCallback } from '../utils/social-auth.util';
+import { handleSocialAuthCallback } from '../shared/social-auth-callback.helper';
 
 @Controller('social/facebook')
 export class FacebookController implements IFacebookAuthController {

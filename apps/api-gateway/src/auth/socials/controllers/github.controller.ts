@@ -15,7 +15,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
 import { AUTH_SERVICE } from '@app/contracts/constants/auth-service.constant';
 import { GithubAuthGuard } from '../guards/github-auth.guard';
-import { handleSocialAuthCallback } from '../utils/social-auth.util';
+import { handleSocialAuthCallback } from '../shared/social-auth-callback.helper';
 
 @Controller('social/github')
 export class GithubController implements IGithubAuthController {
