@@ -1,3 +1,7 @@
+import {
+  HEALTH_DATABASE_TIMEOUT_MS,
+  HEALTH_MICROSERVICE_TIMEOUT_MS,
+} from '@app/common';
 import { AUTH_SERVICE, HEALTH_PATTERN, USER_SERVICE } from '@app/contracts/constants';
 import { Controller } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -8,9 +12,6 @@ import {
   MicroserviceHealthIndicator,
   TypeOrmHealthIndicator,
 } from '@nestjs/terminus';
-
-const DATABASE_TIMEOUT_MS = 2500;
-const MICROSERVICE_TIMEOUT_MS = 2500;
 
 @Controller()
 export class AuthHealthController {
@@ -26,12 +27,12 @@ export class AuthHealthController {
     return this.health.check([
       () =>
         this.database.pingCheck('database', {
-          timeout: DATABASE_TIMEOUT_MS,
+          timeout: HEALTH_DATABASE_TIMEOUT_MS,
         }),
       () =>
         this.microservice.pingCheck(USER_SERVICE.NAME, {
           transport: Transport.TCP,
-          timeout: MICROSERVICE_TIMEOUT_MS,
+          timeout: HEALTH_MICROSERVICE_TIMEOUT_MS,
           options: {
             host: this.configService.get<string>('services.user.host'),
             port: this.configService.get<number>('services.user.port'),

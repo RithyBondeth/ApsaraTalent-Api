@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { HEALTH_RPC_TIMEOUT_MS } from '@app/common';
 import {
   AUTH_SERVICE,
   CHAT_SERVICE,
@@ -16,8 +17,6 @@ import {
   type HealthIndicatorResult,
 } from '@nestjs/terminus';
 import { firstValueFrom, timeout } from 'rxjs';
-
-const RPC_TIMEOUT_MS = 4000;
 
 @Injectable()
 export class InternalServiceHealthIndicator {
@@ -59,7 +58,7 @@ export class InternalServiceHealthIndicator {
 
     try {
       const response = await firstValueFrom(
-        client.send(HEALTH_PATTERN, {}).pipe(timeout(RPC_TIMEOUT_MS)),
+        client.send(HEALTH_PATTERN, {}).pipe(timeout(HEALTH_RPC_TIMEOUT_MS)),
       );
 
       if (!response || response.status !== 'ok') {

@@ -1,6 +1,10 @@
 import { CACHE_MANAGER, type Cache } from '@nestjs/cache-manager';
 import { Inject, Injectable } from '@nestjs/common';
 import {
+  HEALTH_CACHE_PROBE_PREFIX,
+  HEALTH_CACHE_PROBE_TTL_SECONDS,
+} from '../constants';
+import {
   HealthCheckError,
   HealthIndicatorService,
   type HealthIndicatorResult,
@@ -17,11 +21,17 @@ export class RedisCacheHealthIndicator {
     key: Key,
   ): Promise<HealthIndicatorResult<Key>> {
     const indicator = this.healthIndicatorService.check(key);
-    const probeKey = `health:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+    const probeKey = `${HEALTH_CACHE_PROBE_PREFIX}:${Date.now()}:${Math.random()
+      .toString(36)
+      .slice(2)}`;
     const probeValue = 'ok';
 
     try {
-      await this.cacheManager.set(probeKey, probeValue, 5);
+      await this.cacheManager.set(
+        probeKey,
+        probeValue,
+        HEALTH_CACHE_PROBE_TTL_SECONDS,
+      );
       const storedValue = await this.cacheManager.get<string>(probeKey);
       await this.cacheManager.del(probeKey);
 

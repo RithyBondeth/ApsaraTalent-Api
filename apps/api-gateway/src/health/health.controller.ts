@@ -14,10 +14,12 @@ import {
   USER_SERVICE,
 } from '@app/contracts/constants';
 import { IHealthController } from '@app/contracts/interfaces/health.interface';
-import { RedisCacheHealthIndicator } from '@app/common';
+import {
+  HEALTH_DATABASE_TIMEOUT_MS,
+  RedisCacheHealthIndicator,
+} from '@app/common';
 import { InternalServiceHealthIndicator } from './indicators/internal-service.health';
 
-const DATABASE_TIMEOUT_MS = 2500;
 const INTERNAL_SERVICES = [
   AUTH_SERVICE.NAME,
   USER_SERVICE.NAME,
@@ -63,7 +65,7 @@ export class HealthController implements IHealthController {
     return this.health.check([
       () =>
         this.database.pingCheck('database', {
-          timeout: DATABASE_TIMEOUT_MS,
+          timeout: HEALTH_DATABASE_TIMEOUT_MS,
         }),
       () => this.redisCache.pingCheck('redis_cache'),
       ...INTERNAL_SERVICES.map((service) => () =>

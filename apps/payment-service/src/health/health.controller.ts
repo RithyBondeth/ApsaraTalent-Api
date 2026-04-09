@@ -1,11 +1,12 @@
-import { ConfigValuesHealthIndicator } from '@app/common';
+import {
+  ConfigValuesHealthIndicator,
+  HEALTH_DATABASE_TIMEOUT_MS,
+} from '@app/common';
 import { HEALTH_PATTERN } from '@app/contracts/constants';
 import { Controller } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MessagePattern } from '@nestjs/microservices';
 import { HealthCheckService, TypeOrmHealthIndicator } from '@nestjs/terminus';
-
-const DATABASE_TIMEOUT_MS = 2500;
 
 @Controller()
 export class PaymentHealthController {
@@ -21,7 +22,7 @@ export class PaymentHealthController {
     return this.health.check([
       () =>
         this.database.pingCheck('database', {
-          timeout: DATABASE_TIMEOUT_MS,
+          timeout: HEALTH_DATABASE_TIMEOUT_MS,
         }),
       () =>
         this.configHealth.check('bakong_config', {

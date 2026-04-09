@@ -1,4 +1,5 @@
 import { HEALTH_PATTERN } from '@app/contracts/constants';
+import { HEALTH_DATABASE_TIMEOUT_MS } from '@app/common';
 import { Controller } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import {
@@ -8,8 +9,6 @@ import {
   TypeOrmHealthIndicator,
 } from '@nestjs/terminus';
 import { PushNotificationService } from '../push-notification.service';
-
-const DATABASE_TIMEOUT_MS = 2500;
 
 @Controller()
 export class NotificationHealthController {
@@ -25,7 +24,7 @@ export class NotificationHealthController {
     return this.health.check([
       () =>
         this.database.pingCheck('database', {
-          timeout: DATABASE_TIMEOUT_MS,
+          timeout: HEALTH_DATABASE_TIMEOUT_MS,
         }),
       () => this.checkFirebaseHealth(),
     ]);

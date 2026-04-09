@@ -1,10 +1,11 @@
-import { RedisCacheHealthIndicator } from '@app/common';
+import {
+  HEALTH_DATABASE_TIMEOUT_MS,
+  RedisCacheHealthIndicator,
+} from '@app/common';
 import { HEALTH_PATTERN } from '@app/contracts/constants';
 import { Controller } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import { HealthCheckService, TypeOrmHealthIndicator } from '@nestjs/terminus';
-
-const DATABASE_TIMEOUT_MS = 2500;
 
 @Controller()
 export class ResumeHealthController {
@@ -19,7 +20,7 @@ export class ResumeHealthController {
     return this.health.check([
       () =>
         this.database.pingCheck('database', {
-          timeout: DATABASE_TIMEOUT_MS,
+          timeout: HEALTH_DATABASE_TIMEOUT_MS,
         }),
       () => this.redisCache.pingCheck('redis_cache'),
     ]);
