@@ -1,4 +1,3 @@
-import { Logger } from '@nestjs/common';
 import {
   SubscribeMessage,
   WebSocketGateway,
@@ -6,16 +5,8 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ChatGatewayService } from './chat-gateway.service';
-import {
-  isOriginAllowed,
-  parseAllowedOrigins,
-} from '../utils/cors-origin.util';
-
-const CHAT_ALLOWED_ORIGINS = parseAllowedOrigins(
-  process.env.ALLOWED_ORIGINS,
-  process.env.FRONTEND_ORIGIN,
-);
-const CHAT_ALLOW_ALL_CORS = process.env.CORS_ALLOW_ALL === 'true';
+import { CHAT_ALLOWED_ORIGINS, CHAT_ALLOW_ALL_CORS } from '@app/contracts';
+import { isOriginAllowed } from '../utils/cors-origin.util';
 
 @WebSocketGateway({
   namespace: '/chat',
@@ -25,22 +16,15 @@ const CHAT_ALLOW_ALL_CORS = process.env.CORS_ALLOW_ALL === 'true';
       origin: string,
       callback: (err: Error | null, allow: boolean) => void,
     ) => {
-      if (
-        CHAT_ALLOW_ALL_CORS ||
-        isOriginAllowed(origin, CHAT_ALLOWED_ORIGINS)
-      ) {
+      if (CHAT_ALLOW_ALL_CORS || isOriginAllowed(origin, CHAT_ALLOWED_ORIGINS))
         callback(null, true);
-      } else {
-        callback(new Error(`CORS: origin ${origin} not allowed`), false);
-      }
+      else callback(new Error(`CORS: origin ${origin} not allowed`), false);
     },
     credentials: true,
   },
 })
 export class CallGateway {
   @WebSocketServer() server: Server;
-  private logger = new Logger('CallGateway');
-
   constructor(private readonly chatGatewayService: ChatGatewayService) {}
 
   @SubscribeMessage('callOffer')
@@ -49,16 +33,16 @@ export class CallGateway {
     data: {
       callId: string;
       receiverId: string;
-      offer: any; // RTCSessionDescriptionInit
+      offer: any;
     },
-  ) {
+  ): Promise<{ success: boolean }> {
     if (!client.data.userId) {
       client.emit('error', { message: 'Unauthorized' });
-      return;
+      return { success: false };
     }
     if (!data?.callId || !data?.receiverId || !data?.offer) {
       client.emit('error', { message: 'Invalid call offer payload' });
-      return;
+      return { success: false };
     }
 
     const callerId = client.data.userId as string;
@@ -81,16 +65,16 @@ export class CallGateway {
     data: {
       callId: string;
       callerId: string;
-      answer: any; // RTCSessionDescriptionInit
+      answer: any;
     },
-  ) {
+  ): Promise<{ success: boolean }> {
     if (!client.data.userId) {
       client.emit('error', { message: 'Unauthorized' });
-      return;
+      return { success: false };
     }
     if (!data?.callId || !data?.callerId || !data?.answer) {
       client.emit('error', { message: 'Invalid call answer payload' });
-      return;
+      return { success: false };
     }
 
     this.server.to(data.callerId).emit('callAnswered', {
@@ -107,9 +91,9 @@ export class CallGateway {
     data: {
       callId: string;
       targetUserId: string;
-      candidate: any; // RTCIceCandidateInit
+      candidate: any;
     },
-  ) {
+  ): Promise<any> {
     if (!client.data.userId) {
       client.emit('error', { message: 'Unauthorized' });
       return;
@@ -129,7 +113,7 @@ export class CallGateway {
   async handleCallDecline(
     client: Socket,
     data: { callId: string; callerId: string },
-  ) {
+  ): Promise<any> {
     if (!client.data.userId) {
       client.emit('error', { message: 'Unauthorized' });
       return;
@@ -153,7 +137,7 @@ export class CallGateway {
   async handleCallEnd(
     client: Socket,
     data: { callId: string; targetUserId: string; reason?: string },
-  ) {
+  ): Promise<any> {
     if (!client.data.userId) {
       client.emit('error', { message: 'Unauthorized' });
       return;

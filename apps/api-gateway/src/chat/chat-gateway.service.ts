@@ -27,7 +27,7 @@ export class ChatGatewayService {
     @InjectRepository(User) private readonly userRepository: Repository<User>,
   ) {}
 
-  getConnectedUsers() {
+  getConnectedUsers(): Map<string, Set<string>> {
     return this.connectedUsers;
   }
 
@@ -37,9 +37,9 @@ export class ChatGatewayService {
   }
 
   addSocket(userId: string, socketId: string): boolean {
-    if (!this.connectedUsers.has(userId)) {
+    if (!this.connectedUsers.has(userId))
       this.connectedUsers.set(userId, new Set());
-    }
+
     const sockets = this.connectedUsers.get(userId)!;
     const isNewOnline = sockets.size === 0;
     sockets.add(socketId);
@@ -105,9 +105,8 @@ export class ChatGatewayService {
     if (type === 'call') return 'Call';
 
     const trimmed = params.content?.trim() ?? '';
-    if (!trimmed && params.hasAttachment) {
+    if (!trimmed && params.hasAttachment)
       return params.attachmentFilename || 'Attachment';
-    }
     if (!trimmed) return 'New message';
 
     return trimmed.length > 140 ? `${trimmed.slice(0, 140)}...` : trimmed;
@@ -157,9 +156,8 @@ export class ChatGatewayService {
         ),
       );
 
-      if (savedNotification?.id) {
+      if (savedNotification?.id)
         server.to(params.receiverId).emit('newNotification', savedNotification);
-      }
     } catch (error: any) {
       this.logger.warn(
         `[WS] Failed to create chat notification: ${error?.message || 'Unknown error'}`,

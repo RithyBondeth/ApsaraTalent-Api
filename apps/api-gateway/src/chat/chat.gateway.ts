@@ -16,16 +16,8 @@ import { CHAT_SERVICE } from '@app/contracts/constants/chat-service.constant';
 import { ClientProxy } from '@nestjs/microservices';
 import { ChatGatewayService } from './chat-gateway.service';
 import { extractChatToken } from './utils/chat-token.util';
-import {
-  isOriginAllowed,
-  parseAllowedOrigins,
-} from '../utils/cors-origin.util';
-
-const CHAT_ALLOWED_ORIGINS = parseAllowedOrigins(
-  process.env.ALLOWED_ORIGINS,
-  process.env.FRONTEND_ORIGIN,
-);
-const CHAT_ALLOW_ALL_CORS = process.env.CORS_ALLOW_ALL === 'true';
+import { isOriginAllowed } from '../utils/cors-origin.util';
+import { CHAT_ALLOW_ALL_CORS, CHAT_ALLOWED_ORIGINS } from '@app/contracts';
 
 @WebSocketGateway({
   namespace: '/chat',
@@ -35,14 +27,9 @@ const CHAT_ALLOW_ALL_CORS = process.env.CORS_ALLOW_ALL === 'true';
       origin: string,
       callback: (err: Error | null, allow: boolean) => void,
     ) => {
-      if (
-        CHAT_ALLOW_ALL_CORS ||
-        isOriginAllowed(origin, CHAT_ALLOWED_ORIGINS)
-      ) {
+      if (CHAT_ALLOW_ALL_CORS || isOriginAllowed(origin, CHAT_ALLOWED_ORIGINS))
         callback(null, true);
-      } else {
-        callback(new Error(`CORS: origin ${origin} not allowed`), false);
-      }
+      else callback(new Error(`CORS: origin ${origin} not allowed`), false);
     },
     credentials: true,
   },
@@ -60,7 +47,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @Inject(CHAT_SERVICE.NAME) private readonly chatServiceClient: ClientProxy,
   ) {}
 
-  async handleConnection(client: Socket) {
+  async handleConnection(client: Socket): Promise<void> {
     this.logger.log(`[WS] New connection attempt: socketId=${client.id}`);
     try {
       const token = extractChatToken(client);
@@ -98,16 +85,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       this.logger.log(
-        `[WS] ✅ User connected: userId=${payload.id}, socketId=${client.id}`,
+        `[WS] User connected: userId=${payload.id}, socketId=${client.id}`,
       );
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      this.logger.error(`[WS] ❌ Connection handler error: ${errorMessage}`);
+      this.logger.error(`[WS] Connection handler error: ${errorMessage}`);
       client.disconnect(true);
     }
   }
 
-  async handleDisconnect(client: Socket) {
+  async handleDisconnect(client: Socket): Promise<void> {
     const userId = client.data.userId;
     if (!userId) return;
 
@@ -129,10 +116,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('getOnlineUsers')
-  handleGetOnlineUsers(
-    client: Socket,
-    userIds: string[],
-  ): Record<string, boolean> {
+  handleGetOnlineUsers(userIds: string[]): Record<string, boolean> {
     if (!Array.isArray(userIds)) return {};
 
     const result: Record<string, boolean> = {};
@@ -149,9 +133,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('sendMessage')
-  async handleMessage(client: Socket, payload: TChatPayload) {
+  async handleMessage(client: Socket, payload: TChatPayload): Promise<any> {
     this.logger.log(
-      `[WS] 📨 sendMessage received from userId=${client.data.userId}, receiverId=${payload?.receiverId}, content.length=${payload?.content?.length}`,
+      `[WS] sendMessage received from userId=${client.data.userId}, receiverId=${payload?.receiverId}, content.length=${payload?.content?.length}`,
     );
     try {
       if (!client.data.userId) {
@@ -254,7 +238,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('getRecentChats')
-  async handleGetRecentChats(client: Socket) {
+  async handleGetRecentChats(client: Socket): Promise<any> {
     const userId = client.data.userId;
     try {
       this.logger.log(`[WS] Fetching recent chats for userId=${userId}`);
@@ -272,7 +256,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleGetChatHistory(
     client: Socket,
     payload: { userId2: string; limit?: number; offset?: number },
-  ) {
+  ): Promise<any> {
     const userId1 = client.data.userId;
     try {
       this.logger.log(
@@ -294,7 +278,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('getUnreadCount')
-  async handleGetUnreadCount(client: Socket) {
+  async handleGetUnreadCount(client: Socket): Promise<{ unreadCount: number }> {
     const userId = client.data.userId;
     try {
       const count = await firstValueFrom(
@@ -311,7 +295,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleRead(
     client: Socket,
     payload: { messageId: string; senderId?: string } | string,
-  ) {
+  ): Promise<{ success: boolean; messageId: string }> {
     try {
       if (!client.data.userId) {
         client.emit('error', { message: 'Unauthorized' });
@@ -358,7 +342,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleTyping(
     client: Socket,
     data: { receiverId: string; isTyping: boolean },
-  ) {
+  ): Promise<void> {
     if (!data?.receiverId || typeof data.isTyping !== 'boolean') {
       client.emit('error', { message: 'Invalid typing payload' });
       return;
@@ -380,7 +364,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleReaction(
     client: Socket,
     data: { messageId: string; receiverId: string; emoji: string | null },
-  ) {
+  ): Promise<void> {
     try {
       this.logger.log(
         `[WS] Reaction received: messageId=${data.messageId}, userId=${client.data.userId}, emoji=${data.emoji}`,
@@ -403,7 +387,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server.to(data.receiverId).emit('messageReaction', payload);
 
       this.logger.log(
-        `[WS] ✅ Reaction broadcasted for message ${data.messageId}`,
+        `[WS] Reaction broadcasted for message ${data.messageId}`,
       );
     } catch (error) {
       const errorMessage =
@@ -417,7 +401,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleEditMessage(
     client: Socket,
     data: { messageId: string; receiverId: string; newContent: string },
-  ) {
+  ): Promise<void> {
     if (!client.data.userId) {
       client.emit('error', { message: 'Unauthorized' });
       return;
@@ -469,7 +453,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleDeleteMessage(
     client: Socket,
     data: { messageId: string; receiverId: string },
-  ) {
+  ): Promise<void> {
     if (!client.data.userId) {
       client.emit('error', { message: 'Unauthorized' });
       return;
