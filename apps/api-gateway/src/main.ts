@@ -2,7 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { RequestMethod, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -23,13 +23,6 @@ async function bootstrap() {
   // =========================================================
   // 1. GLOBAL CONFIGURATION
   // =========================================================
-
-  // Set global prefix for all routes (e.g., /api/v1/user)
-  // Exclude social OAuth routes — they use browser redirects (not Axios)
-  // and their callback URLs must remain stable for OAuth provider configs.
-  app.setGlobalPrefix('api/v1', {
-    exclude: [{ path: 'social/(.*)', method: RequestMethod.ALL }],
-  });
 
   // Ensure request payload validation and transformation via DTOs
   app.useGlobalPipes(
