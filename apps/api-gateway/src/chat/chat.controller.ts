@@ -5,6 +5,7 @@ import {
   Controller,
   Get,
   Inject,
+  Logger,
   Post,
   Req,
   UploadedFile,
@@ -20,6 +21,8 @@ import { IChatController } from '@app/contracts/interfaces/chat.interface';
 
 @Controller('chat')
 export class ChatController implements IChatController {
+  private readonly logger = new Logger(ChatController.name);
+
   constructor(@Inject(CHAT_SERVICE.NAME) private chatClient: ClientProxy) {}
 
   @Post('initiate')
@@ -44,8 +47,10 @@ export class ChatController implements IChatController {
       return await firstValueFrom(
         this.chatClient.send(CHAT_SERVICE.ACTIONS.GET_RECENT_CHATS, userId),
       );
-    } catch (error) {
-      console.error('Failed to getRecentChats:', error);
+    } catch (error: any) {
+      this.logger.error(
+        `Failed to getRecentChats: ${error?.message || 'Unknown'}`,
+      );
       throw error;
     }
   }

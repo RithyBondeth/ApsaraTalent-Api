@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService as NestJwtService } from '@nestjs/jwt';
 import { StringValue } from 'ms';
 import { IPayload } from './interfaces/payload.interface';
 @Injectable()
 export class JwtService {
+  private readonly logger = new Logger(JwtService.name);
+
   constructor(
     private readonly jwtService: NestJwtService,
     private readonly configService: ConfigService,
@@ -39,7 +41,7 @@ export class JwtService {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      console.error(errorMessage);
+      this.logger.error(errorMessage);
       throw new Error(errorMessage);
     }
   }
@@ -52,7 +54,7 @@ export class JwtService {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      console.error(errorMessage);
+      this.logger.error(errorMessage);
       throw new Error(errorMessage);
     }
   }
@@ -66,7 +68,7 @@ export class JwtService {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      console.error(errorMessage);
+      this.logger.error(errorMessage);
       throw new Error(errorMessage);
     }
   }
