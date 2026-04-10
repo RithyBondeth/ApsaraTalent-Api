@@ -3,7 +3,7 @@ import { IJobController } from '@app/contracts/interfaces/job-controller.interfa
 import { Controller, Get, Inject, Query, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { JOB_SERVICE } from '@app/contracts/constants/job-service.constant';
+import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
 
 @Controller('job')
 @UseGuards(AuthGuard)

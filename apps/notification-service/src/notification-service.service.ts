@@ -16,7 +16,7 @@ import { Repository } from 'typeorm';
 import { PushNotificationService } from './push-notification.service';
 
 import { INotificationService } from '@app/contracts/interfaces/notification-service.interface';
-import { NOTIFICATION } from '@app/contracts/constants/notification.constant';
+import { NOTIFICATION } from '@app/contracts/constants/domain/notification.constant';
 
 @Injectable()
 export class NotificationService implements INotificationService {

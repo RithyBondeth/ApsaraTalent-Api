@@ -1,6 +1,6 @@
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { PAYMENT_SERVICE } from '@app/contracts/constants/payment-service.constant';
+import { PAYMENT_SERVICE } from '@app/contracts/constants/service-actions/payment-service.constant';
 import { RateLimit } from './decorators/rate-limit.decorator';
 import { CheckPaymentBulkStatusDTO } from './dtos/check-payment-bulk-status.dto';
 import { CheckPaymentStatusDTO } from './dtos/check-payment-status.dto';

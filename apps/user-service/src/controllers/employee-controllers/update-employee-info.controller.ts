@@ -1,7 +1,7 @@
 import { IUpdateEmployeeController } from '@app/contracts/interfaces/employee-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { UpdateEmployeeInfoDTO } from '../../dtos/employee/update-employee-info.dto';
 import { UpdateEmployeeInfoService } from '../../services/employee-services/update-employee-info.service';
 

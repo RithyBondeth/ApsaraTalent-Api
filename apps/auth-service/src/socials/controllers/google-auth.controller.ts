@@ -1,6 +1,6 @@
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { AUTH_SERVICE } from '@app/contracts/constants/auth-service.constant';
+import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
 import { GoogleAuthDTO } from '../dtos/google-auth.dto';
 
 import { IGoogleAuthMicroserviceController } from '@app/contracts/interfaces/auth-controller.interface';

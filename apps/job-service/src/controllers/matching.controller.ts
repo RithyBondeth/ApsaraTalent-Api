@@ -2,7 +2,7 @@ import { IMatchingController } from '@app/contracts/interfaces/job-controller.in
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
-import { JOB_SERVICE } from '@app/contracts/constants/job-service.constant';
+import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
 import { MatchDto } from '../dtos/match.dto';
 
 import {

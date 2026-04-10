@@ -1,6 +1,6 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
-import { JOB_SERVICE } from '@app/contracts/constants/job-service.constant';
-import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
+import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { IInterviewController } from '@app/contracts/interfaces/job-controller.interface';
 import {
   CreateInterviewDto,

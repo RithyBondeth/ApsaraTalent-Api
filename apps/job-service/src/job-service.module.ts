@@ -21,7 +21,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { TerminusModule } from '@nestjs/terminus';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { NOTIFICATION_SERVICE } from '@app/contracts/constants/notification.constant';
+import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 import { JobHealthController } from './health/health.controller';
 import { InterviewController } from './controllers/interview.controller';
 import { JobController } from './controllers/job-service.controller';

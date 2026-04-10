@@ -1,6 +1,6 @@
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { OpenPositionService } from '../../services/company-services/open-position.service';
 
 import { IOpenPositionController } from '@app/contracts/interfaces/company.interface';

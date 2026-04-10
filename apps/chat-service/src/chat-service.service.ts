@@ -12,11 +12,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
-import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { User } from '@app/common/database/entities/user.entity';
 
 import { IChatService } from '@app/contracts/interfaces/chat-service.interface';
-import { CHAT } from '@app/contracts/constants/chat.constant';
+import { CHAT } from '@app/contracts/constants/domain/chat.constant';
 
 const UNREAD_COUNT_TTL = 15_000; // 15s
 const RECENT_CHATS_TTL = 30_000; // 30s

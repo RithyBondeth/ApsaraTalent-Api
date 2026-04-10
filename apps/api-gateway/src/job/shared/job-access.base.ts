@@ -1,4 +1,4 @@
-import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { ForbiddenException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';

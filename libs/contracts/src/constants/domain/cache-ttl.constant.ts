@@ -1,9 +1,3 @@
-/**
- * Shared cache TTL constants (in milliseconds).
- *
- * Use these instead of inline magic numbers so TTL policy
- * changes only need to happen in one place.
- */
 export const CACHE_TTL = {
   /** 1 minute — search results, frequently changing data */
   SHORT: 60_000,

@@ -1,7 +1,7 @@
 import { IResumeBuilderController } from '@app/contracts/interfaces/resume-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/resume-builder-service.constant';
+import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/service-actions/resume-builder-service.constant';
 import { BuildResumeDTO } from '../dtos/resume-builder.dto';
 
 const BUILD_RESUME_PATTERN = { cmd: 'build-resume' } as const;

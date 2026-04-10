@@ -8,7 +8,7 @@ import { BuildResumeDTO } from '../dtos/resume-builder.dto';
 import { ImageService } from './image.service';
 
 import { IResumeBuilderService } from '@app/contracts/interfaces/resume-builder-service.interface';
-import { RESUME } from '@app/contracts/constants/resume-builder-service.constant';
+import { RESUME } from '@app/contracts/constants/domain/resume.constant';
 
 @Injectable()
 export class ResumeBuilderService implements IResumeBuilderService {

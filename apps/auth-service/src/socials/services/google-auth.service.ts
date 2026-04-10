@@ -8,11 +8,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { firstValueFrom, timeout } from 'rxjs';
 import { Repository } from 'typeorm';
-import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { GoogleAuthDTO } from '../dtos/google-auth.dto';
 
 import { IGoogleAuthService } from '@app/contracts/interfaces/auth-service.interface';
-import { AUTH } from '@app/contracts/constants/auth.constant';
+import { AUTH } from '@app/contracts/constants/domain/auth.constant';
 
 @Injectable()
 export class GoogleAuthService implements IGoogleAuthService {

@@ -5,8 +5,8 @@ import { Repository } from 'typeorm';
 import { firstValueFrom } from 'rxjs';
 import { Server } from 'socket.io';
 import { User } from '@app/common/database/entities/user.entity';
-import { CHAT_SERVICE } from '@app/contracts/constants/chat-service.constant';
-import { NOTIFICATION_SERVICE } from '@app/contracts/constants/notification.constant';
+import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-service.constant';
+import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 import { CHAT, CHAT_WEBSOCKET_EVENTS } from '@app/contracts';
 
 @Injectable()

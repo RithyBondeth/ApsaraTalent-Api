@@ -1,7 +1,4 @@
-import {
-  ACCESS_TOKEN_MAX_AGE,
-  REFRESH_TOKEN_MAX_AGE,
-} from '@app/contracts/constants/auth.constant';
+import { AUTH } from '@app/contracts/constants/domain/auth.constant';
 import {
   TSetAuthTokenCookiesOptions,
   TSetRememberCookieOptions,
@@ -17,8 +14,8 @@ export function setAuthTokenCookies(
   {
     accessToken,
     refreshToken,
-    accessMaxAge = ACCESS_TOKEN_MAX_AGE,
-    refreshMaxAge = REFRESH_TOKEN_MAX_AGE,
+    accessMaxAge = AUTH.TOKEN_MAXAGE,
+    refreshMaxAge = AUTH.REMEMBER_ME_MAXAGE,
     isProduction = isProductionEnvironment(),
   }: TSetAuthTokenCookiesOptions,
 ): void {

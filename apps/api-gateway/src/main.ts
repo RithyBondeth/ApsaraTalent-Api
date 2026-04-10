@@ -12,7 +12,7 @@ import passport from 'passport';
 import { Logger } from 'nestjs-pino';
 import { join } from 'path';
 import { ApiGatewayModule } from './api-gateway.module';
-import { AUTH } from '@app/contracts/constants/auth.constant';
+import { AUTH } from '@app/contracts/constants/domain/auth.constant';
 import { isOriginAllowed, parseAllowedOrigins } from './utils/cors-origin.util';
 
 async function bootstrap() {

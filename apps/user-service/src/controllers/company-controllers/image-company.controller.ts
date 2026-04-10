@@ -1,7 +1,7 @@
 import { IImageCompanyController } from '@app/contracts/interfaces/company.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import {
   I_IMAGE_COMPANY_SERVICE,
   IImageCompanyService,

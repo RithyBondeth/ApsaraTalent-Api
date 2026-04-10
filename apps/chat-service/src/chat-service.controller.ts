@@ -4,7 +4,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PinoLogger } from 'nestjs-pino';
 
 import { IChatController } from '@app/contracts/interfaces/chat.interface';
-import { CHAT_SERVICE } from '@app/contracts/constants/chat-service.constant';
+import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-service.constant';
 import {
   I_CHAT_SERVICE,
   IChatService,

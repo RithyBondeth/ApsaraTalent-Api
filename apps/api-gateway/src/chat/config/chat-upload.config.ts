@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   ALLOWED_MIME_TYPES_FOR_CHAT,
   MAX_FILE_SIZE_BYTES_FOR_CHAT,
-} from '@app/contracts/constants/chat.constant';
+} from '@app/contracts/constants/domain/chat.constant';
 import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface';
 
 export const chatUploadMulterOptions: MulterOptions = {

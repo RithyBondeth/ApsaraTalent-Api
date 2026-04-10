@@ -13,7 +13,7 @@ const JOB_LIST_TTL = 5 * 60 * 1000; // 5 min
 const JOB_SEARCH_TTL = 2 * 60 * 1000; // 2 min
 
 import { IJobServiceService } from '@app/contracts/interfaces/job-service.interface';
-import { JOB } from '@app/contracts/constants/job-service.constant';
+import { JOB } from '@app/contracts/constants/domain/job.constant';
 
 @Injectable()
 export class JobService implements IJobServiceService {

@@ -1,6 +1,6 @@
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { JOB_SERVICE } from '@app/contracts/constants/job-service.constant';
+import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
 import {
   CreateInterviewDto,
   UpdateInterviewStatusDto,

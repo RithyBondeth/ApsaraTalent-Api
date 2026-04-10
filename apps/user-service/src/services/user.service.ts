@@ -20,7 +20,7 @@ import {
   UserResponseDTO,
 } from '../dtos/user-response.dto';
 import { IUserService } from '@app/contracts/interfaces/user-service.interface';
-import { CACHE_TTL } from '@app/contracts/constants/cache-ttl.constant';
+import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
 
 @Injectable()
 export class UserService implements IUserService, OnModuleInit {

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PinoLogger } from 'nestjs-pino';
 import sharp from 'sharp';
-import { RESUME } from '@app/contracts/constants/resume-builder-service.constant';
+import { RESUME } from '@app/contracts/constants/domain/resume.constant';
 
 @Injectable()
 export class ImageService {

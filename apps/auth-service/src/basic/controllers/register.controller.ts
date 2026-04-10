@@ -2,7 +2,7 @@ import { IBasicAuthRegisterController } from '@app/contracts/interfaces/auth-con
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
-import { AUTH_SERVICE } from '@app/contracts/constants/auth-service.constant';
+import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
 import { CompanyRegisterDTO } from '../dtos/company-register.dto';
 import { EmployeeRegisterDTO } from '../dtos/employee-register.dto';
 

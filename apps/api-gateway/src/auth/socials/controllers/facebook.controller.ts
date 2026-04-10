@@ -13,7 +13,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
-import { AUTH_SERVICE } from '@app/contracts/constants/auth-service.constant';
+import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
 import { FacebookAuthGuard } from '../guards/facebook-auth.guard';
 import { handleSocialAuthCallback } from '../shared/social-auth-callback.helper';
 

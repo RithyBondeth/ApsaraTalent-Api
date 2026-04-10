@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { PAYMENT_SERVICE } from '@app/contracts/constants/payment-service.constant';
+import { PAYMENT_SERVICE } from '@app/contracts/constants/service-actions/payment-service.constant';
 import { IPaymentController } from '@app/contracts/interfaces/payment.interface';
 
 @Controller('bakong')

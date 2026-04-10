@@ -12,7 +12,7 @@ import {
 } from '@nestjs/websockets';
 import { firstValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
-import { CHAT_SERVICE } from '@app/contracts/constants/chat-service.constant';
+import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-service.constant';
 import { ClientProxy } from '@nestjs/microservices';
 import { ChatGatewayService } from './chat-gateway.service';
 import { extractChatToken } from './utils/chat-token.util';
@@ -283,8 +283,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.GET_CHAT_HISTORY, {
           userId1,
           userId2: payload.userId2,
-          limit: Math.min(Math.max(1, payload.limit || CHAT.DEFAULT_HISTORY_LIMIT), CHAT.MAX_HISTORY_LIMIT),
-          offset: Math.min(Math.max(0, payload.offset || 0), CHAT.MAX_HISTORY_OFFSET),
+          limit: Math.min(
+            Math.max(1, payload.limit || CHAT.DEFAULT_HISTORY_LIMIT),
+            CHAT.MAX_HISTORY_LIMIT,
+          ),
+          offset: Math.min(
+            Math.max(0, payload.offset || 0),
+            CHAT.MAX_HISTORY_OFFSET,
+          ),
         }),
       );
       return history;
@@ -438,7 +444,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const trimmed = data.newContent?.trim();
     if (!trimmed || trimmed.length > CHAT.MAX_MESSAGE_LENGTH) {
-      client.emit('error', { message: `Message must be 1–${CHAT.MAX_MESSAGE_LENGTH} characters` });
+      client.emit('error', {
+        message: `Message must be 1–${CHAT.MAX_MESSAGE_LENGTH} characters`,
+      });
       return;
     }
 

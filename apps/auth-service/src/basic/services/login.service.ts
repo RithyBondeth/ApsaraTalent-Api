@@ -9,7 +9,7 @@ import * as bcrypt from 'bcrypt';
 import { PinoLogger } from 'nestjs-pino';
 import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
-import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { checkEmail } from '@app/utils/functions/check-email';
 import { LoginResponseDTO } from '../dtos/login-response.dto';
 import { LoginDTO } from '../dtos/login.dto';

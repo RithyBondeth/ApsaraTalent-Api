@@ -13,8 +13,8 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { JOB_SERVICE } from '@app/contracts/constants/job-service.constant';
-import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
+import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { JobAccessBase } from '../shared/job-access.base';
 
 @Controller('match')

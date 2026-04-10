@@ -22,7 +22,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { TerminusModule } from '@nestjs/terminus';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { ForgotPasswordController } from './basic/controllers/forgot-password.controller';
 import { LoginOTPController } from './basic/controllers/login-otp.controller';
 import { LoginController } from './basic/controllers/login.controller';

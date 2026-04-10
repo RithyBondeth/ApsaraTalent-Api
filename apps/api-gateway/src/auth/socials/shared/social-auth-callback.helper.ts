@@ -13,7 +13,7 @@ import {
   TSocialAuthResult,
   TSuccessHtmlOptions,
 } from '@app/contracts/types/auth.type';
-import { AUTH } from '@app/contracts/constants/auth.constant';
+import { AUTH } from '@app/contracts/constants/domain/auth.constant';
 
 const logger = new Logger('SocialAuthUtil');
 

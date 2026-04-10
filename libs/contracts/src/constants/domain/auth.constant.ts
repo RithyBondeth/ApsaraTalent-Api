@@ -1,6 +1,3 @@
-export const ACCESS_TOKEN_MAX_AGE = 1000 * 60 * 60 * 24 * 7;
-export const REFRESH_TOKEN_MAX_AGE = 1000 * 60 * 60 * 24 * 30;
-
 export const AUTH = {
   /** Session cookie lifetime — 24 hours */
   SESSION_COOKIE_MAXAGE: 1_000 * 60 * 60 * 24,

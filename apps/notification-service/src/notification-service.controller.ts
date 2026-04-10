@@ -9,7 +9,7 @@ import {
   MarkReadPayload,
   UnreadCountPayload,
 } from '@app/contracts/interfaces/notification.interface';
-import { NOTIFICATION_SERVICE } from '@app/contracts/constants/notification.constant';
+import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 
 import { INotificationController } from '@app/contracts/interfaces/notification.interface';
 import {

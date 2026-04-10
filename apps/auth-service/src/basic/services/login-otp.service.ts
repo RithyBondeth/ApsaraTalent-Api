@@ -10,12 +10,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
-import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { LoginOtpDTO } from '../dtos/login-otp.dto';
 import { VerifyOtpDTO } from '../dtos/verify-otp.dto';
 
 import { ILoginOTPService } from '@app/contracts/interfaces/auth-service.interface';
-import { AUTH } from '@app/contracts/constants/auth.constant';
+import { AUTH } from '@app/contracts/constants/domain/auth.constant';
 
 @Injectable()
 export class LoginOTPService implements ILoginOTPService {
