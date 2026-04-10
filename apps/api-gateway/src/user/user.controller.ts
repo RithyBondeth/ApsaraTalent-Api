@@ -1,20 +1,20 @@
-import { TUser, User } from '@app/common/decorators/user.decorator';
+import { AuthUser, User } from '@app/common/decorators/user.decorator';
 import { AuthGuard } from '@app/common/guards/auth.guard';
 import { UserInterceptor } from '@app/common/interceptors/user.interceptor';
 import { IUserController } from '@app/contracts/interfaces/controller/user-controller.interface';
 import {
-    Body,
-    Controller,
-    ForbiddenException,
-    Get,
-    Inject,
-    Param,
-    ParseUUIDPipe,
-    Post,
-    Query,
-    Req,
-    UseGuards,
-    UseInterceptors
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  Inject,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -92,7 +92,7 @@ export class UserController implements IUserController {
 
   @UseInterceptors(UserInterceptor)
   @Get('current-user')
-  async getCurrentUser(@User() user: TUser): Promise<any> {
+  async getCurrentUser(@User() user: AuthUser): Promise<any> {
     const userID = user.id;
     const payload = { userID };
     return firstValueFrom(
@@ -254,10 +254,10 @@ export class UserController implements IUserController {
   ): Promise<any> {
     await this.assertEmployeeAccess(req?.user?.id, employeeId);
     return firstValueFrom(
-      this.userClient.send(
-        USER_SERVICE.ACTIONS.GET_EMPLOYEE_RECOMMENDATIONS,
-        { employeeId, limit: limit ? Number(limit) : 10 },
-      ),
+      this.userClient.send(USER_SERVICE.ACTIONS.GET_EMPLOYEE_RECOMMENDATIONS, {
+        employeeId,
+        limit: limit ? Number(limit) : 10,
+      }),
     );
   }
 
@@ -269,10 +269,10 @@ export class UserController implements IUserController {
   ): Promise<any> {
     await this.assertCompanyAccess(req?.user?.id, companyId);
     return firstValueFrom(
-      this.userClient.send(
-        USER_SERVICE.ACTIONS.GET_COMPANY_RECOMMENDATIONS,
-        { companyId, limit: limit ? Number(limit) : 10 },
-      ),
+      this.userClient.send(USER_SERVICE.ACTIONS.GET_COMPANY_RECOMMENDATIONS, {
+        companyId,
+        limit: limit ? Number(limit) : 10,
+      }),
     );
   }
 }
