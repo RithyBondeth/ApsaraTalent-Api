@@ -7,7 +7,7 @@ import { Server } from 'socket.io';
 import { User } from '@app/common/database/entities/user.entity';
 import { CHAT_SERVICE } from '@app/contracts/constants/chat-service.constant';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/notification.constant';
-import { CHAT_WEBSOCKET_EVENTS, DEFAULT_AVATAR_PATH } from '@app/contracts';
+import { CHAT, CHAT_WEBSOCKET_EVENTS } from '@app/contracts';
 
 @Injectable()
 export class ChatGatewayService {
@@ -76,7 +76,7 @@ export class ChatGatewayService {
         where: { id: userId },
         relations: ['employee', 'company'],
       });
-      if (!user) return { name: 'Unknown', avatar: DEFAULT_AVATAR_PATH };
+      if (!user) return { name: 'Unknown', avatar: CHAT.DEFAULT_AVATAR_PATH };
       const emp = user.employee;
       const co = user.company;
       const name = emp
@@ -85,10 +85,10 @@ export class ChatGatewayService {
           user.email ||
           'Unknown'
         : co?.name || user.email || 'Unknown';
-      const avatar = emp?.avatar || co?.avatar || DEFAULT_AVATAR_PATH;
+      const avatar = emp?.avatar || co?.avatar || CHAT.DEFAULT_AVATAR_PATH;
       return { name, avatar };
     } catch {
-      return { name: 'Unknown', avatar: DEFAULT_AVATAR_PATH };
+      return { name: 'Unknown', avatar: CHAT.DEFAULT_AVATAR_PATH };
     }
   }
 

@@ -18,11 +18,10 @@ import { ChatGatewayService } from './chat-gateway.service';
 import { extractChatToken } from './utils/chat-token.util';
 import { isOriginAllowed } from '../utils/cors-origin.util';
 import {
+  CHAT,
   CHAT_ALLOW_ALL_CORS,
   CHAT_ALLOWED_ORIGINS,
   CHAT_WEBSOCKET_EVENTS,
-  MAX_MESSAGE_LENGTH,
-  PAGINATION,
 } from '@app/contracts';
 
 @WebSocketGateway({
@@ -165,9 +164,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       const trimmedContent = payload?.content?.trim() ?? '';
       const hasAttachment = !!payload?.attachment;
-      if (trimmedContent.length > MAX_MESSAGE_LENGTH) {
+      if (trimmedContent.length > CHAT.MAX_MESSAGE_LENGTH) {
         client.emit('error', {
-          message: `Message must be at most ${MAX_MESSAGE_LENGTH} characters`,
+          message: `Message must be at most ${CHAT.MAX_MESSAGE_LENGTH} characters`,
         });
         return;
       }
@@ -284,8 +283,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.GET_CHAT_HISTORY, {
           userId1,
           userId2: payload.userId2,
-          limit: Math.min(Math.max(1, payload.limit || PAGINATION.DEFAULT_CHAT_HISTORY_LIMIT), PAGINATION.MAX_CHAT_HISTORY_LIMIT),
-          offset: Math.min(Math.max(0, payload.offset || 0), PAGINATION.MAX_CHAT_HISTORY_OFFSET),
+          limit: Math.min(Math.max(1, payload.limit || CHAT.DEFAULT_HISTORY_LIMIT), CHAT.MAX_HISTORY_LIMIT),
+          offset: Math.min(Math.max(0, payload.offset || 0), CHAT.MAX_HISTORY_OFFSET),
         }),
       );
       return history;
@@ -438,8 +437,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     const trimmed = data.newContent?.trim();
-    if (!trimmed || trimmed.length > MAX_MESSAGE_LENGTH) {
-      client.emit('error', { message: `Message must be 1–${MAX_MESSAGE_LENGTH} characters` });
+    if (!trimmed || trimmed.length > CHAT.MAX_MESSAGE_LENGTH) {
+      client.emit('error', { message: `Message must be 1–${CHAT.MAX_MESSAGE_LENGTH} characters` });
       return;
     }
 

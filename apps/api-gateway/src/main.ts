@@ -12,7 +12,7 @@ import passport from 'passport';
 import { Logger } from 'nestjs-pino';
 import { join } from 'path';
 import { ApiGatewayModule } from './api-gateway.module';
-import { AUTH_EXPIRY } from '@app/contracts/constants/app.constant';
+import { AUTH } from '@app/contracts/constants/auth.constant';
 import { isOriginAllowed, parseAllowedOrigins } from './utils/cors-origin.util';
 
 async function bootstrap() {
@@ -56,7 +56,7 @@ async function bootstrap() {
         httpOnly: true,
         secure: isProduction, // HTTPS required in production
         sameSite: 'lax', // 'lax' required for OAuth redirect flows (Google, Facebook, etc.)
-        maxAge: AUTH_EXPIRY.SESSION_COOKIE_MAXAGE,
+        maxAge: AUTH.SESSION_COOKIE_MAXAGE,
       },
     }),
   );

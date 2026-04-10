@@ -16,7 +16,7 @@ import { Repository } from 'typeorm';
 import { PushNotificationService } from './push-notification.service';
 
 import { INotificationService } from '@app/contracts/interfaces/notification-service.interface';
-import { PAGINATION } from '@app/contracts/constants/app.constant';
+import { NOTIFICATION } from '@app/contracts/constants/notification.constant';
 
 @Injectable()
 export class NotificationService implements INotificationService {
@@ -87,8 +87,8 @@ export class NotificationService implements INotificationService {
   }
 
   async listByUser(payload: ListNotificationsPayload) {
-    const page = Math.max(PAGINATION.MIN_PAGE, payload.page ?? PAGINATION.MIN_PAGE);
-    const limit = Math.min(Math.max(1, payload.limit ?? PAGINATION.DEFAULT_NOTIFICATION_LIMIT), PAGINATION.MAX_NOTIFICATION_LIMIT);
+    const page = Math.max(NOTIFICATION.MIN_PAGE, payload.page ?? NOTIFICATION.MIN_PAGE);
+    const limit = Math.min(Math.max(1, payload.limit ?? NOTIFICATION.DEFAULT_LIMIT), NOTIFICATION.MAX_LIMIT);
     const skip = (page - 1) * limit;
 
     const where: any = { user: { id: payload.userId } };

@@ -12,7 +12,7 @@ import { ForgotPasswordResponseDTO } from '../dtos/forgot-password-response.dto'
 import { ForgotPasswordDTO } from '../dtos/forgot-password.dto';
 
 import { IForgotPasswordService } from '@app/contracts/interfaces/auth-service.interface';
-import { AUTH_EXPIRY } from '@app/contracts/constants/app.constant';
+import { AUTH } from '@app/contracts/constants/auth.constant';
 
 @Injectable()
 export class ForgotPasswordService implements IForgotPasswordService {
@@ -45,7 +45,7 @@ export class ForgotPasswordService implements IForgotPasswordService {
 
       //Generate a reset password token and expiry date
       const resetToken = crypto.randomBytes(20).toString('hex');
-      const expireDateToken = new Date(Date.now() + AUTH_EXPIRY.PASSWORD_RESET_TOKEN_EXPIRY);
+      const expireDateToken = new Date(Date.now() + AUTH.PASSWORD_RESET_EXPIRY);
 
       //Set a reset password token and expiry date
       user.resetPasswordToken = crypto

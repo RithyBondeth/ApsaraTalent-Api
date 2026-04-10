@@ -12,7 +12,7 @@ import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
 import { GoogleAuthDTO } from '../dtos/google-auth.dto';
 
 import { IGoogleAuthService } from '@app/contracts/interfaces/auth-service.interface';
-import { TIMEOUTS } from '@app/contracts/constants/app.constant';
+import { AUTH } from '@app/contracts/constants/auth.constant';
 
 @Injectable()
 export class GoogleAuthService implements IGoogleAuthService {
@@ -97,7 +97,7 @@ export class GoogleAuthService implements IGoogleAuthService {
     firstValueFrom(
       this.userClient
         .send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, { userId })
-        .pipe(timeout(TIMEOUTS.SOCIAL_AUTH)),
+        .pipe(timeout(AUTH.SOCIAL_AUTH_TIMEOUT)),
     ).catch((err) => {
       this.logger.warn(
         `[AUTH] Cache clear after ${provider} login failed for userId=${userId}: ${(err as Error).message}`,

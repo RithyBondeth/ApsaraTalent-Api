@@ -15,7 +15,7 @@ import { LoginOtpDTO } from '../dtos/login-otp.dto';
 import { VerifyOtpDTO } from '../dtos/verify-otp.dto';
 
 import { ILoginOTPService } from '@app/contracts/interfaces/auth-service.interface';
-import { OTP, AUTH_EXPIRY } from '@app/contracts/constants/app.constant';
+import { AUTH } from '@app/contracts/constants/auth.constant';
 
 @Injectable()
 export class LoginOTPService implements ILoginOTPService {
@@ -29,8 +29,8 @@ export class LoginOTPService implements ILoginOTPService {
 
   async loginOtp(loginOtpDTO: LoginOtpDTO): Promise<any> {
     try {
-      const otpCode = Math.floor(OTP.MIN + Math.random() * OTP.RANGE).toString();
-      const otpExpires = new Date(Date.now() + AUTH_EXPIRY.OTP_EXPIRY);
+      const otpCode = Math.floor(AUTH.OTP_MIN + Math.random() * AUTH.OTP_RANGE).toString();
+      const otpExpires = new Date(Date.now() + AUTH.OTP_EXPIRY);
 
       let user = await this.userRepo.findOne({
         where: { phone: loginOtpDTO.phone },

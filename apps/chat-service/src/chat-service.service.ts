@@ -16,11 +16,7 @@ import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
 import { User } from '@app/common/database/entities/user.entity';
 
 import { IChatService } from '@app/contracts/interfaces/chat-service.interface';
-import {
-  DEFAULT_AVATAR_PATH,
-  MAX_MESSAGE_LENGTH,
-  PAGINATION,
-} from '@app/contracts/constants/app.constant';
+import { CHAT } from '@app/contracts/constants/chat.constant';
 
 const UNREAD_COUNT_TTL = 15_000; // 15s
 const RECENT_CHATS_TTL = 30_000; // 30s
@@ -104,7 +100,7 @@ export class ChatService implements IChatService {
         avatar:
           partner.employee?.avatar ||
           partner.company?.avatar ||
-          DEFAULT_AVATAR_PATH,
+          CHAT.DEFAULT_AVATAR_PATH,
         email: partner.email,
         isRead: true,
         preview: "👋 Let's chat!",
@@ -273,9 +269,9 @@ export class ChatService implements IChatService {
 
     // Validate new content: must be a non-empty string ≤ 5000 chars
     const trimmed = data.newContent?.trim();
-    if (!trimmed || trimmed.length > MAX_MESSAGE_LENGTH) {
+    if (!trimmed || trimmed.length > CHAT.MAX_MESSAGE_LENGTH) {
       throw new RpcException({
-        message: `Message content must be 1–${MAX_MESSAGE_LENGTH} characters`,
+        message: `Message content must be 1–${CHAT.MAX_MESSAGE_LENGTH} characters`,
         statusCode: 400,
       });
     }
@@ -397,9 +393,9 @@ export class ChatService implements IChatService {
     return { sender, receiver };
   }
 
-  async getChatHistory(u1: string, u2: string, limit: number = PAGINATION.DEFAULT_CHAT_HISTORY_LIMIT, offset = 0) {
-    limit = Math.min(Math.max(1, limit), PAGINATION.MAX_CHAT_HISTORY_LIMIT);
-    offset = Math.min(Math.max(0, offset), PAGINATION.MAX_CHAT_HISTORY_OFFSET);
+  async getChatHistory(u1: string, u2: string, limit: number = CHAT.DEFAULT_HISTORY_LIMIT, offset = 0) {
+    limit = Math.min(Math.max(1, limit), CHAT.MAX_HISTORY_LIMIT);
+    offset = Math.min(Math.max(0, offset), CHAT.MAX_HISTORY_OFFSET);
     const userId1 = await this.resolveUserId(u1);
     const userId2 = await this.resolveUserId(u2);
     this.logger.info(`Fetching history: ${userId1} <-> ${userId2}`);
@@ -558,7 +554,7 @@ export class ChatService implements IChatService {
       .where('sender.id IN (:...userIds)', { userIds })
       .orWhere('receiver.id IN (:...userIds)', { userIds })
       .orderBy('chat.sentAt', 'DESC')
-      .take(PAGINATION.MAX_RECENT_CHATS)
+      .take(CHAT.MAX_RECENT_CHATS)
       .getMany();
 
     await this.redisService.set(cacheKey, result, RECENT_CHATS_TTL);
