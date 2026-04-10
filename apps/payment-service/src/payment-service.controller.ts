@@ -10,11 +10,11 @@ import { GenerateIndividualKhqrDTO } from './dtos/generate-individual-khqr.dto';
 import { GenerateMerchantKhqrDTO } from './dtos/generate-merchant-khqr.dto';
 import { VerifyKhqrDTO } from './dtos/verify-khqr.dto';
 
-import { IPaymentController } from '@app/contracts/interfaces/payment.interface';
+import { IPaymentController } from '@app/contracts/interfaces/domain/payment.interface';
 import {
   I_PAYMENT_SERVICE,
   IPaymentService,
-} from '@app/contracts/interfaces/payment-service.interface';
+} from '@app/contracts/interfaces/service/payment-service.interface';
 
 @Controller()
 export class PaymentController implements IPaymentController {

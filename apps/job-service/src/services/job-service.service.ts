@@ -12,7 +12,7 @@ import { SearchJobDto } from '../dtos/job-search.dto';
 const JOB_LIST_TTL = 5 * 60 * 1000; // 5 min
 const JOB_SEARCH_TTL = 2 * 60 * 1000; // 2 min
 
-import { IJobServiceService } from '@app/contracts/interfaces/job-service.interface';
+import { IJobServiceService } from '@app/contracts/interfaces/service/job-service.interface';
 import { JOB } from '@app/contracts/constants/domain/job.constant';
 
 @Injectable()

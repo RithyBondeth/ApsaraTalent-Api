@@ -4,9 +4,9 @@ import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-serv
 import {
   I_EXPERIENCE_AND_EDUCATION_SERVICE,
   IExperienceAndEducationService,
-} from '@app/contracts/interfaces/user-service.interface';
+} from '@app/contracts/interfaces/service/user-service.interface';
 
-import { IRemoveEmployeeItemsController } from '@app/contracts/interfaces/employee-controller.interface';
+import { IRemoveEmployeeItemsController } from '@app/contracts/interfaces/controller/employee-controller.interface';
 
 @Controller()
 export class ExperienceAndEducationController implements IRemoveEmployeeItemsController {

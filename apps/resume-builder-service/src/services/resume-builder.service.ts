@@ -7,7 +7,7 @@ import * as puppeteer from 'puppeteer';
 import { BuildResumeDTO } from '../dtos/resume-builder.dto';
 import { ImageService } from './image.service';
 
-import { IResumeBuilderService } from '@app/contracts/interfaces/resume-builder-service.interface';
+import { IResumeBuilderService } from '@app/contracts/interfaces/service/resume-builder-service.interface';
 import { RESUME } from '@app/contracts/constants/domain/resume.constant';
 
 @Injectable()

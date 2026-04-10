@@ -59,7 +59,7 @@ import {
   I_REGISTER_SERVICE,
   I_RESET_PASSWORD_SERVICE,
   I_VERIFY_EMAIL_SERVICE,
-} from '@app/contracts/interfaces/auth-service.interface';
+} from '@app/contracts/interfaces/service/auth-service.interface';
 
 @Module({
   imports: [

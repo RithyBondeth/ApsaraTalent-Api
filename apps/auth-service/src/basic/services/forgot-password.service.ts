@@ -11,7 +11,7 @@ import { checkEmail } from '@app/utils/functions/check-email';
 import { ForgotPasswordResponseDTO } from '../dtos/forgot-password-response.dto';
 import { ForgotPasswordDTO } from '../dtos/forgot-password.dto';
 
-import { IForgotPasswordService } from '@app/contracts/interfaces/auth-service.interface';
+import { IForgotPasswordService } from '@app/contracts/interfaces/service/auth-service.interface';
 import { AUTH } from '@app/contracts/constants/domain/auth.constant';
 
 @Injectable()

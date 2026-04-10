@@ -15,7 +15,7 @@ import { BakongLoggingInterceptor } from './interceptors/bakong.interceptor';
 import { PaymentController } from './payment-service.controller';
 import { PaymentService } from './payment-service.service';
 
-import { I_PAYMENT_SERVICE } from '@app/contracts/interfaces/payment-service.interface';
+import { I_PAYMENT_SERVICE } from '@app/contracts/interfaces/service/payment-service.interface';
 
 @Module({
   imports: [

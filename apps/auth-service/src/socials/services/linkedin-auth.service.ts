@@ -11,7 +11,7 @@ import { Repository } from 'typeorm';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { LinkedInAuthDTO } from '../dtos/linkedin-auth.dto';
 
-import { ILinkedInAuthService } from '@app/contracts/interfaces/auth-service.interface';
+import { ILinkedInAuthService } from '@app/contracts/interfaces/service/auth-service.interface';
 import { AUTH } from '@app/contracts/constants/domain/auth.constant';
 
 @Injectable()

@@ -14,7 +14,7 @@ import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-serv
 import { LoginOtpDTO } from '../dtos/login-otp.dto';
 import { VerifyOtpDTO } from '../dtos/verify-otp.dto';
 
-import { ILoginOTPService } from '@app/contracts/interfaces/auth-service.interface';
+import { ILoginOTPService } from '@app/contracts/interfaces/service/auth-service.interface';
 import { AUTH } from '@app/contracts/constants/domain/auth.constant';
 
 @Injectable()

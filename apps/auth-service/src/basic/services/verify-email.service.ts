@@ -7,7 +7,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { VerifyEmailResponseDTO } from '../dtos/verify-email-response.dto';
 
-import { IVerifyEmailService } from '@app/contracts/interfaces/auth-service.interface';
+import { IVerifyEmailService } from '@app/contracts/interfaces/service/auth-service.interface';
 
 @Injectable()
 export class VerifyEmailService implements IVerifyEmailService {

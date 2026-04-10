@@ -1,4 +1,4 @@
-import { IGoogleAuthController } from '@app/contracts/interfaces/auth-controller.interface';
+import { IGoogleAuthController } from '@app/contracts/interfaces/controller/auth-controller.interface';
 import {
   Controller,
   Get,

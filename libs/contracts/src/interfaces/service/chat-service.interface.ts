@@ -1,4 +1,4 @@
-import { IChatMessage, TChatContent } from './chat.interface';
+import { IChatMessage, TChatContent } from '../domain/chat.interface';
 
 export const I_CHAT_SERVICE = 'IChatService';
 

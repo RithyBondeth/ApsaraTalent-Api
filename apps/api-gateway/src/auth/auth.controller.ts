@@ -1,4 +1,4 @@
-import { IBasicAuthController } from '@app/contracts/interfaces/auth-controller.interface';
+import { IBasicAuthController } from '@app/contracts/interfaces/controller/auth-controller.interface';
 import { ThrottlerGuard } from '@app/common/throttler/guards/throttler.guard';
 import {
   Body,

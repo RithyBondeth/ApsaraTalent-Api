@@ -10,7 +10,7 @@ import { PinoLogger } from 'nestjs-pino';
 import * as path from 'path';
 import { Repository } from 'typeorm';
 
-import { IImageCompanyService } from '@app/contracts/interfaces/user-service.interface';
+import { IImageCompanyService } from '@app/contracts/interfaces/service/user-service.interface';
 
 @Injectable()
 export class ImageCompanyService implements IImageCompanyService {

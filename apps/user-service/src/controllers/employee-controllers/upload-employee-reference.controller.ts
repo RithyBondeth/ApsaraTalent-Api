@@ -1,4 +1,4 @@
-import { IUploadEmployeeController } from '@app/contracts/interfaces/employee-controller.interface';
+import { IUploadEmployeeController } from '@app/contracts/interfaces/controller/employee-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
@@ -6,7 +6,7 @@ import { UploadEmployeeReferenceService } from '../../services/employee-services
 import {
   I_UPLOAD_EMPLOYEE_REFERENCE_SERVICE,
   IUploadEmployeeReferenceService,
-} from '@app/contracts/interfaces/user-service.interface';
+} from '@app/contracts/interfaces/service/user-service.interface';
 
 @Controller()
 export class UploadEmployeeReferenceController implements IUploadEmployeeController {

@@ -1,7 +1,7 @@
 import { TUser, User } from '@app/common/decorators/user.decorator';
 import { AuthGuard } from '@app/common/guards/auth.guard';
 import { UserInterceptor } from '@app/common/interceptors/user.interceptor';
-import { IUserController } from '@app/contracts/interfaces/user-controller.interface';
+import { IUserController } from '@app/contracts/interfaces/controller/user-controller.interface';
 import {
     Body,
     Controller,

@@ -4,7 +4,7 @@ import { EMessageType } from '@app/common/database/enums/message-type.enum';
 import {
   IChatMessage,
   TChatContent,
-} from '@app/contracts/interfaces/chat.interface';
+} from '@app/contracts/interfaces/domain/chat.interface';
 import { RedisService } from '@app/common/redis/redis.service';
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
@@ -15,7 +15,7 @@ import { Repository } from 'typeorm';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { User } from '@app/common/database/entities/user.entity';
 
-import { IChatService } from '@app/contracts/interfaces/chat-service.interface';
+import { IChatService } from '@app/contracts/interfaces/service/chat-service.interface';
 import { CHAT } from '@app/contracts/constants/domain/chat.constant';
 
 const UNREAD_COUNT_TTL = 15_000; // 15s

@@ -3,12 +3,12 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { OpenPositionService } from '../../services/company-services/open-position.service';
 
-import { IOpenPositionController } from '@app/contracts/interfaces/company.interface';
+import { IOpenPositionController } from '@app/contracts/interfaces/domain/company.interface';
 
 import {
   I_OPEN_POSITION_SERVICE,
   IOpenPositionService,
-} from '@app/contracts/interfaces/user-service.interface';
+} from '@app/contracts/interfaces/service/user-service.interface';
 
 @Controller()
 export class OpenPositionController implements IOpenPositionController {

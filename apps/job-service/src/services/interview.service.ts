@@ -15,7 +15,7 @@ import {
   VALID_STATUS_TRANSITIONS,
 } from '../dtos/interview.dto';
 
-import { IInterviewService } from '@app/contracts/interfaces/job-service.interface';
+import { IInterviewService } from '@app/contracts/interfaces/service/job-service.interface';
 import { JOB } from '@app/contracts/constants/domain/job.constant';
 
 @Injectable()

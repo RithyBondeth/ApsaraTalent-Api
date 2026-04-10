@@ -1,8 +1,8 @@
 import { AUTH } from '@app/contracts/constants/domain/auth.constant';
 import {
-  TSetAuthTokenCookiesOptions,
-  TSetRememberCookieOptions,
-} from '@app/contracts/types/auth.type';
+  SetAuthTokenCookiesOptions,
+  SetRememberCookieOptions,
+} from '@app/contracts/interfaces/domain/auth.interface';
 import { Response } from 'express';
 
 export function isProductionEnvironment(): boolean {
@@ -17,7 +17,7 @@ export function setAuthTokenCookies(
     accessMaxAge = AUTH.TOKEN_MAXAGE,
     refreshMaxAge = AUTH.REMEMBER_ME_MAXAGE,
     isProduction = isProductionEnvironment(),
-  }: TSetAuthTokenCookiesOptions,
+  }: SetAuthTokenCookiesOptions,
 ): void {
   const cookieOptions = {
     httpOnly: true,
@@ -45,7 +45,7 @@ export function setRememberCookie(
   {
     maxAge,
     isProduction = isProductionEnvironment(),
-  }: TSetRememberCookieOptions,
+  }: SetRememberCookieOptions,
 ): void {
   res.cookie('auth-remember', remember ? 'true' : 'false', {
     httpOnly: false,

@@ -8,14 +8,14 @@ import {
   MarkAllReadPayload,
   MarkReadPayload,
   UnreadCountPayload,
-} from '@app/contracts/interfaces/notification.interface';
+} from '@app/contracts/interfaces/domain/notification.interface';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { PushNotificationService } from './push-notification.service';
 
-import { INotificationService } from '@app/contracts/interfaces/notification-service.interface';
+import { INotificationService } from '@app/contracts/interfaces/service/notification-service.interface';
 import { NOTIFICATION } from '@app/contracts/constants/domain/notification.constant';
 
 @Injectable()

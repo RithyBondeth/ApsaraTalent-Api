@@ -10,7 +10,7 @@ import { SALT_ROUNDS } from '@app/contracts/constants/domain/password.constant';
 import { ResetPasswordResponseDTO } from '../dtos/reset-password-response.dto';
 import { ResetPasswordDTO } from '../dtos/reset-password.dto';
 
-import { IResetPasswordService } from '@app/contracts/interfaces/auth-service.interface';
+import { IResetPasswordService } from '@app/contracts/interfaces/service/auth-service.interface';
 
 @Injectable()
 export class ResetPasswordService implements IResetPasswordService {

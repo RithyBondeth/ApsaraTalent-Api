@@ -1,11 +1,11 @@
-import { IImageEmployeeController } from '@app/contracts/interfaces/employee-controller.interface';
+import { IImageEmployeeController } from '@app/contracts/interfaces/controller/employee-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import {
   I_IMAGE_EMPLOYEE_SERVICE,
   IImageEmployeeService,
-} from '@app/contracts/interfaces/user-service.interface';
+} from '@app/contracts/interfaces/service/user-service.interface';
 
 @Controller()
 export class ImageEmployeeController implements IImageEmployeeController {

@@ -17,7 +17,7 @@ import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-serv
 import { ChatService } from './chat-service.service';
 import { ChatController } from './chat-service.controller';
 import { ChatHealthController } from './health/health.controller';
-import { I_CHAT_SERVICE } from '@app/contracts/interfaces/chat-service.interface';
+import { I_CHAT_SERVICE } from '@app/contracts/interfaces/service/chat-service.interface';
 
 @Module({
   imports: [

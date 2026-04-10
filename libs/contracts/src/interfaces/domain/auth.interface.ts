@@ -2,9 +2,9 @@ import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
 
-export type TOAuthProvider = 'google' | 'linkedin' | 'github' | 'facebook';
+export type OAuthProvider = 'google' | 'linkedin' | 'github' | 'facebook';
 
-export type TSocialAuthResult = {
+export interface SocialAuthResult {
   accessToken: string;
   refreshToken?: string | null;
   newUser?: boolean;
@@ -16,22 +16,22 @@ export type TSocialAuthResult = {
   provider?: string | null;
   lastLoginMethod?: string | null;
   lastLoginAt?: string | Date | null;
-};
+}
 
-export type TSuccessHtmlOptions = {
+export interface SuccessHtmlOptions {
   targetOrigin: string;
   successType: string;
   remember: boolean;
-  result: TSocialAuthResult;
-};
+  result: SocialAuthResult;
+}
 
-export type TErrorHtmlOptions = {
+export interface ErrorHtmlOptions {
   targetOrigin: string;
   errorType: string;
   errorMessage: string;
-};
+}
 
-export type TSocialAuthCallbackOptions = {
+export interface SocialAuthCallbackOptions {
   authService: ClientProxy;
   configService: ConfigService;
   req: any;
@@ -43,17 +43,17 @@ export type TSocialAuthCallbackOptions = {
   errorType: string;
   failureMessage: string;
   timeoutMs?: number;
-};
+}
 
-export type TSetAuthTokenCookiesOptions = {
+export interface SetAuthTokenCookiesOptions {
   accessToken: string;
   refreshToken?: string | null;
   accessMaxAge?: number;
   refreshMaxAge?: number;
   isProduction?: boolean;
-};
+}
 
-export type TSetRememberCookieOptions = {
+export interface SetRememberCookieOptions {
   maxAge: number;
   isProduction?: boolean;
-};
+}

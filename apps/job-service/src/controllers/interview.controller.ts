@@ -6,12 +6,12 @@ import {
   UpdateInterviewStatusDto,
 } from '../dtos/interview.dto';
 
-import { IInterviewController } from '@app/contracts/interfaces/job-controller.interface';
+import { IInterviewController } from '@app/contracts/interfaces/controller/job-controller.interface';
 
 import {
   I_INTERVIEW_SERVICE,
   IInterviewService,
-} from '@app/contracts/interfaces/job-service.interface';
+} from '@app/contracts/interfaces/service/job-service.interface';
 
 @Controller()
 export class InterviewController implements IInterviewController {

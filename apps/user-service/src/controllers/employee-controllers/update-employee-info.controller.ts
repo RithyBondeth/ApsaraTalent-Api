@@ -1,4 +1,4 @@
-import { IUpdateEmployeeController } from '@app/contracts/interfaces/employee-controller.interface';
+import { IUpdateEmployeeController } from '@app/contracts/interfaces/controller/employee-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
@@ -8,7 +8,7 @@ import { UpdateEmployeeInfoService } from '../../services/employee-services/upda
 import {
   I_UPDATE_EMPLOYEE_INFO_SERVICE,
   IUpdateEmployeeInfoService,
-} from '@app/contracts/interfaces/user-service.interface';
+} from '@app/contracts/interfaces/service/user-service.interface';
 
 @Controller()
 export class UpdateEmployeeInfoController implements IUpdateEmployeeController {

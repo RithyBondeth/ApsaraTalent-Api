@@ -1,5 +1,5 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
-import { IJobController } from '@app/contracts/interfaces/job-controller.interface';
+import { IJobController } from '@app/contracts/interfaces/controller/job-controller.interface';
 import { Controller, Get, Inject, Query, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';

@@ -34,7 +34,7 @@ import {
   I_INTERVIEW_SERVICE,
   I_JOB_SERVICE_SERVICE,
   I_MATCHING_SERVICE,
-} from '@app/contracts/interfaces/job-service.interface';
+} from '@app/contracts/interfaces/service/job-service.interface';
 
 @Module({
   imports: [

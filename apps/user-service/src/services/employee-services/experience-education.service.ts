@@ -7,7 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 
-import { IExperienceAndEducationService } from '@app/contracts/interfaces/user-service.interface';
+import { IExperienceAndEducationService } from '@app/contracts/interfaces/service/user-service.interface';
 
 @Injectable()
 export class ExperienceAndEducationService implements IExperienceAndEducationService {

@@ -1,4 +1,4 @@
-import { IFindCompanyController } from '@app/contracts/interfaces/company.interface';
+import { IFindCompanyController } from '@app/contracts/interfaces/domain/company.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
@@ -12,7 +12,7 @@ import { FindCompanyService } from '../../services/company-services/find-company
 import {
   I_FIND_COMPANY_SERVICE,
   IFindCompanyService,
-} from '@app/contracts/interfaces/user-service.interface';
+} from '@app/contracts/interfaces/service/user-service.interface';
 
 @Controller()
 export class FindCompanyController implements IFindCompanyController {

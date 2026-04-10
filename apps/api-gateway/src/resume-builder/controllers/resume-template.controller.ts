@@ -1,5 +1,5 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
-import { IResumeTemplateController } from '@app/contracts/interfaces/resume-controller.interface';
+import { IResumeTemplateController } from '@app/contracts/interfaces/controller/resume-controller.interface';
 import { UploadFileInterceptor } from '@app/common/uploadfile/uploadfile.interceptor';
 import {
     Body,

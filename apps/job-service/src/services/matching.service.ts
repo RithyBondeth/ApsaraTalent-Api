@@ -14,7 +14,7 @@ import { Logger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { MatchDto } from '../dtos/match.dto';
 
-import { IMatchingService } from '@app/contracts/interfaces/job-service.interface';
+import { IMatchingService } from '@app/contracts/interfaces/service/job-service.interface';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
 
 @Injectable()

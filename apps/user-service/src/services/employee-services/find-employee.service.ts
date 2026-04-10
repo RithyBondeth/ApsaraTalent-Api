@@ -12,7 +12,7 @@ import {
   EmployeeResponseDTO,
 } from '../../dtos/user-response.dto';
 
-import { IFindEmployeeService } from '@app/contracts/interfaces/user-service.interface';
+import { IFindEmployeeService } from '@app/contracts/interfaces/service/user-service.interface';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
 
 @Injectable()

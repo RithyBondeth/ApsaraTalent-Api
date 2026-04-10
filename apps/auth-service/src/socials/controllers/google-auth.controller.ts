@@ -3,12 +3,12 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
 import { GoogleAuthDTO } from '../dtos/google-auth.dto';
 
-import { IGoogleAuthMicroserviceController } from '@app/contracts/interfaces/auth-controller.interface';
+import { IGoogleAuthMicroserviceController } from '@app/contracts/interfaces/controller/auth-controller.interface';
 
 import {
   I_GOOGLE_AUTH_SERVICE,
   IGoogleAuthService,
-} from '@app/contracts/interfaces/auth-service.interface';
+} from '@app/contracts/interfaces/service/auth-service.interface';
 
 @Controller()
 export class GoogleAuthController implements IGoogleAuthMicroserviceController {

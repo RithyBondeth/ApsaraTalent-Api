@@ -13,7 +13,7 @@ import {
   JobPositionDTO,
 } from '../../dtos/user-response.dto';
 
-import { IFindCompanyService } from '@app/contracts/interfaces/user-service.interface';
+import { IFindCompanyService } from '@app/contracts/interfaces/service/user-service.interface';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
 
 @Injectable()

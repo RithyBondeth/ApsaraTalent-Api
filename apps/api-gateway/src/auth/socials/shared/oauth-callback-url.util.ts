@@ -1,4 +1,4 @@
-import { TOAuthProvider } from '@app/contracts/types/auth.type';
+import { OAuthProvider } from '@app/contracts/interfaces/domain/auth.interface';
 import type { Request } from 'express';
 
 /**
@@ -12,7 +12,7 @@ import type { Request } from 'express';
  */
 export function buildPublicCallbackUrl(
   req: Request,
-  provider: TOAuthProvider,
+  provider: OAuthProvider,
 ): string {
   const forwardedProtoHeader = req.headers['x-forwarded-proto'];
   const forwardedHostHeader = req.headers['x-forwarded-host'];

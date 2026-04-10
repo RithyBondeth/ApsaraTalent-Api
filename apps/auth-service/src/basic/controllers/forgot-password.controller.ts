@@ -1,4 +1,4 @@
-import { IBasicAuthForgotPasswordController } from '@app/contracts/interfaces/auth-controller.interface';
+import { IBasicAuthForgotPasswordController } from '@app/contracts/interfaces/controller/auth-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
@@ -8,7 +8,7 @@ import { ForgotPasswordDTO } from '../dtos/forgot-password.dto';
 import {
   I_FORGOT_PASSWORD_SERVICE,
   IForgotPasswordService,
-} from '@app/contracts/interfaces/auth-service.interface';
+} from '@app/contracts/interfaces/service/auth-service.interface';
 
 @Controller()
 export class ForgotPasswordController implements IBasicAuthForgotPasswordController {

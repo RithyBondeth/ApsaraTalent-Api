@@ -12,7 +12,7 @@ import { SearchTemplateDTO } from '../dtos/search-resume-template.dto';
 const TEMPLATE_TTL = 60 * 60 * 1000; // 1 hour — static data
 const TEMPLATE_SEARCH_TTL = 30 * 60 * 1000; // 30 min
 
-import { IResumeTemplateService } from '@app/contracts/interfaces/resume-builder-service.interface';
+import { IResumeTemplateService } from '@app/contracts/interfaces/service/resume-builder-service.interface';
 
 @Injectable()
 export class ResumeTemplateService implements IResumeTemplateService {

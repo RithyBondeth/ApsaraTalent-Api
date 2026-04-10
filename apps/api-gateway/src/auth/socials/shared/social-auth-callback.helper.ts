@@ -8,11 +8,11 @@ import {
   setRememberCookie,
 } from '../../utils/auth-cookie.util';
 import {
-  TErrorHtmlOptions,
-  TSocialAuthCallbackOptions,
-  TSocialAuthResult,
-  TSuccessHtmlOptions,
-} from '@app/contracts/types/auth.type';
+  ErrorHtmlOptions,
+  SocialAuthCallbackOptions,
+  SocialAuthResult,
+  SuccessHtmlOptions,
+} from '@app/contracts/interfaces/domain/auth.interface';
 import { AUTH } from '@app/contracts/constants/domain/auth.constant';
 
 const logger = new Logger('SocialAuthUtil');
@@ -30,7 +30,7 @@ export function setSocialAuthCookies(
   res: Response,
   configService: ConfigService,
   remember: unknown,
-  result: TSocialAuthResult,
+  result: SocialAuthResult,
 ): void {
   const rememberMe = getRememberFlag(remember);
   const maxAge = rememberMe ? AUTH.REMEMBER_ME_MAXAGE : AUTH.TOKEN_MAXAGE;
@@ -53,7 +53,7 @@ export function buildSocialAuthSuccessHtml({
   successType,
   remember,
   result,
-}: TSuccessHtmlOptions): string {
+}: SuccessHtmlOptions): string {
   return `
     <!doctype html>
     <html>
@@ -99,7 +99,7 @@ export function buildSocialAuthErrorHtml({
   targetOrigin,
   errorType,
   errorMessage,
-}: TErrorHtmlOptions): string {
+}: ErrorHtmlOptions): string {
   return `
     <!doctype html>
     <html>
@@ -140,7 +140,7 @@ export async function handleSocialAuthCallback({
   errorType,
   failureMessage,
   timeoutMs = AUTH.OAUTH_CALLBACK_TIMEOUT,
-}: TSocialAuthCallbackOptions): Promise<void> {
+}: SocialAuthCallbackOptions): Promise<void> {
   const frontendOrigin = getFrontendOrigin(configService);
 
   try {
@@ -161,7 +161,7 @@ export async function handleSocialAuthCallback({
 
     const result = await firstValueFrom(
       authService
-        .send<TSocialAuthResult>(action, payload)
+        .send<SocialAuthResult>(action, payload)
         .pipe(timeout(timeoutMs)),
     );
 

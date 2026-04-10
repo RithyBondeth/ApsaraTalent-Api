@@ -17,7 +17,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-service.constant';
 import { chatUploadMulterOptions } from './config/chat-upload.config';
-import { IChatController } from '@app/contracts/interfaces/chat.interface';
+import { IChatController } from '@app/contracts/interfaces/domain/chat.interface';
 
 @Controller('chat')
 export class ChatController implements IChatController {

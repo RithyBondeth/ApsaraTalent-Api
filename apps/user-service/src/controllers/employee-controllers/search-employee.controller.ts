@@ -1,4 +1,4 @@
-import { ISearchEmployeeController } from '@app/contracts/interfaces/employee-controller.interface';
+import { ISearchEmployeeController } from '@app/contracts/interfaces/controller/employee-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
@@ -9,7 +9,7 @@ import { SearchEmployeeService } from '../../services/employee-services/search-e
 import {
   I_SEARCH_EMPLOYEE_SERVICE,
   ISearchEmployeeService,
-} from '@app/contracts/interfaces/user-service.interface';
+} from '@app/contracts/interfaces/service/user-service.interface';
 
 @Controller()
 export class SearchEmployeeController implements ISearchEmployeeController {

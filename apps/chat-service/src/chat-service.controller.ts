@@ -1,14 +1,14 @@
-import { TChatContent } from '@app/contracts/interfaces/chat.interface';
+import { TChatContent } from '@app/contracts/interfaces/domain/chat.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PinoLogger } from 'nestjs-pino';
 
-import { IChatController } from '@app/contracts/interfaces/chat.interface';
+import { IChatController } from '@app/contracts/interfaces/domain/chat.interface';
 import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-service.constant';
 import {
   I_CHAT_SERVICE,
   IChatService,
-} from '@app/contracts/interfaces/chat-service.interface';
+} from '@app/contracts/interfaces/service/chat-service.interface';
 
 @Controller()
 export class ChatController implements IChatController {

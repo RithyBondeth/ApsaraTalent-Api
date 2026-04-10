@@ -1,5 +1,5 @@
 import { EMessageType } from '@app/common/database/enums/message-type.enum';
-import { TChatPayload } from '@app/contracts/interfaces/chat.interface';
+import { TChatPayload } from '@app/contracts/interfaces/domain/chat.interface';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
 import { Inject, Logger } from '@nestjs/common';

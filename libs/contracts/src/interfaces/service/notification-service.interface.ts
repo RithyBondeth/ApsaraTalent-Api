@@ -6,7 +6,7 @@ import {
   MarkAllReadPayload,
   MarkReadPayload,
   UnreadCountPayload,
-} from './notification.interface';
+} from '../domain/notification.interface';
 
 export const I_NOTIFICATION_SERVICE = 'INotificationService';
 
