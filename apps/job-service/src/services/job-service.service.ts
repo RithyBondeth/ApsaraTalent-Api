@@ -39,7 +39,7 @@ export class JobService implements IJobServiceService {
       });
       if (!jobs)
         throw new RpcException({
-          message: "There's no job available.",
+          message: "There's no job available",
           statusCode: 400,
         });
       const result = jobs.map((job) => new JobResponseDTO(job));
@@ -47,7 +47,7 @@ export class JobService implements IJobServiceService {
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message || 'An error occurred while fetching the job.',
+        (error as Error).message || 'An error occurred while fetching the job',
       );
       if (error instanceof RpcException) throw error;
       throw new RpcException({
@@ -232,7 +232,7 @@ export class JobService implements IJobServiceService {
 
       if (!jobs.length) {
         throw new RpcException({
-          message: 'No jobs found matching your criteria.',
+          message: 'No jobs found matching your criteria',
           statusCode: 404,
         });
       }
@@ -243,7 +243,7 @@ export class JobService implements IJobServiceService {
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
-          'An error occurred while searching for jobs.',
+          'An error occurred while searching for jobs',
       );
       if (error instanceof RpcException) throw error;
       throw new RpcException({

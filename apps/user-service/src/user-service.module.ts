@@ -44,7 +44,7 @@ import { FindCompanyService } from './services/company-services/find-company.ser
 import { ImageCompanyService } from './services/company-services/image-company.service';
 import { OpenPositionService } from './services/company-services/open-position.service';
 import { UpdateCompanyInfoService } from './services/company-services/update-company-info.service';
-import { ExperienceAndEducationService } from './services/employee-services/experienc-education.service';
+import { ExperienceAndEducationService } from './services/employee-services/experience-education.service';
 import { FindEmployeeService } from './services/employee-services/find-employee.service';
 import { ImageEmployeeService } from './services/employee-services/image-employee.service';
 import { SearchEmployeeService } from './services/employee-services/search-employee.service';

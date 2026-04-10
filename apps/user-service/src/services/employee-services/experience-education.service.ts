@@ -30,7 +30,7 @@ export class ExperienceAndEducationService implements IExperienceAndEducationSer
       if (!removeExp)
         throw new RpcException({
           statusCode: 404,
-          message: "There's no experience with this id.",
+          message: "There's no experience with this id",
         });
 
       // Invalidate cache after deletion
@@ -45,10 +45,10 @@ export class ExperienceAndEducationService implements IExperienceAndEducationSer
       // Handle error
       this.logger.error(
         (error as Error).message ||
-          "An error occurred while removing the employee's experience.",
+          "An error occurred while removing the employee's experience",
       );
       throw new RpcException({
-        message: "An error occurred while removing the employee's experience.",
+        message: "An error occurred while removing the employee's experience",
         statusCode: 500,
       });
     }
@@ -64,7 +64,7 @@ export class ExperienceAndEducationService implements IExperienceAndEducationSer
       if (!removeEdu)
         throw new RpcException({
           statusCode: 404,
-          message: "There's no education with this id.",
+          message: "There's no education with this id",
         });
 
       // Invalidate cache after deletion
@@ -79,10 +79,10 @@ export class ExperienceAndEducationService implements IExperienceAndEducationSer
       // Handle error
       this.logger.error(
         (error as Error).message ||
-          "An error occurred while removing the employee's education.",
+          "An error occurred while removing the employee's education",
       );
       throw new RpcException({
-        message: "An error occurred while removing the employee's education.",
+        message: "An error occurred while removing the employee's education",
         statusCode: 500,
       });
     }

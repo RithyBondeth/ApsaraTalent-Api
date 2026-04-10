@@ -17,6 +17,9 @@ import { User } from '@app/common/database/entities/user.entity';
 
 import { IChatService } from '@app/contracts/interfaces/chat-service.interface';
 
+const UNREAD_COUNT_TTL = 15_000; // 15s
+const RECENT_CHATS_TTL = 30_000; // 30s
+
 @Injectable()
 export class ChatService implements IChatService {
   private static readonly UUID_REGEX =
@@ -485,7 +488,7 @@ export class ChatService implements IChatService {
     const count = await this.chatRepository.count({
       where: { receiver: { id: userId }, isRead: false },
     });
-    await this.redisService.set(cacheKey, count, 15000); // 15s TTL
+    await this.redisService.set(cacheKey, count, UNREAD_COUNT_TTL);
     return count;
   }
 
@@ -553,7 +556,7 @@ export class ChatService implements IChatService {
       .take(100)
       .getMany();
 
-    await this.redisService.set(cacheKey, result, 30000); // 30s TTL
+    await this.redisService.set(cacheKey, result, RECENT_CHATS_TTL);
     return result;
   }
 }

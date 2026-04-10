@@ -35,12 +35,12 @@ async function bootstrap() {
     }),
   );
 
-  // Logger Setup
+  // Logger setup
   const logger = app.get(Logger);
   app.useLogger(logger);
 
   await app.listen();
-  const port = configService.get<string>('services.notification.port');
+  const port = configService.get<number>('services.notification.port');
   logger.log(`Notification service is running on port ${port}`);
 
   // Close the app context

@@ -95,7 +95,7 @@ export class UserService implements IUserService, OnModuleInit {
       if (!users || users.length === 0)
         throw new RpcException({
           statusCode: 404,
-          message: 'There are no users available!',
+          message: 'There are no users available',
         });
 
       const result = users.map(
@@ -211,7 +211,7 @@ export class UserService implements IUserService, OnModuleInit {
       if (!user)
         throw new RpcException({
           statusCode: 404,
-          message: 'There is no user with this id!',
+          message: 'There is no user with this id',
         });
 
       const result: UserResponseDTO = new UserResponseDTO({
@@ -263,7 +263,7 @@ export class UserService implements IUserService, OnModuleInit {
       if (!result.affected) {
         throw new RpcException({
           statusCode: 404,
-          message: 'There is no user with this id!',
+          message: 'There is no user with this id',
         });
       }
 
@@ -296,7 +296,7 @@ export class UserService implements IUserService, OnModuleInit {
       if (exists)
         throw new RpcException({
           statusCode: 400,
-          message: 'Already favorited!',
+          message: 'Already favorited',
         });
 
       const favorite = this.empFavoriteCmpRepository.create({
@@ -337,7 +337,7 @@ export class UserService implements IUserService, OnModuleInit {
       if ((error as any)?.code === '23505') {
         throw new RpcException({
           statusCode: 400,
-          message: 'Already favorited!',
+          message: 'Already favorited',
         });
       }
       if (error instanceof RpcException) throw error;
@@ -746,7 +746,7 @@ export class UserService implements IUserService, OnModuleInit {
       if (!careerScopes || careerScopes.length === 0)
         throw new RpcException({
           statusCode: 404,
-          message: 'No career scopes available!',
+          message: 'No career scopes available',
         });
 
       // Cache for 1 hour (rarely changes)
