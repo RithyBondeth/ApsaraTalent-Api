@@ -20,7 +20,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import {
   CompanyResponseDTO,
   EmployeeResponseDTO,
-  JobPositionDTO,
+  JobPositionResponseDTO,
   UserResponseDTO,
 } from 'apps/user-service/src/dtos/user-response.dto';
 import { PinoLogger } from 'nestjs-pino';
@@ -306,7 +306,7 @@ export class RegisterService implements IRegisterService {
         company: new CompanyResponseDTO({
           ...company.company,
           openPositions: company.company.openPositions?.map(
-            (job) => new JobPositionDTO(job),
+            (job) => new JobPositionResponseDTO(job),
           ),
         }),
       }),
@@ -498,7 +498,7 @@ export class RegisterService implements IRegisterService {
           ? new CompanyResponseDTO({
               ...employee.company,
               openPositions: employee.company.openPositions?.map(
-                (job) => new JobPositionDTO(job),
+                (job) => new JobPositionResponseDTO(job),
               ),
             })
           : undefined,

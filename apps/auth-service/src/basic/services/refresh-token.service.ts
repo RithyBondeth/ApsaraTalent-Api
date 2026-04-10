@@ -18,7 +18,9 @@ export class RefreshTokenService implements IRefreshTokenService {
     private readonly logger: PinoLogger,
   ) {}
 
-  async refreshToken(refreshTokenDTO: RefreshTokenDTO) {
+  async refreshToken(
+    refreshTokenDTO: RefreshTokenDTO,
+  ): Promise<RefreshTokenResponseDTO> {
     try {
       //Verify that the refresh token
       const decoded = await this.jwtService.verifyRefreshToken(

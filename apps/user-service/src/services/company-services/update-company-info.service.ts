@@ -14,7 +14,7 @@ import { Repository } from 'typeorm';
 import { UpdateCompanyInfoDTO } from '../../dtos/company/update-company-info.dto';
 import {
   CompanyResponseDTO,
-  JobPositionDTO,
+  JobPositionResponseDTO,
 } from '../../dtos/user-response.dto';
 
 import { IUpdateCompanyInfoService } from '@app/contracts/interfaces/service/user-service.interface';
@@ -325,7 +325,7 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
           ...(freshCompany ?? company),
           openPositions: (
             freshCompany?.openPositions ?? company.openPositions
-          )?.map((job) => new JobPositionDTO(job)),
+          )?.map((job) => new JobPositionResponseDTO(job)),
         }),
       };
     } catch (error) {

@@ -3,6 +3,7 @@ import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
 import { RefreshTokenDTO } from '../dtos/refresh-token.dto';
+import { RefreshTokenResponseDTO } from '../dtos/refresh-token-response.dto';
 
 import {
   I_REFRESH_TOKEN_SERVICE,
@@ -17,7 +18,9 @@ export class RefreshTokenController implements IBasicAuthRefreshTokenController 
   ) {}
 
   @MessagePattern(AUTH_SERVICE.ACTIONS.REFRESH_TOKEN)
-  async refreshToken(@Payload() refreshTokenDTO: RefreshTokenDTO) {
+  async refreshToken(
+    @Payload() refreshTokenDTO: RefreshTokenDTO,
+  ): Promise<RefreshTokenResponseDTO> {
     return this.refreshTokenService.refreshToken(refreshTokenDTO);
   }
 }

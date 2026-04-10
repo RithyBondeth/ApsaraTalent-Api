@@ -10,7 +10,7 @@ import { UserPaginationDTO } from '../../dtos/user-pagination.dto';
 import {
   CompanyResponseDTO,
   CountAllUsersResponseDTO,
-  JobPositionDTO,
+  JobPositionResponseDTO,
 } from '../../dtos/user-response.dto';
 
 import { IFindCompanyService } from '@app/contracts/interfaces/service/user-service.interface';
@@ -61,7 +61,7 @@ export class FindCompanyService implements IFindCompanyService {
         const transformedCompany = {
           ...company,
           openPositions:
-            company.openPositions?.map((job) => new JobPositionDTO(job)) ?? [],
+            company.openPositions?.map((job) => new JobPositionResponseDTO(job)) ?? [],
         };
         return new CompanyResponseDTO(transformedCompany);
       });
@@ -148,7 +148,7 @@ export class FindCompanyService implements IFindCompanyService {
         ...user.company,
         email: user.email,
         openPositions:
-          user.company.openPositions?.map((job) => new JobPositionDTO(job)) ??
+          user.company.openPositions?.map((job) => new JobPositionResponseDTO(job)) ??
           [],
       });
 

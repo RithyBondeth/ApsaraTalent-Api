@@ -1,102 +1,56 @@
 import { EGender } from '@app/common/database/enums/gender.enum';
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
 import { Exclude, Expose, Type } from 'class-transformer';
-import {
-  IsArray,
-  IsBoolean,
-  IsDate,
-  IsEmail,
-  IsEnum,
-  IsNumber,
-  IsOptional,
-  IsPositive,
-  IsString,
-  ValidateNested,
-} from 'class-validator';
 import { formatDateToDDMMYYYY } from '@app/utils/functions/date-formatter';
 
 export class EmployeeResponseDTO {
   userId: string;
 
-  @IsString()
   id: string;
 
-  @IsString()
   firstname: string;
 
-  @IsString()
   lastname: string;
 
-  @IsDate()
   @Type(() => Date)
-  @IsOptional()
   dob?: Date;
 
-  @IsString()
   username: string;
 
-  @IsEnum(EGender)
   gender: EGender;
 
-  @IsString()
-  @IsOptional()
   avatar?: string;
 
-  @IsString()
   phone: string;
 
-  @IsString()
   email: string;
 
-  @IsString()
   job: string;
 
-  @IsString()
-  @IsOptional()
   yearsOfExperience: string;
 
-  @IsString()
   availability: string;
 
-  @IsString()
   description: string;
 
-  @IsString()
   location: string;
 
-  @IsString()
-  @IsOptional()
   resume?: string;
 
-  @IsString()
-  @IsOptional()
   coverLetter?: string;
 
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => SkillDTO)
-  @IsOptional()
-  skills?: SkillDTO[];
+  @Type(() => SkillResponseDTO)
+  skills?: SkillResponseDTO[];
 
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => ExperienceDTO)
-  @IsOptional()
-  experiences?: ExperienceDTO[];
+  @Type(() => ExperienceResponseDTO)
+  experiences?: ExperienceResponseDTO[];
 
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => EducationDTO)
-  @IsOptional()
-  educations?: EducationDTO[];
+  @Type(() => EducationResponseDTO)
+  educations?: EducationResponseDTO[];
 
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => SocialDTO)
-  @IsOptional()
-  socials?: SocialDTO[];
+  @Type(() => SocialResponseDTO)
+  socials?: SocialResponseDTO[];
 
-  @IsDate()
   @Type(() => Date)
   createdAt: Date;
 
@@ -105,164 +59,108 @@ export class EmployeeResponseDTO {
   }
 }
 
-export class SkillDTO {
-  @IsString()
-  @IsOptional()
+export class SkillResponseDTO {
   id?: string;
 
-  @IsString()
   name: string;
 
-  @IsString()
-  @IsOptional()
   description?: string;
 
-  constructor(partial: Partial<SkillDTO>) {
+  constructor(partial: Partial<SkillResponseDTO>) {
     return Object.assign(this, partial);
   }
 }
 
-export class ExperienceDTO {
-  @IsString()
-  @IsOptional()
+export class ExperienceResponseDTO {
   id?: string;
 
-  @IsString()
   title: string;
 
-  @IsString()
   description: string;
 
-  @IsDate()
   @Type(() => Date)
   startDate: Date;
 
-  @IsDate()
   @Type(() => Date)
   endDate: Date;
 
-  constructor(partial: Partial<ExperienceDTO>) {
+  constructor(partial: Partial<ExperienceResponseDTO>) {
     return Object.assign(this, partial);
   }
 }
 
-export class EducationDTO {
-  @IsString()
-  @IsOptional()
+export class EducationResponseDTO {
   id?: string;
 
-  @IsString()
   school: string;
 
-  @IsString()
   degree: string;
 
-  @IsString()
   year: string;
 
-  constructor(partial: Partial<EducationDTO>) {
+  constructor(partial: Partial<EducationResponseDTO>) {
     return Object.assign(this, partial);
   }
 }
 
-export class SocialDTO {
-  @IsString()
-  @IsOptional()
+export class SocialResponseDTO {
   id?: string;
 
-  @IsString()
   platform: string;
 
-  @IsString()
   url: string;
 
-  constructor(partial: Partial<SocialDTO>) {
+  constructor(partial: Partial<SocialResponseDTO>) {
     return Object.assign(this, partial);
   }
 }
 
 export class CompanyResponseDTO {
-  @IsString()
   id: string;
 
-  @IsString()
   name: string;
 
-  @IsString()
   industry: string;
 
-  @IsString()
   description: string;
 
-  @IsString()
-  @IsOptional()
   avatar?: string;
 
-  @IsString()
-  @IsOptional()
   cover?: string;
 
-  @IsNumber()
-  @IsPositive()
   companySize: number;
 
-  @IsNumber()
-  @IsPositive()
   foundedYear: number;
 
-  @IsString()
   location: string;
 
-  @IsString()
-  @IsOptional()
   phone?: string;
 
-  @IsString()
-  @IsOptional()
   email?: string;
 
-  @IsArray()
-  @Type(() => ImageDTO)
-  @ValidateNested({ each: true })
-  @IsOptional()
-  images?: ImageDTO[];
+  @Type(() => ImageResponseDTO)
+  images?: ImageResponseDTO[];
 
-  @IsArray()
-  @Type(() => JobPositionDTO)
-  @ValidateNested({ each: true })
-  @IsOptional()
-  openPositions?: JobPositionDTO[];
+  @Type(() => JobPositionResponseDTO)
+  openPositions?: JobPositionResponseDTO[];
 
-  @IsArray()
-  @Type(() => ValuesAndBenefitsDTO)
-  @ValidateNested({ each: true })
-  @IsOptional()
-  values?: ValuesAndBenefitsDTO[];
+  @Type(() => ValuesAndBenefitsResponseDTO)
+  values?: ValuesAndBenefitsResponseDTO[];
 
-  @IsArray()
-  @Type(() => ValuesAndBenefitsDTO)
-  @ValidateNested({ each: true })
-  @IsOptional()
-  benefits?: ValuesAndBenefitsDTO[];
+  @Type(() => ValuesAndBenefitsResponseDTO)
+  benefits?: ValuesAndBenefitsResponseDTO[];
 
   @Expose()
   get availableTimes(): string[] {
     return [...(new Set(this.openPositions?.map((job) => job.type)) || [])];
   }
 
-  @IsArray()
-  @Type(() => CareerScopesDTO)
-  @ValidateNested({ each: true })
-  @IsOptional()
-  careerScopes?: CareerScopesDTO[];
+  @Type(() => CareerScopesResponseDTO)
+  careerScopes?: CareerScopesResponseDTO[];
 
-  @IsArray()
-  @Type(() => SocialDTO)
-  @ValidateNested({ each: true })
-  @IsOptional()
-  socials: SocialDTO[];
+  @Type(() => SocialResponseDTO)
+  socials: SocialResponseDTO[];
 
-  @IsDate()
   @Type(() => Date)
   createdAt: Date;
 
@@ -271,12 +169,9 @@ export class CompanyResponseDTO {
   }
 }
 
-export class ImageDTO {
-  @IsString()
-  @IsOptional()
+export class ImageResponseDTO {
   id?: string;
 
-  @IsString()
   image: string;
 
   @Exclude()
@@ -285,25 +180,20 @@ export class ImageDTO {
   @Exclude()
   updatedAt: Date;
 
-  constructor(partial: Partial<ImageDTO>) {
+  constructor(partial: Partial<ImageResponseDTO>) {
     return Object.assign(this, partial);
   }
 }
 
-export class JobPositionDTO {
-  @IsString()
+export class JobPositionResponseDTO {
   id: string;
 
-  @IsString()
   title: string;
 
-  @IsString()
   description: string;
 
-  @IsString()
   salary: string;
 
-  @IsString()
   type: string;
 
   @Exclude()
@@ -346,126 +236,78 @@ export class JobPositionDTO {
     return this.createdAt ? formatDateToDDMMYYYY(this.createdAt) : null;
   }
 
-  constructor(partial: Partial<JobPositionDTO>) {
+  constructor(partial: Partial<JobPositionResponseDTO>) {
     return Object.assign(this, partial);
   }
 }
 
-export class ValuesAndBenefitsDTO {
-  @IsNumber()
-  @IsPositive()
-  @IsOptional()
+export class ValuesAndBenefitsResponseDTO {
   id?: number;
 
-  @IsString()
   label: string;
 
-  constructor(partial: Partial<ValuesAndBenefitsDTO>) {
+  constructor(partial: Partial<ValuesAndBenefitsResponseDTO>) {
     return Object.assign(this, partial);
   }
 }
 
-export class CareerScopesDTO {
-  @IsString()
-  @IsOptional()
+export class CareerScopesResponseDTO {
   id?: string;
 
-  @IsString()
   name: string;
 
-  @IsString()
-  @IsOptional()
   description?: string;
 
-  constructor(partial: Partial<CareerScopesDTO>) {
+  constructor(partial: Partial<CareerScopesResponseDTO>) {
     return Object.assign(this, partial);
   }
 }
 
 export class UserResponseDTO {
-  @IsString()
   id: string;
 
-  @IsEnum(EUserRole)
   role: EUserRole;
 
-  @IsEmail()
   email: string;
 
-  @IsString()
   password: string;
 
-  @IsString()
-  @IsOptional()
   phone?: string;
 
-  @IsString()
-  @IsOptional()
   otpCode?: string;
 
-  @IsDate()
-  @IsOptional()
   otpCodeExpires?: Date;
 
-  @IsString()
-  @IsOptional()
   pushNotificationToken?: string;
 
-  @IsString()
-  @IsOptional()
   resetPasswordToken?: string;
 
-  @IsDate()
-  @IsOptional()
   resetPasswordExpires?: Date;
 
-  @IsString()
-  @IsOptional()
   refreshToken?: string;
 
-  @IsBoolean()
-  @IsOptional()
   isEmailVerified?: boolean;
 
-  @IsString()
-  @IsOptional()
   emailVerificationToken?: string;
 
-  @IsBoolean()
-  @IsOptional()
   isTwoFactorEnabled?: boolean;
 
-  @IsString()
-  @IsOptional()
   twoFactorSecret?: string;
 
-  @IsString()
-  @IsOptional()
   facebookId?: string;
 
-  @IsString()
-  @IsOptional()
   googleId?: string;
 
-  @IsString()
-  @IsOptional()
   linkedinId?: string;
 
-  @IsString()
-  @IsOptional()
   githubId?: string;
 
-  @ValidateNested()
   @Type(() => EmployeeResponseDTO)
-  @IsOptional()
   employee?: EmployeeResponseDTO;
 
-  @ValidateNested()
   @Type(() => CompanyResponseDTO)
-  @IsOptional()
   company?: CompanyResponseDTO;
 
-  @IsDate()
   @Type(() => Date)
   createdAt: Date;
 
@@ -475,19 +317,10 @@ export class UserResponseDTO {
 }
 
 export class CountAllUsersResponseDTO {
-  @IsNumber()
-  @IsPositive()
-  @IsOptional()
   totalUsers?: number;
 
-  @IsNumber()
-  @IsPositive()
-  @IsOptional()
   totalEmployees?: number;
 
-  @IsNumber()
-  @IsPositive()
-  @IsOptional()
   totalCompanies?: number;
 
   constructor(partial: Partial<CountAllUsersResponseDTO>) {

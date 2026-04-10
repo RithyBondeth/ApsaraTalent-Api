@@ -16,7 +16,7 @@ import {
   CompanyResponseDTO,
   CountAllUsersResponseDTO,
   EmployeeResponseDTO,
-  JobPositionDTO,
+  JobPositionResponseDTO,
   UserResponseDTO,
 } from '../dtos/user-response.dto';
 import { IUserService } from '@app/contracts/interfaces/service/user-service.interface';
@@ -109,7 +109,7 @@ export class UserService implements IUserService, OnModuleInit {
             company: new CompanyResponseDTO({
               ...user.company,
               openPositions: user.company?.openPositions?.map(
-                (job) => new JobPositionDTO(job),
+                (job) => new JobPositionResponseDTO(job),
               ),
             }),
           }),
@@ -221,7 +221,7 @@ export class UserService implements IUserService, OnModuleInit {
         company: new CompanyResponseDTO({
           ...user.company,
           openPositions: user.company?.openPositions?.map(
-            (job) => new JobPositionDTO(job),
+            (job) => new JobPositionResponseDTO(job),
           ),
         }),
       });
@@ -874,7 +874,7 @@ export class UserService implements IUserService, OnModuleInit {
         company: new CompanyResponseDTO({
           ...user.company,
           openPositions: user.company?.openPositions?.map(
-            (job) => new JobPositionDTO(job),
+            (job) => new JobPositionResponseDTO(job),
           ),
         }),
       }));

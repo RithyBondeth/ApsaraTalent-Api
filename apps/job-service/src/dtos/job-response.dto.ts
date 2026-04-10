@@ -1,10 +1,8 @@
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
-import { IsBoolean, IsNumber, IsString } from 'class-validator';
 import { formatDateToDDMMYYYY } from '@app/utils/functions/date-formatter';
 
 export class UserInJobResponseDTO {
-  @IsString()
   id: string;
 
   @Exclude()
@@ -73,10 +71,8 @@ export class UserInJobResponseDTO {
 }
 
 export class CompanyInJobResponseDTO {
-  @IsString()
   id: string;
 
-  @IsString()
   name: string;
 
   @Exclude()
@@ -85,19 +81,15 @@ export class CompanyInJobResponseDTO {
   @Exclude()
   phone: string;
 
-  @IsString()
   avatar: string;
 
   @Exclude()
   cover: string;
 
-  @IsNumber()
   companySize: number;
 
-  @IsString()
   industry: string;
 
-  @IsString()
   location: string;
 
   @Exclude()
@@ -115,16 +107,12 @@ export class CompanyInJobResponseDTO {
 }
 
 export class JobResponseDTO {
-  @IsString()
   id: string;
 
-  @IsString()
   title: string;
 
-  @IsString()
   description: string;
 
-  @IsString()
   type: string;
 
   @Exclude()
@@ -151,7 +139,6 @@ export class JobResponseDTO {
     return this.skillsRequired.split(',').map((skill) => skill.trim());
   }
 
-  @IsString()
   salary: string;
 
   @Exclude()
@@ -177,7 +164,6 @@ export class JobResponseDTO {
   @Type(() => CompanyInJobResponseDTO)
   company: CompanyInJobResponseDTO;
 
-  @IsBoolean()
   isHide: boolean;
 
   constructor(partial: Partial<JobResponseDTO>) {
