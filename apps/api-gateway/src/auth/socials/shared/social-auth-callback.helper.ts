@@ -13,6 +13,7 @@ import {
   TSocialAuthResult,
   TSuccessHtmlOptions,
 } from '@app/contracts/types/auth.type';
+import { AUTH_EXPIRY, TIMEOUTS } from '@app/contracts/constants/app.constant';
 
 const logger = new Logger('SocialAuthUtil');
 
@@ -32,7 +33,7 @@ export function setSocialAuthCookies(
   result: TSocialAuthResult,
 ): void {
   const rememberMe = getRememberFlag(remember);
-  const maxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+  const maxAge = rememberMe ? AUTH_EXPIRY.REMEMBER_ME_MAXAGE : AUTH_EXPIRY.AUTH_TOKEN_MAXAGE;
   const isProduction =
     configService.get<string>('NODE_ENV') === 'production' ||
     isProductionEnvironment();
@@ -138,7 +139,7 @@ export async function handleSocialAuthCallback({
   successType,
   errorType,
   failureMessage,
-  timeoutMs = 10000,
+  timeoutMs = TIMEOUTS.OAUTH_CALLBACK,
 }: TSocialAuthCallbackOptions): Promise<void> {
   const frontendOrigin = getFrontendOrigin(configService);
 

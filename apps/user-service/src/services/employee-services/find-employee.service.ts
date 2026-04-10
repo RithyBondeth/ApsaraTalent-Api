@@ -13,6 +13,7 @@ import {
 } from '../../dtos/user-response.dto';
 
 import { IFindEmployeeService } from '@app/contracts/interfaces/user-service.interface';
+import { CACHE_TTL } from '@app/contracts/constants/cache-ttl.constant';
 
 @Injectable()
 export class FindEmployeeService implements IFindEmployeeService {
@@ -56,8 +57,7 @@ export class FindEmployeeService implements IFindEmployeeService {
 
       const result = employees.map((emp) => new EmployeeResponseDTO(emp));
 
-      // Cache for 2 minutes
-      await this.redisService.set(cacheKey, result, 120000);
+      await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);
 
       return result;
     } catch (error) {
@@ -90,8 +90,7 @@ export class FindEmployeeService implements IFindEmployeeService {
       const totalEmployees = await this.employeeRepository.count();
       const result = { totalEmployees };
 
-      // Cache for 2 minutes
-      await this.redisService.set(cacheKey, result, 120000);
+      await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);
 
       return new CountAllUsersResponseDTO(result);
     } catch (error) {
@@ -142,8 +141,7 @@ export class FindEmployeeService implements IFindEmployeeService {
         email: user.email,
       });
 
-      // Cache for 5 minutes
-      await this.redisService.set(cacheKey, result, 300000);
+      await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
 
       return result;
     } catch (error) {

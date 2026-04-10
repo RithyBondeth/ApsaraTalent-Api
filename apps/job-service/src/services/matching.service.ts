@@ -15,6 +15,7 @@ import { Repository } from 'typeorm';
 import { MatchDto } from '../dtos/match.dto';
 
 import { IMatchingService } from '@app/contracts/interfaces/job-service.interface';
+import { CACHE_TTL } from '@app/contracts/constants/cache-ttl.constant';
 
 @Injectable()
 export class MatchingService implements IMatchingService {
@@ -293,7 +294,7 @@ export class MatchingService implements IMatchingService {
         });
 
       const result = employeeLiked.map((e) => new UserResponseDTO(e.company));
-      await this.redisService.set(cacheKey, result, 300000);
+      await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
       return result;
     } catch (error) {
       this.logger.error(
@@ -328,7 +329,7 @@ export class MatchingService implements IMatchingService {
         });
 
       const result = companyLiked.map((c) => new UserResponseDTO(c.employee));
-      await this.redisService.set(cacheKey, result, 300000);
+      await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
       return result;
     } catch (error) {
       this.logger.error(
@@ -365,7 +366,7 @@ export class MatchingService implements IMatchingService {
       const result = currentEmployeeMatching.map(
         (u) => new UserResponseDTO(u.company),
       );
-      await this.redisService.set(cacheKey, result, 300000);
+      await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
       return result;
     } catch (error) {
       this.logger.error(
@@ -402,7 +403,7 @@ export class MatchingService implements IMatchingService {
       const result = currentCompanyMatching.map(
         (u) => new UserResponseDTO(u.employee),
       );
-      await this.redisService.set(cacheKey, result, 300000);
+      await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
       return result;
     } catch (error) {
       this.logger.error(
@@ -431,7 +432,7 @@ export class MatchingService implements IMatchingService {
         where: { employee: { id: eid }, isMatched: true },
       });
       const result = { totalMatching: count };
-      await this.redisService.set(cacheKey, result, 300000);
+      await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
       return result;
     } catch (error) {
       this.logger.error(
@@ -618,7 +619,7 @@ export class MatchingService implements IMatchingService {
         where: { company: { id: cid }, isMatched: true },
       });
       const result = { totalMatching: count };
-      await this.redisService.set(cacheKey, result, 300000);
+      await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
       return result;
     } catch (error) {
       this.logger.error(

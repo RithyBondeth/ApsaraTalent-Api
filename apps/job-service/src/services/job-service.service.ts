@@ -13,6 +13,7 @@ const JOB_LIST_TTL = 5 * 60 * 1000; // 5 min
 const JOB_SEARCH_TTL = 2 * 60 * 1000; // 2 min
 
 import { IJobServiceService } from '@app/contracts/interfaces/job-service.interface';
+import { MAX_INT32 } from '@app/contracts/constants/app.constant';
 
 @Injectable()
 export class JobService implements IJobServiceService {
@@ -111,7 +112,7 @@ export class JobService implements IJobServiceService {
       if (companySizeMin || companySizeMax) {
         query.andWhere('company.companySize BETWEEN :min AND :max', {
           min: companySizeMin || 0,
-          max: companySizeMax || 2147483647,
+          max: companySizeMax || MAX_INT32,
         });
       }
 

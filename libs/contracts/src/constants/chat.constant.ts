@@ -24,6 +24,21 @@ export const CHAT_ALLOWED_ORIGINS = parseAllowedOrigins(
 );
 export const CHAT_ALLOW_ALL_CORS = process.env.CORS_ALLOW_ALL === 'true';
 
+export const CHAT = {
+  /** Default avatar when a user has no profile picture */
+  DEFAULT_AVATAR_PATH: '/avatars/default.png',
+  /** Maximum allowed text content length per message */
+  MAX_MESSAGE_LENGTH: 5_000,
+  /** Default number of messages returned in chat history */
+  DEFAULT_HISTORY_LIMIT: 50,
+  /** Hard cap on messages per history request */
+  MAX_HISTORY_LIMIT: 100,
+  /** Hard cap on history offset to prevent runaway queries */
+  MAX_HISTORY_OFFSET: 10_000,
+  /** Maximum recent-chat entries fetched per user */
+  MAX_RECENT_CHATS: 100,
+} as const;
+
 export const CHAT_WEBSOCKET_EVENTS = {
   // Chat Actions
   GET_ONLINE_USERS: 'getOnlineUsers',

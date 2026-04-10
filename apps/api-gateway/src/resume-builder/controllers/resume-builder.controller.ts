@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { TimeoutError, firstValueFrom, timeout } from 'rxjs';
+import { TIMEOUTS } from '@app/contracts/constants/app.constant';
 import { BuildResumeDTO } from '../../../../resume-builder-service/src/dtos/resume-builder.dto';
 import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/resume-builder-service.constant';
 
@@ -31,7 +32,7 @@ export class ResumeBuilderController implements IResumeBuilderController {
       return await firstValueFrom(
         this.resumeBuilderClient
           .send(RESUME_BUILDER_SERVICE.ACTIONS.BUILD_RESUME, buildResumeDTO)
-          .pipe(timeout(170_000)),
+          .pipe(timeout(TIMEOUTS.RESUME_BUILDER_CONTROLLER)),
       );
     } catch (error) {
       if (error instanceof TimeoutError) {

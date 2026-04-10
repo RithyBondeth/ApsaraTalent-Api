@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PinoLogger } from 'nestjs-pino';
 import sharp from 'sharp';
+import { RESUME_AVATAR_SIZE } from '@app/contracts/constants/app.constant';
 
 @Injectable()
 export class ImageService {
@@ -24,7 +25,7 @@ export class ImageService {
       const imageBuffer = Buffer.from(base64Data, 'base64');
 
       const optimizedBuffer = await sharp(imageBuffer)
-        .resize(300, 300, { fit: 'cover', position: 'center' })
+        .resize(RESUME_AVATAR_SIZE, RESUME_AVATAR_SIZE, { fit: 'cover', position: 'center' })
         .jpeg({ quality: 85 })
         .toBuffer();
 

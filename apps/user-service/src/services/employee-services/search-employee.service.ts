@@ -10,6 +10,7 @@ import { SearchEmployeeDto } from '../../dtos/employee/search-employee.dto';
 import { EmployeeResponseDTO } from '../../dtos/user-response.dto';
 
 import { ISearchEmployeeService } from '@app/contracts/interfaces/user-service.interface';
+import { CACHE_TTL } from '@app/contracts/constants/cache-ttl.constant';
 
 @Injectable()
 export class SearchEmployeeService implements ISearchEmployeeService {
@@ -184,8 +185,7 @@ export class SearchEmployeeService implements ISearchEmployeeService {
           }),
       );
 
-      // Cache search results for 1 minute (shorter because search is frequent)
-      await this.redisService.set(cacheKey, result, 60000);
+      await this.redisService.set(cacheKey, result, CACHE_TTL.SHORT);
 
       return result;
     } catch (error) {

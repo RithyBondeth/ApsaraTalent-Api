@@ -14,6 +14,7 @@ import {
 } from '../../dtos/user-response.dto';
 
 import { IFindCompanyService } from '@app/contracts/interfaces/user-service.interface';
+import { CACHE_TTL } from '@app/contracts/constants/cache-ttl.constant';
 
 @Injectable()
 export class FindCompanyService implements IFindCompanyService {
@@ -65,8 +66,7 @@ export class FindCompanyService implements IFindCompanyService {
         return new CompanyResponseDTO(transformedCompany);
       });
 
-      // Cache the result for 2 minutes
-      await this.redisService.set(cacheKey, result, 120000);
+      await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);
 
       return result;
     } catch (error) {
@@ -99,8 +99,7 @@ export class FindCompanyService implements IFindCompanyService {
       const totalCompanies = await this.companyRepository.count();
       const result = { totalCompanies };
 
-      // Cache for 2 minutes
-      await this.redisService.set(cacheKey, result, 120000);
+      await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);
 
       return new CountAllUsersResponseDTO(result);
     } catch (error) {
@@ -153,8 +152,7 @@ export class FindCompanyService implements IFindCompanyService {
           [],
       });
 
-      // Cache the result for 5 minutes
-      await this.redisService.set(cacheKey, result, 300000);
+      await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
 
       return result;
     } catch (error) {

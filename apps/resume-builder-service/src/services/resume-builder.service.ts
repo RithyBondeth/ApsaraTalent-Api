@@ -8,6 +8,7 @@ import { BuildResumeDTO } from '../dtos/resume-builder.dto';
 import { ImageService } from './image.service';
 
 import { IResumeBuilderService } from '@app/contracts/interfaces/resume-builder-service.interface';
+import { TIMEOUTS } from '@app/contracts/constants/app.constant';
 
 @Injectable()
 export class ResumeBuilderService implements IResumeBuilderService {
@@ -521,7 +522,7 @@ CONTENT RULES
       const page = await browser.newPage();
       await page.setContent(html, {
         waitUntil: 'networkidle0',
-        timeout: 30000,
+        timeout: TIMEOUTS.RESUME_GENERATION,
       });
 
       const pdf = await page.pdf({

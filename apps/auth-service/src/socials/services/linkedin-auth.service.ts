@@ -12,6 +12,7 @@ import { USER_SERVICE } from '@app/contracts/constants/user-service.constant';
 import { LinkedInAuthDTO } from '../dtos/linkedin-auth.dto';
 
 import { ILinkedInAuthService } from '@app/contracts/interfaces/auth-service.interface';
+import { TIMEOUTS } from '@app/contracts/constants/app.constant';
 
 @Injectable()
 export class LinkedInAuthService implements ILinkedInAuthService {
@@ -86,7 +87,7 @@ export class LinkedInAuthService implements ILinkedInAuthService {
     firstValueFrom(
       this.userClient
         .send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, { userId })
-        .pipe(timeout(3000)),
+        .pipe(timeout(TIMEOUTS.SOCIAL_AUTH)),
     ).catch((err) => {
       this.logger.warn(
         `[AUTH] Cache clear after ${provider} login failed for userId=${userId}: ${(err as Error).message}`,

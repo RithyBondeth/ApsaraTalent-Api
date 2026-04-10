@@ -20,6 +20,7 @@ import {
   UserResponseDTO,
 } from '../dtos/user-response.dto';
 import { IUserService } from '@app/contracts/interfaces/user-service.interface';
+import { CACHE_TTL } from '@app/contracts/constants/cache-ttl.constant';
 
 @Injectable()
 export class UserService implements IUserService, OnModuleInit {
@@ -114,8 +115,7 @@ export class UserService implements IUserService, OnModuleInit {
           }),
       );
 
-      // Cache for 2 minutes
-      await this.redisService.set(cacheKey, result, 120000);
+      await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);
 
       return result;
     } catch (error) {
@@ -148,8 +148,7 @@ export class UserService implements IUserService, OnModuleInit {
       const totalUsers = await this.userRepository.count();
       const result = { totalUsers };
 
-      // Cache for 2 minutes
-      await this.redisService.set(cacheKey, result, 120000);
+      await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);
 
       return new CountAllUsersResponseDTO(result);
     } catch (error) {
@@ -227,8 +226,7 @@ export class UserService implements IUserService, OnModuleInit {
         }),
       });
 
-      // Cache for 5 minutes
-      await this.redisService.set(cacheKey, result, 300000);
+      await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
 
       return result;
     } catch (error) {
@@ -562,7 +560,7 @@ export class UserService implements IUserService, OnModuleInit {
 
       if (!allFavorites || allFavorites.length === 0) {
         const result: any[] = [];
-        await this.redisService.set(cacheKey, result, 60000);
+        await this.redisService.set(cacheKey, result, CACHE_TTL.SHORT);
         return result;
       }
 
@@ -576,8 +574,7 @@ export class UserService implements IUserService, OnModuleInit {
         },
       }));
 
-      // Cache for 2 minutes
-      await this.redisService.set(cacheKey, result, 120000);
+      await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);
 
       return result;
     } catch (error) {
@@ -615,7 +612,7 @@ export class UserService implements IUserService, OnModuleInit {
 
       if (!allFavorites || allFavorites.length === 0) {
         const result: any[] = [];
-        await this.redisService.set(cacheKey, result, 60000);
+        await this.redisService.set(cacheKey, result, CACHE_TTL.SHORT);
         return result;
       }
 
@@ -629,8 +626,7 @@ export class UserService implements IUserService, OnModuleInit {
         },
       }));
 
-      // Cache for 2 minutes
-      await this.redisService.set(cacheKey, result, 120000);
+      await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);
 
       return result;
     } catch (error) {
@@ -669,8 +665,7 @@ export class UserService implements IUserService, OnModuleInit {
 
       const result = { totalFavorites: countAllCompanyFavorites };
 
-      // Cache for 5 minutes
-      await this.redisService.set(cacheKey, result, 300000);
+      await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
 
       return result;
     } catch (error) {
@@ -711,8 +706,7 @@ export class UserService implements IUserService, OnModuleInit {
 
       const result = { totalFavorites: countAllEmployeeFavorites };
 
-      // Cache for 5 minutes
-      await this.redisService.set(cacheKey, result, 300000);
+      await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
 
       return result;
     } catch (error) {
@@ -749,8 +743,7 @@ export class UserService implements IUserService, OnModuleInit {
           message: 'No career scopes available',
         });
 
-      // Cache for 1 hour (rarely changes)
-      await this.redisService.set(cacheKey, careerScopes, 3600000);
+      await this.redisService.set(cacheKey, careerScopes, CACHE_TTL.STATIC);
 
       return careerScopes;
     } catch (error) {
@@ -886,8 +879,7 @@ export class UserService implements IUserService, OnModuleInit {
         }),
       }));
 
-      // Cache for 5 minutes
-      await this.redisService.set(cacheKey, recommendations, 300000);
+      await this.redisService.set(cacheKey, recommendations, CACHE_TTL.LONG);
 
       return recommendations;
     } catch (error) {
@@ -978,8 +970,7 @@ export class UserService implements IUserService, OnModuleInit {
           : undefined,
       }));
 
-      // Cache for 5 minutes
-      await this.redisService.set(cacheKey, recommendations, 300000);
+      await this.redisService.set(cacheKey, recommendations, CACHE_TTL.LONG);
 
       return recommendations;
     } catch (error) {

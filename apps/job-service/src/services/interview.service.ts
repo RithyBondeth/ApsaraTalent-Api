@@ -16,6 +16,7 @@ import {
 } from '../dtos/interview.dto';
 
 import { IInterviewService } from '@app/contracts/interfaces/job-service.interface';
+import { DEFAULT_INTERVIEW_DURATION_MINUTES } from '@app/contracts/constants/app.constant';
 
 @Injectable()
 export class InterviewService implements IInterviewService {
@@ -83,7 +84,7 @@ export class InterviewService implements IInterviewService {
         title: dto.title,
         description: dto.description,
         scheduledAt: new Date(dto.scheduledAt),
-        durationMinutes: dto.durationMinutes || 30,
+        durationMinutes: dto.durationMinutes || DEFAULT_INTERVIEW_DURATION_MINUTES,
         location: dto.location,
         meetingLink: dto.meetingLink,
         status: 'pending',
