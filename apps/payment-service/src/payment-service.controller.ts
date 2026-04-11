@@ -15,6 +15,15 @@ import {
   I_PAYMENT_SERVICE,
   IPaymentService,
 } from '@app/contracts/interfaces/service/payment-service.interface';
+import {
+  CheckPaymentBulkStatusResponse,
+  CheckPaymentStatusResponse,
+  DecodeKhqrResponse,
+  GenerateDeepLinkResponse,
+  GenerateIndividualKhqrResponse,
+  GenerateMerchantKhqrResponse,
+  VerifyKhqrResponse,
+} from '@app/contracts/interfaces/domain/payment-response.interface';
 
 @Controller()
 export class PaymentController implements IPaymentController {
@@ -27,7 +36,7 @@ export class PaymentController implements IPaymentController {
   @RateLimit(50) // Lower limit for QR generation
   async generateIndividualQr(
     @Payload() generateIndividualKhqrDTO: GenerateIndividualKhqrDTO,
-  ): Promise<any> {
+  ): Promise<GenerateIndividualKhqrResponse> {
     return this.paymentService.generateIndividualKhqrDTO(
       generateIndividualKhqrDTO,
     );
@@ -37,40 +46,44 @@ export class PaymentController implements IPaymentController {
   @RateLimit(50) // Lower limit for QR generation
   async generateMerchantQr(
     @Payload() generateMerchantKhqrDTO: GenerateMerchantKhqrDTO,
-  ): Promise<any> {
+  ): Promise<GenerateMerchantKhqrResponse> {
     return this.paymentService.generateMerchantKhqrDTO(
       generateMerchantKhqrDTO,
     );
   }
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.VERIFY_KHQR)
-  async verifyKhqr(@Payload() verifyKhqrDTO: VerifyKhqrDTO): Promise<any> {
+  async verifyKhqr(
+    @Payload() verifyKhqrDTO: VerifyKhqrDTO,
+  ): Promise<VerifyKhqrResponse> {
     return this.paymentService.verifyKhqr(verifyKhqrDTO);
   }
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.DECODE_KHQR)
-  async decodeKhqr(@Payload() decodeKhqrDTO: DecodeKhqrDTO): Promise<any> {
+  async decodeKhqr(
+    @Payload() decodeKhqrDTO: DecodeKhqrDTO,
+  ): Promise<DecodeKhqrResponse> {
     return this.paymentService.decodeKhqr(decodeKhqrDTO);
   }
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.GENERATE_DEEP_LINK)
   async generateDeepLink(
     @Payload() generateDeepLinkDTO: GenerateDeepLinkDTO,
-  ): Promise<any> {
+  ): Promise<GenerateDeepLinkResponse> {
     return this.paymentService.generateDeepLink(generateDeepLinkDTO);
   }
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.CHECK_PAYMENT_STATUS)
   async checkPaymentStatus(
     @Payload() checkPaymentStatusDTO: CheckPaymentStatusDTO,
-  ): Promise<any> {
+  ): Promise<CheckPaymentStatusResponse> {
     return this.paymentService.checkPaymentStatus(checkPaymentStatusDTO);
   }
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.CHECK_PAYMENT_BULK_STATUS)
   async checkPaymentBulkStatus(
     @Payload() checkPaymentBulkStatusDTO: CheckPaymentBulkStatusDTO,
-  ): Promise<any> {
+  ): Promise<CheckPaymentBulkStatusResponse> {
     return this.paymentService.checkPaymentBulkStatus(
       checkPaymentBulkStatusDTO,
     );

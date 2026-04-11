@@ -34,6 +34,15 @@ import {
 } from './exceptions/bakong.exceptions';
 
 import { IPaymentService } from '@app/contracts/interfaces/service/payment-service.interface';
+import {
+  CheckPaymentBulkStatusResponse,
+  CheckPaymentStatusResponse,
+  DecodeKhqrResponse,
+  GenerateDeepLinkResponse,
+  GenerateIndividualKhqrResponse,
+  GenerateMerchantKhqrResponse,
+  VerifyKhqrResponse,
+} from '@app/contracts/interfaces/domain/payment-response.interface';
 
 @Injectable()
 export class PaymentService implements IPaymentService {
@@ -68,7 +77,7 @@ export class PaymentService implements IPaymentService {
   }
   async generateIndividualKhqrDTO(
     generateIndividualKhqrDTO: GenerateIndividualKhqrDTO,
-  ): Promise<any> {
+  ): Promise<GenerateIndividualKhqrResponse> {
     try {
       this.logger.info(
         { merchantName: generateIndividualKhqrDTO.merchantName },
@@ -160,7 +169,7 @@ export class PaymentService implements IPaymentService {
 
   async generateMerchantKhqrDTO(
     generateMerchantKhqrDTO: GenerateMerchantKhqrDTO,
-  ): Promise<any> {
+  ): Promise<GenerateMerchantKhqrResponse> {
     try {
       this.logger.info(
         { merchantName: generateMerchantKhqrDTO.merchantName },
@@ -246,7 +255,7 @@ export class PaymentService implements IPaymentService {
     }
   }
 
-  async verifyKhqr(verifyKhqrDTO: VerifyKhqrDTO): Promise<any> {
+  async verifyKhqr(verifyKhqrDTO: VerifyKhqrDTO): Promise<VerifyKhqrResponse> {
     try {
       this.logger.info('Verifying KHQR code');
 
@@ -278,7 +287,7 @@ export class PaymentService implements IPaymentService {
     }
   }
 
-  async decodeKhqr(decodeKhqrDTO: DecodeKhqrDTO): Promise<any> {
+  async decodeKhqr(decodeKhqrDTO: DecodeKhqrDTO): Promise<DecodeKhqrResponse> {
     try {
       this.logger.info('Decoding KHQR code');
 
@@ -318,7 +327,7 @@ export class PaymentService implements IPaymentService {
 
   async generateDeepLink(
     generateDeepLinkDTO: GenerateDeepLinkDTO,
-  ): Promise<any> {
+  ): Promise<GenerateDeepLinkResponse> {
     try {
       this.logger.info('Generating payment deep link');
 
@@ -353,7 +362,7 @@ export class PaymentService implements IPaymentService {
 
   async checkPaymentStatus(
     checkPaymentStatusDTO: CheckPaymentStatusDTO,
-  ): Promise<any> {
+  ): Promise<CheckPaymentStatusResponse> {
     try {
       this.logger.info(
         { md5Hash: checkPaymentStatusDTO.md5Hash.substring(0, 8) + '...' },
@@ -448,7 +457,7 @@ export class PaymentService implements IPaymentService {
 
   async checkPaymentBulkStatus(
     checkPaymentBulkStatusDTO: CheckPaymentBulkStatusDTO,
-  ): Promise<any> {
+  ): Promise<CheckPaymentBulkStatusResponse> {
     try {
       this.logger.info(
         { count: checkPaymentBulkStatusDTO.md5Hashes.length },

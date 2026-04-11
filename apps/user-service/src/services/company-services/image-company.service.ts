@@ -11,6 +11,7 @@ import * as path from 'path';
 import { Repository } from 'typeorm';
 
 import { IImageCompanyService } from '@app/contracts/interfaces/service/user-service.interface';
+import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
 
 @Injectable()
 export class ImageCompanyService implements IImageCompanyService {
@@ -50,7 +51,10 @@ export class ImageCompanyService implements IImageCompanyService {
     this.logger.info({ companyId, keysToDelete }, 'Company caches invalidated');
   }
 
-  async uploadCompanyAvatar(companyId: string, avatar: Express.Multer.File) {
+  async uploadCompanyAvatar(
+    companyId: string,
+    avatar: Express.Multer.File,
+  ): Promise<MessageResponse> {
     try {
       const company = await this.companyRepository.findOne({
         where: { id: companyId },
@@ -113,7 +117,7 @@ export class ImageCompanyService implements IImageCompanyService {
     }
   }
 
-  async removeCompanyAvatar(companyId: string) {
+  async removeCompanyAvatar(companyId: string): Promise<MessageResponse> {
     try {
       const company = await this.companyRepository.findOne({
         where: { id: companyId },
@@ -161,7 +165,10 @@ export class ImageCompanyService implements IImageCompanyService {
     }
   }
 
-  async uploadCompanyCover(companyId: string, cover: Express.Multer.File) {
+  async uploadCompanyCover(
+    companyId: string,
+    cover: Express.Multer.File,
+  ): Promise<MessageResponse> {
     try {
       const company = await this.companyRepository.findOne({
         where: { id: companyId },
@@ -221,7 +228,7 @@ export class ImageCompanyService implements IImageCompanyService {
     }
   }
 
-  async removeCompanyCover(companyId: string) {
+  async removeCompanyCover(companyId: string): Promise<MessageResponse> {
     try {
       const company = await this.companyRepository.findOne({
         where: { id: companyId },
@@ -268,7 +275,10 @@ export class ImageCompanyService implements IImageCompanyService {
     }
   }
 
-  async uploadCompanyImage(companyId: string, images: Express.Multer.File[]) {
+  async uploadCompanyImage(
+    companyId: string,
+    images: Express.Multer.File[],
+  ): Promise<MessageResponse> {
     try {
       const company = await this.companyRepository.findOne({
         where: { id: companyId },
@@ -325,7 +335,10 @@ export class ImageCompanyService implements IImageCompanyService {
     }
   }
 
-  async removeCompanyImage(companyId: string, imageId: string) {
+  async removeCompanyImage(
+    companyId: string,
+    imageId: string,
+  ): Promise<MessageResponse> {
     try {
       const image = await this.imageRepository.findOne({
         where: { id: imageId, company: { id: companyId } },

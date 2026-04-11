@@ -8,6 +8,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 
 import { IOpenPositionService } from '@app/contracts/interfaces/service/user-service.interface';
+import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
 
 @Injectable()
 export class OpenPositionService implements IOpenPositionService {
@@ -39,7 +40,10 @@ export class OpenPositionService implements IOpenPositionService {
     );
   }
 
-  async removeOpenPosition(companyId: string, opId: string): Promise<any> {
+  async removeOpenPosition(
+    companyId: string,
+    opId: string,
+  ): Promise<MessageResponse> {
     try {
       const removedJob = await this.jobRepository.findOne({
         where: { id: opId, company: { id: companyId } },

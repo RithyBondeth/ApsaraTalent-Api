@@ -1,20 +1,23 @@
+import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
+import { MessageResponse } from '../domain/message-response.interface';
+
 export interface IUserController {
-  findAllUsers(data?: any): Promise<any>;
-  findOneUserById(data?: any): Promise<any>;
+  findAllUsers(data?: any): Promise<UserResponseDTO[]>;
+  findOneUserById(data?: any): Promise<UserResponseDTO>;
   getCurrentUser(data?: any): Promise<any>;
   findAllCareerScopes(data?: any): Promise<any>;
-  employeeFavoriteCompany(eid?: any, cid?: any): Promise<any>;
+  employeeFavoriteCompany(eid?: any, cid?: any): Promise<MessageResponse>;
   employeeUnfavoriteCompany(
     eid?: any,
     cid?: any,
     favoriteId?: string,
-  ): Promise<any>;
-  companyFavoriteEmployee(cid?: any, eid?: any): Promise<any>;
+  ): Promise<MessageResponse>;
+  companyFavoriteEmployee(cid?: any, eid?: any): Promise<MessageResponse>;
   companyUnfavoriteEmployee(
     cid?: any,
     eid?: any,
     favoriteId?: string,
-  ): Promise<any>;
+  ): Promise<MessageResponse>;
   findAllEmployeeFavorite(eid?: any): Promise<any>;
   findAllCompanyFavorite(cid?: any): Promise<any>;
   countEmployeeFavorite(eid?: any): Promise<any>;

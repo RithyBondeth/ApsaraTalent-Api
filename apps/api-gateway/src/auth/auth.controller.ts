@@ -15,6 +15,11 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
+import { LoginResponseDTO } from 'apps/auth-service/src/basic/dtos/login-response.dto';
+import { ForgotPasswordResponseDTO } from 'apps/auth-service/src/basic/dtos/forgot-password-response.dto';
+import { ResetPasswordResponseDTO } from 'apps/auth-service/src/basic/dtos/reset-password-response.dto';
+import { RefreshTokenResponseDTO } from 'apps/auth-service/src/basic/dtos/refresh-token-response.dto';
+import { VerifyEmailResponseDTO } from 'apps/auth-service/src/basic/dtos/verify-email-response.dto';
 import { setAuthTokenCookies } from './utils/auth-cookie.util';
 import { sendAuthServiceRequest } from './utils/auth-rpc.util';
 
@@ -54,11 +59,11 @@ export class AuthController implements IBasicAuthController {
   async login(
     @Body() loginDTO: any,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<any> {
+  ): Promise<LoginResponseDTO> {
     const payload = { ...loginDTO };
 
     const { accessToken, refreshToken, user, message } =
-      await sendAuthServiceRequest(
+      await sendAuthServiceRequest<LoginResponseDTO>(
         this.authClient,
         AUTH_SERVICE.ACTIONS.LOGIN,
         payload,
@@ -113,9 +118,11 @@ export class AuthController implements IBasicAuthController {
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
-  async forgotPassword(@Body() forgotPasswordDTO: any): Promise<any> {
+  async forgotPassword(
+    @Body() forgotPasswordDTO: any,
+  ): Promise<ForgotPasswordResponseDTO> {
     const payload = { ...forgotPasswordDTO };
-    return await sendAuthServiceRequest(
+    return await sendAuthServiceRequest<ForgotPasswordResponseDTO>(
       this.authClient,
       AUTH_SERVICE.ACTIONS.FORGOT_PASSWORD,
       payload,
@@ -128,9 +135,9 @@ export class AuthController implements IBasicAuthController {
   async resetPassword(
     @Body() resetPasswordDTO: any,
     @Param('token') token: string,
-  ): Promise<any> {
+  ): Promise<ResetPasswordResponseDTO> {
     const payload = { ...resetPasswordDTO, token };
-    return await sendAuthServiceRequest(
+    return await sendAuthServiceRequest<ResetPasswordResponseDTO>(
       this.authClient,
       AUTH_SERVICE.ACTIONS.RESET_PASSWORD,
       payload,
@@ -143,10 +150,10 @@ export class AuthController implements IBasicAuthController {
   async refreshToken(
     @Body() refreshTokenDTO: any,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<any> {
+  ): Promise<RefreshTokenResponseDTO> {
     const payload = { ...refreshTokenDTO };
     const { accessToken, refreshToken, user, message } =
-      await sendAuthServiceRequest(
+      await sendAuthServiceRequest<RefreshTokenResponseDTO>(
         this.authClient,
         AUTH_SERVICE.ACTIONS.REFRESH_TOKEN,
         payload,
@@ -167,8 +174,8 @@ export class AuthController implements IBasicAuthController {
   @UseGuards(ThrottlerGuard)
   async verifyEmail(
     @Param('emailVerificationToken') emailVerificationToken: string,
-  ): Promise<any> {
-    return await sendAuthServiceRequest(
+  ): Promise<VerifyEmailResponseDTO> {
+    return await sendAuthServiceRequest<VerifyEmailResponseDTO>(
       this.authClient,
       AUTH_SERVICE.ACTIONS.VERIFY_EMAIL,
       emailVerificationToken,

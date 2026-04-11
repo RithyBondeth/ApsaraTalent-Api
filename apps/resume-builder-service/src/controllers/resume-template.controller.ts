@@ -9,6 +9,7 @@ import {
   I_RESUME_TEMPLATE_SERVICE,
   IResumeTemplateService,
 } from '@app/contracts/interfaces/service/resume-builder-service.interface';
+import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
 
 @Controller()
 export class ResumeTemplateController implements IResumeTemplateController {
@@ -34,7 +35,7 @@ export class ResumeTemplateController implements IResumeTemplateController {
       createResumeTemplateDTO: CreateResumeTemplateDTO;
       image: Express.Multer.File;
     },
-  ): Promise<any> {
+  ): Promise<MessageResponse> {
     return this.resumeTemplateService.createResumeTemplate(
       payload.createResumeTemplateDTO,
       payload.image,

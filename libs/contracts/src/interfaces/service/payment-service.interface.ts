@@ -5,23 +5,34 @@ import { GenerateDeepLinkDTO } from 'apps/payment-service/src/dtos/generate-deep
 import { GenerateIndividualKhqrDTO } from 'apps/payment-service/src/dtos/generate-individual-khqr.dto';
 import { GenerateMerchantKhqrDTO } from 'apps/payment-service/src/dtos/generate-merchant-khqr.dto';
 import { VerifyKhqrDTO } from 'apps/payment-service/src/dtos/verify-khqr.dto';
+import {
+  CheckPaymentBulkStatusResponse,
+  CheckPaymentStatusResponse,
+  DecodeKhqrResponse,
+  GenerateDeepLinkResponse,
+  GenerateIndividualKhqrResponse,
+  GenerateMerchantKhqrResponse,
+  VerifyKhqrResponse,
+} from '../domain/payment-response.interface';
 
 export const I_PAYMENT_SERVICE = 'IPaymentService';
 
 export interface IPaymentService {
   generateIndividualKhqrDTO(
     generateIndividualKhqrDTO: GenerateIndividualKhqrDTO,
-  ): Promise<any>;
+  ): Promise<GenerateIndividualKhqrResponse>;
   generateMerchantKhqrDTO(
     generateMerchantKhqrDTO: GenerateMerchantKhqrDTO,
-  ): Promise<any>;
-  verifyKhqr(verifyKhqrDTO: VerifyKhqrDTO): Promise<any>;
-  decodeKhqr(decodeKhqrDTO: DecodeKhqrDTO): Promise<any>;
-  generateDeepLink(generateDeepLinkDTO: GenerateDeepLinkDTO): Promise<any>;
+  ): Promise<GenerateMerchantKhqrResponse>;
+  verifyKhqr(verifyKhqrDTO: VerifyKhqrDTO): Promise<VerifyKhqrResponse>;
+  decodeKhqr(decodeKhqrDTO: DecodeKhqrDTO): Promise<DecodeKhqrResponse>;
+  generateDeepLink(
+    generateDeepLinkDTO: GenerateDeepLinkDTO,
+  ): Promise<GenerateDeepLinkResponse>;
   checkPaymentStatus(
     checkPaymentStatusDTO: CheckPaymentStatusDTO,
-  ): Promise<any>;
+  ): Promise<CheckPaymentStatusResponse>;
   checkPaymentBulkStatus(
     checkPaymentBulkStatusDTO: CheckPaymentBulkStatusDTO,
-  ): Promise<any>;
+  ): Promise<CheckPaymentBulkStatusResponse>;
 }

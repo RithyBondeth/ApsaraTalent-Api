@@ -20,6 +20,8 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
+import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
+import { EmployeeResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
 
 @Controller('user/employee')
 @UseGuards(AuthGuard)
@@ -28,18 +30,23 @@ export class EmployeeController implements IEmployeeController {
     @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
   ) {}
   @Get('all')
-  async findAll(@Query() pagination: any) {
+  async findAll(@Query() pagination: any): Promise<EmployeeResponseDTO[]> {
     const payload = { pagination };
     return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.FIND_ALL_EMPLOYEE, payload),
+      this.userClient.send<EmployeeResponseDTO[]>(
+        USER_SERVICE.ACTIONS.FIND_ALL_EMPLOYEE,
+        payload,
+      ),
     );
   }
 
   @Get('one/:employeeId')
-  async findOneById(@Param('employeeId', ParseUUIDPipe) employeeId: string) {
+  async findOneById(
+    @Param('employeeId', ParseUUIDPipe) employeeId: string,
+  ): Promise<EmployeeResponseDTO> {
     const payload = { employeeId };
     return firstValueFrom(
-      this.userClient.send(
+      this.userClient.send<EmployeeResponseDTO>(
         USER_SERVICE.ACTIONS.FIND_ONE_EMPLOYEE_BY_ID,
         payload,
       ),
@@ -62,11 +69,11 @@ export class EmployeeController implements IEmployeeController {
   async uploadEmployeeAvatar(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @UploadedFile() avatar: Express.Multer.File,
-  ) {
+  ): Promise<MessageResponse> {
     if (!avatar) throw new BadRequestException('No file uploaded');
     const payload = { employeeId, avatar };
     return firstValueFrom(
-      this.userClient.send(
+      this.userClient.send<MessageResponse>(
         USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_AVATAR,
         payload,
       ),
@@ -76,10 +83,10 @@ export class EmployeeController implements IEmployeeController {
   @Post('remove-avatar/:employeeId')
   async removeEmployeeAvatar(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
-  ) {
+  ): Promise<MessageResponse> {
     const payload = { employeeId };
     return firstValueFrom(
-      this.userClient.send(
+      this.userClient.send<MessageResponse>(
         USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_AVATAR,
         payload,
       ),
@@ -91,10 +98,10 @@ export class EmployeeController implements IEmployeeController {
   async uploadEmployeeResume(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @UploadedFile() resume: Express.Multer.File,
-  ) {
+  ): Promise<MessageResponse> {
     const payload = { employeeId, resume };
     return firstValueFrom(
-      this.userClient.send(
+      this.userClient.send<MessageResponse>(
         USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_RESUME,
         payload,
       ),
@@ -104,10 +111,10 @@ export class EmployeeController implements IEmployeeController {
   @Post('remove-resume/:employeeId')
   async removeEmployeeResume(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
-  ) {
+  ): Promise<MessageResponse> {
     const payload = { employeeId };
     return firstValueFrom(
-      this.userClient.send(
+      this.userClient.send<MessageResponse>(
         USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_RESUME,
         payload,
       ),
@@ -119,10 +126,10 @@ export class EmployeeController implements IEmployeeController {
   async uploadEmployeeCoverLetter(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @UploadedFile() coverLetter: Express.Multer.File,
-  ) {
+  ): Promise<MessageResponse> {
     const payload = { employeeId, coverLetter };
     return firstValueFrom(
-      this.userClient.send(
+      this.userClient.send<MessageResponse>(
         USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_COVER_LETTER,
         payload,
       ),
@@ -132,10 +139,10 @@ export class EmployeeController implements IEmployeeController {
   @Post('remove-cover-letter/:employeeId')
   async removeEmployeeCoverLetter(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
-  ) {
+  ): Promise<MessageResponse> {
     const payload = { employeeId };
     return firstValueFrom(
-      this.userClient.send(
+      this.userClient.send<MessageResponse>(
         USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_COVER_LETTER,
         payload,
       ),
@@ -171,9 +178,11 @@ export class EmployeeController implements IEmployeeController {
   }
 
   @Get('search-employee')
-  async searchEmployee(@Query() searchEmployeeQuery: any) {
+  async searchEmployee(
+    @Query() searchEmployeeQuery: any,
+  ): Promise<EmployeeResponseDTO[]> {
     return firstValueFrom(
-      this.userClient.send(
+      this.userClient.send<EmployeeResponseDTO[]>(
         USER_SERVICE.ACTIONS.SEARCH_EMPLOYEES,
         searchEmployeeQuery,
       ),

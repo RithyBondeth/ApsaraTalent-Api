@@ -11,6 +11,15 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { PAYMENT_SERVICE } from '@app/contracts/constants/service-actions/payment-service.constant';
 import { IPaymentController } from '@app/contracts/interfaces/domain/payment.interface';
+import {
+  CheckPaymentBulkStatusResponse,
+  CheckPaymentStatusResponse,
+  DecodeKhqrResponse,
+  GenerateDeepLinkResponse,
+  GenerateIndividualKhqrResponse,
+  GenerateMerchantKhqrResponse,
+  VerifyKhqrResponse,
+} from '@app/contracts/interfaces/domain/payment-response.interface';
 
 @Controller('bakong')
 export class PaymentController implements IPaymentController {
@@ -21,9 +30,9 @@ export class PaymentController implements IPaymentController {
   @Post('generate-individual-khqr')
   async generateIndividualQr(
     @Body() generateIndividualQrDTO: any,
-  ): Promise<any> {
+  ): Promise<GenerateIndividualKhqrResponse> {
     return firstValueFrom(
-      this.paymentClient.send(
+      this.paymentClient.send<GenerateIndividualKhqrResponse>(
         PAYMENT_SERVICE.ACTIONS.GENERATE_INDIVIDUAL_KHQR,
         generateIndividualQrDTO,
       ),
@@ -37,7 +46,9 @@ export class PaymentController implements IPaymentController {
   }
 
   @Post('generate-merchant-khqr')
-  async generateMerchantQr(@Body() generateMerchantQrDTO: any): Promise<any> {
+  async generateMerchantQr(
+    @Body() generateMerchantQrDTO: any,
+  ): Promise<GenerateMerchantKhqrResponse | void> {
     // return firstValueFrom(
     //   this.paymentClient.send(
     //     PAYMENT_SERVICE.ACTIONS.GENERATE_MERCHANT_KHQR,
@@ -47,9 +58,9 @@ export class PaymentController implements IPaymentController {
   }
 
   @Post('verify-khqr')
-  async verifyKhqr(@Body() verifyKhqrDTO: any): Promise<any> {
+  async verifyKhqr(@Body() verifyKhqrDTO: any): Promise<VerifyKhqrResponse> {
     return firstValueFrom(
-      this.paymentClient.send(
+      this.paymentClient.send<VerifyKhqrResponse>(
         PAYMENT_SERVICE.ACTIONS.VERIFY_KHQR,
         verifyKhqrDTO,
       ),
@@ -57,9 +68,9 @@ export class PaymentController implements IPaymentController {
   }
 
   @Post('decode-khqr')
-  async decodeKhqr(@Body() verifyKhqrDTO: any): Promise<any> {
+  async decodeKhqr(@Body() verifyKhqrDTO: any): Promise<DecodeKhqrResponse> {
     return firstValueFrom(
-      this.paymentClient.send(
+      this.paymentClient.send<DecodeKhqrResponse>(
         PAYMENT_SERVICE.ACTIONS.DECODE_KHQR,
         verifyKhqrDTO,
       ),
@@ -78,9 +89,11 @@ export class PaymentController implements IPaymentController {
   }
 
   @Post('generate-deep-link')
-  async generateDeepLink(@Body() generateDeepLinkDto: any): Promise<any> {
+  async generateDeepLink(
+    @Body() generateDeepLinkDto: any,
+  ): Promise<GenerateDeepLinkResponse> {
     return firstValueFrom(
-      this.paymentClient.send(
+      this.paymentClient.send<GenerateDeepLinkResponse>(
         PAYMENT_SERVICE.ACTIONS.GENERATE_DEEP_LINK,
         generateDeepLinkDto,
       ),
@@ -88,9 +101,11 @@ export class PaymentController implements IPaymentController {
   }
 
   @Post('payment/check-status')
-  async checkPaymentStatus(@Body() checkPaymentStatusDTO: any): Promise<any> {
+  async checkPaymentStatus(
+    @Body() checkPaymentStatusDTO: any,
+  ): Promise<CheckPaymentStatusResponse> {
     return firstValueFrom(
-      this.paymentClient.send(
+      this.paymentClient.send<CheckPaymentStatusResponse>(
         PAYMENT_SERVICE.ACTIONS.CHECK_PAYMENT_STATUS,
         checkPaymentStatusDTO,
       ),
@@ -100,9 +115,9 @@ export class PaymentController implements IPaymentController {
   @Post('payment/check-bulk-status')
   async checkPaymentBulkStatus(
     @Body() checkPaymentBulkStatusDTO: any,
-  ): Promise<any> {
+  ): Promise<CheckPaymentBulkStatusResponse> {
     return firstValueFrom(
-      this.paymentClient.send(
+      this.paymentClient.send<CheckPaymentBulkStatusResponse>(
         PAYMENT_SERVICE.ACTIONS.CHECK_PAYMENT_BULK_STATUS,
         checkPaymentBulkStatusDTO,
       ),

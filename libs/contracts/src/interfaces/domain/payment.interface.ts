@@ -1,12 +1,30 @@
+import {
+  CheckPaymentBulkStatusResponse,
+  CheckPaymentStatusResponse,
+  DecodeKhqrResponse,
+  GenerateDeepLinkResponse,
+  GenerateIndividualKhqrResponse,
+  GenerateMerchantKhqrResponse,
+  VerifyKhqrResponse,
+} from './payment-response.interface';
+
 export interface IPaymentController {
-  generateIndividualQr(generateIndividualQrDTO?: any): Promise<any>;
-  generateMerchantQr(generateMerchantQrDTO?: any): Promise<any>;
-  verifyKhqr(verifyKhqrDTO?: any): Promise<any>;
-  decodeKhqr(verifyKhqrDTO?: any): Promise<any>;
+  generateIndividualQr(
+    generateIndividualQrDTO?: any,
+  ): Promise<GenerateIndividualKhqrResponse>;
+  generateMerchantQr(
+    generateMerchantQrDTO?: any,
+  ): Promise<GenerateMerchantKhqrResponse | void>;
+  verifyKhqr(verifyKhqrDTO?: any): Promise<VerifyKhqrResponse>;
+  decodeKhqr(verifyKhqrDTO?: any): Promise<DecodeKhqrResponse>;
   generateQRImage?(body?: any, format?: any): Promise<any>;
-  generateDeepLink(generateDeepLinkDto?: any): Promise<any>;
-  checkPaymentStatus(checkPaymentStatusDTO?: any): Promise<any>;
-  checkPaymentBulkStatus(checkPaymentBulkStatusDTO?: any): Promise<any>;
+  generateDeepLink(generateDeepLinkDto?: any): Promise<GenerateDeepLinkResponse>;
+  checkPaymentStatus(
+    checkPaymentStatusDTO?: any,
+  ): Promise<CheckPaymentStatusResponse>;
+  checkPaymentBulkStatus(
+    checkPaymentBulkStatusDTO?: any,
+  ): Promise<CheckPaymentBulkStatusResponse>;
   getPaymentInfo?(md5Hash?: any): Promise<any>;
   getKHQRInfo?(qrString?: any): Promise<any>;
   generateMd5Hash?(body?: any): Promise<any>;

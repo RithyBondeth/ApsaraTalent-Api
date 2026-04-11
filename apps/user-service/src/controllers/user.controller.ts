@@ -12,6 +12,7 @@ import {
   I_USER_SERVICE,
   IUserService,
 } from '@app/contracts/interfaces/service/user-service.interface';
+import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
 
 @Controller()
 export class UserController implements IUserController {
@@ -56,14 +57,14 @@ export class UserController implements IUserController {
   @MessagePattern(USER_SERVICE.ACTIONS.ADD_COMPANY_TO_FAVORITE)
   async employeeFavoriteCompany(
     @Payload() payload: { eid: string; cid: string },
-  ): Promise<any> {
+  ): Promise<MessageResponse> {
     return this.userService.employeeFavoriteCompany(payload.eid, payload.cid);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_COMPANY_FROM_FAVORITE)
   async employeeUnfavoriteCompany(
     @Payload() payload: { eid: string; cid: string; favoriteId: string },
-  ): Promise<any> {
+  ): Promise<MessageResponse> {
     return this.userService.employeeUnfavoriteCompany(
       payload.eid,
       payload.cid,
@@ -74,7 +75,7 @@ export class UserController implements IUserController {
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_FROM_FAVORITE)
   async companyUnfavoriteEmployee(
     @Payload() payload: { cid: string; eid: string; favoriteId: string },
-  ): Promise<any> {
+  ): Promise<MessageResponse> {
     return this.userService.companyUnfavoriteEmployee(
       payload.cid,
       payload.eid,
@@ -85,7 +86,7 @@ export class UserController implements IUserController {
   @MessagePattern(USER_SERVICE.ACTIONS.ADD_EMPLOYEE_TO_FAVORITE)
   async companyFavoriteEmployee(
     @Payload() payload: { eid: string; cid: string },
-  ): Promise<any> {
+  ): Promise<MessageResponse> {
     return this.userService.companyFavoriteEmployee(payload.cid, payload.eid);
   }
 

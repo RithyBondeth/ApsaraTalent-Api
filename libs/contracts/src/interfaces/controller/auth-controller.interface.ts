@@ -1,21 +1,30 @@
+import { LoginResponseDTO } from 'apps/auth-service/src/basic/dtos/login-response.dto';
+import { ForgotPasswordResponseDTO } from 'apps/auth-service/src/basic/dtos/forgot-password-response.dto';
+import { ResetPasswordResponseDTO } from 'apps/auth-service/src/basic/dtos/reset-password-response.dto';
+import { RefreshTokenResponseDTO } from 'apps/auth-service/src/basic/dtos/refresh-token-response.dto';
+import { VerifyEmailResponseDTO } from 'apps/auth-service/src/basic/dtos/verify-email-response.dto';
+
 export interface IBasicAuthLoginController {
-  login(loginDTO: any, res: any): Promise<any>;
+  login(loginDTO: any, res: any): Promise<LoginResponseDTO>;
 }
 
 export interface IBasicAuthForgotPasswordController {
-  forgotPassword(forgotPasswordDTO: any): Promise<any>;
+  forgotPassword(forgotPasswordDTO: any): Promise<ForgotPasswordResponseDTO>;
 }
 
 export interface IBasicAuthResetPasswordController {
-  resetPassword(resetPasswordDTO: any, token: string): Promise<any>;
+  resetPassword(
+    resetPasswordDTO: any,
+    token: string,
+  ): Promise<ResetPasswordResponseDTO>;
 }
 
 export interface IBasicAuthRefreshTokenController {
-  refreshToken(refreshTokenDTO: any, res: any): Promise<any>;
+  refreshToken(refreshTokenDTO: any, res: any): Promise<RefreshTokenResponseDTO>;
 }
 
 export interface IBasicAuthVerifyEmailController {
-  verifyEmail(emailVerificationToken: string): Promise<any>;
+  verifyEmail(emailVerificationToken: string): Promise<VerifyEmailResponseDTO>;
 }
 
 export interface IBasicAuthRegisterController {

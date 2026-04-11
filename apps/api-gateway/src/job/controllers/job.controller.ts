@@ -4,6 +4,7 @@ import { Controller, Get, Inject, Query, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
+import { JobResponseDTO } from 'apps/job-service/src/dtos/job-response.dto';
 
 @Controller('job')
 @UseGuards(AuthGuard)
@@ -13,14 +14,17 @@ export class JobController implements IJobController {
   ) {}
 
   @Get('all')
-  async findAllJobs(): Promise<any> {
+  async findAllJobs(): Promise<JobResponseDTO[]> {
     return firstValueFrom(
-      this.jobClient.send(JOB_SERVICE.ACTIONS.FIND_ALL_JOBS, {}),
+      this.jobClient.send<JobResponseDTO[]>(
+        JOB_SERVICE.ACTIONS.FIND_ALL_JOBS,
+        {},
+      ),
     );
   }
 
   @Get('search')
-  async searchJobs(@Query() searchJobQuery: any): Promise<any> {
+  async searchJobs(@Query() searchJobQuery: any): Promise<JobResponseDTO[]> {
     const transformedQuery = {
       ...searchJobQuery,
       ...(searchJobQuery.companySizeMin && {
@@ -32,7 +36,10 @@ export class JobController implements IJobController {
     };
 
     return firstValueFrom(
-      this.jobClient.send(JOB_SERVICE.ACTIONS.SEARCH_JOBS, transformedQuery),
+      this.jobClient.send<JobResponseDTO[]>(
+        JOB_SERVICE.ACTIONS.SEARCH_JOBS,
+        transformedQuery,
+      ),
     );
   }
 }

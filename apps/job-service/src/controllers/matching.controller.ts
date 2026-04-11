@@ -44,14 +44,14 @@ export class MatchingController implements IMatchingController {
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_MATCHING)
   async findCurrentEmployeeMatching(
     @Payload() payload: { eid: string },
-  ): Promise<any> {
+  ): Promise<UserResponseDTO[]> {
     return this.matchingService.findCurrentEmployeeMatching(payload.eid);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_MATCHING)
   async findCurrentCompanyMatching(
     @Payload() payload: { cid: string },
-  ): Promise<any> {
+  ): Promise<UserResponseDTO[]> {
     return this.matchingService.findCurrentCompanyMatching(payload.cid);
   }
 

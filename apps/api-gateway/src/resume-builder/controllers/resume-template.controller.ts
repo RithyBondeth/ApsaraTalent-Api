@@ -17,6 +17,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/service-actions/resume-builder-service.constant';
+import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
 
 @Controller('resume/template')
 @UseGuards(AuthGuard)
@@ -53,10 +54,10 @@ export class ResumeTemplateController implements IResumeTemplateController {
   async createResumeTemplate(
     @Body() createResumeTemplateDTO: any,
     @UploadedFile() image: Express.Multer.File,
-  ): Promise<any> {
+  ): Promise<MessageResponse> {
     const payload = { createResumeTemplateDTO, image };
     return firstValueFrom(
-      this.resumeBuilderClient.send(
+      this.resumeBuilderClient.send<MessageResponse>(
         RESUME_BUILDER_SERVICE.ACTIONS.CREATE_RESUME_TEMPLATE,
         payload,
       ),

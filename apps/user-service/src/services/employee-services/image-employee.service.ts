@@ -9,6 +9,7 @@ import * as path from 'path';
 import { Repository } from 'typeorm';
 
 import { IImageEmployeeService } from '@app/contracts/interfaces/service/user-service.interface';
+import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
 
 @Injectable()
 export class ImageEmployeeService implements IImageEmployeeService {
@@ -20,7 +21,10 @@ export class ImageEmployeeService implements IImageEmployeeService {
     private readonly logger: PinoLogger,
   ) {}
 
-  async uploadEmployeeAvatar(employeeId: string, avatar: Express.Multer.File) {
+  async uploadEmployeeAvatar(
+    employeeId: string,
+    avatar: Express.Multer.File,
+  ): Promise<MessageResponse> {
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
@@ -77,7 +81,7 @@ export class ImageEmployeeService implements IImageEmployeeService {
     }
   }
 
-  async removeEmployeeAvatar(employeeId: string) {
+  async removeEmployeeAvatar(employeeId: string): Promise<MessageResponse> {
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },

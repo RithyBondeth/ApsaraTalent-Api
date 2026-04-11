@@ -1,3 +1,9 @@
+import { LoginResponseDTO } from 'apps/auth-service/src/basic/dtos/login-response.dto';
+import { ForgotPasswordResponseDTO } from 'apps/auth-service/src/basic/dtos/forgot-password-response.dto';
+import { ResetPasswordResponseDTO } from 'apps/auth-service/src/basic/dtos/reset-password-response.dto';
+import { RefreshTokenResponseDTO } from 'apps/auth-service/src/basic/dtos/refresh-token-response.dto';
+import { VerifyEmailResponseDTO } from 'apps/auth-service/src/basic/dtos/verify-email-response.dto';
+
 export const I_LOGIN_SERVICE = 'ILoginService';
 export const I_REGISTER_SERVICE = 'IRegisterService';
 export const I_FORGOT_PASSWORD_SERVICE = 'IForgotPasswordService';
@@ -12,7 +18,7 @@ export const I_GITHUB_AUTH_SERVICE = 'IGithubAuthService';
 export const I_FACEBOOK_AUTH_SERVICE = 'IFacebookAuthService';
 
 export interface ILoginService {
-  login(loginDTO: any): Promise<any>;
+  login(loginDTO: any): Promise<LoginResponseDTO>;
 }
 
 export interface IRegisterService {
@@ -21,19 +27,19 @@ export interface IRegisterService {
 }
 
 export interface IForgotPasswordService {
-  forgotPassword(forgotPasswordDTO: any): Promise<any>;
+  forgotPassword(forgotPasswordDTO: any): Promise<ForgotPasswordResponseDTO>;
 }
 
 export interface IResetPasswordService {
-  resetPassword(resetPasswordDTO: any): Promise<any>;
+  resetPassword(resetPasswordDTO: any): Promise<ResetPasswordResponseDTO>;
 }
 
 export interface IRefreshTokenService {
-  refreshToken(refreshTokenDTO: any): Promise<any>;
+  refreshToken(refreshTokenDTO: any): Promise<RefreshTokenResponseDTO>;
 }
 
 export interface IVerifyEmailService {
-  verifyEmail(token: string): Promise<any>;
+  verifyEmail(token: string): Promise<VerifyEmailResponseDTO>;
 }
 
 export interface ILoginOTPService {

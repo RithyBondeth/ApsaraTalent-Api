@@ -7,6 +7,7 @@ import {
   I_UPLOAD_EMPLOYEE_REFERENCE_SERVICE,
   IUploadEmployeeReferenceService,
 } from '@app/contracts/interfaces/service/user-service.interface';
+import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
 
 @Controller()
 export class UploadEmployeeReferenceController implements IUploadEmployeeController {
@@ -18,7 +19,7 @@ export class UploadEmployeeReferenceController implements IUploadEmployeeControl
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_RESUME)
   async uploadEmployeeResume(
     @Payload() payload: { employeeId: string; resume: Express.Multer.File },
-  ) {
+  ): Promise<MessageResponse> {
     return this.uploadEmployeeReferenceService.uploadEmployeeResume(
       payload.employeeId,
       payload.resume,
@@ -26,7 +27,9 @@ export class UploadEmployeeReferenceController implements IUploadEmployeeControl
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_RESUME)
-  async removeEmployeeResume(@Payload() payload: { employeeId: string }) {
+  async removeEmployeeResume(
+    @Payload() payload: { employeeId: string },
+  ): Promise<MessageResponse> {
     return this.uploadEmployeeReferenceService.removeEmployeeResume(
       payload.employeeId,
     );
@@ -39,7 +42,7 @@ export class UploadEmployeeReferenceController implements IUploadEmployeeControl
       employeeId: string;
       coverLetter: Express.Multer.File;
     },
-  ) {
+  ): Promise<MessageResponse> {
     return this.uploadEmployeeReferenceService.uploadEmployeeCoverLetter(
       payload.employeeId,
       payload.coverLetter,
@@ -47,7 +50,9 @@ export class UploadEmployeeReferenceController implements IUploadEmployeeControl
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_COVER_LETTER)
-  async removeEmployeeCoverLetter(@Payload() payload: { employeeId: string }) {
+  async removeEmployeeCoverLetter(
+    @Payload() payload: { employeeId: string },
+  ): Promise<MessageResponse> {
     return this.uploadEmployeeReferenceService.removeEmployeeCoverLetter(
       payload.employeeId,
     );

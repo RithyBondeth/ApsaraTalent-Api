@@ -19,6 +19,8 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
+import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
+import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
 
 @Controller('user')
 @UseGuards(AuthGuard)
@@ -74,19 +76,22 @@ export class UserController implements IUserController {
   }
 
   @Get('all')
-  async findAllUsers(): Promise<any> {
+  async findAllUsers(): Promise<UserResponseDTO[]> {
     return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.FIND_ALL, {}),
+      this.userClient.send<UserResponseDTO[]>(USER_SERVICE.ACTIONS.FIND_ALL, {}),
     );
   }
 
   @Get('one/:userId')
   async findOneUserById(
     @Param('userId', ParseUUIDPipe) userId: string,
-  ): Promise<any> {
+  ): Promise<UserResponseDTO> {
     const payload = { userId };
     return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.FIND_ONE_BY_ID, payload),
+      this.userClient.send<UserResponseDTO>(
+        USER_SERVICE.ACTIONS.FIND_ONE_BY_ID,
+        payload,
+      ),
     );
   }
 
@@ -118,11 +123,11 @@ export class UserController implements IUserController {
     @Param('eid', ParseUUIDPipe) eid: string,
     @Param('cid', ParseUUIDPipe) cid: string,
     @Req() req?: any,
-  ): Promise<any> {
+  ): Promise<MessageResponse> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
     const payload = { eid, cid };
     return firstValueFrom(
-      this.userClient.send(
+      this.userClient.send<MessageResponse>(
         USER_SERVICE.ACTIONS.ADD_COMPANY_TO_FAVORITE,
         payload,
       ),
@@ -135,11 +140,11 @@ export class UserController implements IUserController {
     @Param('cid', ParseUUIDPipe) cid: string,
     @Param('favoriteId', ParseUUIDPipe) favoriteId: string,
     @Req() req?: any,
-  ): Promise<any> {
+  ): Promise<MessageResponse> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
     const payload = { eid, cid, favoriteId };
     return firstValueFrom(
-      this.userClient.send(
+      this.userClient.send<MessageResponse>(
         USER_SERVICE.ACTIONS.REMOVE_COMPANY_FROM_FAVORITE,
         payload,
       ),
@@ -151,11 +156,11 @@ export class UserController implements IUserController {
     @Param('cid', ParseUUIDPipe) cid: string,
     @Param('eid', ParseUUIDPipe) eid: string,
     @Req() req?: any,
-  ): Promise<any> {
+  ): Promise<MessageResponse> {
     await this.assertCompanyAccess(req?.user?.id, cid);
     const payload = { cid, eid };
     return firstValueFrom(
-      this.userClient.send(
+      this.userClient.send<MessageResponse>(
         USER_SERVICE.ACTIONS.ADD_EMPLOYEE_TO_FAVORITE,
         payload,
       ),
@@ -168,11 +173,11 @@ export class UserController implements IUserController {
     @Param('eid', ParseUUIDPipe) eid: string,
     @Param('favoriteId', ParseUUIDPipe) favoriteId: string,
     @Req() req?: any,
-  ): Promise<any> {
+  ): Promise<MessageResponse> {
     await this.assertCompanyAccess(req?.user?.id, cid);
     const payload = { cid, eid, favoriteId };
     return firstValueFrom(
-      this.userClient.send(
+      this.userClient.send<MessageResponse>(
         USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_FROM_FAVORITE,
         payload,
       ),

@@ -13,6 +13,7 @@ const TEMPLATE_TTL = 60 * 60 * 1000; // 1 hour — static data
 const TEMPLATE_SEARCH_TTL = 30 * 60 * 1000; // 30 min
 
 import { IResumeTemplateService } from '@app/contracts/interfaces/service/resume-builder-service.interface';
+import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
 
 @Injectable()
 export class ResumeTemplateService implements IResumeTemplateService {
@@ -97,7 +98,7 @@ export class ResumeTemplateService implements IResumeTemplateService {
   async createResumeTemplate(
     createResumeTemplateDTO: CreateResumeTemplateDTO,
     image: Express.Multer.File,
-  ): Promise<any> {
+  ): Promise<MessageResponse> {
     try {
       const template = this.resumeTemplateRepository.create({
         title: createResumeTemplateDTO.title,

@@ -15,6 +15,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
+import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
 import { JobAccessBase } from '../shared/job-access.base';
 
 @Controller('match')
@@ -57,11 +58,11 @@ export class JobMatchingController extends JobAccessBase implements IMatchingCon
   async findCurrentEmployeeLiked(
     @Param('eid', ParseUUIDPipe) eid: string,
     @Req() req?: any,
-  ): Promise<any> {
+  ): Promise<UserResponseDTO[]> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
     const payload = { eid };
     return firstValueFrom(
-      this.jobClient.send(
+      this.jobClient.send<UserResponseDTO[]>(
         JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_LIKED,
         payload,
       ),
@@ -72,11 +73,11 @@ export class JobMatchingController extends JobAccessBase implements IMatchingCon
   async findCurrentCompanyLiked(
     @Param('cid', ParseUUIDPipe) cid: string,
     @Req() req?: any,
-  ): Promise<any> {
+  ): Promise<UserResponseDTO[]> {
     await this.assertCompanyAccess(req?.user?.id, cid);
     const payload = { cid };
     return firstValueFrom(
-      this.jobClient.send(
+      this.jobClient.send<UserResponseDTO[]>(
         JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_LIKED,
         payload,
       ),
@@ -87,11 +88,11 @@ export class JobMatchingController extends JobAccessBase implements IMatchingCon
   async findCurrentEmployeeMatching(
     @Param('eid', ParseUUIDPipe) eid: string,
     @Req() req?: any,
-  ): Promise<any> {
+  ): Promise<UserResponseDTO[]> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
     const payload = { eid };
     return firstValueFrom(
-      this.jobClient.send(
+      this.jobClient.send<UserResponseDTO[]>(
         JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_MATCHING,
         payload,
       ),
@@ -102,11 +103,11 @@ export class JobMatchingController extends JobAccessBase implements IMatchingCon
   async findCurrentCompanyMatching(
     @Param('cid', ParseUUIDPipe) cid: string,
     @Req() req?: any,
-  ): Promise<any> {
+  ): Promise<UserResponseDTO[]> {
     await this.assertCompanyAccess(req?.user?.id, cid);
     const payload = { cid };
     return firstValueFrom(
-      this.jobClient.send(
+      this.jobClient.send<UserResponseDTO[]>(
         JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_MATCHING,
         payload,
       ),

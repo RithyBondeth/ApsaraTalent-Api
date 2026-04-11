@@ -9,6 +9,7 @@ import * as path from 'path';
 import { Repository } from 'typeorm';
 
 import { IUploadEmployeeReferenceService } from '@app/contracts/interfaces/service/user-service.interface';
+import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
 
 @Injectable()
 export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceService {
@@ -20,7 +21,10 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
     private readonly logger: PinoLogger,
   ) {}
 
-  async uploadEmployeeResume(employeeId: string, resume: Express.Multer.File) {
+  async uploadEmployeeResume(
+    employeeId: string,
+    resume: Express.Multer.File,
+  ): Promise<MessageResponse> {
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
@@ -71,7 +75,7 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
     }
   }
 
-  async removeEmployeeResume(employeeId: string) {
+  async removeEmployeeResume(employeeId: string): Promise<MessageResponse> {
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
@@ -118,7 +122,7 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
   async uploadEmployeeCoverLetter(
     employeeId: string,
     coverLetter: Express.Multer.File,
-  ) {
+  ): Promise<MessageResponse> {
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
@@ -177,7 +181,9 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
     }
   }
 
-  async removeEmployeeCoverLetter(employeeId: string) {
+  async removeEmployeeCoverLetter(
+    employeeId: string,
+  ): Promise<MessageResponse> {
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },

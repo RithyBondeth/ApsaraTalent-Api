@@ -21,6 +21,8 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
+import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
+import { CompanyResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
 
 @Controller('user/company')
 @UseGuards(AuthGuard)
@@ -30,18 +32,23 @@ export class CompanyController implements ICompanyController {
   ) {}
 
   @Get('all')
-  async findAll(@Query() pagination: any) {
+  async findAll(@Query() pagination: any): Promise<CompanyResponseDTO[]> {
     const payload = { pagination };
     return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.FIND_ALL_COMPANY, payload),
+      this.userClient.send<CompanyResponseDTO[]>(
+        USER_SERVICE.ACTIONS.FIND_ALL_COMPANY,
+        payload,
+      ),
     );
   }
 
   @Get('one/:companyId')
-  async findOneById(@Param('companyId', ParseUUIDPipe) companyId: string) {
+  async findOneById(
+    @Param('companyId', ParseUUIDPipe) companyId: string,
+  ): Promise<CompanyResponseDTO> {
     const payload = { companyId };
     return firstValueFrom(
-      this.userClient.send(
+      this.userClient.send<CompanyResponseDTO>(
         USER_SERVICE.ACTIONS.FIND_ONE_COMPANY_BY_ID,
         payload,
       ),
@@ -64,20 +71,26 @@ export class CompanyController implements ICompanyController {
   async uploadCompanyAvatar(
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @UploadedFile() avatar: Express.Multer.File,
-  ) {
+  ): Promise<MessageResponse> {
     const payload = { companyId, avatar };
     return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_AVATAR, payload),
+      this.userClient.send<MessageResponse>(
+        USER_SERVICE.ACTIONS.UPLOAD_COMPANY_AVATAR,
+        payload,
+      ),
     );
   }
 
   @Post('remove-avatar/:companyId')
   async removeCompanyAvatar(
     @Param('companyId', ParseUUIDPipe) companyId: string,
-  ) {
+  ): Promise<MessageResponse> {
     const payload = { companyId };
     return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.REMOVE_COMPANY_AVATAR, payload),
+      this.userClient.send<MessageResponse>(
+        USER_SERVICE.ACTIONS.REMOVE_COMPANY_AVATAR,
+        payload,
+      ),
     );
   }
 
@@ -86,20 +99,26 @@ export class CompanyController implements ICompanyController {
   async uploadCompanyCover(
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @UploadedFile() cover: Express.Multer.File,
-  ) {
+  ): Promise<MessageResponse> {
     const payload = { cover, companyId };
     return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_COVER, payload),
+      this.userClient.send<MessageResponse>(
+        USER_SERVICE.ACTIONS.UPLOAD_COMPANY_COVER,
+        payload,
+      ),
     );
   }
 
   @Post('remove-cover/:companyId')
   async removeCompanyCover(
     @Param('companyId', ParseUUIDPipe) companyId: string,
-  ) {
+  ): Promise<MessageResponse> {
     const payload = { companyId };
     return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.REMOVE_COMPANY_COVER, payload),
+      this.userClient.send<MessageResponse>(
+        USER_SERVICE.ACTIONS.REMOVE_COMPANY_COVER,
+        payload,
+      ),
     );
   }
 
@@ -108,10 +127,13 @@ export class CompanyController implements ICompanyController {
   async uploadCompanyImages(
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @UploadedFiles() images: Express.Multer.File[],
-  ) {
+  ): Promise<MessageResponse> {
     const payload = { images, companyId };
     return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_IMAGES, payload),
+      this.userClient.send<MessageResponse>(
+        USER_SERVICE.ACTIONS.UPLOAD_COMPANY_IMAGES,
+        payload,
+      ),
     );
   }
 
@@ -119,10 +141,13 @@ export class CompanyController implements ICompanyController {
   async removeCompanyImage(
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @Param('imageId', ParseUUIDPipe) imageId: string,
-  ) {
+  ): Promise<MessageResponse> {
     const payload = { companyId, imageId };
     return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.REMOVE_COMPANY_IMAGES, payload),
+      this.userClient.send<MessageResponse>(
+        USER_SERVICE.ACTIONS.REMOVE_COMPANY_IMAGES,
+        payload,
+      ),
     );
   }
 
@@ -130,10 +155,13 @@ export class CompanyController implements ICompanyController {
   async removeOpenPosition(
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @Param('opId', ParseUUIDPipe) opId: string,
-  ) {
+  ): Promise<MessageResponse> {
     const payload = { companyId, opId };
     return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.REMOVE_OPEN_POSITION, payload),
+      this.userClient.send<MessageResponse>(
+        USER_SERVICE.ACTIONS.REMOVE_OPEN_POSITION,
+        payload,
+      ),
     );
   }
 }

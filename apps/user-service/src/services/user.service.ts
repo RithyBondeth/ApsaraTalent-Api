@@ -20,6 +20,7 @@ import {
   UserResponseDTO,
 } from '../dtos/user-response.dto';
 import { IUserService } from '@app/contracts/interfaces/service/user-service.interface';
+import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
 
 @Injectable()
@@ -282,7 +283,7 @@ export class UserService implements IUserService, OnModuleInit {
   async employeeFavoriteCompany(
     eid: string,
     cid: string,
-  ): Promise<{ message: string }> {
+  ): Promise<MessageResponse> {
     try {
       const exists = await this.empFavoriteCmpRepository.findOne({
         where: {
@@ -352,7 +353,7 @@ export class UserService implements IUserService, OnModuleInit {
     eid: string,
     cid: string,
     favoriteId: string,
-  ): Promise<{ message: string }> {
+  ): Promise<MessageResponse> {
     try {
       const favoriteToRemove = await this.empFavoriteCmpRepository.findOne({
         where: {
@@ -412,7 +413,7 @@ export class UserService implements IUserService, OnModuleInit {
   async companyFavoriteEmployee(
     cid: string,
     eid: string,
-  ): Promise<{ message: string }> {
+  ): Promise<MessageResponse> {
     try {
       const exists = await this.cmpFavoriteEmpRepository.findOne({
         where: {
@@ -482,7 +483,7 @@ export class UserService implements IUserService, OnModuleInit {
     cid: string,
     eid: string,
     favoriteId: string,
-  ): Promise<{ message: string }> {
+  ): Promise<MessageResponse> {
     try {
       const favoriteToRemove = await this.cmpFavoriteEmpRepository.findOne({
         where: {
