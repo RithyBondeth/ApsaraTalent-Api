@@ -34,24 +34,6 @@ export class RegisterService implements IRegisterService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     @InjectRepository(Employee)
-    private readonly employeeRepository: Repository<Employee>,
-    @InjectRepository(Company)
-    private readonly companyRepository: Repository<Company>,
-    @InjectRepository(Skill)
-    private readonly skillRepository: Repository<Skill>,
-    @InjectRepository(Experience)
-    private readonly experienceRepository: Repository<Experience>,
-    @InjectRepository(CareerScope)
-    private readonly careerScopeRepository: Repository<CareerScope>,
-    @InjectRepository(Job) private readonly jobRepository: Repository<Job>,
-    @InjectRepository(Education)
-    private readonly educationRepository: Repository<Education>,
-    @InjectRepository(Social)
-    private readonly socialRepository: Repository<Social>,
-    @InjectRepository(Benefit)
-    private readonly benefitRepository: Repository<Benefit>,
-    @InjectRepository(Value)
-    private readonly valueRepository: Repository<Value>,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,

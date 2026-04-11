@@ -13,7 +13,6 @@ import { Repository } from 'typeorm';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { LoginOtpDTO } from '../dtos/login-otp.dto';
 import { VerifyOtpDTO } from '../dtos/verify-otp.dto';
-
 import { ILoginOTPService } from '@app/contracts/interfaces/service/auth-service.interface';
 import { AUTH } from '@app/contracts/constants/domain/auth.constant';
 
@@ -29,7 +28,9 @@ export class LoginOTPService implements ILoginOTPService {
 
   async loginOtp(loginOtpDTO: LoginOtpDTO): Promise<any> {
     try {
-      const otpCode = Math.floor(AUTH.OTP_MIN + Math.random() * AUTH.OTP_RANGE).toString();
+      const otpCode = Math.floor(
+        AUTH.OTP_MIN + Math.random() * AUTH.OTP_RANGE,
+      ).toString();
       const otpExpires = new Date(Date.now() + AUTH.OTP_EXPIRY);
 
       let user = await this.userRepo.findOne({
