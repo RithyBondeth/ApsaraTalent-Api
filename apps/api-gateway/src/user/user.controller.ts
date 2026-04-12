@@ -15,10 +15,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
-import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
+import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto'; // TODO: move to @app/contracts/dtos/user
+import { rpcCall } from '../utils/rpc-call';
 
 @Controller('user')
 @UseGuards(AuthGuard)
@@ -28,11 +28,9 @@ export class UserController implements IUserController {
   ) {}
 
   private async getCurrentUserProfile(userId: string): Promise<any> {
-    return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.GET_CURRENT_USER, {
-        userID: userId,
-      }),
-    );
+    return rpcCall(this.userClient, USER_SERVICE.ACTIONS.GET_CURRENT_USER, {
+      userID: userId,
+    });
   }
 
   private async assertEmployeeAccess(
@@ -74,9 +72,17 @@ export class UserController implements IUserController {
   }
 
   @Get('all')
-  async findAllUsers(): Promise<UserResponseDTO[]> {
-    return firstValueFrom(
-      this.userClient.send<UserResponseDTO[]>(USER_SERVICE.ACTIONS.FIND_ALL, {}),
+  async findAllUsers(
+    @Query('skip') skip?: string,
+    @Query('limit') limit?: string,
+  ): Promise<UserResponseDTO[]> {
+    return rpcCall<UserResponseDTO[]>(
+      this.userClient,
+      USER_SERVICE.ACTIONS.FIND_ALL,
+      {
+        skip: skip !== undefined ? Number(skip) : 0,
+        limit: limit !== undefined ? Number(limit) : 20,
+      },
     );
   }
 
@@ -84,22 +90,18 @@ export class UserController implements IUserController {
   async findOneUserById(
     @Param('userId', ParseUUIDPipe) userId: string,
   ): Promise<UserResponseDTO> {
-    const payload = { userId };
-    return firstValueFrom(
-      this.userClient.send<UserResponseDTO>(
-        USER_SERVICE.ACTIONS.FIND_ONE_BY_ID,
-        payload,
-      ),
+    return rpcCall<UserResponseDTO>(
+      this.userClient,
+      USER_SERVICE.ACTIONS.FIND_ONE_BY_ID,
+      { userId },
     );
   }
 
   @Get('current-user')
   async getCurrentUser(@User() user: AuthUser): Promise<any> {
-    const userID = user.id;
-    const payload = { userID };
-    return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.GET_CURRENT_USER, payload),
-    );
+    return rpcCall(this.userClient, USER_SERVICE.ACTIONS.GET_CURRENT_USER, {
+      userID: user.id,
+    });
   }
 
   @Post('push-token')
@@ -107,12 +109,10 @@ export class UserController implements IUserController {
     @Req() req,
     @Body() body: { token: string | null },
   ): Promise<any> {
-    return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.UPDATE_PUSH_TOKEN, {
-        userId: req.user.id,
-        token: body?.token ?? null,
-      }),
-    );
+    return rpcCall(this.userClient, USER_SERVICE.ACTIONS.UPDATE_PUSH_TOKEN, {
+      userId: req.user.id,
+      token: body?.token ?? null,
+    });
   }
 
   @Post('employee/:eid/favorite/company/:cid')
@@ -122,12 +122,10 @@ export class UserController implements IUserController {
     @Req() req?: any,
   ): Promise<MessageResponse> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
-    const payload = { eid, cid };
-    return firstValueFrom(
-      this.userClient.send<MessageResponse>(
-        USER_SERVICE.ACTIONS.ADD_COMPANY_TO_FAVORITE,
-        payload,
-      ),
+    return rpcCall<MessageResponse>(
+      this.userClient,
+      USER_SERVICE.ACTIONS.ADD_COMPANY_TO_FAVORITE,
+      { eid, cid },
     );
   }
 
@@ -139,12 +137,10 @@ export class UserController implements IUserController {
     @Req() req?: any,
   ): Promise<MessageResponse> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
-    const payload = { eid, cid, favoriteId };
-    return firstValueFrom(
-      this.userClient.send<MessageResponse>(
-        USER_SERVICE.ACTIONS.REMOVE_COMPANY_FROM_FAVORITE,
-        payload,
-      ),
+    return rpcCall<MessageResponse>(
+      this.userClient,
+      USER_SERVICE.ACTIONS.REMOVE_COMPANY_FROM_FAVORITE,
+      { eid, cid, favoriteId },
     );
   }
 
@@ -155,12 +151,10 @@ export class UserController implements IUserController {
     @Req() req?: any,
   ): Promise<MessageResponse> {
     await this.assertCompanyAccess(req?.user?.id, cid);
-    const payload = { cid, eid };
-    return firstValueFrom(
-      this.userClient.send<MessageResponse>(
-        USER_SERVICE.ACTIONS.ADD_EMPLOYEE_TO_FAVORITE,
-        payload,
-      ),
+    return rpcCall<MessageResponse>(
+      this.userClient,
+      USER_SERVICE.ACTIONS.ADD_EMPLOYEE_TO_FAVORITE,
+      { cid, eid },
     );
   }
 
@@ -172,12 +166,10 @@ export class UserController implements IUserController {
     @Req() req?: any,
   ): Promise<MessageResponse> {
     await this.assertCompanyAccess(req?.user?.id, cid);
-    const payload = { cid, eid, favoriteId };
-    return firstValueFrom(
-      this.userClient.send<MessageResponse>(
-        USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_FROM_FAVORITE,
-        payload,
-      ),
+    return rpcCall<MessageResponse>(
+      this.userClient,
+      USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_FROM_FAVORITE,
+      { cid, eid, favoriteId },
     );
   }
 
@@ -187,12 +179,10 @@ export class UserController implements IUserController {
     @Req() req?: any,
   ): Promise<any> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
-    const payload = { eid };
-    return firstValueFrom(
-      this.userClient.send(
-        USER_SERVICE.ACTIONS.FIND_ALL_EMPLOYEE_FAVORITE,
-        payload,
-      ),
+    return rpcCall(
+      this.userClient,
+      USER_SERVICE.ACTIONS.FIND_ALL_EMPLOYEE_FAVORITE,
+      { eid },
     );
   }
 
@@ -202,12 +192,10 @@ export class UserController implements IUserController {
     @Req() req?: any,
   ): Promise<any> {
     await this.assertCompanyAccess(req?.user?.id, cid);
-    const payload = { cid };
-    return firstValueFrom(
-      this.userClient.send(
-        USER_SERVICE.ACTIONS.FIND_ALL_COMPANY_FAVORITE,
-        payload,
-      ),
+    return rpcCall(
+      this.userClient,
+      USER_SERVICE.ACTIONS.FIND_ALL_COMPANY_FAVORITE,
+      { cid },
     );
   }
 
@@ -217,12 +205,10 @@ export class UserController implements IUserController {
     @Req() req?: any,
   ): Promise<any> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
-    const payload = { eid };
-    return firstValueFrom(
-      this.userClient.send(
-        USER_SERVICE.ACTIONS.COUNT_EMPLOYEE_FAVORITE,
-        payload,
-      ),
+    return rpcCall(
+      this.userClient,
+      USER_SERVICE.ACTIONS.COUNT_EMPLOYEE_FAVORITE,
+      { eid },
     );
   }
 
@@ -232,19 +218,19 @@ export class UserController implements IUserController {
     @Req() req?: any,
   ): Promise<any> {
     await this.assertCompanyAccess(req?.user?.id, cid);
-    const payload = { cid };
-    return firstValueFrom(
-      this.userClient.send(
-        USER_SERVICE.ACTIONS.COUNT_COMPANY_FAVORITE,
-        payload,
-      ),
+    return rpcCall(
+      this.userClient,
+      USER_SERVICE.ACTIONS.COUNT_COMPANY_FAVORITE,
+      { cid },
     );
   }
 
   @Get('find-all-career-scopes')
   async findAllCareerScopes(): Promise<any> {
-    return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.FIND_ALL_CAREER_SCOPES, {}),
+    return rpcCall(
+      this.userClient,
+      USER_SERVICE.ACTIONS.FIND_ALL_CAREER_SCOPES,
+      {},
     );
   }
 
@@ -255,11 +241,10 @@ export class UserController implements IUserController {
     @Req() req?: any,
   ): Promise<any> {
     await this.assertEmployeeAccess(req?.user?.id, employeeId);
-    return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.GET_EMPLOYEE_RECOMMENDATIONS, {
-        employeeId,
-        limit: limit ? Number(limit) : 10,
-      }),
+    return rpcCall(
+      this.userClient,
+      USER_SERVICE.ACTIONS.GET_EMPLOYEE_RECOMMENDATIONS,
+      { employeeId, limit: limit ? Number(limit) : 10 },
     );
   }
 
@@ -270,11 +255,10 @@ export class UserController implements IUserController {
     @Req() req?: any,
   ): Promise<any> {
     await this.assertCompanyAccess(req?.user?.id, companyId);
-    return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.GET_COMPANY_RECOMMENDATIONS, {
-        companyId,
-        limit: limit ? Number(limit) : 10,
-      }),
+    return rpcCall(
+      this.userClient,
+      USER_SERVICE.ACTIONS.GET_COMPANY_RECOMMENDATIONS,
+      { companyId, limit: limit ? Number(limit) : 10 },
     );
   }
 }

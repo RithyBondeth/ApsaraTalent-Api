@@ -18,8 +18,10 @@ export class JobController implements IJobController {
   ) {}
 
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_ALL_JOBS)
-  findAllJobs(): Promise<JobResponseDTO[]> {
-    return this.jobService.findAllJobs();
+  findAllJobs(
+    @Payload() data: { skip?: number; limit?: number } = {},
+  ): Promise<JobResponseDTO[]> {
+    return this.jobService.findAllJobs(data.skip, data.limit);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.SEARCH_JOBS)

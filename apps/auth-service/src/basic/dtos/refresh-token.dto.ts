@@ -1,7 +1,1 @@
-import { IsNotEmpty, IsString } from 'class-validator';
-
-export class RefreshTokenDTO {
-  @IsString()
-  @IsNotEmpty()
-  refreshToken: string;
-}
+export { RefreshTokenDTO } from '@app/contracts/dtos/auth/refresh-token.dto';

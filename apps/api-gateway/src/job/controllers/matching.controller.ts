@@ -12,11 +12,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
+import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto'; // TODO: move UserResponseDTO to @app/contracts/dtos/user when ready
 import { JobAccessBase } from '../shared/job-access.base';
+import { rpcCall } from '../../utils/rpc-call';
 
 @Controller('match')
 @UseGuards(AuthGuard)
@@ -35,10 +35,10 @@ export class JobMatchingController extends JobAccessBase implements IMatchingCon
     @Req() req?: any,
   ): Promise<any> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
-    const payload = { eid, cid };
-    return firstValueFrom(
-      this.jobClient.send(JOB_SERVICE.ACTIONS.EMPLOYEE_LIKES, payload),
-    );
+    return rpcCall(this.jobClient, JOB_SERVICE.ACTIONS.EMPLOYEE_LIKES, {
+      eid,
+      cid,
+    });
   }
 
   @Post('company/:cid/like/:eid')
@@ -48,10 +48,10 @@ export class JobMatchingController extends JobAccessBase implements IMatchingCon
     @Req() req?: any,
   ): Promise<any> {
     await this.assertCompanyAccess(req?.user?.id, cid);
-    const payload = { cid, eid };
-    return firstValueFrom(
-      this.jobClient.send(JOB_SERVICE.ACTIONS.COMPANY_LIKES, payload),
-    );
+    return rpcCall(this.jobClient, JOB_SERVICE.ACTIONS.COMPANY_LIKES, {
+      cid,
+      eid,
+    });
   }
 
   @Get('current-employee-liked/:eid')
@@ -60,12 +60,10 @@ export class JobMatchingController extends JobAccessBase implements IMatchingCon
     @Req() req?: any,
   ): Promise<UserResponseDTO[]> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
-    const payload = { eid };
-    return firstValueFrom(
-      this.jobClient.send<UserResponseDTO[]>(
-        JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_LIKED,
-        payload,
-      ),
+    return rpcCall<UserResponseDTO[]>(
+      this.jobClient,
+      JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_LIKED,
+      { eid },
     );
   }
 
@@ -75,12 +73,10 @@ export class JobMatchingController extends JobAccessBase implements IMatchingCon
     @Req() req?: any,
   ): Promise<UserResponseDTO[]> {
     await this.assertCompanyAccess(req?.user?.id, cid);
-    const payload = { cid };
-    return firstValueFrom(
-      this.jobClient.send<UserResponseDTO[]>(
-        JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_LIKED,
-        payload,
-      ),
+    return rpcCall<UserResponseDTO[]>(
+      this.jobClient,
+      JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_LIKED,
+      { cid },
     );
   }
 
@@ -90,12 +86,10 @@ export class JobMatchingController extends JobAccessBase implements IMatchingCon
     @Req() req?: any,
   ): Promise<UserResponseDTO[]> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
-    const payload = { eid };
-    return firstValueFrom(
-      this.jobClient.send<UserResponseDTO[]>(
-        JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_MATCHING,
-        payload,
-      ),
+    return rpcCall<UserResponseDTO[]>(
+      this.jobClient,
+      JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_MATCHING,
+      { eid },
     );
   }
 
@@ -105,12 +99,10 @@ export class JobMatchingController extends JobAccessBase implements IMatchingCon
     @Req() req?: any,
   ): Promise<UserResponseDTO[]> {
     await this.assertCompanyAccess(req?.user?.id, cid);
-    const payload = { cid };
-    return firstValueFrom(
-      this.jobClient.send<UserResponseDTO[]>(
-        JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_MATCHING,
-        payload,
-      ),
+    return rpcCall<UserResponseDTO[]>(
+      this.jobClient,
+      JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_MATCHING,
+      { cid },
     );
   }
 
@@ -120,12 +112,10 @@ export class JobMatchingController extends JobAccessBase implements IMatchingCon
     @Req() req?: any,
   ): Promise<any> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
-    const payload = { eid };
-    return firstValueFrom(
-      this.jobClient.send(
-        JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_MATCHING_COUNT,
-        payload,
-      ),
+    return rpcCall(
+      this.jobClient,
+      JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_MATCHING_COUNT,
+      { eid },
     );
   }
 
@@ -135,22 +125,18 @@ export class JobMatchingController extends JobAccessBase implements IMatchingCon
     @Req() req?: any,
   ): Promise<any> {
     await this.assertCompanyAccess(req?.user?.id, cid);
-    const payload = { cid };
-    return firstValueFrom(
-      this.jobClient.send(
-        JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_MATCHING_COUNT,
-        payload,
-      ),
+    return rpcCall(
+      this.jobClient,
+      JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_MATCHING_COUNT,
+      { cid },
     );
   }
 
   @Get('analytics/:id')
   async getAnalytics(@Param('id') id: string, @Query('role') role: string) {
-    return firstValueFrom(
-      this.jobClient.send(JOB_SERVICE.ACTIONS.GET_ANALYTICS, {
-        userId: id,
-        role,
-      }),
-    );
+    return rpcCall(this.jobClient, JOB_SERVICE.ACTIONS.GET_ANALYTICS, {
+      userId: id,
+      role,
+    });
   }
 }

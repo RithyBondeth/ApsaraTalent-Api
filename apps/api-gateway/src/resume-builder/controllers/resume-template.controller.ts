@@ -15,9 +15,9 @@ import {
     UseInterceptors
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
 import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/service-actions/resume-builder-service.constant';
 import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
+import { rpcCall } from '../../utils/rpc-call';
 
 @Controller('resume/template')
 @UseGuards(AuthGuard)
@@ -29,11 +29,10 @@ export class ResumeTemplateController implements IResumeTemplateController {
 
   @Get('all')
   async findAllResumeTemplate(): Promise<any> {
-    return firstValueFrom(
-      this.resumeBuilderClient.send(
-        RESUME_BUILDER_SERVICE.ACTIONS.FIND_ALL_RESUME_TEMPLATES,
-        {},
-      ),
+    return rpcCall(
+      this.resumeBuilderClient,
+      RESUME_BUILDER_SERVICE.ACTIONS.FIND_ALL_RESUME_TEMPLATES,
+      {},
     );
   }
 
@@ -41,11 +40,10 @@ export class ResumeTemplateController implements IResumeTemplateController {
   async findOneResumeTemplateById(
     @Param('id', ParseUUIDPipe) resumeId: string,
   ): Promise<any> {
-    return firstValueFrom(
-      this.resumeBuilderClient.send(
-        RESUME_BUILDER_SERVICE.ACTIONS.FIND_ONE_RESUME_TEMPLATE,
-        resumeId,
-      ),
+    return rpcCall(
+      this.resumeBuilderClient,
+      RESUME_BUILDER_SERVICE.ACTIONS.FIND_ONE_RESUME_TEMPLATE,
+      resumeId,
     );
   }
 
@@ -55,22 +53,19 @@ export class ResumeTemplateController implements IResumeTemplateController {
     @Body() createResumeTemplateDTO: any,
     @UploadedFile() image: Express.Multer.File,
   ): Promise<MessageResponse> {
-    const payload = { createResumeTemplateDTO, image };
-    return firstValueFrom(
-      this.resumeBuilderClient.send<MessageResponse>(
-        RESUME_BUILDER_SERVICE.ACTIONS.CREATE_RESUME_TEMPLATE,
-        payload,
-      ),
+    return rpcCall<MessageResponse>(
+      this.resumeBuilderClient,
+      RESUME_BUILDER_SERVICE.ACTIONS.CREATE_RESUME_TEMPLATE,
+      { createResumeTemplateDTO, image },
     );
   }
 
   @Get('search')
   async searchResumeTemplate(@Query() searchTemplateQuery: any): Promise<any> {
-    return firstValueFrom(
-      this.resumeBuilderClient.send(
-        RESUME_BUILDER_SERVICE.ACTIONS.SEARCH_RESUME_TEMPLATE,
-        searchTemplateQuery,
-      ),
+    return rpcCall(
+      this.resumeBuilderClient,
+      RESUME_BUILDER_SERVICE.ACTIONS.SEARCH_RESUME_TEMPLATE,
+      searchTemplateQuery,
     );
   }
 }

@@ -1,8 +1,8 @@
 import { Controller, Get, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { IPublicUserController } from '@app/contracts/interfaces/controller/public-user-controller.interface';
+import { rpcCall } from '../utils/rpc-call';
 
 @Controller('public/user')
 export class PublicUserController implements IPublicUserController {
@@ -13,23 +13,20 @@ export class PublicUserController implements IPublicUserController {
   @Get('landing-stats')
   async getLandingStats() {
     const [users, companies, employees] = await Promise.all([
-      firstValueFrom(
-        this.userClient.send<{ totalUsers: number }>(
-          USER_SERVICE.ACTIONS.COUNT_ALL_USERS,
-          {},
-        ),
+      rpcCall<{ totalUsers: number }>(
+        this.userClient,
+        USER_SERVICE.ACTIONS.COUNT_ALL_USERS,
+        {},
       ),
-      firstValueFrom(
-        this.userClient.send<{ totalCompanies: number }>(
-          USER_SERVICE.ACTIONS.COUNT_ALL_COMPANY,
-          {},
-        ),
+      rpcCall<{ totalCompanies: number }>(
+        this.userClient,
+        USER_SERVICE.ACTIONS.COUNT_ALL_COMPANY,
+        {},
       ),
-      firstValueFrom(
-        this.userClient.send<{ totalEmployees: number }>(
-          USER_SERVICE.ACTIONS.COUNT_ALL_EMPLOYEE,
-          {},
-        ),
+      rpcCall<{ totalEmployees: number }>(
+        this.userClient,
+        USER_SERVICE.ACTIONS.COUNT_ALL_EMPLOYEE,
+        {},
       ),
     ]);
 

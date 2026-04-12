@@ -1,3 +1,1 @@
-import { ForgotPasswordResponseDTO } from './forgot-password-response.dto';
-
-export class ResetPasswordResponseDTO extends ForgotPasswordResponseDTO {}
+export { ResetPasswordResponseDTO } from '@app/contracts/dtos/auth/reset-password-response.dto';

@@ -12,7 +12,7 @@ export const I_MATCHING_SERVICE = 'IMatchingService';
 export const I_INTERVIEW_SERVICE = 'IInterviewService';
 
 export interface IJobServiceService {
-  findAllJobs(): Promise<JobResponseDTO[]>;
+  findAllJobs(skip?: number, limit?: number): Promise<JobResponseDTO[]>;
   searchJobs(searchParams: SearchJobDto): Promise<JobResponseDTO[]>;
 }
 

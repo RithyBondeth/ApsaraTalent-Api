@@ -14,10 +14,10 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
 import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-service.constant';
 import { chatUploadMulterOptions } from './config/chat-upload.config';
 import { IChatController } from '@app/contracts/interfaces/domain/chat.interface';
+import { rpcCall } from '../utils/rpc-call';
 
 @Controller('chat')
 export class ChatController implements IChatController {
@@ -31,21 +31,20 @@ export class ChatController implements IChatController {
     @Body() body: { receiverId: string },
     @Req() req: any,
   ): Promise<any> {
-    return await firstValueFrom(
-      this.chatClient.send(CHAT_SERVICE.ACTIONS.CREATE_OR_GET_CHAT, {
-        senderId: req.user.id,
-        receiverId: body.receiverId,
-      }),
-    );
+    return rpcCall(this.chatClient, CHAT_SERVICE.ACTIONS.CREATE_OR_GET_CHAT, {
+      senderId: req.user.id,
+      receiverId: body.receiverId,
+    });
   }
 
   @Get('recent')
   @UseGuards(AuthGuard)
   async getRecentChats(@Req() req: any): Promise<any> {
     try {
-      const userId = req.user.id;
-      return await firstValueFrom(
-        this.chatClient.send(CHAT_SERVICE.ACTIONS.GET_RECENT_CHATS, userId),
+      return await rpcCall(
+        this.chatClient,
+        CHAT_SERVICE.ACTIONS.GET_RECENT_CHATS,
+        req.user.id,
       );
     } catch (error: any) {
       this.logger.error(

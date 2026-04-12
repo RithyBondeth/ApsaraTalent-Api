@@ -1,3 +1,1 @@
-import { ForgotPasswordResponseDTO } from './forgot-password-response.dto';
-
-export class VerifyEmailResponseDTO extends ForgotPasswordResponseDTO {}
+export { VerifyEmailResponseDTO } from '@app/contracts/dtos/auth/verify-email-response.dto';

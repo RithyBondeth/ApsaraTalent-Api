@@ -3,19 +3,17 @@ import { IResumeBuilderController } from '@app/contracts/interfaces/controller/r
 import {
   Body,
   Controller,
-  GatewayTimeoutException,
   HttpCode,
-  HttpException,
   HttpStatus,
   Inject,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { TimeoutError, firstValueFrom, timeout } from 'rxjs';
 import { RESUME } from '@app/contracts/constants/domain/resume.constant';
 import { BuildResumeDTO } from '../../../../resume-builder-service/src/dtos/resume-builder.dto';
 import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/service-actions/resume-builder-service.constant';
+import { rpcCall } from '../../utils/rpc-call';
 
 @Controller('resume')
 @UseGuards(AuthGuard)
@@ -28,42 +26,11 @@ export class ResumeBuilderController implements IResumeBuilderController {
   @Post('build-resume')
   @HttpCode(HttpStatus.CREATED)
   async buildResume(@Body() buildResumeDTO: BuildResumeDTO): Promise<any> {
-    try {
-      return await firstValueFrom(
-        this.resumeBuilderClient
-          .send(RESUME_BUILDER_SERVICE.ACTIONS.BUILD_RESUME, buildResumeDTO)
-          .pipe(timeout(RESUME.CONTROLLER_TIMEOUT)),
-      );
-    } catch (error) {
-      if (error instanceof TimeoutError) {
-        throw new GatewayTimeoutException(
-          'Resume generation timed out. Please try again.',
-        );
-      }
-
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      if (typeof error === 'object' && error && 'statusCode' in error) {
-        const err = error as { statusCode?: number; message?: string };
-        throw new HttpException(
-          err.message || 'Resume generation failed',
-          err.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
-
-      if (error instanceof Error) {
-        throw new HttpException(
-          error.message || 'Resume generation failed',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
-
-      throw new HttpException(
-        'Resume generation failed',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    return rpcCall(
+      this.resumeBuilderClient,
+      RESUME_BUILDER_SERVICE.ACTIONS.BUILD_RESUME,
+      buildResumeDTO,
+      RESUME.CONTROLLER_TIMEOUT,
+    );
   }
 }

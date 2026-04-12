@@ -2,10 +2,11 @@ import { AuthGuard } from '@app/common/guards/auth.guard';
 import { IJobController } from '@app/contracts/interfaces/controller/job-controller.interface';
 import { Controller, Get, Inject, Query, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
 import { JobResponseDTO } from 'apps/job-service/src/dtos/job-response.dto';
-import { SearchJobDto } from 'apps/job-service/src/dtos/job-search.dto';
+import { SearchJobDto } from '@app/contracts/dtos/job';
+import { PaginationDTO } from '@app/contracts/dtos/user';
+import { rpcCall } from '../../utils/rpc-call';
 
 @Controller('job')
 @UseGuards(AuthGuard)
@@ -15,12 +16,13 @@ export class JobController implements IJobController {
   ) {}
 
   @Get('all')
-  async findAllJobs(): Promise<JobResponseDTO[]> {
-    return firstValueFrom(
-      this.jobClient.send<JobResponseDTO[]>(
-        JOB_SERVICE.ACTIONS.FIND_ALL_JOBS,
-        {},
-      ),
+  async findAllJobs(
+    @Query() pagination: PaginationDTO,
+  ): Promise<JobResponseDTO[]> {
+    return rpcCall<JobResponseDTO[]>(
+      this.jobClient,
+      JOB_SERVICE.ACTIONS.FIND_ALL_JOBS,
+      { skip: pagination.skip ?? 0, limit: pagination.limit ?? 20 },
     );
   }
 
@@ -36,11 +38,10 @@ export class JobController implements IJobController {
       }),
     };
 
-    return firstValueFrom(
-      this.jobClient.send<JobResponseDTO[]>(
-        JOB_SERVICE.ACTIONS.SEARCH_JOBS,
-        transformedQuery,
-      ),
+    return rpcCall<JobResponseDTO[]>(
+      this.jobClient,
+      JOB_SERVICE.ACTIONS.SEARCH_JOBS,
+      transformedQuery,
     );
   }
 }

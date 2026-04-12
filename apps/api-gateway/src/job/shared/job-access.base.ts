@@ -1,17 +1,15 @@
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { ForbiddenException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { rpcCall } from '../../utils/rpc-call';
 
 export abstract class JobAccessBase {
   constructor(protected readonly userClient: ClientProxy) {}
 
   protected async getCurrentUserProfile(userId: string): Promise<any> {
-    return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.GET_CURRENT_USER, {
-        userID: userId,
-      }),
-    );
+    return rpcCall(this.userClient, USER_SERVICE.ACTIONS.GET_CURRENT_USER, {
+      userID: userId,
+    });
   }
 
   protected async assertEmployeeAccess(

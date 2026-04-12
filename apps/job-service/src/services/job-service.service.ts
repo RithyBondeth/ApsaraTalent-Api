@@ -25,8 +25,8 @@ export class JobService implements IJobServiceService {
     this.logger.setContext(JobService.name);
   }
 
-  async findAllJobs(): Promise<JobResponseDTO[]> {
-    const cacheKey = this.redisService.generateJobListKey();
+  async findAllJobs(skip = 0, limit = 20): Promise<JobResponseDTO[]> {
+    const cacheKey = `${this.redisService.generateJobListKey()}:skip:${skip}:limit:${limit}`;
     const cached = await this.redisService.get<JobResponseDTO[]>(cacheKey);
     if (cached) {
       this.logger.info('All jobs cache HIT');
@@ -37,12 +37,10 @@ export class JobService implements IJobServiceService {
     try {
       const jobs = await this.jobRepo.find({
         relations: ['company', 'company.user'],
+        skip,
+        take: limit,
+        order: { createdAt: 'DESC' },
       });
-      if (!jobs)
-        throw new RpcException({
-          message: "There's no job available",
-          statusCode: 400,
-        });
       const result = jobs.map((job) => new JobResponseDTO(job));
       await this.redisService.set(cacheKey, result, JOB_LIST_TTL);
       return result;

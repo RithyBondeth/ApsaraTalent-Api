@@ -1,7 +1,1 @@
-import { IsNotEmpty, IsString } from 'class-validator';
-
-export class VerifyKhqrDTO {
-  @IsString()
-  @IsNotEmpty()
-  qrString: string;
-}
+export { VerifyKhqrDTO } from '@app/contracts/dtos/payment/verify-khqr.dto';

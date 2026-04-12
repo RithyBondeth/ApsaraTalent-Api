@@ -1,7 +1,1 @@
-import { IsNotEmpty, IsString } from 'class-validator';
-
-export class ForgotPasswordDTO {
-  @IsString()
-  @IsNotEmpty()
-  identifier: string;
-}
+export { ForgotPasswordDTO } from '@app/contracts/dtos/auth/forgot-password.dto';

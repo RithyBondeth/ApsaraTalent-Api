@@ -17,11 +17,12 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { PaginationDTO } from '@app/contracts/dtos/user';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
-import { EmployeeResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
+import { EmployeeResponseDTO } from 'apps/user-service/src/dtos/user-response.dto'; // TODO: move to @app/contracts/dtos/user
+import { rpcCall } from '../utils/rpc-call';
 
 @Controller('user/employee')
 @UseGuards(AuthGuard)
@@ -29,14 +30,13 @@ export class EmployeeController implements IEmployeeController {
   constructor(
     @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
   ) {}
+
   @Get('all')
-  async findAll(@Query() pagination: any): Promise<EmployeeResponseDTO[]> {
-    const payload = { pagination };
-    return firstValueFrom(
-      this.userClient.send<EmployeeResponseDTO[]>(
-        USER_SERVICE.ACTIONS.FIND_ALL_EMPLOYEE,
-        payload,
-      ),
+  async findAll(@Query() pagination: PaginationDTO): Promise<EmployeeResponseDTO[]> {
+    return rpcCall<EmployeeResponseDTO[]>(
+      this.userClient,
+      USER_SERVICE.ACTIONS.FIND_ALL_EMPLOYEE,
+      { pagination },
     );
   }
 
@@ -44,12 +44,10 @@ export class EmployeeController implements IEmployeeController {
   async findOneById(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
   ): Promise<EmployeeResponseDTO> {
-    const payload = { employeeId };
-    return firstValueFrom(
-      this.userClient.send<EmployeeResponseDTO>(
-        USER_SERVICE.ACTIONS.FIND_ONE_EMPLOYEE_BY_ID,
-        payload,
-      ),
+    return rpcCall<EmployeeResponseDTO>(
+      this.userClient,
+      USER_SERVICE.ACTIONS.FIND_ONE_EMPLOYEE_BY_ID,
+      { employeeId },
     );
   }
 
@@ -58,9 +56,10 @@ export class EmployeeController implements IEmployeeController {
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @Body() updateEmployeeInfoDTO: any,
   ) {
-    const payload = { employeeId, updateEmployeeInfoDTO };
-    return firstValueFrom(
-      this.userClient.send(USER_SERVICE.ACTIONS.UPDATE_EMPLOYEE_INFO, payload),
+    return rpcCall(
+      this.userClient,
+      USER_SERVICE.ACTIONS.UPDATE_EMPLOYEE_INFO,
+      { employeeId, updateEmployeeInfoDTO },
     );
   }
 
@@ -71,12 +70,10 @@ export class EmployeeController implements IEmployeeController {
     @UploadedFile() avatar: Express.Multer.File,
   ): Promise<MessageResponse> {
     if (!avatar) throw new BadRequestException('No file uploaded');
-    const payload = { employeeId, avatar };
-    return firstValueFrom(
-      this.userClient.send<MessageResponse>(
-        USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_AVATAR,
-        payload,
-      ),
+    return rpcCall<MessageResponse>(
+      this.userClient,
+      USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_AVATAR,
+      { employeeId, avatar },
     );
   }
 
@@ -84,12 +81,10 @@ export class EmployeeController implements IEmployeeController {
   async removeEmployeeAvatar(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
   ): Promise<MessageResponse> {
-    const payload = { employeeId };
-    return firstValueFrom(
-      this.userClient.send<MessageResponse>(
-        USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_AVATAR,
-        payload,
-      ),
+    return rpcCall<MessageResponse>(
+      this.userClient,
+      USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_AVATAR,
+      { employeeId },
     );
   }
 
@@ -99,12 +94,10 @@ export class EmployeeController implements IEmployeeController {
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @UploadedFile() resume: Express.Multer.File,
   ): Promise<MessageResponse> {
-    const payload = { employeeId, resume };
-    return firstValueFrom(
-      this.userClient.send<MessageResponse>(
-        USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_RESUME,
-        payload,
-      ),
+    return rpcCall<MessageResponse>(
+      this.userClient,
+      USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_RESUME,
+      { employeeId, resume },
     );
   }
 
@@ -112,12 +105,10 @@ export class EmployeeController implements IEmployeeController {
   async removeEmployeeResume(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
   ): Promise<MessageResponse> {
-    const payload = { employeeId };
-    return firstValueFrom(
-      this.userClient.send<MessageResponse>(
-        USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_RESUME,
-        payload,
-      ),
+    return rpcCall<MessageResponse>(
+      this.userClient,
+      USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_RESUME,
+      { employeeId },
     );
   }
 
@@ -127,12 +118,10 @@ export class EmployeeController implements IEmployeeController {
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @UploadedFile() coverLetter: Express.Multer.File,
   ): Promise<MessageResponse> {
-    const payload = { employeeId, coverLetter };
-    return firstValueFrom(
-      this.userClient.send<MessageResponse>(
-        USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_COVER_LETTER,
-        payload,
-      ),
+    return rpcCall<MessageResponse>(
+      this.userClient,
+      USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_COVER_LETTER,
+      { employeeId, coverLetter },
     );
   }
 
@@ -140,12 +129,10 @@ export class EmployeeController implements IEmployeeController {
   async removeEmployeeCoverLetter(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
   ): Promise<MessageResponse> {
-    const payload = { employeeId };
-    return firstValueFrom(
-      this.userClient.send<MessageResponse>(
-        USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_COVER_LETTER,
-        payload,
-      ),
+    return rpcCall<MessageResponse>(
+      this.userClient,
+      USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_COVER_LETTER,
+      { employeeId },
     );
   }
 
@@ -154,12 +141,10 @@ export class EmployeeController implements IEmployeeController {
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @Param('educationId', ParseUUIDPipe) educationId: string,
   ) {
-    const payload = { employeeId, educationId };
-    return firstValueFrom(
-      this.userClient.send(
-        USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_EDUCATION,
-        payload,
-      ),
+    return rpcCall(
+      this.userClient,
+      USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_EDUCATION,
+      { employeeId, educationId },
     );
   }
 
@@ -168,12 +153,10 @@ export class EmployeeController implements IEmployeeController {
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @Param('experienceId', ParseUUIDPipe) experienceId: string,
   ) {
-    const payload = { employeeId, experienceId };
-    return firstValueFrom(
-      this.userClient.send(
-        USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_EXPERIENCE,
-        payload,
-      ),
+    return rpcCall(
+      this.userClient,
+      USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_EXPERIENCE,
+      { employeeId, experienceId },
     );
   }
 
@@ -181,11 +164,10 @@ export class EmployeeController implements IEmployeeController {
   async searchEmployee(
     @Query() searchEmployeeQuery: any,
   ): Promise<EmployeeResponseDTO[]> {
-    return firstValueFrom(
-      this.userClient.send<EmployeeResponseDTO[]>(
-        USER_SERVICE.ACTIONS.SEARCH_EMPLOYEES,
-        searchEmployeeQuery,
-      ),
+    return rpcCall<EmployeeResponseDTO[]>(
+      this.userClient,
+      USER_SERVICE.ACTIONS.SEARCH_EMPLOYEES,
+      searchEmployeeQuery,
     );
   }
 }

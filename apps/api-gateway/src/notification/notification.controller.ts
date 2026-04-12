@@ -13,9 +13,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 import { INotificationController } from '@app/contracts/interfaces/domain/notification.interface';
+import { rpcCall } from '../utils/rpc-call';
 
 @Controller('notification')
 export class NotificationController implements INotificationController {
@@ -26,11 +26,10 @@ export class NotificationController implements INotificationController {
 
   @Get('all')
   async getAllNotification(): Promise<any> {
-    return firstValueFrom(
-      this.notificationClient.send(
-        NOTIFICATION_SERVICE.ACTIONS.FIND_ALL_NOTIFICATIONS,
-        {},
-      ),
+    return rpcCall(
+      this.notificationClient,
+      NOTIFICATION_SERVICE.ACTIONS.FIND_ALL_NOTIFICATIONS,
+      {},
     );
   }
 
@@ -42,70 +41,65 @@ export class NotificationController implements INotificationController {
     @Query('limit') limit?: string,
     @Query('unreadOnly') unreadOnly?: string,
   ) {
-    return firstValueFrom(
-      this.notificationClient.send(NOTIFICATION_SERVICE.ACTIONS.LIST_BY_USER, {
+    return rpcCall(
+      this.notificationClient,
+      NOTIFICATION_SERVICE.ACTIONS.LIST_BY_USER,
+      {
         userId: req.user.id,
         page: page ? Number(page) : undefined,
         limit: limit ? Number(limit) : undefined,
         unreadOnly: unreadOnly === 'true',
-      }),
+      },
     );
   }
 
   @Get('unread-count')
   @UseGuards(AuthGuard)
   async getUnreadCount(@Req() req) {
-    return firstValueFrom(
-      this.notificationClient.send(
-        NOTIFICATION_SERVICE.ACTIONS.GET_UNREAD_COUNT,
-        { userId: req.user.id },
-      ),
+    return rpcCall(
+      this.notificationClient,
+      NOTIFICATION_SERVICE.ACTIONS.GET_UNREAD_COUNT,
+      { userId: req.user.id },
     );
   }
 
   @Patch(':id/read')
   @UseGuards(AuthGuard)
   async markRead(@Req() req, @Param('id') id: string) {
-    return firstValueFrom(
-      this.notificationClient.send(NOTIFICATION_SERVICE.ACTIONS.MARK_READ, {
-        userId: req.user.id,
-        notificationId: id,
-      }),
+    return rpcCall(
+      this.notificationClient,
+      NOTIFICATION_SERVICE.ACTIONS.MARK_READ,
+      { userId: req.user.id, notificationId: id },
     );
   }
 
   @Patch('read-all')
   @UseGuards(AuthGuard)
   async markAllRead(@Req() req) {
-    return firstValueFrom(
-      this.notificationClient.send(NOTIFICATION_SERVICE.ACTIONS.MARK_ALL_READ, {
-        userId: req.user.id,
-      }),
+    return rpcCall(
+      this.notificationClient,
+      NOTIFICATION_SERVICE.ACTIONS.MARK_ALL_READ,
+      { userId: req.user.id },
     );
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard)
   async deleteNotification(@Req() req, @Param('id') id: string) {
-    return firstValueFrom(
-      this.notificationClient.send(
-        NOTIFICATION_SERVICE.ACTIONS.DELETE_NOTIFICATION,
-        {
-          userId: req.user.id,
-          notificationId: id,
-        },
-      ),
+    return rpcCall(
+      this.notificationClient,
+      NOTIFICATION_SERVICE.ACTIONS.DELETE_NOTIFICATION,
+      { userId: req.user.id, notificationId: id },
     );
   }
 
   @Delete()
   @UseGuards(AuthGuard)
   async deleteAllNotifications(@Req() req) {
-    return firstValueFrom(
-      this.notificationClient.send(
-        NOTIFICATION_SERVICE.ACTIONS.DELETE_ALL_NOTIFICATIONS,
-        { userId: req.user.id },
-      ),
+    return rpcCall(
+      this.notificationClient,
+      NOTIFICATION_SERVICE.ACTIONS.DELETE_ALL_NOTIFICATIONS,
+      { userId: req.user.id },
     );
   }
 
@@ -121,17 +115,16 @@ export class NotificationController implements INotificationController {
       data?: Record<string, any>;
     },
   ) {
-    return firstValueFrom(
-      this.notificationClient.send(
-        NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION,
-        {
-          userId: req.user.id,
-          title: body.title,
-          message: body.message,
-          type: body.type,
-          data: body.data,
-        },
-      ),
+    return rpcCall(
+      this.notificationClient,
+      NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION,
+      {
+        userId: req.user.id,
+        title: body.title,
+        message: body.message,
+        type: body.type,
+        data: body.data,
+      },
     );
   }
 }

@@ -5,7 +5,7 @@ import { IInterviewController } from '@app/contracts/interfaces/controller/job-c
 import {
   CreateInterviewDto,
   UpdateInterviewStatusDto,
-} from 'apps/job-service/src/dtos/interview.dto';
+} from '@app/contracts/dtos/job';
 import {
   Body,
   Controller,
@@ -20,8 +20,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
 import { JobAccessBase } from '../shared/job-access.base';
+import { rpcCall } from '../../utils/rpc-call';
 
 @Controller('match/interview')
 @UseGuards(AuthGuard)
@@ -36,13 +36,10 @@ export class InterviewController extends JobAccessBase implements IInterviewCont
   @Post()
   async createInterview(@Body() dto: CreateInterviewDto, @Req() req?: any) {
     await this.assertCompanyAccess(req?.user?.id, dto.companyId);
-
-    return firstValueFrom(
-      this.jobClient.send(JOB_SERVICE.ACTIONS.CREATE_INTERVIEW, {
-        ...dto,
-        createdBy: 'company',
-      }),
-    );
+    return rpcCall(this.jobClient, JOB_SERVICE.ACTIONS.CREATE_INTERVIEW, {
+      ...dto,
+      createdBy: 'company',
+    });
   }
 
   @Get('employee/:employeeId')
@@ -51,11 +48,10 @@ export class InterviewController extends JobAccessBase implements IInterviewCont
     @Req() req?: any,
   ) {
     await this.assertEmployeeAccess(req?.user?.id, employeeId);
-
-    return firstValueFrom(
-      this.jobClient.send(JOB_SERVICE.ACTIONS.GET_INTERVIEWS_BY_EMPLOYEE, {
-        employeeId,
-      }),
+    return rpcCall(
+      this.jobClient,
+      JOB_SERVICE.ACTIONS.GET_INTERVIEWS_BY_EMPLOYEE,
+      { employeeId },
     );
   }
 
@@ -65,11 +61,10 @@ export class InterviewController extends JobAccessBase implements IInterviewCont
     @Req() req?: any,
   ) {
     await this.assertCompanyAccess(req?.user?.id, companyId);
-
-    return firstValueFrom(
-      this.jobClient.send(JOB_SERVICE.ACTIONS.GET_INTERVIEWS_BY_COMPANY, {
-        companyId,
-      }),
+    return rpcCall(
+      this.jobClient,
+      JOB_SERVICE.ACTIONS.GET_INTERVIEWS_BY_COMPANY,
+      { companyId },
     );
   }
 
@@ -89,12 +84,10 @@ export class InterviewController extends JobAccessBase implements IInterviewCont
       throw new ForbiddenException('Invalid user role.');
     }
 
-    return firstValueFrom(
-      this.jobClient.send(JOB_SERVICE.ACTIONS.UPDATE_INTERVIEW_STATUS, {
-        ...dto,
-        requestUserId: req.user.id,
-        requestUserRole: role,
-      }),
+    return rpcCall(
+      this.jobClient,
+      JOB_SERVICE.ACTIONS.UPDATE_INTERVIEW_STATUS,
+      { ...dto, requestUserId: req.user.id, requestUserRole: role },
     );
   }
 }

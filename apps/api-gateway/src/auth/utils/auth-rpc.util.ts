@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { rpcCall } from '../../utils/rpc-call';
 
 export function normalizeAuthServiceError(error: unknown): {
   statusCode: number;
@@ -71,8 +71,9 @@ export async function sendAuthServiceRequest<T = any>(
   payload: unknown,
 ): Promise<T> {
   try {
-    return await firstValueFrom(authClient.send<T>(action, payload));
+    return await rpcCall<T>(authClient, action as string, payload);
   } catch (error) {
+    if (error instanceof HttpException) throw error;
     rethrowAuthServiceError(error);
   }
 }

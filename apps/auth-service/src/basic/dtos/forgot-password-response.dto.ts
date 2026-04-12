@@ -1,7 +1,1 @@
-export class ForgotPasswordResponseDTO {
-  message: string;
-
-  constructor(message: string) {
-    this.message = message;
-  }
-}
+export { ForgotPasswordResponseDTO } from '@app/contracts/dtos/auth/forgot-password-response.dto';

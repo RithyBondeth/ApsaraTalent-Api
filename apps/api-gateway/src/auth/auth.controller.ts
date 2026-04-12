@@ -15,19 +15,21 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
-import { CompanyRegisterDTO } from 'apps/auth-service/src/basic/dtos/company-register.dto';
-import { EmployeeRegisterDTO } from 'apps/auth-service/src/basic/dtos/employee-register.dto';
-import { LoginDTO } from 'apps/auth-service/src/basic/dtos/login.dto';
-import { LoginOtpDTO } from 'apps/auth-service/src/basic/dtos/login-otp.dto';
-import { VerifyOtpDTO } from 'apps/auth-service/src/basic/dtos/verify-otp.dto';
-import { ForgotPasswordDTO } from 'apps/auth-service/src/basic/dtos/forgot-password.dto';
-import { ResetPasswordDTO } from 'apps/auth-service/src/basic/dtos/reset-password.dto';
-import { RefreshTokenDTO } from 'apps/auth-service/src/basic/dtos/refresh-token.dto';
-import { LoginResponseDTO } from 'apps/auth-service/src/basic/dtos/login-response.dto';
-import { ForgotPasswordResponseDTO } from 'apps/auth-service/src/basic/dtos/forgot-password-response.dto';
-import { ResetPasswordResponseDTO } from 'apps/auth-service/src/basic/dtos/reset-password-response.dto';
-import { RefreshTokenResponseDTO } from 'apps/auth-service/src/basic/dtos/refresh-token-response.dto';
-import { VerifyEmailResponseDTO } from 'apps/auth-service/src/basic/dtos/verify-email-response.dto';
+import {
+  CompanyRegisterDTO,
+  EmployeeRegisterDTO,
+  LoginDTO,
+  LoginOtpDTO,
+  VerifyOtpDTO,
+  ForgotPasswordDTO,
+  ResetPasswordDTO,
+  RefreshTokenDTO,
+  LoginResponseDTO,
+  ForgotPasswordResponseDTO,
+  ResetPasswordResponseDTO,
+  RefreshTokenResponseDTO,
+  VerifyEmailResponseDTO,
+} from '@app/contracts/dtos/auth';
 import { setAuthTokenCookies } from './utils/auth-cookie.util';
 import { sendAuthServiceRequest } from './utils/auth-rpc.util';
 

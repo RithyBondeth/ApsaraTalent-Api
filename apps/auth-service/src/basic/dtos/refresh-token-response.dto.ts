@@ -1,3 +1,1 @@
-import { LoginResponseDTO } from './login-response.dto';
-
-export class RefreshTokenResponseDTO extends LoginResponseDTO {}
+export { RefreshTokenResponseDTO } from '@app/contracts/dtos/auth/refresh-token-response.dto';
