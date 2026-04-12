@@ -47,9 +47,7 @@ export class PaymentController implements IPaymentController {
   async generateMerchantQr(
     @Payload() generateMerchantKhqrDTO: GenerateMerchantKhqrDTO,
   ): Promise<GenerateMerchantKhqrResponse> {
-    return this.paymentService.generateMerchantKhqrDTO(
-      generateMerchantKhqrDTO,
-    );
+    return this.paymentService.generateMerchantKhqrDTO(generateMerchantKhqrDTO);
   }
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.VERIFY_KHQR)

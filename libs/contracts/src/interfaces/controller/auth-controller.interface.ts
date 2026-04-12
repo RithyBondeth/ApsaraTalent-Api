@@ -20,7 +20,10 @@ export interface IBasicAuthResetPasswordController {
 }
 
 export interface IBasicAuthRefreshTokenController {
-  refreshToken(refreshTokenDTO: any, res: any): Promise<RefreshTokenResponseDTO>;
+  refreshToken(
+    refreshTokenDTO: any,
+    res: any,
+  ): Promise<RefreshTokenResponseDTO>;
 }
 
 export interface IBasicAuthVerifyEmailController {

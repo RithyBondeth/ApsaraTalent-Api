@@ -87,8 +87,14 @@ export class NotificationService implements INotificationService {
   }
 
   async listByUser(payload: ListNotificationsPayload) {
-    const page = Math.max(NOTIFICATION.MIN_PAGE, payload.page ?? NOTIFICATION.MIN_PAGE);
-    const limit = Math.min(Math.max(1, payload.limit ?? NOTIFICATION.DEFAULT_LIMIT), NOTIFICATION.MAX_LIMIT);
+    const page = Math.max(
+      NOTIFICATION.MIN_PAGE,
+      payload.page ?? NOTIFICATION.MIN_PAGE,
+    );
+    const limit = Math.min(
+      Math.max(1, payload.limit ?? NOTIFICATION.DEFAULT_LIMIT),
+      NOTIFICATION.MAX_LIMIT,
+    );
     const skip = (page - 1) * limit;
 
     const where: any = { user: { id: payload.userId } };

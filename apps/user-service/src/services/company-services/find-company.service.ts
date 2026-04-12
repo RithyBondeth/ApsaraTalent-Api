@@ -61,7 +61,9 @@ export class FindCompanyService implements IFindCompanyService {
         const transformedCompany = {
           ...company,
           openPositions:
-            company.openPositions?.map((job) => new JobPositionResponseDTO(job)) ?? [],
+            company.openPositions?.map(
+              (job) => new JobPositionResponseDTO(job),
+            ) ?? [],
         };
         return new CompanyResponseDTO(transformedCompany);
       });
@@ -148,8 +150,9 @@ export class FindCompanyService implements IFindCompanyService {
         ...user.company,
         email: user.email,
         openPositions:
-          user.company.openPositions?.map((job) => new JobPositionResponseDTO(job)) ??
-          [],
+          user.company.openPositions?.map(
+            (job) => new JobPositionResponseDTO(job),
+          ) ?? [],
       });
 
       await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);

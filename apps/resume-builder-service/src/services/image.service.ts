@@ -25,7 +25,10 @@ export class ImageService {
       const imageBuffer = Buffer.from(base64Data, 'base64');
 
       const optimizedBuffer = await sharp(imageBuffer)
-        .resize(RESUME.AVATAR_SIZE, RESUME.AVATAR_SIZE, { fit: 'cover', position: 'center' })
+        .resize(RESUME.AVATAR_SIZE, RESUME.AVATAR_SIZE, {
+          fit: 'cover',
+          position: 'center',
+        })
         .jpeg({ quality: 85 })
         .toBuffer();
 

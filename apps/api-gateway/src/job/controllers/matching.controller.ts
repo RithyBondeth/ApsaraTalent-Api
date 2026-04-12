@@ -20,7 +20,10 @@ import { rpcCall } from '../../utils/rpc-call';
 
 @Controller('match')
 @UseGuards(AuthGuard)
-export class JobMatchingController extends JobAccessBase implements IMatchingController {
+export class JobMatchingController
+  extends JobAccessBase
+  implements IMatchingController
+{
   constructor(
     @Inject(JOB_SERVICE.NAME) private readonly jobClient: ClientProxy,
     @Inject(USER_SERVICE.NAME) userClient: ClientProxy,

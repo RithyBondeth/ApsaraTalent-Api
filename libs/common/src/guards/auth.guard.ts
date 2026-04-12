@@ -46,7 +46,9 @@ export class AuthGuard implements CanActivate {
     try {
       user = await this.userRepository.findOne({ where: { id: payload.id } });
     } catch {
-      throw new InternalServerErrorException('Authentication service unavailable');
+      throw new InternalServerErrorException(
+        'Authentication service unavailable',
+      );
     }
 
     if (!user) {

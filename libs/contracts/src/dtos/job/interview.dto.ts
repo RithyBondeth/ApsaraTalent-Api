@@ -1,4 +1,11 @@
-import { IsDateString, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export enum InterviewStatus {
   PENDING = 'pending',
@@ -10,7 +17,11 @@ export enum InterviewStatus {
 
 /** Valid transitions: who can trigger which status change */
 export const VALID_STATUS_TRANSITIONS: Record<string, InterviewStatus[]> = {
-  pending: [InterviewStatus.ACCEPTED, InterviewStatus.DECLINED, InterviewStatus.CANCELLED],
+  pending: [
+    InterviewStatus.ACCEPTED,
+    InterviewStatus.DECLINED,
+    InterviewStatus.CANCELLED,
+  ],
   accepted: [InterviewStatus.CANCELLED, InterviewStatus.COMPLETED],
   declined: [],
   cancelled: [],
@@ -59,7 +70,10 @@ export class UpdateInterviewStatusDto {
   @IsNotEmpty()
   interviewId: string;
 
-  @IsEnum(InterviewStatus, { message: 'Status must be one of: pending, accepted, declined, cancelled, completed' })
+  @IsEnum(InterviewStatus, {
+    message:
+      'Status must be one of: pending, accepted, declined, cancelled, completed',
+  })
   status: InterviewStatus;
 
   @IsString()

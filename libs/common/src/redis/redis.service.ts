@@ -205,7 +205,9 @@ export class RedisService {
   }
 
   async invalidateTemplateCaches(templateId?: string): Promise<void> {
-    const deletions: Promise<void>[] = [this.del(this.generateTemplateListKey())];
+    const deletions: Promise<void>[] = [
+      this.del(this.generateTemplateListKey()),
+    ];
     if (templateId) {
       deletions.push(this.del(this.generateTemplateDetailKey(templateId)));
     }

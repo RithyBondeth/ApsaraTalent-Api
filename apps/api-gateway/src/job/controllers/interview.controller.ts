@@ -25,7 +25,10 @@ import { rpcCall } from '../../utils/rpc-call';
 
 @Controller('match/interview')
 @UseGuards(AuthGuard)
-export class InterviewController extends JobAccessBase implements IInterviewController {
+export class InterviewController
+  extends JobAccessBase
+  implements IInterviewController
+{
   constructor(
     @Inject(JOB_SERVICE.NAME) private readonly jobClient: ClientProxy,
     @Inject(USER_SERVICE.NAME) userClient: ClientProxy,

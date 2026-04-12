@@ -3,7 +3,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { AuthGuard, IAuthModuleOptions } from '@nestjs/passport';
 import { Request } from 'express';
 import { buildPublicCallbackUrl } from '../shared/oauth-callback-url.util';
 
@@ -20,14 +20,14 @@ export class GithubAuthGuard extends AuthGuard('github') {
     return super.canActivate(context);
   }
 
-  getAuthenticateOptions(context: ExecutionContext) {
+  getAuthenticateOptions(context: ExecutionContext): IAuthModuleOptions {
     const req = context.switchToHttp().getRequest<Request>();
     return {
       callbackURL: buildPublicCallbackUrl(req, 'github'),
     };
   }
 
-  handleRequest(err: any, user: any, info?: any) {
+  handleRequest(err: any, user: any, info?: any): any {
     if (err) throw err;
     if (!user) {
       throw new UnauthorizedException(

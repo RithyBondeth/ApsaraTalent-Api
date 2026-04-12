@@ -27,16 +27,23 @@ export class GenerateIndividualKhqrDTO {
 
   @IsString()
   @IsNotEmpty()
-  @Length(1, 25, { message: 'Merchant name must be between 1 and 25 characters' })
+  @Length(1, 25, {
+    message: 'Merchant name must be between 1 and 25 characters',
+  })
   merchantName: string;
 
   @IsString()
   @IsNotEmpty()
-  @Length(1, 15, { message: 'Merchant city must be between 1 and 15 characters' })
+  @Length(1, 15, {
+    message: 'Merchant city must be between 1 and 15 characters',
+  })
   merchantCity: string;
 
   @IsOptional()
-  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Amount must be a valid number with max 2 decimal places' })
+  @IsNumber(
+    { maxDecimalPlaces: 2 },
+    { message: 'Amount must be a valid number with max 2 decimal places' },
+  )
   @Min(0, { message: 'Amount cannot be negative' })
   @Transform(({ value }) => parseFloat(value))
   amount?: number;
@@ -53,7 +60,9 @@ export class GenerateIndividualKhqrDTO {
   @IsOptional()
   @IsString()
   @Matches(/^[0-9+\-\s()]+$/, { message: 'Invalid mobile number format' })
-  @Length(8, 15, { message: 'Mobile number must be between 8 and 15 characters' })
+  @Length(8, 15, {
+    message: 'Mobile number must be between 8 and 15 characters',
+  })
   mobileNumber?: string;
 
   @IsOptional()
@@ -63,7 +72,9 @@ export class GenerateIndividualKhqrDTO {
 
   @IsOptional()
   @IsString()
-  @Length(1, 25, { message: 'Terminal label must be between 1 and 25 characters' })
+  @Length(1, 25, {
+    message: 'Terminal label must be between 1 and 25 characters',
+  })
   terminalLabel?: string;
 
   @IsOptional()

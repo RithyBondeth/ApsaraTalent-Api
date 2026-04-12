@@ -1,4 +1,9 @@
-import { Catch, ArgumentsHost, HttpStatus, RpcExceptionFilter } from '@nestjs/common';
+import {
+  Catch,
+  ArgumentsHost,
+  HttpStatus,
+  RpcExceptionFilter,
+} from '@nestjs/common';
 import { Observable, throwError } from 'rxjs';
 import { RpcException } from '@nestjs/microservices';
 
@@ -9,7 +14,10 @@ export class GlobalRpcExceptionFilter implements RpcExceptionFilter<any> {
     return throwError(() => error);
   }
 
-  private normalize(exception: unknown): { statusCode: number; message: string } {
+  private normalize(exception: unknown): {
+    statusCode: number;
+    message: string;
+  } {
     if (exception instanceof RpcException) {
       const err = exception.getError();
       if (typeof err === 'string') {
@@ -38,6 +46,9 @@ export class GlobalRpcExceptionFilter implements RpcExceptionFilter<any> {
       };
     }
 
-    return { statusCode: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Internal server error' };
+    return {
+      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      message: 'Internal server error',
+    };
   }
 }

@@ -27,7 +27,9 @@ export class JobController implements IJobController {
   }
 
   @Get('search')
-  async searchJobs(@Query() searchJobQuery: SearchJobDto): Promise<JobResponseDTO[]> {
+  async searchJobs(
+    @Query() searchJobQuery: SearchJobDto,
+  ): Promise<JobResponseDTO[]> {
     const transformedQuery = {
       ...searchJobQuery,
       ...(searchJobQuery.companySizeMin && {

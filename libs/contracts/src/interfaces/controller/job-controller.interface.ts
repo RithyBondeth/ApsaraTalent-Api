@@ -18,7 +18,10 @@ export interface IMatchingController {
   companyLikes(data?: any, id?: any): Promise<any>;
   findCurrentEmployeeLiked(data?: any, id?: any): Promise<UserResponseDTO[]>;
   findCurrentCompanyLiked(data?: any, id?: any): Promise<UserResponseDTO[]>;
-  findCurrentEmployeeMatching(data?: any, req?: any): Promise<UserResponseDTO[]>;
+  findCurrentEmployeeMatching(
+    data?: any,
+    req?: any,
+  ): Promise<UserResponseDTO[]>;
   findCurrentCompanyMatching(data?: any, req?: any): Promise<UserResponseDTO[]>;
   findCurrentEmployeeMatchingCount(data?: any, id?: any): Promise<any>;
   findCurrentCompanyMatchingCount(data?: any, id?: any): Promise<any>;

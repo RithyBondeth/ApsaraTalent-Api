@@ -18,7 +18,9 @@ export interface IPaymentController {
   verifyKhqr(verifyKhqrDTO?: any): Promise<VerifyKhqrResponse>;
   decodeKhqr(verifyKhqrDTO?: any): Promise<DecodeKhqrResponse>;
   generateQRImage?(body?: any, format?: any): Promise<any>;
-  generateDeepLink(generateDeepLinkDto?: any): Promise<GenerateDeepLinkResponse>;
+  generateDeepLink(
+    generateDeepLinkDto?: any,
+  ): Promise<GenerateDeepLinkResponse>;
   checkPaymentStatus(
     checkPaymentStatusDTO?: any,
   ): Promise<CheckPaymentStatusResponse>;

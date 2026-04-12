@@ -59,7 +59,9 @@ export class PaymentController implements IPaymentController {
   }
 
   @Post('verify-khqr')
-  async verifyKhqr(@Body() verifyKhqrDTO: VerifyKhqrDTO): Promise<VerifyKhqrResponse> {
+  async verifyKhqr(
+    @Body() verifyKhqrDTO: VerifyKhqrDTO,
+  ): Promise<VerifyKhqrResponse> {
     return rpcCall<VerifyKhqrResponse>(
       this.paymentClient,
       PAYMENT_SERVICE.ACTIONS.VERIFY_KHQR,
@@ -68,7 +70,9 @@ export class PaymentController implements IPaymentController {
   }
 
   @Post('decode-khqr')
-  async decodeKhqr(@Body() decodeKhqrDTO: DecodeKhqrDTO): Promise<DecodeKhqrResponse> {
+  async decodeKhqr(
+    @Body() decodeKhqrDTO: DecodeKhqrDTO,
+  ): Promise<DecodeKhqrResponse> {
     return rpcCall<DecodeKhqrResponse>(
       this.paymentClient,
       PAYMENT_SERVICE.ACTIONS.DECODE_KHQR,

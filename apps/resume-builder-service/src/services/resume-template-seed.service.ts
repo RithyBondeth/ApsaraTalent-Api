@@ -132,10 +132,7 @@ export class ResumeTemplateSeedService implements OnModuleInit {
         }
       }
     } catch (error) {
-      this.logger.error(
-        { err: error },
-        'Failed to seed resume templates',
-      );
+      this.logger.error({ err: error }, 'Failed to seed resume templates');
     }
   }
 }

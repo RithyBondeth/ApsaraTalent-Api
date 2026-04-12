@@ -33,7 +33,9 @@ export class CompanyController implements ICompanyController {
   ) {}
 
   @Get('all')
-  async findAll(@Query() pagination: PaginationDTO): Promise<CompanyResponseDTO[]> {
+  async findAll(
+    @Query() pagination: PaginationDTO,
+  ): Promise<CompanyResponseDTO[]> {
     return rpcCall<CompanyResponseDTO[]>(
       this.userClient,
       USER_SERVICE.ACTIONS.FIND_ALL_COMPANY,
@@ -57,11 +59,10 @@ export class CompanyController implements ICompanyController {
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @Body() updateCompanyInfoDTO: any,
   ) {
-    return rpcCall(
-      this.userClient,
-      USER_SERVICE.ACTIONS.UPDATE_COMPANY_INFO,
-      { companyId, updateCompanyInfoDTO },
-    );
+    return rpcCall(this.userClient, USER_SERVICE.ACTIONS.UPDATE_COMPANY_INFO, {
+      companyId,
+      updateCompanyInfoDTO,
+    });
   }
 
   @Post('upload-avatar/:companyId')

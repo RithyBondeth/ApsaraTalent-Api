@@ -68,8 +68,8 @@ export class HealthController implements IHealthController {
           timeout: HEALTH_DATABASE_TIMEOUT_MS,
         }),
       () => this.redisCache.pingCheck('redis_cache'),
-      ...INTERNAL_SERVICES.map((service) => () =>
-        this.internalServiceHealth.pingCheck(service),
+      ...INTERNAL_SERVICES.map(
+        (service) => () => this.internalServiceHealth.pingCheck(service),
       ),
     ]);
   }

@@ -28,9 +28,13 @@ export class RpcToHttpExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const body = exception.getResponse();
-      response.status(status).json(
-        typeof body === 'string' ? { statusCode: status, message: body } : body,
-      );
+      response
+        .status(status)
+        .json(
+          typeof body === 'string'
+            ? { statusCode: status, message: body }
+            : body,
+        );
       return;
     }
 
@@ -39,7 +43,10 @@ export class RpcToHttpExceptionFilter implements ExceptionFilter {
     response.status(statusCode).json({ statusCode, message });
   }
 
-  private normalize(exception: unknown): { statusCode: number; message: string } {
+  private normalize(exception: unknown): {
+    statusCode: number;
+    message: string;
+  } {
     const fallback = {
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       message: 'Internal server error',
@@ -90,7 +97,10 @@ export class RpcToHttpExceptionFilter implements ExceptionFilter {
           typeof parsed['statusCode'] === 'number' &&
           typeof parsed['message'] === 'string'
         ) {
-          return { statusCode: parsed['statusCode'], message: parsed['message'] };
+          return {
+            statusCode: parsed['statusCode'],
+            message: parsed['message'],
+          };
         }
       } catch {
         return { statusCode: fallback.statusCode, message: err['message'] };

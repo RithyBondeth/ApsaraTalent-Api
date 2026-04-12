@@ -32,7 +32,9 @@ export class EmployeeController implements IEmployeeController {
   ) {}
 
   @Get('all')
-  async findAll(@Query() pagination: PaginationDTO): Promise<EmployeeResponseDTO[]> {
+  async findAll(
+    @Query() pagination: PaginationDTO,
+  ): Promise<EmployeeResponseDTO[]> {
     return rpcCall<EmployeeResponseDTO[]>(
       this.userClient,
       USER_SERVICE.ACTIONS.FIND_ALL_EMPLOYEE,
@@ -56,11 +58,10 @@ export class EmployeeController implements IEmployeeController {
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @Body() updateEmployeeInfoDTO: any,
   ) {
-    return rpcCall(
-      this.userClient,
-      USER_SERVICE.ACTIONS.UPDATE_EMPLOYEE_INFO,
-      { employeeId, updateEmployeeInfoDTO },
-    );
+    return rpcCall(this.userClient, USER_SERVICE.ACTIONS.UPDATE_EMPLOYEE_INFO, {
+      employeeId,
+      updateEmployeeInfoDTO,
+    });
   }
 
   @Post('upload-avatar/:employeeId')

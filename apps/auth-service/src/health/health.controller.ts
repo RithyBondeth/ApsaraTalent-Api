@@ -2,7 +2,11 @@ import {
   HEALTH_DATABASE_TIMEOUT_MS,
   HEALTH_MICROSERVICE_TIMEOUT_MS,
 } from '@app/common';
-import { AUTH_SERVICE, HEALTH_PATTERN, USER_SERVICE } from '@app/contracts/constants';
+import {
+  AUTH_SERVICE,
+  HEALTH_PATTERN,
+  USER_SERVICE,
+} from '@app/contracts/constants';
 import { Controller } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MessagePattern } from '@nestjs/microservices';

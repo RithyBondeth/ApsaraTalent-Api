@@ -9,6 +9,8 @@ export class GenerateMerchantKhqrDTO extends GenerateIndividualKhqrDTO {
 
   @IsString()
   @IsNotEmpty()
-  @Length(1, 25, { message: 'Acquiring bank name must be between 1 and 25 characters' })
+  @Length(1, 25, {
+    message: 'Acquiring bank name must be between 1 and 25 characters',
+  })
   acquiringBank: string;
 }

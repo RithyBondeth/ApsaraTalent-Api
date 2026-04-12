@@ -42,7 +42,9 @@ export class AuthController implements IBasicAuthController {
   @Post('register-company')
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(ThrottlerGuard)
-  async registerCompany(@Body() companyRegisterDTO: CompanyRegisterDTO): Promise<any> {
+  async registerCompany(
+    @Body() companyRegisterDTO: CompanyRegisterDTO,
+  ): Promise<any> {
     const payload = { ...companyRegisterDTO };
     return await sendAuthServiceRequest(
       this.authClient,
@@ -54,7 +56,9 @@ export class AuthController implements IBasicAuthController {
   @Post('register-employee')
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(ThrottlerGuard)
-  async registerEmployee(@Body() employeeRegisterDTO: EmployeeRegisterDTO): Promise<any> {
+  async registerEmployee(
+    @Body() employeeRegisterDTO: EmployeeRegisterDTO,
+  ): Promise<any> {
     const payload = { ...employeeRegisterDTO };
     return await sendAuthServiceRequest(
       this.authClient,

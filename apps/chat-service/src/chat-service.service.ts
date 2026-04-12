@@ -393,7 +393,12 @@ export class ChatService implements IChatService {
     return { sender, receiver };
   }
 
-  async getChatHistory(u1: string, u2: string, limit: number = CHAT.DEFAULT_HISTORY_LIMIT, offset = 0) {
+  async getChatHistory(
+    u1: string,
+    u2: string,
+    limit: number = CHAT.DEFAULT_HISTORY_LIMIT,
+    offset = 0,
+  ) {
     limit = Math.min(Math.max(1, limit), CHAT.MAX_HISTORY_LIMIT);
     offset = Math.min(Math.max(0, offset), CHAT.MAX_HISTORY_OFFSET);
     const userId1 = await this.resolveUserId(u1);
