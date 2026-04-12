@@ -4,6 +4,7 @@ import { IoAdapter } from '@nestjs/platform-socket.io';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { RpcToHttpExceptionFilter } from './filters/rpc-to-http-exception.filter';
 import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
@@ -24,6 +25,10 @@ async function bootstrap() {
   // =========================================================
   // 1. GLOBAL CONFIGURATION
   // =========================================================
+
+  // Convert RPC errors from microservices into proper HTTP responses.
+  // Must be registered before ValidationPipe so it catches all unhandled errors.
+  app.useGlobalFilters(new RpcToHttpExceptionFilter());
 
   // Ensure request payload validation and transformation via DTOs
   app.useGlobalPipes(

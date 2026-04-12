@@ -1,6 +1,5 @@
 import { AuthUser, User } from '@app/common/decorators/user.decorator';
 import { AuthGuard } from '@app/common/guards/auth.guard';
-import { UserInterceptor } from '@app/common/interceptors/user.interceptor';
 import { IUserController } from '@app/contracts/interfaces/controller/user-controller.interface';
 import {
   Body,
@@ -14,7 +13,6 @@ import {
   Query,
   Req,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -95,7 +93,6 @@ export class UserController implements IUserController {
     );
   }
 
-  @UseInterceptors(UserInterceptor)
   @Get('current-user')
   async getCurrentUser(@User() user: AuthUser): Promise<any> {
     const userID = user.id;

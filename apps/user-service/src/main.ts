@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Logger } from 'nestjs-pino';
+import { GlobalRpcExceptionFilter } from '@app/common';
 import { UserServiceModule } from './user-service.module';
 
 async function bootstrap() {
@@ -21,6 +22,8 @@ async function bootstrap() {
       },
     },
   );
+
+  app.useGlobalFilters(new GlobalRpcExceptionFilter());
 
   // Pipe Validation Setup
   app.useGlobalPipes(

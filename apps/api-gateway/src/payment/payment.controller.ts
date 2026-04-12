@@ -20,6 +20,13 @@ import {
   GenerateMerchantKhqrResponse,
   VerifyKhqrResponse,
 } from '@app/contracts/interfaces/domain/payment-response.interface';
+import { GenerateIndividualKhqrDTO } from 'apps/payment-service/src/dtos/generate-individual-khqr.dto';
+import { GenerateMerchantKhqrDTO } from 'apps/payment-service/src/dtos/generate-merchant-khqr.dto';
+import { VerifyKhqrDTO } from 'apps/payment-service/src/dtos/verify-khqr.dto';
+import { DecodeKhqrDTO } from 'apps/payment-service/src/dtos/decode-khqr.dto';
+import { GenerateDeepLinkDTO } from 'apps/payment-service/src/dtos/generate-deeplink.dto';
+import { CheckPaymentStatusDTO } from 'apps/payment-service/src/dtos/check-payment-status.dto';
+import { CheckPaymentBulkStatusDTO } from 'apps/payment-service/src/dtos/check-payment-bulk-status.dto';
 
 @Controller('bakong')
 export class PaymentController implements IPaymentController {
@@ -29,7 +36,7 @@ export class PaymentController implements IPaymentController {
 
   @Post('generate-individual-khqr')
   async generateIndividualQr(
-    @Body() generateIndividualQrDTO: any,
+    @Body() generateIndividualQrDTO: GenerateIndividualKhqrDTO,
   ): Promise<GenerateIndividualKhqrResponse> {
     return firstValueFrom(
       this.paymentClient.send<GenerateIndividualKhqrResponse>(
@@ -37,28 +44,22 @@ export class PaymentController implements IPaymentController {
         generateIndividualQrDTO,
       ),
     );
-    // return firstValueFrom(
-    //   this.paymentClient.send(
-    //     PAYMENT_SERVICE.ACTIONS.GENERATE_INDIVIDUAL_KHQR,
-    //     generateIndividualQrDTO,
-    //   ),
-    // );
   }
 
   @Post('generate-merchant-khqr')
   async generateMerchantQr(
-    @Body() generateMerchantQrDTO: any,
-  ): Promise<GenerateMerchantKhqrResponse | void> {
-    // return firstValueFrom(
-    //   this.paymentClient.send(
-    //     PAYMENT_SERVICE.ACTIONS.GENERATE_MERCHANT_KHQR,
-    //     generateMerchantQrDTO,
-    //   ),
-    // );
+    @Body() generateMerchantQrDTO: GenerateMerchantKhqrDTO,
+  ): Promise<GenerateMerchantKhqrResponse> {
+    return firstValueFrom(
+      this.paymentClient.send<GenerateMerchantKhqrResponse>(
+        PAYMENT_SERVICE.ACTIONS.GENERATE_MERCHANT_KHQR,
+        generateMerchantQrDTO,
+      ),
+    );
   }
 
   @Post('verify-khqr')
-  async verifyKhqr(@Body() verifyKhqrDTO: any): Promise<VerifyKhqrResponse> {
+  async verifyKhqr(@Body() verifyKhqrDTO: VerifyKhqrDTO): Promise<VerifyKhqrResponse> {
     return firstValueFrom(
       this.paymentClient.send<VerifyKhqrResponse>(
         PAYMENT_SERVICE.ACTIONS.VERIFY_KHQR,
@@ -68,11 +69,11 @@ export class PaymentController implements IPaymentController {
   }
 
   @Post('decode-khqr')
-  async decodeKhqr(@Body() verifyKhqrDTO: any): Promise<DecodeKhqrResponse> {
+  async decodeKhqr(@Body() decodeKhqrDTO: DecodeKhqrDTO): Promise<DecodeKhqrResponse> {
     return firstValueFrom(
       this.paymentClient.send<DecodeKhqrResponse>(
         PAYMENT_SERVICE.ACTIONS.DECODE_KHQR,
-        verifyKhqrDTO,
+        decodeKhqrDTO,
       ),
     );
   }
@@ -90,7 +91,7 @@ export class PaymentController implements IPaymentController {
 
   @Post('generate-deep-link')
   async generateDeepLink(
-    @Body() generateDeepLinkDto: any,
+    @Body() generateDeepLinkDto: GenerateDeepLinkDTO,
   ): Promise<GenerateDeepLinkResponse> {
     return firstValueFrom(
       this.paymentClient.send<GenerateDeepLinkResponse>(
@@ -102,7 +103,7 @@ export class PaymentController implements IPaymentController {
 
   @Post('payment/check-status')
   async checkPaymentStatus(
-    @Body() checkPaymentStatusDTO: any,
+    @Body() checkPaymentStatusDTO: CheckPaymentStatusDTO,
   ): Promise<CheckPaymentStatusResponse> {
     return firstValueFrom(
       this.paymentClient.send<CheckPaymentStatusResponse>(
@@ -114,7 +115,7 @@ export class PaymentController implements IPaymentController {
 
   @Post('payment/check-bulk-status')
   async checkPaymentBulkStatus(
-    @Body() checkPaymentBulkStatusDTO: any,
+    @Body() checkPaymentBulkStatusDTO: CheckPaymentBulkStatusDTO,
   ): Promise<CheckPaymentBulkStatusResponse> {
     return firstValueFrom(
       this.paymentClient.send<CheckPaymentBulkStatusResponse>(

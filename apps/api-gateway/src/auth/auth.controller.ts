@@ -15,6 +15,14 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
+import { CompanyRegisterDTO } from 'apps/auth-service/src/basic/dtos/company-register.dto';
+import { EmployeeRegisterDTO } from 'apps/auth-service/src/basic/dtos/employee-register.dto';
+import { LoginDTO } from 'apps/auth-service/src/basic/dtos/login.dto';
+import { LoginOtpDTO } from 'apps/auth-service/src/basic/dtos/login-otp.dto';
+import { VerifyOtpDTO } from 'apps/auth-service/src/basic/dtos/verify-otp.dto';
+import { ForgotPasswordDTO } from 'apps/auth-service/src/basic/dtos/forgot-password.dto';
+import { ResetPasswordDTO } from 'apps/auth-service/src/basic/dtos/reset-password.dto';
+import { RefreshTokenDTO } from 'apps/auth-service/src/basic/dtos/refresh-token.dto';
 import { LoginResponseDTO } from 'apps/auth-service/src/basic/dtos/login-response.dto';
 import { ForgotPasswordResponseDTO } from 'apps/auth-service/src/basic/dtos/forgot-password-response.dto';
 import { ResetPasswordResponseDTO } from 'apps/auth-service/src/basic/dtos/reset-password-response.dto';
@@ -32,7 +40,7 @@ export class AuthController implements IBasicAuthController {
   @Post('register-company')
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(ThrottlerGuard)
-  async registerCompany(@Body() companyRegisterDTO: any): Promise<any> {
+  async registerCompany(@Body() companyRegisterDTO: CompanyRegisterDTO): Promise<any> {
     const payload = { ...companyRegisterDTO };
     return await sendAuthServiceRequest(
       this.authClient,
@@ -44,7 +52,7 @@ export class AuthController implements IBasicAuthController {
   @Post('register-employee')
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(ThrottlerGuard)
-  async registerEmployee(@Body() employeeRegisterDTO: any): Promise<any> {
+  async registerEmployee(@Body() employeeRegisterDTO: EmployeeRegisterDTO): Promise<any> {
     const payload = { ...employeeRegisterDTO };
     return await sendAuthServiceRequest(
       this.authClient,
@@ -57,7 +65,7 @@ export class AuthController implements IBasicAuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
   async login(
-    @Body() loginDTO: any,
+    @Body() loginDTO: LoginDTO,
     @Res({ passthrough: true }) res: Response,
   ): Promise<LoginResponseDTO> {
     const payload = { ...loginDTO };
@@ -82,7 +90,7 @@ export class AuthController implements IBasicAuthController {
   @Post('login-otp')
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
-  async loginOtp(@Body() loginOtpDTO: any): Promise<any> {
+  async loginOtp(@Body() loginOtpDTO: LoginOtpDTO): Promise<any> {
     return await sendAuthServiceRequest(
       this.authClient,
       AUTH_SERVICE.ACTIONS.LOGIN_OTP,
@@ -94,7 +102,7 @@ export class AuthController implements IBasicAuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
   async verifyOtp(
-    @Body() verifyOtpDTO: any,
+    @Body() verifyOtpDTO: VerifyOtpDTO,
     @Res({ passthrough: true }) res: Response,
   ): Promise<any> {
     const response = await sendAuthServiceRequest(
@@ -119,7 +127,7 @@ export class AuthController implements IBasicAuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
   async forgotPassword(
-    @Body() forgotPasswordDTO: any,
+    @Body() forgotPasswordDTO: ForgotPasswordDTO,
   ): Promise<ForgotPasswordResponseDTO> {
     const payload = { ...forgotPasswordDTO };
     return await sendAuthServiceRequest<ForgotPasswordResponseDTO>(
@@ -133,7 +141,7 @@ export class AuthController implements IBasicAuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
   async resetPassword(
-    @Body() resetPasswordDTO: any,
+    @Body() resetPasswordDTO: ResetPasswordDTO,
     @Param('token') token: string,
   ): Promise<ResetPasswordResponseDTO> {
     const payload = { ...resetPasswordDTO, token };
@@ -148,7 +156,7 @@ export class AuthController implements IBasicAuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
   async refreshToken(
-    @Body() refreshTokenDTO: any,
+    @Body() refreshTokenDTO: RefreshTokenDTO,
     @Res({ passthrough: true }) res: Response,
   ): Promise<RefreshTokenResponseDTO> {
     const payload = { ...refreshTokenDTO };

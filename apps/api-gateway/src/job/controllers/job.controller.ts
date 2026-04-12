@@ -5,6 +5,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
 import { JobResponseDTO } from 'apps/job-service/src/dtos/job-response.dto';
+import { SearchJobDto } from 'apps/job-service/src/dtos/job-search.dto';
 
 @Controller('job')
 @UseGuards(AuthGuard)
@@ -24,7 +25,7 @@ export class JobController implements IJobController {
   }
 
   @Get('search')
-  async searchJobs(@Query() searchJobQuery: any): Promise<JobResponseDTO[]> {
+  async searchJobs(@Query() searchJobQuery: SearchJobDto): Promise<JobResponseDTO[]> {
     const transformedQuery = {
       ...searchJobQuery,
       ...(searchJobQuery.companySizeMin && {
