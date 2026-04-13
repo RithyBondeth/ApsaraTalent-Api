@@ -3,6 +3,7 @@ import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/service-actions/resume-builder-service.constant';
 import { BuildResumeDTO } from '../dtos/resume-builder.dto';
+import { BuildResumeResponseDTO } from '@app/contracts/dtos/resume';
 
 const BUILD_RESUME_PATTERN = { cmd: 'build-resume' } as const;
 const LEGACY_BUILD_RESUME_PATTERN = { cmd: 'build-resume ' } as const;
@@ -22,7 +23,7 @@ export class ResumeBuilderController implements IResumeBuilderController {
   @MessagePattern(LEGACY_BUILD_RESUME_PATTERN)
   @MessagePattern(BUILD_RESUME_PATTERN)
   @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.BUILD_RESUME)
-  async buildResume(@Payload() buildResumeDTO: BuildResumeDTO): Promise<any> {
+  async buildResume(@Payload() buildResumeDTO: BuildResumeDTO): Promise<BuildResumeResponseDTO> {
     return await this.resumeBuilderService.buildResume(buildResumeDTO);
   }
 }

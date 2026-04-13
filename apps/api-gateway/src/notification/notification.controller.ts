@@ -120,7 +120,7 @@ export class NotificationController implements INotificationController {
       type?: string;
       data?: Record<string, any>;
     },
-  ) {
+  ): Promise<NotificationResponseDTO> {
     return rpcCall(
       this.notificationClient,
       NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION,

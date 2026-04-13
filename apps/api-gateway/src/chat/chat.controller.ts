@@ -17,7 +17,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-service.constant';
 import { chatUploadMulterOptions } from './config/chat-upload.config';
 import { IChatController } from '@app/contracts/interfaces/domain/chat.interface';
-import { ChatInitResponseDTO } from '@app/contracts/dtos/chat';
+import { ChatInitResponseDTO, ChatUploadResponseDTO } from '@app/contracts/dtos/chat';
 import { rpcCall } from '../utils/rpc-call';
 
 @Controller('chat')
@@ -40,7 +40,7 @@ export class ChatController implements IChatController {
 
   @Get('recent')
   @UseGuards(AuthGuard)
-  async getRecentChats(@Req() req: any): Promise<any> {
+  async getRecentChats(@Req() req: any): Promise<ChatInitResponseDTO[]> {
     try {
       return await rpcCall(
         this.chatClient,
@@ -61,7 +61,7 @@ export class ChatController implements IChatController {
   async uploadAttachment(
     @UploadedFile() file: Express.Multer.File,
     @Req() req: any,
-  ): Promise<any> {
+  ): Promise<ChatUploadResponseDTO> {
     if (!file) throw new BadRequestException('No file provided');
 
     const today = new Date().toISOString().slice(0, 10);

@@ -5,3 +5,4 @@ export * from './decode-khqr.dto';
 export * from './generate-deeplink.dto';
 export * from './check-payment-status.dto';
 export * from './check-payment-bulk-status.dto';
+export * from './payment-extra-response.dto';

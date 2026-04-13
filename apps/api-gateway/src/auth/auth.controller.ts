@@ -25,6 +25,7 @@ import {
   ResetPasswordDTO,
   RefreshTokenDTO,
   LoginResponseDTO,
+  LoginOtpResponseDTO,
   ForgotPasswordResponseDTO,
   ResetPasswordResponseDTO,
   RefreshTokenResponseDTO,
@@ -44,7 +45,7 @@ export class AuthController implements IBasicAuthController {
   @UseGuards(ThrottlerGuard)
   async registerCompany(
     @Body() companyRegisterDTO: CompanyRegisterDTO,
-  ): Promise<any> {
+  ): Promise<LoginResponseDTO> {
     const payload = { ...companyRegisterDTO };
     return await sendAuthServiceRequest(
       this.authClient,
@@ -58,7 +59,7 @@ export class AuthController implements IBasicAuthController {
   @UseGuards(ThrottlerGuard)
   async registerEmployee(
     @Body() employeeRegisterDTO: EmployeeRegisterDTO,
-  ): Promise<any> {
+  ): Promise<LoginResponseDTO> {
     const payload = { ...employeeRegisterDTO };
     return await sendAuthServiceRequest(
       this.authClient,
@@ -96,7 +97,7 @@ export class AuthController implements IBasicAuthController {
   @Post('login-otp')
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
-  async loginOtp(@Body() loginOtpDTO: LoginOtpDTO): Promise<any> {
+  async loginOtp(@Body() loginOtpDTO: LoginOtpDTO): Promise<LoginOtpResponseDTO> {
     return await sendAuthServiceRequest(
       this.authClient,
       AUTH_SERVICE.ACTIONS.LOGIN_OTP,
@@ -110,7 +111,7 @@ export class AuthController implements IBasicAuthController {
   async verifyOtp(
     @Body() verifyOtpDTO: VerifyOtpDTO,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<any> {
+  ): Promise<LoginResponseDTO> {
     const response = await sendAuthServiceRequest(
       this.authClient,
       AUTH_SERVICE.ACTIONS.VERIFY_OTP,

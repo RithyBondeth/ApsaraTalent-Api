@@ -4,6 +4,11 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
 import { MatchDto } from '../dtos/match.dto';
+import {
+  MatchResponseDTO,
+  MatchCountResponseDTO,
+  AnalyticsResponseDTO,
+} from '@app/contracts/dtos/job';
 
 import {
   I_MATCHING_SERVICE,
@@ -18,12 +23,12 @@ export class MatchingController implements IMatchingController {
   ) {}
 
   @MessagePattern(JOB_SERVICE.ACTIONS.EMPLOYEE_LIKES)
-  async employeeLikes(@Payload() payload: MatchDto): Promise<any> {
+  async employeeLikes(@Payload() payload: MatchDto): Promise<MatchResponseDTO> {
     return this.matchingService.employeeLikes(payload);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.COMPANY_LIKES)
-  async companyLikes(@Payload() payload: MatchDto): Promise<any> {
+  async companyLikes(@Payload() payload: MatchDto): Promise<MatchResponseDTO> {
     return this.matchingService.companyLikes(payload);
   }
 
@@ -58,19 +63,21 @@ export class MatchingController implements IMatchingController {
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_MATCHING_COUNT)
   async findCurrentEmployeeMatchingCount(
     @Payload() payload: { eid: string },
-  ): Promise<any> {
+  ): Promise<MatchCountResponseDTO> {
     return this.matchingService.findCurrentEmployeeMatchingCount(payload.eid);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_MATCHING_COUNT)
   async findCurrentCompanyMatchingCount(
     @Payload() payload: { cid: string },
-  ): Promise<any> {
+  ): Promise<MatchCountResponseDTO> {
     return this.matchingService.findCurrentCompanyMatchingCount(payload.cid);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.GET_ANALYTICS)
-  async getAnalytics(@Payload() payload: { userId: string; role: string }) {
+  async getAnalytics(
+    @Payload() payload: { userId: string; role: string },
+  ): Promise<AnalyticsResponseDTO> {
     return this.matchingService.getAnalytics(
       payload.userId,
       payload.role as 'employee' | 'company',

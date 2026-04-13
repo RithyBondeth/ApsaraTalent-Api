@@ -1,6 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import {
   HealthCheck,
+  HealthCheckResult,
   HealthCheckService,
   TypeOrmHealthIndicator,
 } from '@nestjs/terminus';
@@ -18,6 +19,7 @@ import {
   HEALTH_DATABASE_TIMEOUT_MS,
   RedisCacheHealthIndicator,
 } from '@app/common';
+import { LivenessResponseDTO } from '@app/contracts/dtos/health';
 import { InternalServiceHealthIndicator } from './indicators/internal-service.health';
 
 const INTERNAL_SERVICES = [
@@ -41,18 +43,18 @@ export class HealthController implements IHealthController {
 
   @Get()
   @HealthCheck()
-  checkHealth() {
+  checkHealth(): Promise<HealthCheckResult> {
     return this.runReadinessChecks();
   }
 
   @Get('ready')
   @HealthCheck()
-  checkReadiness() {
+  checkReadiness(): Promise<HealthCheckResult> {
     return this.runReadinessChecks();
   }
 
   @Get('live')
-  checkLiveness() {
+  checkLiveness(): LivenessResponseDTO {
     return {
       status: 'ok',
       service: 'api-gateway',

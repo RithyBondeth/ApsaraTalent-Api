@@ -15,6 +15,11 @@ import { ClientProxy } from '@nestjs/microservices';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { UserResponseDTO } from '@app/contracts/dtos/user';
+import {
+  MatchResponseDTO,
+  MatchCountResponseDTO,
+  AnalyticsResponseDTO,
+} from '@app/contracts/dtos/job';
 import { JobAccessBase } from '../shared/job-access.base';
 import { rpcCall } from '../../utils/rpc-call';
 
@@ -36,7 +41,7 @@ export class JobMatchingController
     @Param('eid', ParseUUIDPipe) eid: string,
     @Param('cid', ParseUUIDPipe) cid: string,
     @Req() req?: any,
-  ): Promise<any> {
+  ): Promise<MatchResponseDTO> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
     return rpcCall(this.jobClient, JOB_SERVICE.ACTIONS.EMPLOYEE_LIKES, {
       eid,
@@ -49,7 +54,7 @@ export class JobMatchingController
     @Param('cid', ParseUUIDPipe) cid: string,
     @Param('eid', ParseUUIDPipe) eid: string,
     @Req() req?: any,
-  ): Promise<any> {
+  ): Promise<MatchResponseDTO> {
     await this.assertCompanyAccess(req?.user?.id, cid);
     return rpcCall(this.jobClient, JOB_SERVICE.ACTIONS.COMPANY_LIKES, {
       cid,
@@ -113,7 +118,7 @@ export class JobMatchingController
   async findCurrentEmployeeMatchingCount(
     @Param('eid', ParseUUIDPipe) eid: string,
     @Req() req?: any,
-  ): Promise<any> {
+  ): Promise<MatchCountResponseDTO> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
     return rpcCall(
       this.jobClient,
@@ -126,7 +131,7 @@ export class JobMatchingController
   async findCurrentCompanyMatchingCount(
     @Param('cid', ParseUUIDPipe) cid: string,
     @Req() req?: any,
-  ): Promise<any> {
+  ): Promise<MatchCountResponseDTO> {
     await this.assertCompanyAccess(req?.user?.id, cid);
     return rpcCall(
       this.jobClient,
@@ -136,7 +141,10 @@ export class JobMatchingController
   }
 
   @Get('analytics/:id')
-  async getAnalytics(@Param('id') id: string, @Query('role') role: string) {
+  async getAnalytics(
+    @Param('id') id: string,
+    @Query('role') role: string,
+  ): Promise<AnalyticsResponseDTO> {
     return rpcCall(this.jobClient, JOB_SERVICE.ACTIONS.GET_ANALYTICS, {
       userId: id,
       role,

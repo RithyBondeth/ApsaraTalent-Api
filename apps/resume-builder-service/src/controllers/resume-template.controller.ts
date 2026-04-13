@@ -10,6 +10,7 @@ import {
   IResumeTemplateService,
 } from '@app/contracts/interfaces/service/resume-builder-service.interface';
 import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
+import { ResumeTemplateResponseDTO } from '@app/contracts/dtos/resume';
 
 @Controller()
 export class ResumeTemplateController implements IResumeTemplateController {
@@ -19,12 +20,14 @@ export class ResumeTemplateController implements IResumeTemplateController {
   ) {}
 
   @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.FIND_ALL_RESUME_TEMPLATES)
-  async findAllResumeTemplate(): Promise<any> {
+  async findAllResumeTemplate(): Promise<ResumeTemplateResponseDTO[]> {
     return this.resumeTemplateService.findAllResumeTemplate();
   }
 
   @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.FIND_ONE_RESUME_TEMPLATE)
-  async findOneResumeTemplateById(@Payload() resumeId: string): Promise<any> {
+  async findOneResumeTemplateById(
+    @Payload() resumeId: string,
+  ): Promise<ResumeTemplateResponseDTO> {
     return this.resumeTemplateService.findOneResumeTemplate(resumeId);
   }
 
@@ -45,7 +48,7 @@ export class ResumeTemplateController implements IResumeTemplateController {
   @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.SEARCH_RESUME_TEMPLATE)
   async searchResumeTemplate(
     @Payload() searchTemplateDTO: SearchTemplateDTO,
-  ): Promise<any> {
+  ): Promise<ResumeTemplateResponseDTO[]> {
     return this.resumeTemplateService.searchResumeTemplate(searchTemplateDTO);
   }
 }

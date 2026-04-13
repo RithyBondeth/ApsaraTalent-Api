@@ -5,6 +5,7 @@ import {
   CreateInterviewDto,
   UpdateInterviewStatusDto,
 } from '../dtos/interview.dto';
+import { InterviewResponseDTO } from '@app/contracts/dtos/job';
 
 import { IInterviewController } from '@app/contracts/interfaces/controller/job-controller.interface';
 
@@ -21,22 +22,28 @@ export class InterviewController implements IInterviewController {
   ) {}
 
   @MessagePattern(JOB_SERVICE.ACTIONS.CREATE_INTERVIEW)
-  async createInterview(@Payload() dto: CreateInterviewDto) {
+  async createInterview(@Payload() dto: CreateInterviewDto): Promise<InterviewResponseDTO> {
     return this.interviewService.createInterview(dto);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.GET_INTERVIEWS_BY_EMPLOYEE)
-  async getInterviewsByEmployee(@Payload() payload: { employeeId: string }) {
+  async getInterviewsByEmployee(
+    @Payload() payload: { employeeId: string },
+  ): Promise<InterviewResponseDTO[]> {
     return this.interviewService.getInterviewsByEmployee(payload.employeeId);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.GET_INTERVIEWS_BY_COMPANY)
-  async getInterviewsByCompany(@Payload() payload: { companyId: string }) {
+  async getInterviewsByCompany(
+    @Payload() payload: { companyId: string },
+  ): Promise<InterviewResponseDTO[]> {
     return this.interviewService.getInterviewsByCompany(payload.companyId);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.UPDATE_INTERVIEW_STATUS)
-  async updateInterviewStatus(@Payload() dto: UpdateInterviewStatusDto) {
+  async updateInterviewStatus(
+    @Payload() dto: UpdateInterviewStatusDto,
+  ): Promise<InterviewResponseDTO> {
     return this.interviewService.updateInterviewStatus(dto);
   }
 }

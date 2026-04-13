@@ -5,6 +5,7 @@ import { IInterviewController } from '@app/contracts/interfaces/controller/job-c
 import {
   CreateInterviewDto,
   UpdateInterviewStatusDto,
+  InterviewResponseDTO,
 } from '@app/contracts/dtos/job';
 import {
   Body,
@@ -37,7 +38,10 @@ export class InterviewController
   }
 
   @Post()
-  async createInterview(@Body() dto: CreateInterviewDto, @Req() req?: any) {
+  async createInterview(
+    @Body() dto: CreateInterviewDto,
+    @Req() req?: any,
+  ): Promise<InterviewResponseDTO> {
     await this.assertCompanyAccess(req?.user?.id, dto.companyId);
     return rpcCall(this.jobClient, JOB_SERVICE.ACTIONS.CREATE_INTERVIEW, {
       ...dto,
@@ -49,7 +53,7 @@ export class InterviewController
   async getInterviewsByEmployee(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @Req() req?: any,
-  ) {
+  ): Promise<InterviewResponseDTO[]> {
     await this.assertEmployeeAccess(req?.user?.id, employeeId);
     return rpcCall(
       this.jobClient,
@@ -62,7 +66,7 @@ export class InterviewController
   async getInterviewsByCompany(
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @Req() req?: any,
-  ) {
+  ): Promise<InterviewResponseDTO[]> {
     await this.assertCompanyAccess(req?.user?.id, companyId);
     return rpcCall(
       this.jobClient,
@@ -75,7 +79,7 @@ export class InterviewController
   async updateInterviewStatus(
     @Body() dto: UpdateInterviewStatusDto,
     @Req() req?: any,
-  ) {
+  ): Promise<InterviewResponseDTO> {
     if (!req?.user?.id) {
       throw new ForbiddenException('Unauthorized request.');
     }

@@ -17,7 +17,13 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
-import { UserResponseDTO } from '@app/contracts/dtos/user';
+import {
+  UserResponseDTO,
+  CompanyResponseDTO,
+  EmployeeResponseDTO,
+  CareerScopesResponseDTO,
+  FavoriteCountResponseDTO,
+} from '@app/contracts/dtos/user';
 import { rpcCall } from '../utils/rpc-call';
 
 @Controller('user')
@@ -98,7 +104,7 @@ export class UserController implements IUserController {
   }
 
   @Get('current-user')
-  async getCurrentUser(@User() user: AuthUser): Promise<any> {
+  async getCurrentUser(@User() user: AuthUser): Promise<UserResponseDTO> {
     return rpcCall(this.userClient, USER_SERVICE.ACTIONS.GET_CURRENT_USER, {
       userID: user.id,
     });
@@ -108,7 +114,7 @@ export class UserController implements IUserController {
   async updatePushNotificationToken(
     @Req() req,
     @Body() body: { token: string | null },
-  ): Promise<any> {
+  ): Promise<MessageResponse> {
     return rpcCall(this.userClient, USER_SERVICE.ACTIONS.UPDATE_PUSH_TOKEN, {
       userId: req.user.id,
       token: body?.token ?? null,
@@ -177,7 +183,7 @@ export class UserController implements IUserController {
   async findAllEmployeeFavorite(
     @Param('eid', ParseUUIDPipe) eid: string,
     @Req() req?: any,
-  ): Promise<any> {
+  ): Promise<CompanyResponseDTO[]> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
     return rpcCall(
       this.userClient,
@@ -190,7 +196,7 @@ export class UserController implements IUserController {
   async findAllCompanyFavorite(
     @Param('cid', ParseUUIDPipe) cid: string,
     @Req() req?: any,
-  ): Promise<any> {
+  ): Promise<EmployeeResponseDTO[]> {
     await this.assertCompanyAccess(req?.user?.id, cid);
     return rpcCall(
       this.userClient,
@@ -203,7 +209,7 @@ export class UserController implements IUserController {
   async countEmployeeFavorite(
     @Param('eid', ParseUUIDPipe) eid: string,
     @Req() req?: any,
-  ): Promise<any> {
+  ): Promise<FavoriteCountResponseDTO> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
     return rpcCall(
       this.userClient,
@@ -216,7 +222,7 @@ export class UserController implements IUserController {
   async countCompanyFavorite(
     @Param('cid', ParseUUIDPipe) cid: string,
     @Req() req?: any,
-  ): Promise<any> {
+  ): Promise<FavoriteCountResponseDTO> {
     await this.assertCompanyAccess(req?.user?.id, cid);
     return rpcCall(
       this.userClient,
@@ -226,7 +232,7 @@ export class UserController implements IUserController {
   }
 
   @Get('find-all-career-scopes')
-  async findAllCareerScopes(): Promise<any> {
+  async findAllCareerScopes(): Promise<CareerScopesResponseDTO[]> {
     return rpcCall(
       this.userClient,
       USER_SERVICE.ACTIONS.FIND_ALL_CAREER_SCOPES,
@@ -239,7 +245,7 @@ export class UserController implements IUserController {
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @Query('limit') limit?: number,
     @Req() req?: any,
-  ): Promise<any> {
+  ): Promise<CompanyResponseDTO[]> {
     await this.assertEmployeeAccess(req?.user?.id, employeeId);
     return rpcCall(
       this.userClient,
@@ -253,7 +259,7 @@ export class UserController implements IUserController {
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @Query('limit') limit?: number,
     @Req() req?: any,
-  ): Promise<any> {
+  ): Promise<EmployeeResponseDTO[]> {
     await this.assertCompanyAccess(req?.user?.id, companyId);
     return rpcCall(
       this.userClient,

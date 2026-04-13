@@ -6,6 +6,12 @@ import { PinoLogger } from 'nestjs-pino';
 import { IChatController } from '@app/contracts/interfaces/domain/chat.interface';
 import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-service.constant';
 import {
+  ChatInitResponseDTO,
+  ChatMessageResponseDTO,
+  ChatHistoryResponseDTO,
+  ChatActionResponseDTO,
+} from '@app/contracts/dtos/chat';
+import {
   I_CHAT_SERVICE,
   IChatService,
 } from '@app/contracts/interfaces/service/chat-service.interface';
@@ -22,7 +28,7 @@ export class ChatController implements IChatController {
   @MessagePattern(CHAT_SERVICE.ACTIONS.CREATE_OR_GET_CHAT)
   async initiateChat(
     @Payload() payload: { senderId: string; receiverId: string },
-  ) {
+  ): Promise<ChatInitResponseDTO> {
     this.logger.info(
       `[CHAT] createOrGetChat: sender=${payload.senderId}, receiver=${payload.receiverId}`,
     );
@@ -30,7 +36,7 @@ export class ChatController implements IChatController {
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.CREATE_MESSAGE)
-  async createMessage(@Payload() data: TChatContent) {
+  async createMessage(@Payload() data: TChatContent): Promise<ChatMessageResponseDTO> {
     this.logger.info(
       `[CHAT] createMessage: sender=${data.senderId}, receiver=${data.receiverId}, content="${data.content}"`,
     );
@@ -40,7 +46,7 @@ export class ChatController implements IChatController {
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.MARK_MESSAGE_READ)
-  async markAsRead(@Payload() data: { messageId: string; readerId: string }) {
+  async markAsRead(@Payload() data: { messageId: string; readerId: string }): Promise<ChatActionResponseDTO> {
     this.logger.info(
       `[CHAT] markAsRead: messageId=${data.messageId}, reader=${data.readerId}`,
     );
@@ -48,7 +54,7 @@ export class ChatController implements IChatController {
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.GET_USER_BY_ID_FOR_CHAT)
-  async getUserByIdForChat(@Payload() userId: string) {
+  async getUserByIdForChat(@Payload() userId: string): Promise<any> {
     this.logger.info(`[CHAT] getUserByIdForChat: userId=${userId}`);
     return this.chatService.getUserByIdForChat(userId);
   }
@@ -56,7 +62,7 @@ export class ChatController implements IChatController {
   @MessagePattern(CHAT_SERVICE.ACTIONS.VALIDATE_CHAT_USERS)
   async validateChatUsers(
     @Payload() data: { senderId: string; receiverId: string },
-  ) {
+  ): Promise<{ sender: any; receiver: any }> {
     this.logger.info(
       `[CHAT] validateChatUsers: sender=${data.senderId}, receiver=${data.receiverId}`,
     );
@@ -79,7 +85,7 @@ export class ChatController implements IChatController {
       limit?: number;
       offset?: number;
     },
-  ) {
+  ): Promise<ChatHistoryResponseDTO> {
     this.logger.info(
       `[CHAT] getChatHistory: userId1=${data.userId1}, userId2=${data.userId2}`,
     );
@@ -94,13 +100,13 @@ export class ChatController implements IChatController {
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.GET_UNREAD_COUNT)
-  async getUnreadCount(@Payload() userId: string) {
+  async getUnreadCount(@Payload() userId: string): Promise<{ count: number }> {
     this.logger.info(`[CHAT] getUnreadCount: userId=${userId}`);
     return this.chatService.getUnreadCount(userId);
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.GET_RECENT_CHATS)
-  async getRecentChats(@Payload() userId: string) {
+  async getRecentChats(@Payload() userId: string): Promise<ChatInitResponseDTO[]> {
     this.logger.info(`[CHAT] getRecentChats: userId=${userId}`);
     const result = await this.chatService.getRecentChats(userId);
     this.logger.info(`[CHAT] getRecentChats returned ${result.length} chats`);
@@ -115,7 +121,7 @@ export class ChatController implements IChatController {
       userId: string;
       emoji: string | null;
     },
-  ) {
+  ): Promise<ChatMessageResponseDTO> {
     this.logger.info(
       `[CHAT] updateReaction: messageId=${data.messageId}, userId=${data.userId}, emoji=${data.emoji}`,
     );
@@ -140,7 +146,7 @@ export class ChatController implements IChatController {
       requesterId: string;
       newContent: string;
     },
-  ) {
+  ): Promise<ChatMessageResponseDTO> {
     this.logger.info(
       `[CHAT] editMessage: messageId=${data.messageId}, requester=${data.requesterId}`,
     );
@@ -155,7 +161,7 @@ export class ChatController implements IChatController {
   @MessagePattern(CHAT_SERVICE.ACTIONS.DELETE_MESSAGE)
   async deleteMessage(
     @Payload() data: { messageId: string; requesterId: string },
-  ) {
+  ): Promise<ChatActionResponseDTO> {
     this.logger.info(
       `[CHAT] deleteMessage: messageId=${data.messageId}, requester=${data.requesterId}`,
     );

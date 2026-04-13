@@ -1,4 +1,3 @@
-import { CareerScope } from '@app/common/database/entities/career-scope.entity';
 import { IUserController } from '@app/contracts/interfaces/controller/user-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
@@ -6,7 +5,11 @@ import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-serv
 import {
   CountAllUsersResponseDTO,
   UserResponseDTO,
+  CompanyResponseDTO,
+  EmployeeResponseDTO,
+  CareerScopesResponseDTO,
 } from '../dtos/user-response.dto';
+import { FavoriteCountResponseDTO } from '@app/contracts/dtos/user';
 
 import {
   I_USER_SERVICE,
@@ -40,14 +43,16 @@ export class UserController implements IUserController {
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.GET_CURRENT_USER)
-  async getCurrentUser(@Payload() payload: { userID: string }): Promise<any> {
+  async getCurrentUser(
+    @Payload() payload: { userID: string },
+  ): Promise<UserResponseDTO> {
     return this.userService.findOneUserByID(payload.userID);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.UPDATE_PUSH_TOKEN)
   async updatePushNotificationToken(
     @Payload() payload: { userId: string; token: string | null },
-  ): Promise<any> {
+  ): Promise<MessageResponse> {
     return this.userService.updatePushNotificationToken(
       payload.userId,
       payload.token,
@@ -93,33 +98,33 @@ export class UserController implements IUserController {
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_EMPLOYEE_FAVORITE)
   async findAllEmployeeFavorite(
     @Payload() payload: { eid: string },
-  ): Promise<any> {
+  ): Promise<CompanyResponseDTO[]> {
     return this.userService.findAllEmployeeFavorites(payload.eid);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_COMPANY_FAVORITE)
   async findAllCompanyFavorite(
     @Payload() payload: { cid: string },
-  ): Promise<any> {
+  ): Promise<EmployeeResponseDTO[]> {
     return this.userService.findAllCompanyFavorites(payload.cid);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.COUNT_COMPANY_FAVORITE)
   async countCompanyFavorite(
     @Payload() payload: { cid: string },
-  ): Promise<any> {
+  ): Promise<FavoriteCountResponseDTO> {
     return this.userService.countCompanyFavorite(payload.cid);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.COUNT_EMPLOYEE_FAVORITE)
   async countEmployeeFavorite(
     @Payload() payload: { eid: string },
-  ): Promise<any> {
+  ): Promise<FavoriteCountResponseDTO> {
     return this.userService.countEmployeeFavorite(payload.eid);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_CAREER_SCOPES)
-  async findAllCareerScopes(): Promise<Partial<CareerScope[]>> {
+  async findAllCareerScopes(): Promise<CareerScopesResponseDTO[]> {
     return this.userService.findAllCareerScopes();
   }
 
@@ -131,7 +136,7 @@ export class UserController implements IUserController {
   @MessagePattern(USER_SERVICE.ACTIONS.GET_EMPLOYEE_RECOMMENDATIONS)
   async getEmployeeRecommendations(
     @Payload() payload: { employeeId: string; limit?: number },
-  ) {
+  ): Promise<CompanyResponseDTO[]> {
     return this.userService.getEmployeeRecommendations(
       payload.employeeId,
       payload.limit,
@@ -141,7 +146,7 @@ export class UserController implements IUserController {
   @MessagePattern(USER_SERVICE.ACTIONS.GET_COMPANY_RECOMMENDATIONS)
   async getCompanyRecommendations(
     @Payload() payload: { companyId: string; limit?: number },
-  ) {
+  ): Promise<EmployeeResponseDTO[]> {
     return this.userService.getCompanyRecommendations(
       payload.companyId,
       payload.limit,

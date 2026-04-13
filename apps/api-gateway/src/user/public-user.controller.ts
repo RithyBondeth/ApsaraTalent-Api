@@ -2,6 +2,7 @@ import { Controller, Get, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { IPublicUserController } from '@app/contracts/interfaces/controller/public-user-controller.interface';
+import { LandingStatsResponseDTO } from '@app/contracts/dtos/user';
 import { rpcCall } from '../utils/rpc-call';
 
 @Controller('public/user')
@@ -11,7 +12,7 @@ export class PublicUserController implements IPublicUserController {
   ) {}
 
   @Get('landing-stats')
-  async getLandingStats() {
+  async getLandingStats(): Promise<LandingStatsResponseDTO> {
     const [users, companies, employees] = await Promise.all([
       rpcCall<{ totalUsers: number }>(
         this.userClient,

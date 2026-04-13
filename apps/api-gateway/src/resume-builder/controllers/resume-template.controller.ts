@@ -17,7 +17,11 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/service-actions/resume-builder-service.constant';
 import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
-import { CreateResumeTemplateDTO, SearchTemplateDTO } from '@app/contracts/dtos/resume';
+import {
+  CreateResumeTemplateDTO,
+  SearchTemplateDTO,
+  ResumeTemplateResponseDTO,
+} from '@app/contracts/dtos/resume';
 import { rpcCall } from '../../utils/rpc-call';
 
 @Controller('resume/template')
@@ -29,7 +33,7 @@ export class ResumeTemplateController implements IResumeTemplateController {
   ) {}
 
   @Get('all')
-  async findAllResumeTemplate(): Promise<any> {
+  async findAllResumeTemplate(): Promise<ResumeTemplateResponseDTO[]> {
     return rpcCall(
       this.resumeBuilderClient,
       RESUME_BUILDER_SERVICE.ACTIONS.FIND_ALL_RESUME_TEMPLATES,
@@ -40,7 +44,7 @@ export class ResumeTemplateController implements IResumeTemplateController {
   @Get('one/:id')
   async findOneResumeTemplateById(
     @Param('id', ParseUUIDPipe) resumeId: string,
-  ): Promise<any> {
+  ): Promise<ResumeTemplateResponseDTO> {
     return rpcCall(
       this.resumeBuilderClient,
       RESUME_BUILDER_SERVICE.ACTIONS.FIND_ONE_RESUME_TEMPLATE,
@@ -62,7 +66,7 @@ export class ResumeTemplateController implements IResumeTemplateController {
   }
 
   @Get('search')
-  async searchResumeTemplate(@Query() searchTemplateQuery: SearchTemplateDTO): Promise<any> {
+  async searchResumeTemplate(@Query() searchTemplateQuery: SearchTemplateDTO): Promise<ResumeTemplateResponseDTO[]> {
     return rpcCall(
       this.resumeBuilderClient,
       RESUME_BUILDER_SERVICE.ACTIONS.SEARCH_RESUME_TEMPLATE,

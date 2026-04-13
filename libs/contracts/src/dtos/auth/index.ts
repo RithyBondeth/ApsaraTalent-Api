@@ -11,3 +11,4 @@ export * from './forgot-password-response.dto';
 export * from './reset-password-response.dto';
 export * from './refresh-token-response.dto';
 export * from './verify-email-response.dto';
+export * from './login-otp-response.dto';

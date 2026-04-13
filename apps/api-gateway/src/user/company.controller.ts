@@ -58,7 +58,7 @@ export class CompanyController implements ICompanyController {
   async updateCompanyInfo(
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @Body() updateCompanyInfoDTO: UpdateCompanyInfoDTO,
-  ) {
+  ): Promise<CompanyResponseDTO> {
     return rpcCall(this.userClient, USER_SERVICE.ACTIONS.UPDATE_COMPANY_INFO, {
       companyId,
       updateCompanyInfoDTO,

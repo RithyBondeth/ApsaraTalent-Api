@@ -1,6 +1,7 @@
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
+import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
 import {
   I_EXPERIENCE_AND_EDUCATION_SERVICE,
   IExperienceAndEducationService,
@@ -18,7 +19,7 @@ export class ExperienceAndEducationController implements IRemoveEmployeeItemsCon
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_EXPERIENCE)
   async removeEmployeeExperience(
     @Payload() payload: { employeeId: string; experienceId: string },
-  ) {
+  ): Promise<MessageResponse> {
     return this.experienceAndEducationService.removeEmployeeExperience(
       payload.employeeId,
       payload.experienceId,
@@ -28,7 +29,7 @@ export class ExperienceAndEducationController implements IRemoveEmployeeItemsCon
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_EDUCATION)
   async removeEmployeeEducation(
     @Payload() payload: { employeeId: string; educationId: string },
-  ) {
+  ): Promise<MessageResponse> {
     return this.experienceAndEducationService.removeEmployeeEducation(
       payload.employeeId,
       payload.educationId,

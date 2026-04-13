@@ -51,3 +51,10 @@ export class ChatActionResponseDTO {
   receiverId?: string | null;
   reactions?: Record<string, string>;
 }
+
+export class ChatUploadResponseDTO {
+  url: string;
+  type: 'image' | 'document' | 'audio';
+  filename: string;
+  size: number;
+}

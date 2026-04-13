@@ -57,7 +57,7 @@ export class EmployeeController implements IEmployeeController {
   async updateEmployeeInfo(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @Body() updateEmployeeInfoDTO: UpdateEmployeeInfoDTO,
-  ) {
+  ): Promise<EmployeeResponseDTO> {
     return rpcCall(this.userClient, USER_SERVICE.ACTIONS.UPDATE_EMPLOYEE_INFO, {
       employeeId,
       updateEmployeeInfoDTO,
@@ -141,7 +141,7 @@ export class EmployeeController implements IEmployeeController {
   async removeEmployeeEducation(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @Param('educationId', ParseUUIDPipe) educationId: string,
-  ) {
+  ): Promise<MessageResponse> {
     return rpcCall(
       this.userClient,
       USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_EDUCATION,
@@ -153,7 +153,7 @@ export class EmployeeController implements IEmployeeController {
   async removeEmployeeExperience(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @Param('experienceId', ParseUUIDPipe) experienceId: string,
-  ) {
+  ): Promise<MessageResponse> {
     return rpcCall(
       this.userClient,
       USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_EXPERIENCE,
