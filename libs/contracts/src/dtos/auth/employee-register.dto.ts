@@ -1,4 +1,5 @@
 import { EGender } from '@app/common/database/enums/gender.enum';
+import { LoginResponseDTO } from 'apps/auth-service/src/basic/dtos/login-response.dto';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -166,3 +167,5 @@ class EducationDto {
   @IsOptional()
   year: string;
 }
+
+export class EmployeeRegisterResponseDTO extends LoginResponseDTO {}

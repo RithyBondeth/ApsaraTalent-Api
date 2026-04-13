@@ -30,6 +30,10 @@ import {
   ResetPasswordResponseDTO,
   RefreshTokenResponseDTO,
   VerifyEmailResponseDTO,
+  CompanyRegisterResponseDTO,
+  EmployeeRegisterResponseDTO,
+  VerifyOtpResponseDTO,
+  VerifyEmailDTO,
 } from '@app/contracts/dtos/auth';
 import { setAuthTokenCookies } from './utils/auth-cookie.util';
 import { sendAuthServiceRequest } from './utils/auth-rpc.util';
@@ -45,9 +49,9 @@ export class AuthController implements IBasicAuthController {
   @UseGuards(ThrottlerGuard)
   async registerCompany(
     @Body() companyRegisterDTO: CompanyRegisterDTO,
-  ): Promise<LoginResponseDTO> {
+  ): Promise<CompanyRegisterResponseDTO> {
     const payload = { ...companyRegisterDTO };
-    return await sendAuthServiceRequest(
+    return await sendAuthServiceRequest<CompanyRegisterResponseDTO>(
       this.authClient,
       AUTH_SERVICE.ACTIONS.REGISTER_COMPANY,
       payload,
@@ -59,9 +63,9 @@ export class AuthController implements IBasicAuthController {
   @UseGuards(ThrottlerGuard)
   async registerEmployee(
     @Body() employeeRegisterDTO: EmployeeRegisterDTO,
-  ): Promise<LoginResponseDTO> {
+  ): Promise<EmployeeRegisterResponseDTO> {
     const payload = { ...employeeRegisterDTO };
-    return await sendAuthServiceRequest(
+    return await sendAuthServiceRequest<EmployeeRegisterResponseDTO>(
       this.authClient,
       AUTH_SERVICE.ACTIONS.REGISTER_EMPLOYEE,
       payload,
@@ -97,8 +101,10 @@ export class AuthController implements IBasicAuthController {
   @Post('login-otp')
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
-  async loginOtp(@Body() loginOtpDTO: LoginOtpDTO): Promise<LoginOtpResponseDTO> {
-    return await sendAuthServiceRequest(
+  async loginOtp(
+    @Body() loginOtpDTO: LoginOtpDTO,
+  ): Promise<LoginOtpResponseDTO> {
+    return await sendAuthServiceRequest<LoginOtpResponseDTO>(
       this.authClient,
       AUTH_SERVICE.ACTIONS.LOGIN_OTP,
       loginOtpDTO,
@@ -111,14 +117,14 @@ export class AuthController implements IBasicAuthController {
   async verifyOtp(
     @Body() verifyOtpDTO: VerifyOtpDTO,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<LoginResponseDTO> {
-    const response = await sendAuthServiceRequest(
+  ): Promise<VerifyOtpResponseDTO> {
+    const response = await sendAuthServiceRequest<VerifyOtpResponseDTO>(
       this.authClient,
       AUTH_SERVICE.ACTIONS.VERIFY_OTP,
       verifyOtpDTO,
     );
 
-    const { accessToken, refreshToken, user, message } = response;
+    const { message, accessToken, refreshToken, user } = response;
 
     setAuthTokenCookies(res, { accessToken, refreshToken });
 
@@ -188,12 +194,13 @@ export class AuthController implements IBasicAuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
   async verifyEmail(
-    @Param('emailVerificationToken') emailVerificationToken: string,
+    @Param('emailVerificationToken') emailVerificationToken: VerifyEmailDTO,
   ): Promise<VerifyEmailResponseDTO> {
+    const payload = { emailVerificationToken };
     return await sendAuthServiceRequest<VerifyEmailResponseDTO>(
       this.authClient,
       AUTH_SERVICE.ACTIONS.VERIFY_EMAIL,
-      emailVerificationToken,
+      payload,
     );
   }
 

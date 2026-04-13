@@ -1,3 +1,4 @@
+import { LoginResponseDTO } from 'apps/auth-service/src/basic/dtos/login-response.dto';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -161,3 +162,5 @@ class SocialDTO {
   @IsOptional()
   url?: string;
 }
+
+export class CompanyRegisterResponseDTO extends LoginResponseDTO {}

@@ -1,3 +1,4 @@
+import { LoginResponseDTO } from './login.dto';
 import { IsNotEmpty, IsString } from 'class-validator';
 
 export class VerifyOtpDTO {
@@ -9,3 +10,5 @@ export class VerifyOtpDTO {
   @IsNotEmpty()
   otp: string;
 }
+
+export class VerifyOtpResponseDTO extends LoginResponseDTO {}

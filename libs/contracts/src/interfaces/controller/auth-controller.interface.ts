@@ -15,15 +15,21 @@ export interface IBasicAuthForgotPasswordController {
 }
 
 export interface IBasicAuthResetPasswordController {
-  resetPassword(resetPasswordDTO: any, token: string): Promise<ResetPasswordResponseDTO>;
+  resetPassword(
+    resetPasswordDTO: any,
+    token: string,
+  ): Promise<ResetPasswordResponseDTO>;
 }
 
 export interface IBasicAuthRefreshTokenController {
-  refreshToken(refreshTokenDTO: any, res: any): Promise<RefreshTokenResponseDTO>;
+  refreshToken(
+    refreshTokenDTO: any,
+    res: any,
+  ): Promise<RefreshTokenResponseDTO>;
 }
 
 export interface IBasicAuthVerifyEmailController {
-  verifyEmail(emailVerificationToken: string): Promise<VerifyEmailResponseDTO>;
+  verifyEmail(emailVerificationToken: any): Promise<VerifyEmailResponseDTO>;
 }
 
 export interface IBasicAuthRegisterController {

@@ -5,3 +5,11 @@ export class LoginOtpDTO {
   @IsNotEmpty()
   phone: string;
 }
+
+export class LoginOtpResponseDTO {
+  message: string;
+
+  constructor(message: string) {
+    this.message = message;
+  }
+}
