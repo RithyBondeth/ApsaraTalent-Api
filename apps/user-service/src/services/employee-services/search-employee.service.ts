@@ -6,8 +6,7 @@ import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Brackets, Repository } from 'typeorm';
-import { SearchEmployeeDto } from '../../dtos/employee/search-employee.dto';
-import { EmployeeResponseDTO } from '../../dtos/user-response.dto';
+import { SearchEmployeeDto, EmployeeResponseDTO } from '@app/contracts/dtos/user';
 
 import { ISearchEmployeeService } from '@app/contracts/interfaces/service/user-service.interface';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';

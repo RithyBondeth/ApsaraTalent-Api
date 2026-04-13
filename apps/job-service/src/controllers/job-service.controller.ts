@@ -2,8 +2,7 @@ import { IJobController } from '@app/contracts/interfaces/controller/job-control
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
-import { JobResponseDTO } from '../dtos/job-response.dto';
-import { SearchJobDto } from '../dtos/job-search.dto';
+import { JobResponseDTO, SearchJobDto } from '@app/contracts/dtos/job';
 
 import {
   I_JOB_SERVICE_SERVICE,

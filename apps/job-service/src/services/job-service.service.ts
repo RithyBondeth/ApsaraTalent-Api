@@ -6,8 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Brackets, Repository } from 'typeorm';
 import { extractSalaryRange } from '@app/utils/functions/extract-salary-range';
-import { JobResponseDTO } from '../dtos/job-response.dto';
-import { SearchJobDto } from '../dtos/job-search.dto';
+import { JobResponseDTO, SearchJobDto } from '@app/contracts/dtos/job';
 
 const JOB_LIST_TTL = 5 * 60 * 1000; // 5 min
 const JOB_SEARCH_TTL = 2 * 60 * 1000; // 2 min

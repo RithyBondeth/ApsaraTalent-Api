@@ -6,7 +6,7 @@ import { UserPaginationDTO } from '../../dtos/user-pagination.dto';
 import {
   CountAllUsersResponseDTO,
   EmployeeResponseDTO,
-} from '../../dtos/user-response.dto';
+} from '@app/contracts/dtos/user';
 import {
   I_FIND_EMPLOYEE_SERVICE,
   IFindEmployeeService,

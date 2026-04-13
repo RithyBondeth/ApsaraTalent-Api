@@ -13,7 +13,7 @@ import {
   InterviewStatus,
   UpdateInterviewStatusDto,
   VALID_STATUS_TRANSITIONS,
-} from '../dtos/interview.dto';
+} from '@app/contracts/dtos/job';
 
 import { IInterviewService } from '@app/contracts/interfaces/service/job-service.interface';
 import { JOB } from '@app/contracts/constants/domain/job.constant';

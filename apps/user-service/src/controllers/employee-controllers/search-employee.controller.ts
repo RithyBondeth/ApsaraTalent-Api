@@ -2,8 +2,7 @@ import { ISearchEmployeeController } from '@app/contracts/interfaces/controller/
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { SearchEmployeeDto } from '../../dtos/employee/search-employee.dto';
-import { EmployeeResponseDTO } from '../../dtos/user-response.dto';
+import { SearchEmployeeDto, EmployeeResponseDTO } from '@app/contracts/dtos/user';
 import { SearchEmployeeService } from '../../services/employee-services/search-employee.service';
 
 import {

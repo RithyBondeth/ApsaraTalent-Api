@@ -4,7 +4,7 @@ import { RpcException } from '@nestjs/microservices';
 import { PinoLogger } from 'nestjs-pino';
 import OpenAI from 'openai';
 import * as puppeteer from 'puppeteer';
-import { BuildResumeDTO } from '../dtos/resume-builder.dto';
+import { BuildResumeDTO } from '@app/contracts/dtos/resume';
 import { ImageService } from './image.service';
 
 import { IResumeBuilderService } from '@app/contracts/interfaces/service/resume-builder-service.interface';

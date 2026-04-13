@@ -12,8 +12,7 @@ import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
-import { UpdateEmployeeInfoDTO } from '../../dtos/employee/update-employee-info.dto';
-import { EmployeeResponseDTO } from '../../dtos/user-response.dto';
+import { UpdateEmployeeInfoDTO, EmployeeResponseDTO } from '@app/contracts/dtos/user';
 
 import { IUpdateEmployeeInfoService } from '@app/contracts/interfaces/service/user-service.interface';
 

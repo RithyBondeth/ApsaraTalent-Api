@@ -2,13 +2,15 @@ import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PAYMENT_SERVICE } from '@app/contracts/constants/service-actions/payment-service.constant';
 import { RateLimit } from './decorators/rate-limit.decorator';
-import { CheckPaymentBulkStatusDTO } from './dtos/check-payment-bulk-status.dto';
-import { CheckPaymentStatusDTO } from './dtos/check-payment-status.dto';
-import { DecodeKhqrDTO } from './dtos/decode-khqr.dto';
-import { GenerateDeepLinkDTO } from './dtos/generate-deeplink.dto';
-import { GenerateIndividualKhqrDTO } from './dtos/generate-individual-khqr.dto';
-import { GenerateMerchantKhqrDTO } from './dtos/generate-merchant-khqr.dto';
-import { VerifyKhqrDTO } from './dtos/verify-khqr.dto';
+import {
+  CheckPaymentBulkStatusDTO,
+  CheckPaymentStatusDTO,
+  DecodeKhqrDTO,
+  GenerateDeepLinkDTO,
+  GenerateIndividualKhqrDTO,
+  GenerateMerchantKhqrDTO,
+  VerifyKhqrDTO,
+} from '@app/contracts/dtos/payment';
 
 import { IPaymentController } from '@app/contracts/interfaces/domain/payment.interface';
 import {

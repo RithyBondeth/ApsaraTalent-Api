@@ -4,7 +4,7 @@ import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-servic
 import {
   CreateInterviewDto,
   UpdateInterviewStatusDto,
-} from '../dtos/interview.dto';
+} from '@app/contracts/dtos/job';
 import { InterviewResponseDTO } from '@app/contracts/dtos/job';
 
 import { IInterviewController } from '@app/contracts/interfaces/controller/job-controller.interface';

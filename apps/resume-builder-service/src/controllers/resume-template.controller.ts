@@ -2,8 +2,7 @@ import { IResumeTemplateController } from '@app/contracts/interfaces/controller/
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/service-actions/resume-builder-service.constant';
-import { CreateResumeTemplateDTO } from '../dtos/create-resume-template.dto';
-import { SearchTemplateDTO } from '../dtos/search-resume-template.dto';
+import { CreateResumeTemplateDTO, SearchTemplateDTO } from '@app/contracts/dtos/resume';
 
 import {
   I_RESUME_TEMPLATE_SERVICE,

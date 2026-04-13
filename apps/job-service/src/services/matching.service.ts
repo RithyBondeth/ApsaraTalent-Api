@@ -9,10 +9,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
+import { UserResponseDTO } from '@app/contracts/dtos/user';
 import { Logger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
-import { MatchDto } from '../dtos/match.dto';
+import { MatchDto } from '@app/contracts/dtos/job';
 
 import { IMatchingService } from '@app/contracts/interfaces/service/job-service.interface';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';

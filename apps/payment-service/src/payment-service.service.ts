@@ -18,13 +18,15 @@ import { PinoLogger } from 'nestjs-pino';
 import * as QRCode from 'qrcode';
 import { Repository } from 'typeorm';
 import { BAKONG_CONSTANTS } from './constants/bakong.constant';
-import { CheckPaymentBulkStatusDTO } from './dtos/check-payment-bulk-status.dto';
-import { CheckPaymentStatusDTO } from './dtos/check-payment-status.dto';
-import { DecodeKhqrDTO } from './dtos/decode-khqr.dto';
-import { GenerateDeepLinkDTO } from './dtos/generate-deeplink.dto';
-import { GenerateIndividualKhqrDTO } from './dtos/generate-individual-khqr.dto';
-import { GenerateMerchantKhqrDTO } from './dtos/generate-merchant-khqr.dto';
-import { VerifyKhqrDTO } from './dtos/verify-khqr.dto';
+import {
+  CheckPaymentBulkStatusDTO,
+  CheckPaymentStatusDTO,
+  DecodeKhqrDTO,
+  GenerateDeepLinkDTO,
+  GenerateIndividualKhqrDTO,
+  GenerateMerchantKhqrDTO,
+  VerifyKhqrDTO,
+} from '@app/contracts/dtos/payment';
 import {
   BakongApiConnectionException,
   BakongConfigurationException,

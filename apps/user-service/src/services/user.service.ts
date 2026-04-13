@@ -18,7 +18,7 @@ import {
   EmployeeResponseDTO,
   JobPositionResponseDTO,
   UserResponseDTO,
-} from '../dtos/user-response.dto';
+} from '@app/contracts/dtos/user';
 import { IUserService } from '@app/contracts/interfaces/service/user-service.interface';
 import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';

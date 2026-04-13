@@ -8,8 +8,8 @@ import {
   CompanyResponseDTO,
   EmployeeResponseDTO,
   CareerScopesResponseDTO,
-} from '../dtos/user-response.dto';
-import { FavoriteCountResponseDTO } from '@app/contracts/dtos/user';
+  FavoriteCountResponseDTO,
+} from '@app/contracts/dtos/user';
 
 import {
   I_USER_SERVICE,

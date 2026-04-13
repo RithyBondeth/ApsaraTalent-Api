@@ -10,7 +10,7 @@ import { UserPaginationDTO } from '../../dtos/user-pagination.dto';
 import {
   CountAllUsersResponseDTO,
   EmployeeResponseDTO,
-} from '../../dtos/user-response.dto';
+} from '@app/contracts/dtos/user';
 
 import { IFindEmployeeService } from '@app/contracts/interfaces/service/user-service.interface';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';

@@ -6,8 +6,7 @@ import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
-import { CreateResumeTemplateDTO } from '../dtos/create-resume-template.dto';
-import { SearchTemplateDTO } from '../dtos/search-resume-template.dto';
+import { CreateResumeTemplateDTO, SearchTemplateDTO } from '@app/contracts/dtos/resume';
 
 const TEMPLATE_TTL = 60 * 60 * 1000; // 1 hour — static data
 const TEMPLATE_SEARCH_TTL = 30 * 60 * 1000; // 30 min

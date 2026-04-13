@@ -11,7 +11,7 @@ import {
   CompanyResponseDTO,
   CountAllUsersResponseDTO,
   JobPositionResponseDTO,
-} from '../../dtos/user-response.dto';
+} from '@app/contracts/dtos/user';
 
 import { IFindCompanyService } from '@app/contracts/interfaces/service/user-service.interface';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';

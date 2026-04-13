@@ -22,7 +22,7 @@ import {
   EmployeeResponseDTO,
   JobPositionResponseDTO,
   UserResponseDTO,
-} from 'apps/user-service/src/dtos/user-response.dto';
+} from '@app/contracts/dtos/user';
 import { PinoLogger } from 'nestjs-pino';
 import { DataSource, In, Repository } from 'typeorm';
 import { IRegisterService } from '@app/contracts/interfaces/service/auth-service.interface';
