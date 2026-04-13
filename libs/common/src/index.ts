@@ -13,3 +13,5 @@ export * from './redis/redis.module';
 export * from './throttler/throttler.module';
 export * from './uploadfile/uploadfile.module';
 export * from './utils/cors-origin.util';
+export * from './utils/string.util';
+export * from './utils/user.util';

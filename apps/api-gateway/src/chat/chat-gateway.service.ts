@@ -70,7 +70,10 @@ export class ChatGatewayService {
     return false;
   }
 
-  async getCallerProfile(userId: string) {
+  async getCallerProfile(userId: string): Promise<{
+    name: string;
+    avatar: string;
+  }> {
     try {
       const user = await this.userRepository.findOne({
         where: { id: userId },
@@ -97,7 +100,7 @@ export class ChatGatewayService {
     content: string;
     hasAttachment: boolean;
     attachmentFilename?: string | null;
-  }) {
+  }): string {
     const type = (params.messageType || 'text').toLowerCase();
 
     if (type === 'audio') return 'Audio message';
@@ -124,7 +127,7 @@ export class ChatGatewayService {
       attachmentFilename?: string | null;
       messageId: string;
     },
-  ) {
+  ): Promise<void> {
     try {
       const senderProfile = await this.getCallerProfile(params.senderId);
       const receiverOnline = this.isOnline(params.receiverId);
@@ -175,7 +178,7 @@ export class ChatGatewayService {
       receiverId: string;
       content: string;
     },
-  ) {
+  ): Promise<void> {
     try {
       const savedMessage = await firstValueFrom(
         this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.CREATE_MESSAGE, {

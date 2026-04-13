@@ -5,9 +5,7 @@ import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-serv
 import {
   ChatActionResponseDTO,
   GetChatHistoryResponseDTO,
-  GetUnreadCountResponseDTO,
   InitiateChatResponseDTO,
-  SendMessageResponseDTO,
   SendMessageDTO,
   CreateOrGetChatDTO,
   MarkMessageReadDTO,
@@ -16,6 +14,7 @@ import {
   GetChatHistoryRpcDTO,
   UpdateReactionRpcDTO,
 } from '@app/contracts/dtos/chat';
+import { IChatMessage } from '@app/contracts/interfaces/domain/chat.interface';
 import {
   I_CHAT_SERVICE,
   IChatService,
@@ -34,22 +33,24 @@ export class ChatController {
   async createOrGetChat(
     @Payload() data: CreateOrGetChatDTO,
   ): Promise<InitiateChatResponseDTO> {
-    return this.chatService.createOrGetChat(data.senderId, data.receiverId);
+    return this.chatService.createOrGetChat(data);
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.CREATE_MESSAGE)
   async createMessage(
     @Payload() data: SendMessageDTO & { senderId: string },
-  ): Promise<SendMessageResponseDTO> {
+  ): Promise<IChatMessage> {
     return this.chatService.createMessage(data);
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.MARK_MESSAGE_READ)
-  async markAsRead(@Payload() data: MarkMessageReadDTO): Promise<number> {
+  async markAsRead(
+    @Payload() data: MarkMessageReadDTO,
+  ): Promise<ChatActionResponseDTO> {
     this.logger.info(
       `[CHAT] markAsRead: messageId=${data.messageId}, reader=${data.readerId}`,
     );
-    return this.chatService.markMessageRead(data.messageId, data.readerId);
+    return this.chatService.markAsRead(data);
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.GET_USER_BY_ID_FOR_CHAT)
@@ -88,17 +89,13 @@ export class ChatController {
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.GET_UNREAD_COUNT)
-  async getUnreadCount(
-    @Payload() data: { userId: string },
-  ): Promise<GetUnreadCountResponseDTO> {
+  async getUnreadCount(@Payload() data: { userId: string }): Promise<number> {
     const count = await this.chatService.getUnreadCount(data.userId);
-    return new GetUnreadCountResponseDTO({ count });
+    return count;
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.GET_RECENT_CHATS)
-  async getRecentChats(
-    @Payload() userId: string,
-  ): Promise<InitiateChatResponseDTO[]> {
+  async getRecentChats(@Payload() userId: string): Promise<any[]> {
     this.logger.info(`[CHAT] getRecentChats: userId=${userId}`);
     const result = await this.chatService.getRecentChats(userId);
     this.logger.info(`[CHAT] getRecentChats returned ${result.length} chats`);
@@ -109,11 +106,7 @@ export class ChatController {
   async updateReaction(
     @Payload() data: UpdateReactionRpcDTO,
   ): Promise<ChatActionResponseDTO> {
-    return this.chatService.updateReaction(
-      data.messageId,
-      data.userId,
-      data.emoji,
-    );
+    return this.chatService.updateReaction(data);
   }
 
   /**
@@ -125,11 +118,7 @@ export class ChatController {
   async editMessage(
     @Payload() data: EditMessageRpcDTO,
   ): Promise<ChatActionResponseDTO> {
-    return this.chatService.editMessage(
-      data.messageId,
-      data.requesterId,
-      data.newContent,
-    );
+    return this.chatService.editMessage(data);
   }
 
   /**
@@ -141,6 +130,6 @@ export class ChatController {
   async deleteMessage(
     @Payload() data: DeleteMessageRpcDTO,
   ): Promise<ChatActionResponseDTO> {
-    return this.chatService.deleteMessage(data.messageId, data.requesterId);
+    return this.chatService.deleteMessage(data);
   }
 }

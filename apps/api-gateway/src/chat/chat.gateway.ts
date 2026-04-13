@@ -1,7 +1,3 @@
-import { EMessageType } from '@app/common/database/enums/message-type.enum';
-import { TChatPayload } from '@app/contracts/interfaces/domain/chat.interface';
-import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
-import { JwtService } from '@app/common/jwt/jwt.service';
 import { Inject, Logger } from '@nestjs/common';
 import {
   OnGatewayConnection,
@@ -12,17 +8,33 @@ import {
 } from '@nestjs/websockets';
 import { firstValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
-import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-service.constant';
 import { ClientProxy } from '@nestjs/microservices';
-import { ChatGatewayService } from './chat-gateway.service';
-import { extractChatToken } from './utils/chat-token.util';
-import { isOriginAllowed } from '../utils/cors-origin.util';
+import { JwtService } from '@app/common/jwt/jwt.service';
+import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
+import { EMessageType } from '@app/common/database/enums/message-type.enum';
+import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-service.constant';
 import {
   CHAT,
   CHAT_ALLOW_ALL_CORS,
   CHAT_ALLOWED_ORIGINS,
   CHAT_WEBSOCKET_EVENTS,
+  ChatActionResponseDTO,
+  SendMessageResponseDTO,
+  SendMessageAckResponseDTO,
+  InitiateChatResponseDTO,
+  GetChatHistoryResponseDTO,
+  GetUnreadCountResponseDTO,
+  SendMessageDTO,
+  MarkAsReadDTO,
+  TypingDTO,
+  UpdateReactionDTO,
+  EditMessageDTO,
+  DeleteMessageDTO,
+  GetChatHistoryDTO,
 } from '@app/contracts';
+import { ChatGatewayService } from './chat-gateway.service';
+import { extractChatToken } from './utils/chat-token.util';
+import { isOriginAllowed } from '../utils/cors-origin.util';
 
 @WebSocketGateway({
   namespace: '/chat',
@@ -140,7 +152,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.SEND_MESSAGE)
-  async handleMessage(client: Socket, payload: TChatPayload): Promise<any> {
+  async handleMessage(
+    client: Socket,
+    payload: SendMessageDTO,
+  ): Promise<SendMessageAckResponseDTO | void> {
     this.logger.log(
       `[WS] sendMessage received from userId=${client.data.userId}, receiverId=${payload?.receiverId}, content.length=${payload?.content?.length}`,
     );
@@ -232,17 +247,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         messageId: savedMessage.id,
       });
 
-      return {
+      return new SendMessageAckResponseDTO({
         status: 'sent',
-        message: {
+        message: new SendMessageResponseDTO({
           ...savedMessage,
           receiver: {
             id: usersData.receiver.id,
-            role: usersData.receiver.role,
+            name: usersData.receiver.name || usersData.receiver.email,
             email: usersData.receiver.email,
           },
-        },
-      };
+        }),
+      });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -252,7 +267,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.GET_RECENT_CHATS)
-  async handleGetRecentChats(client: Socket): Promise<any> {
+  async handleGetRecentChats(
+    client: Socket,
+  ): Promise<InitiateChatResponseDTO[]> {
     const userId = client.data.userId;
     try {
       this.logger.log(`[WS] Fetching recent chats for userId=${userId}`);
@@ -272,8 +289,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.GET_CHAT_HISTORY)
   async handleGetChatHistory(
     client: Socket,
-    payload: { userId2: string; limit?: number; offset?: number },
-  ): Promise<any> {
+    payload: GetChatHistoryDTO,
+  ): Promise<GetChatHistoryResponseDTO> {
     const userId1 = client.data.userId;
     try {
       this.logger.log(
@@ -296,12 +313,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return history;
     } catch (error: any) {
       this.logger.error(`getChatHistory error: ${error?.message || 'Unknown'}`);
-      return [];
+      return new GetChatHistoryResponseDTO({
+        messages: [],
+        partnerId: payload.userId2,
+        partnerProfile: null,
+      });
     }
   }
 
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.GET_UNREAD_COUNT)
-  async handleGetUnreadCount(client: Socket): Promise<{ unreadCount: number }> {
+  async handleGetUnreadCount(
+    client: Socket,
+  ): Promise<GetUnreadCountResponseDTO> {
     const userId = client.data.userId;
     try {
       const count = await firstValueFrom(
@@ -310,18 +333,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           userId,
         ),
       );
-      return { unreadCount: typeof count === 'number' ? count : 0 };
+      return new GetUnreadCountResponseDTO({
+        count: typeof count === 'number' ? count : 0,
+      });
     } catch (error: any) {
       this.logger.error(`getUnreadCount error: ${error?.message || 'Unknown'}`);
-      return { unreadCount: 0 };
+      return new GetUnreadCountResponseDTO({ count: 0 });
     }
   }
 
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.MARK_AS_READ)
   async handleRead(
     client: Socket,
-    payload: { messageId: string; senderId?: string } | string,
-  ): Promise<{ success: boolean; messageId: string }> {
+    payload: MarkAsReadDTO,
+  ): Promise<ChatActionResponseDTO | void> {
     try {
       if (!client.data.userId) {
         client.emit('error', { message: 'Unauthorized' });
@@ -356,7 +381,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         });
       }
 
-      return { success: true, messageId };
+      return new ChatActionResponseDTO({ success: true, messageId });
     } catch (error: any) {
       const errorMessage = error?.message || 'Unknown error';
       this.logger.error(`Mark read error: ${errorMessage}`);
@@ -365,10 +390,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.TYPING)
-  async handleTyping(
-    client: Socket,
-    data: { receiverId: string; isTyping: boolean },
-  ): Promise<void> {
+  async handleTyping(client: Socket, data: TypingDTO): Promise<void> {
     if (!data?.receiverId || typeof data.isTyping !== 'boolean') {
       client.emit('error', { message: 'Invalid typing payload' });
       return;
@@ -389,8 +411,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.REACT)
   async handleReaction(
     client: Socket,
-    data: { messageId: string; receiverId: string; emoji: string | null },
-  ): Promise<void> {
+    data: UpdateReactionDTO,
+  ): Promise<ChatActionResponseDTO | void> {
     try {
       this.logger.log(
         `[WS] Reaction received: messageId=${data.messageId}, userId=${client.data.userId}, emoji=${data.emoji}`,
@@ -419,6 +441,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.logger.log(
         `[WS] Reaction broadcasted for message ${data.messageId}`,
       );
+      return new ChatActionResponseDTO({
+        success: true,
+        reactions: result.reactions,
+      });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -430,8 +456,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.EDIT_MESSAGE)
   async handleEditMessage(
     client: Socket,
-    data: { messageId: string; receiverId: string; newContent: string },
-  ): Promise<void> {
+    data: EditMessageDTO,
+  ): Promise<ChatActionResponseDTO | void> {
     if (!client.data.userId) {
       client.emit('error', { message: 'Unauthorized' });
       return;
@@ -486,8 +512,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.DELETE_MESSAGE)
   async handleDeleteMessage(
     client: Socket,
-    data: { messageId: string; receiverId: string },
-  ): Promise<void> {
+    data: DeleteMessageDTO,
+  ): Promise<ChatActionResponseDTO | void> {
     if (!client.data.userId) {
       client.emit('error', { message: 'Unauthorized' });
       return;

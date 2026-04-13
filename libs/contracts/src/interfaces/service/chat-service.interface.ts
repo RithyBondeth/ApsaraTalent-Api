@@ -2,39 +2,40 @@ import { IChatMessage, TChatContent } from '../domain/chat.interface';
 import {
   ChatActionResponseDTO,
   GetChatHistoryResponseDTO,
-  GetUnreadCountResponseDTO,
   InitiateChatResponseDTO,
-  SendMessageResponseDTO,
-  SendMessageDTO,
 } from '../../dtos/chat';
 
 export const I_CHAT_SERVICE = 'IChatService';
 
 export interface IChatService {
-  createOrGetChat(
+  createOrGetChat(data: {
+    senderId: string;
+    receiverId: string;
+  }): Promise<InitiateChatResponseDTO>;
+  createMessage(payload: TChatContent): Promise<IChatMessage>;
+  editMessage(data: {
+    messageId: string;
+    requesterId: string;
+    newContent: string;
+  }): Promise<ChatActionResponseDTO>;
+  updateReaction(data: {
+    messageId: string;
+    userId: string;
+    emoji: string | null;
+  }): Promise<ChatActionResponseDTO>;
+  deleteMessage(data: {
+    messageId: string;
+    requesterId: string;
+  }): Promise<ChatActionResponseDTO>;
+  markAsRead(data: {
+    messageId: string;
+    readerId: string;
+  }): Promise<{ success: boolean }>;
+  getUserByIdForChat(userId: string): Promise<any>;
+  validateChatUsers(
     senderId: string,
     receiverId: string,
-  ): Promise<InitiateChatResponseDTO>;
-  createMessage(
-    payload: SendMessageDTO & { senderId: string },
-  ): Promise<SendMessageResponseDTO>;
-  editMessage(
-    messageId: string,
-    requesterId: string,
-    newContent: string,
-  ): Promise<ChatActionResponseDTO>;
-  updateReaction(
-    messageId: string,
-    userId: string,
-    emoji: string | null,
-  ): Promise<ChatActionResponseDTO>;
-  deleteMessage(
-    messageId: string,
-    requesterId: string,
-  ): Promise<ChatActionResponseDTO>;
-  markMessageRead(messageId: string, readerId: string): Promise<number>;
-  getUserByIdForChat(userId: string): Promise<any>;
-  validateChatUsers(senderId: string, receiverId: string): Promise<any>;
+  ): Promise<{ sender: any; receiver: any }>;
   getChatHistory(
     userId1: string,
     userId2: string,

@@ -14,8 +14,18 @@ import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { User } from '@app/common/database/entities/user.entity';
+import {
+  isUuid,
+  resolveUserId,
+  resolveUserIdSafe,
+  UUID_REGEX,
+} from '@app/common';
 
 import { IChatService } from '@app/contracts/interfaces/service/chat-service.interface';
+import {
+  InitiateChatResponseDTO,
+  ChatActionResponseDTO,
+} from '@app/contracts/dtos/chat';
 import { CHAT } from '@app/contracts/constants/domain/chat.constant';
 
 const UNREAD_COUNT_TTL = 15_000; // 15s
@@ -23,9 +33,6 @@ const RECENT_CHATS_TTL = 30_000; // 30s
 
 @Injectable()
 export class ChatService implements IChatService {
-  private static readonly UUID_REGEX =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
   constructor(
     @InjectRepository(Chat) private readonly chatRepository: Repository<Chat>,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
@@ -43,46 +50,33 @@ export class ChatService implements IChatService {
    *  - a Company UUID  (looks up via company join)
    */
   private async resolveUserId(id: string): Promise<string> {
-    this.logger.debug(`Resolving ID: ${id}`);
-    const byUserId = await this.userRepository.findOne({ where: { id } });
-    if (byUserId) {
-      this.logger.debug(`ID ${id} is directly a User PK`);
-      return byUserId.id;
+    try {
+      this.logger.debug(`Resolving ID: ${id}`);
+      return await resolveUserId(this.userRepository, id);
+    } catch (error) {
+      throw new RpcException({
+        message: `Could not resolve user ID from: ${id}`,
+        statusCode: 404,
+      });
     }
-    const byEmployee = await this.userRepository.findOne({
-      where: { employee: { id } },
-      relations: ['employee'],
-    });
-    if (byEmployee) return byEmployee.id;
-    const byCompany = await this.userRepository.findOne({
-      where: { company: { id } },
-      relations: ['company'],
-    });
-    if (byCompany) return byCompany.id;
-    throw new RpcException({
-      message: `Could not resolve user ID from: ${id}`,
-      statusCode: 404,
-    });
   }
 
   private isUuid(value: string): boolean {
-    return ChatService.UUID_REGEX.test(value);
+    return isUuid(value);
   }
 
   private async resolveUserIdSafe(id: string): Promise<string | null> {
-    try {
-      return await this.resolveUserId(id);
-    } catch (error) {
-      this.logger.warn(
-        `resolveUserIdSafe failed for "${id}": ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`,
-      );
-      return null;
+    const result = await resolveUserIdSafe(this.userRepository, id);
+    if (!result) {
+      this.logger.warn(`resolveUserIdSafe failed for "${id}"`);
     }
+    return result;
   }
 
-  async createOrGetChat(data: { senderId: string; receiverId: string }) {
+  async createOrGetChat(data: {
+    senderId: string;
+    receiverId: string;
+  }): Promise<InitiateChatResponseDTO> {
     try {
       const senderUserId = await this.resolveUserId(data.senderId);
       const receiverUserId = await this.resolveUserId(data.receiverId);
@@ -113,12 +107,12 @@ export class ChatService implements IChatService {
         ],
       });
       if (existing) {
-        return {
+        return new InitiateChatResponseDTO({
           ...partnerProfile,
           id: receiverUserId,
           chatId: existing.id,
           alreadyExists: true,
-        };
+        });
       }
       const message = this.chatRepository.create({
         sender: { id: senderUserId },
@@ -132,12 +126,12 @@ export class ChatService implements IChatService {
         senderUserId,
         receiverUserId,
       );
-      return {
+      return new InitiateChatResponseDTO({
         ...partnerProfile,
         id: receiverUserId,
         chatId: saved.id,
         alreadyExists: false,
-      };
+      });
     } catch (error) {
       if (error instanceof RpcException) throw error;
       throw new RpcException({
@@ -312,14 +306,14 @@ export class ChatService implements IChatService {
       `[CHAT] Message ${data.messageId} edited by ${requesterUserId}`,
     );
 
-    // Return the minimal payload needed for the gateway to broadcast to both users
-    return {
+    // Return the payload needed for the gateway to broadcast the change
+    return new ChatActionResponseDTO({
       success: true,
       messageId: data.messageId,
       newContent: trimmed,
       senderId: message.sender.id,
       receiverId: message.receiver?.id ?? null,
-    };
+    });
   }
 
   /**
@@ -347,12 +341,12 @@ export class ChatService implements IChatService {
     this.logger.info(
       `[CHAT] Message ${data.messageId} soft-deleted by ${requesterUserId}`,
     );
-    return {
+    return new ChatActionResponseDTO({
       success: true,
       messageId: data.messageId,
       senderId: message.sender.id,
       receiverId: (message as any).receiver?.id ?? null,
-    };
+    });
   }
 
   async markAsRead(data: { messageId: string; readerId: string }) {
@@ -485,7 +479,7 @@ export class ChatService implements IChatService {
     };
   }
 
-  async getUnreadCount(u: string) {
+  async getUnreadCount(u: string): Promise<number> {
     const userId = await this.resolveUserId(u);
     const cacheKey = this.redisService.generateUnreadCountKey(userId);
     const cached = await this.redisService.get<number>(cacheKey);
@@ -514,10 +508,10 @@ export class ChatService implements IChatService {
       delete reactions[data.userId];
     }
     await this.chatRepository.update(data.messageId, { reactions });
-    return { success: true, reactions };
+    return new ChatActionResponseDTO({ success: true, reactions });
   }
 
-  async getRecentChats(u: string) {
+  async getRecentChats(u: string): Promise<any[]> {
     const rawId = (u || '').trim();
     const candidateUserIds = new Set<string>();
 
