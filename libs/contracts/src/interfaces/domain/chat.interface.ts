@@ -55,8 +55,17 @@ export interface IChatMessage {
   };
 }
 
+import {
+  InitiateChatDTO,
+  InitiateChatResponseDTO,
+  UploadAttachmentResponseDTO,
+} from '../../dtos/chat';
+
 export interface IChatController {
-  initiateChat(body?: any, req?: any): Promise<any>;
-  getRecentChats(req?: any): Promise<any>;
-  uploadAttachment?(file?: any, req?: any): Promise<any>;
+  initiateChat(
+    body: InitiateChatDTO,
+    req: any,
+  ): Promise<InitiateChatResponseDTO>;
+  getRecentChats(req: any): Promise<InitiateChatResponseDTO[]>;
+  uploadAttachment(file: any, req: any): Promise<UploadAttachmentResponseDTO>;
 }

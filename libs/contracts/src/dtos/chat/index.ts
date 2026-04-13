@@ -1,20 +1,20 @@
-// Response DTOs
-export * from './chat-response.dto';
-
-// Request DTOs (HTTP)
+// Feature-based DTOs (Requests + Responses)
 export * from './initiate-chat.dto';
-
-// Request DTOs (WebSocket)
 export * from './send-message.dto';
 export * from './get-chat-history.dto';
+export * from './call.dto';
+
+// Action-specific DTOs
 export * from './mark-as-read.dto';
 export * from './update-reaction.dto';
 export * from './edit-message.dto';
 export * from './delete-message.dto';
 export * from './typing.dto';
 
-// Request DTOs (RPC / microservice)
+// Validation & Utility DTOs
 export * from './validate-chat-users.dto';
 
-// Call DTOs (WebRTC)
-export * from './call.dto';
+// Common Responses
+export * from './chat-action.dto';
+export * from './unread-count.dto';
+export * from './upload-attachment.dto';

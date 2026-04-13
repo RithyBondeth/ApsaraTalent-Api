@@ -18,8 +18,8 @@ import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-serv
 import { chatUploadMulterOptions } from './config/chat-upload.config';
 import { IChatController } from '@app/contracts/interfaces/domain/chat.interface';
 import {
-  ChatInitResponseDTO,
-  ChatUploadResponseDTO,
+  InitiateChatResponseDTO,
+  UploadAttachmentResponseDTO,
   InitiateChatDTO,
 } from '@app/contracts/dtos/chat';
 import { rpcCall } from '../utils/rpc-call';
@@ -35,7 +35,7 @@ export class ChatController implements IChatController {
   async initiateChat(
     @Body() body: InitiateChatDTO,
     @Req() req: any,
-  ): Promise<ChatInitResponseDTO> {
+  ): Promise<InitiateChatResponseDTO> {
     return rpcCall(this.chatClient, CHAT_SERVICE.ACTIONS.CREATE_OR_GET_CHAT, {
       senderId: req.user.id,
       receiverId: body.receiverId,
@@ -44,7 +44,7 @@ export class ChatController implements IChatController {
 
   @Get('recent')
   @UseGuards(AuthGuard)
-  async getRecentChats(@Req() req: any): Promise<ChatInitResponseDTO[]> {
+  async getRecentChats(@Req() req: any): Promise<InitiateChatResponseDTO[]> {
     try {
       return await rpcCall(
         this.chatClient,
@@ -65,7 +65,7 @@ export class ChatController implements IChatController {
   async uploadAttachment(
     @UploadedFile() file: Express.Multer.File,
     @Req() req: any,
-  ): Promise<ChatUploadResponseDTO> {
+  ): Promise<UploadAttachmentResponseDTO> {
     if (!file) throw new BadRequestException('No file provided');
 
     const today = new Date().toISOString().slice(0, 10);
