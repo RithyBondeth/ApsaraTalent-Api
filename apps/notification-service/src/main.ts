@@ -7,46 +7,60 @@ import { GlobalRpcExceptionFilter } from '@app/common';
 import { NotificationServiceModule } from './notification-service.module';
 
 async function bootstrap() {
+  // First, create the application context to access the ConfigService
   const appContext = await NestFactory.createApplicationContext(
     NotificationServiceModule,
   );
   const configService = appContext.get(ConfigService);
 
+  // =========================================================
+  // 1. MICROSERVICE SETUP
+  // =========================================================
+
+  const host = '0.0.0.0';
+  const port = configService.get<number>('services.notification.port');
+
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
     NotificationServiceModule,
     {
       transport: Transport.TCP,
-      options: {
-        host: '0.0.0.0',
-        port: configService.get<number>('services.notification.port'),
-      },
+      options: { host, port },
     },
   );
 
+  // =========================================================
+  // 2. GLOBAL CONFIGURATION
+  // =========================================================
+
+  // Handle RPC exceptions globally across the microservice
   app.useGlobalFilters(new GlobalRpcExceptionFilter());
 
-  // Pipe Validation Setup
+  // Ensure request payload validation and transformation via DTOs
   app.useGlobalPipes(
     new ValidationPipe({
-      transform: true,
+      whitelist: true, // Strips non-DTO properties automatically
+      transform: true, // Transforms payloads to instances of their DTO classes
       transformOptions: {
-        enableImplicitConversion: true,
+        enableImplicitConversion: true, // Automatically convert primitive types
       },
-      whitelist: true,
       forbidNonWhitelisted: true,
-      enableDebugMessages: true,
+      enableDebugMessages: process.env.NODE_ENV !== 'production',
     }),
   );
 
-  // Logger setup
+  // =========================================================
+  // 3. LOGGER & BOOTSTRAP
+  // =========================================================
+
+  // Attach centralized logging via nestjs-pino
   const logger = app.get(Logger);
   app.useLogger(logger);
 
+  // Expose the microservice to the network
   await app.listen();
-  const port = configService.get<number>('services.notification.port');
   logger.log(`Notification service is running on port ${port}`);
 
-  // Close the app context
+  // Close the initial app context as it's no longer needed
   await appContext.close();
 }
 bootstrap();
