@@ -2,13 +2,11 @@ import { IBasicAuthRefreshTokenController } from '@app/contracts/interfaces/cont
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
-import { RefreshTokenDTO } from '../dtos/refresh-token.dto';
-import { RefreshTokenResponseDTO } from '../dtos/refresh-token-response.dto';
-
 import {
   I_REFRESH_TOKEN_SERVICE,
   IRefreshTokenService,
 } from '@app/contracts/interfaces/service/auth-service.interface';
+import { RefreshTokenDTO, RefreshTokenResponseDTO } from '@app/contracts';
 
 @Controller()
 export class RefreshTokenController implements IBasicAuthRefreshTokenController {

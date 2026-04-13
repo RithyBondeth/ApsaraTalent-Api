@@ -7,8 +7,7 @@ import * as crypto from 'crypto';
 import { PinoLogger } from 'nestjs-pino';
 import { MoreThan, Repository } from 'typeorm';
 import { SALT_ROUNDS } from '@app/contracts/constants/domain/password.constant';
-import { ResetPasswordResponseDTO } from '../dtos/reset-password-response.dto';
-import { ResetPasswordDTO } from '../dtos/reset-password.dto';
+import { ResetPasswordDTO, ResetPasswordResponseDTO } from '@app/contracts';
 
 import { IResetPasswordService } from '@app/contracts/interfaces/service/auth-service.interface';
 
@@ -61,9 +60,9 @@ export class ResetPasswordService implements IResetPasswordService {
       await this.userRepository.save(user);
 
       //Return message
-      return new ResetPasswordResponseDTO(
-        'You password was updated successfully',
-      );
+      return new ResetPasswordResponseDTO({
+        message: 'You password was updated successfully',
+      });
     } catch (error) {
       this.logger.error(
         (error as Error).message ||

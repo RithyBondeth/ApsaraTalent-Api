@@ -9,7 +9,7 @@ export class ForgotPasswordDTO {
 export class ForgotPasswordResponseDTO {
   message: string;
 
-  constructor(message: string) {
-    this.message = message;
+  constructor(partial: Partial<ForgotPasswordResponseDTO>) {
+    return Object.assign(this, partial);
   }
 }

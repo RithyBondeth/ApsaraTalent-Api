@@ -1,5 +1,4 @@
 import { EGender } from '@app/common/database/enums/gender.enum';
-import { LoginResponseDTO } from 'apps/auth-service/src/basic/dtos/login-response.dto';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -14,6 +13,7 @@ import {
   IsUrl,
   ValidateNested,
 } from 'class-validator';
+import { LoginResponseDTO } from './login.dto';
 
 export class EmployeeRegisterDTO {
   @IsBoolean()

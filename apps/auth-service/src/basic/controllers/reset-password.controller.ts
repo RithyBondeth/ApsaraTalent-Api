@@ -2,13 +2,11 @@ import { IBasicAuthResetPasswordController } from '@app/contracts/interfaces/con
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
-import { ResetPasswordResponseDTO } from '../dtos/reset-password-response.dto';
-import { ResetPasswordDTO } from '../dtos/reset-password.dto';
-
 import {
   I_RESET_PASSWORD_SERVICE,
   IResetPasswordService,
 } from '@app/contracts/interfaces/service/auth-service.interface';
+import { ResetPasswordDTO, ResetPasswordResponseDTO } from '@app/contracts';
 
 @Controller()
 export class ResetPasswordController implements IBasicAuthResetPasswordController {

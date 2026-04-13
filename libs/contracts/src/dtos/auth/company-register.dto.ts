@@ -1,4 +1,3 @@
-import { LoginResponseDTO } from 'apps/auth-service/src/basic/dtos/login-response.dto';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -12,6 +11,7 @@ import {
   IsStrongPassword,
   ValidateNested,
 } from 'class-validator';
+import { LoginResponseDTO } from './login.dto';
 
 export class CompanyRegisterDTO {
   @IsBoolean()

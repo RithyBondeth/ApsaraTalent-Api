@@ -4,6 +4,10 @@ import {
   ResetPasswordResponseDTO,
   RefreshTokenResponseDTO,
   VerifyEmailResponseDTO,
+  FacebookLoginResponseDTO,
+  GithubLoginResponseDTO,
+  GoogleLoginResponseDTO,
+  LinkedInLoginResponseDTO,
 } from '@app/contracts/dtos/auth';
 
 export const I_LOGIN_SERVICE = 'ILoginService';
@@ -50,17 +54,17 @@ export interface ILoginOTPService {
 }
 
 export interface IGoogleAuthService {
-  googleLogin(googleData: any): Promise<any>;
+  googleLogin(googleData: any): Promise<GoogleLoginResponseDTO>;
 }
 
 export interface ILinkedInAuthService {
-  linkedInLogin(linkedInData: any): Promise<any>;
+  linkedInLogin(linkedInData: any): Promise<LinkedInLoginResponseDTO>;
 }
 
 export interface IGithubAuthService {
-  githubLogin(githubData: any): Promise<any>;
+  githubLogin(githubData: any): Promise<GithubLoginResponseDTO>;
 }
 
 export interface IFacebookAuthService {
-  facebookLogin(facebookData: any): Promise<any>;
+  facebookLogin(facebookData: any): Promise<FacebookLoginResponseDTO>;
 }

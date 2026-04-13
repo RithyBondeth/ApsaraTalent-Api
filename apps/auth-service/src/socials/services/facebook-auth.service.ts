@@ -9,10 +9,9 @@ import { PinoLogger } from 'nestjs-pino';
 import { firstValueFrom, timeout } from 'rxjs';
 import { Repository } from 'typeorm';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { FacebookAuthDTO } from '../dtos/facebook-auth.dto';
-
 import { IFacebookAuthService } from '@app/contracts/interfaces/service/auth-service.interface';
 import { AUTH } from '@app/contracts/constants/domain/auth.constant';
+import { FacebookAuthDTO, FacebookLoginResponseDTO } from '@app/contracts';
 
 @Injectable()
 export class FacebookAuthService implements IFacebookAuthService {
@@ -23,7 +22,9 @@ export class FacebookAuthService implements IFacebookAuthService {
     private readonly logger: PinoLogger,
   ) {}
 
-  async facebookLogin(facebookData: FacebookAuthDTO) {
+  async facebookLogin(
+    facebookData: FacebookAuthDTO,
+  ): Promise<FacebookLoginResponseDTO> {
     try {
       // Find a user by email
       const user = await this.userRepository.findOne({
@@ -32,7 +33,7 @@ export class FacebookAuthService implements IFacebookAuthService {
 
       if (!user) {
         // If user does not exist, return data for frontend role selection
-        return {
+        return new FacebookLoginResponseDTO({
           message: 'Successfully Logged in with Facebook',
           newUser: true,
           email: facebookData.email,
@@ -42,7 +43,7 @@ export class FacebookAuthService implements IFacebookAuthService {
           accessToken: null,
           refreshToken: null,
           provider: 'facebook',
-        };
+        });
       }
 
       // Update user with facebookId and login tracking
@@ -68,7 +69,7 @@ export class FacebookAuthService implements IFacebookAuthService {
       // Clear Cache in USER SERVICE (non-blocking — must not prevent login)
       this.clearUserCacheSafe(user.id, 'Facebook');
 
-      return {
+      return new FacebookLoginResponseDTO({
         message: 'Successfully Logged in with Facebook',
         newUser: false,
         email: null,
@@ -80,7 +81,7 @@ export class FacebookAuthService implements IFacebookAuthService {
         lastLoginAt: user.lastLoginAt,
         accessToken,
         refreshToken,
-      };
+      });
     } catch (error) {
       this.logger.error('Facebook login error:', {
         error: (error as Error).message,

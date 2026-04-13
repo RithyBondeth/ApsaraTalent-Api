@@ -9,8 +9,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { firstValueFrom, timeout } from 'rxjs';
 import { Repository } from 'typeorm';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { GoogleAuthDTO } from '../dtos/google-auth.dto';
-
+import { GoogleAuthDTO, GoogleLoginResponseDTO } from '@app/contracts';
 import { IGoogleAuthService } from '@app/contracts/interfaces/service/auth-service.interface';
 import { AUTH } from '@app/contracts/constants/domain/auth.constant';
 
@@ -23,7 +22,9 @@ export class GoogleAuthService implements IGoogleAuthService {
     private readonly logger: PinoLogger,
   ) {}
 
-  async googleLogin(googleData: GoogleAuthDTO) {
+  async googleLogin(
+    googleData: GoogleAuthDTO,
+  ): Promise<GoogleLoginResponseDTO> {
     try {
       // Find a user by email
       const user = await this.userRepository.findOne({
@@ -32,17 +33,17 @@ export class GoogleAuthService implements IGoogleAuthService {
 
       if (!user) {
         // If user does not exist, return data for frontend role selection
-        return {
+        return new GoogleLoginResponseDTO({
           message: 'Successfully Logged in with Google',
           newUser: true,
           email: googleData.email,
-          firstname: googleData.firstName,
-          lastname: googleData.lastName,
+          firstName: googleData.firstName,
+          lastName: googleData.lastName,
           picture: googleData.picture,
           accessToken: null,
           refreshToken: null,
           provider: 'google',
-        };
+        });
       }
 
       // Update user with googleId and login tracking if not already set
@@ -68,7 +69,7 @@ export class GoogleAuthService implements IGoogleAuthService {
       // Clear Cache in USER SERVICE (non-blocking — must not prevent login)
       this.clearUserCacheSafe(user.id, 'Google');
 
-      return {
+      return new GoogleLoginResponseDTO({
         message: 'Successfully Logged in with Google',
         newUser: false,
         email: null,
@@ -80,7 +81,7 @@ export class GoogleAuthService implements IGoogleAuthService {
         lastLoginAt: user.lastLoginAt,
         accessToken,
         refreshToken,
-      };
+      });
     } catch (error) {
       this.logger.error('Google login error:', {
         error: (error as Error).message,

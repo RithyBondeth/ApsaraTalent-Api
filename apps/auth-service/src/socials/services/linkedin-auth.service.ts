@@ -9,8 +9,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { firstValueFrom, timeout } from 'rxjs';
 import { Repository } from 'typeorm';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { LinkedInAuthDTO } from '../dtos/linkedin-auth.dto';
-
+import { LinkedInAuthDTO, LinkedInLoginResponseDTO } from '@app/contracts';
 import { ILinkedInAuthService } from '@app/contracts/interfaces/service/auth-service.interface';
 import { AUTH } from '@app/contracts/constants/domain/auth.constant';
 
@@ -23,14 +22,16 @@ export class LinkedInAuthService implements ILinkedInAuthService {
     private readonly logger: PinoLogger,
   ) {}
 
-  async linkedInLogin(linkedInData: LinkedInAuthDTO) {
+  async linkedInLogin(
+    linkedInData: LinkedInAuthDTO,
+  ): Promise<LinkedInLoginResponseDTO> {
     try {
       const user = await this.users.findOne({
         where: { email: linkedInData.email },
       });
 
       if (!user) {
-        return {
+        return new LinkedInLoginResponseDTO({
           message: 'Successfully logged in with LinkedIn',
           newUser: true,
           email: linkedInData.email,
@@ -40,7 +41,7 @@ export class LinkedInAuthService implements ILinkedInAuthService {
           accessToken: null,
           refreshToken: null,
           provider: 'linkedin',
-        };
+        });
       }
 
       // Update user with linkedinId and login tracking
@@ -64,14 +65,14 @@ export class LinkedInAuthService implements ILinkedInAuthService {
       // Clear Cache in USER SERVICE (non-blocking — must not prevent login)
       this.clearUserCacheSafe(user.id, 'LinkedIn');
 
-      return {
+      return new LinkedInLoginResponseDTO({
         message: 'Successfully logged in with LinkedIn',
         newUser: false,
         lastLoginMethod: user.lastLoginMethod,
         lastLoginAt: user.lastLoginAt,
         accessToken,
         refreshToken,
-      };
+      });
     } catch (error) {
       this.logger.error('LinkedIn login error:', {
         error: (error as Error).message,

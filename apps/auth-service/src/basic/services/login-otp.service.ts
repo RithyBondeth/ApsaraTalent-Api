@@ -11,10 +11,15 @@ import { PinoLogger } from 'nestjs-pino';
 import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { LoginOtpDTO } from '../dtos/login-otp.dto';
-import { VerifyOtpDTO } from '../dtos/verify-otp.dto';
 import { ILoginOTPService } from '@app/contracts/interfaces/service/auth-service.interface';
 import { AUTH } from '@app/contracts/constants/domain/auth.constant';
+import {
+  LoginOtpDTO,
+  LoginOtpResponseDTO,
+  UserResponseDTO,
+  VerifyOtpDTO,
+  VerifyOtpResponseDTO,
+} from '@app/contracts';
 
 @Injectable()
 export class LoginOTPService implements ILoginOTPService {
@@ -26,7 +31,7 @@ export class LoginOTPService implements ILoginOTPService {
     private readonly logger: PinoLogger,
   ) {}
 
-  async loginOtp(loginOtpDTO: LoginOtpDTO): Promise<any> {
+  async loginOtp(loginOtpDTO: LoginOtpDTO): Promise<LoginOtpResponseDTO> {
     try {
       const otpCode = Math.floor(
         AUTH.OTP_MIN + Math.random() * AUTH.OTP_RANGE,
@@ -52,10 +57,10 @@ export class LoginOTPService implements ILoginOTPService {
         'OTP generated and stored successfully',
       );
 
-      return {
+      return new LoginOtpResponseDTO({
         message: `OTP sent successfully to ${loginOtpDTO.phone}`,
         isSuccess: true,
-      };
+      });
     } catch (error) {
       this.logger.error((error as Error).message || 'Login OTP failed.');
       if (error instanceof RpcException) throw error;
@@ -66,7 +71,7 @@ export class LoginOTPService implements ILoginOTPService {
     }
   }
 
-  async verifyOtp(verifyOtpDTO: VerifyOtpDTO): Promise<any> {
+  async verifyOtp(verifyOtpDTO: VerifyOtpDTO): Promise<VerifyOtpResponseDTO> {
     try {
       const user = await this.userRepo.findOne({
         where: {
@@ -118,19 +123,17 @@ export class LoginOTPService implements ILoginOTPService {
         }),
       );
 
-      return {
+      return new VerifyOtpResponseDTO({
         message: 'OTP verified successfully',
         isSuccess: true,
         accessToken,
         refreshToken,
-        user: {
-          id: user.id,
-          phone: user.phone,
-          role: user.role,
-          lastLoginMethod: user.lastLoginMethod,
-          lastLoginAt: user.lastLoginAt,
-        },
-      };
+        user: new UserResponseDTO({
+          ...user,
+          employee: undefined,
+          company: undefined,
+        }),
+      });
     } catch (error) {
       this.logger.error((error as Error).message || 'Verify OTP failed.');
       if (error instanceof RpcException) throw error;

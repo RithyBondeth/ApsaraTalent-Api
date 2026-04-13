@@ -9,8 +9,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { firstValueFrom, timeout } from 'rxjs';
 import { Repository } from 'typeorm';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { GithubAuthDTO } from '../dtos/github-auth.dto';
-
+import { GithubAuthDTO, GithubLoginResponseDTO } from '@app/contracts';
 import { IGithubAuthService } from '@app/contracts/interfaces/service/auth-service.interface';
 import { AUTH } from '@app/contracts/constants/domain/auth.constant';
 
@@ -23,7 +22,9 @@ export class GithubAuthService implements IGithubAuthService {
     private readonly logger: PinoLogger,
   ) {}
 
-  async githubLogin(githubData: GithubAuthDTO) {
+  async githubLogin(
+    githubData: GithubAuthDTO,
+  ): Promise<GithubLoginResponseDTO> {
     try {
       // Find a user by email
       const user = await this.userRepository.findOne({
@@ -32,14 +33,14 @@ export class GithubAuthService implements IGithubAuthService {
 
       if (!user) {
         // If user does not exist, return data for frontend role selection
-        return {
+        return new GithubLoginResponseDTO({
           message: 'Successfully Logged in with Github',
           newUser: true,
           email: githubData.email,
           username: githubData.username,
           picture: githubData.picture,
           provider: githubData.provider,
-        };
+        });
       }
 
       // Update user with githubId and login tracking
@@ -65,7 +66,7 @@ export class GithubAuthService implements IGithubAuthService {
       // Clear Cache in USER SERVICE (non-blocking — must not prevent login)
       this.clearUserCacheSafe(user.id, 'GitHub');
 
-      return {
+      return new GithubLoginResponseDTO({
         message: 'Successfully Logged in with Github',
         newUser: false,
         email: null,
@@ -76,7 +77,7 @@ export class GithubAuthService implements IGithubAuthService {
         lastLoginAt: user.lastLoginAt,
         accessToken,
         refreshToken,
-      };
+      });
     } catch (error) {
       this.logger.error('Google login error:', {
         error: (error as Error).message,

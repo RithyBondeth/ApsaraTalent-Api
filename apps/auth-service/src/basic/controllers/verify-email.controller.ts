@@ -2,12 +2,11 @@ import { IBasicAuthVerifyEmailController } from '@app/contracts/interfaces/contr
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
-import { VerifyEmailResponseDTO } from '../dtos/verify-email-response.dto';
-
 import {
   I_VERIFY_EMAIL_SERVICE,
   IVerifyEmailService,
 } from '@app/contracts/interfaces/service/auth-service.interface';
+import { VerifyEmailDTO, VerifyEmailResponseDTO } from '@app/contracts';
 
 @Controller()
 export class VerifyEmailController implements IBasicAuthVerifyEmailController {
@@ -18,8 +17,8 @@ export class VerifyEmailController implements IBasicAuthVerifyEmailController {
 
   @MessagePattern(AUTH_SERVICE.ACTIONS.VERIFY_EMAIL)
   async verifyEmail(
-    @Payload() emailVerificationToken: string,
+    @Payload() payload: VerifyEmailDTO,
   ): Promise<VerifyEmailResponseDTO> {
-    return this.verifyEmailService.verifyEmail(emailVerificationToken);
+    return this.verifyEmailService.verifyEmail(payload.emailVerificationToken);
   }
 }

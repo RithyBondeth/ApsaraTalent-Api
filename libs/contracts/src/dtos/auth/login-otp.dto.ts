@@ -8,8 +8,9 @@ export class LoginOtpDTO {
 
 export class LoginOtpResponseDTO {
   message: string;
+  isSuccess: boolean;
 
-  constructor(message: string) {
-    this.message = message;
+  constructor(partial: Partial<LoginOtpResponseDTO>) {
+    return Object.assign(this, partial);
   }
 }

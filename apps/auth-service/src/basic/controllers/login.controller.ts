@@ -2,13 +2,11 @@ import { IBasicAuthLoginController } from '@app/contracts/interfaces/controller/
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
-import { LoginResponseDTO } from '../dtos/login-response.dto';
-import { LoginDTO } from '../dtos/login.dto';
-
 import {
   I_LOGIN_SERVICE,
   ILoginService,
 } from '@app/contracts/interfaces/service/auth-service.interface';
+import { LoginDTO, LoginResponseDTO } from '@app/contracts';
 
 @Controller()
 export class LoginController implements IBasicAuthLoginController {

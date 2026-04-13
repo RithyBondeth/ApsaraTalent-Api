@@ -8,11 +8,9 @@ import * as crypto from 'crypto';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { checkEmail } from '@app/utils/functions/check-email';
-import { ForgotPasswordResponseDTO } from '../dtos/forgot-password-response.dto';
-import { ForgotPasswordDTO } from '../dtos/forgot-password.dto';
-
 import { IForgotPasswordService } from '@app/contracts/interfaces/service/auth-service.interface';
 import { AUTH } from '@app/contracts/constants/domain/auth.constant';
+import { ForgotPasswordDTO, ForgotPasswordResponseDTO } from '@app/contracts';
 
 @Injectable()
 export class ForgotPasswordService implements IForgotPasswordService {
@@ -68,18 +66,18 @@ export class ForgotPasswordService implements IForgotPasswordService {
           text: `Hello, ${user.email}. Here is your reset password token: ${resetToken}.`,
         });
 
-        return new ForgotPasswordResponseDTO(
-          `Reset password token was sent successfully to ${user.email}`,
-        );
+        return new ForgotPasswordResponseDTO({
+          message: `Reset password token was sent successfully to ${user.email}`,
+        });
       }
 
       if (!user.email && user.phone) {
         //Send reset password token to user phone number
         await this.messageService.sendResetToken(user.phone, resetToken);
 
-        return new ForgotPasswordResponseDTO(
-          `Reset password token was sent successfully to ${user.phone}`,
-        );
+        return new ForgotPasswordResponseDTO({
+          message: `Reset password token was sent successfully to ${user.phone}`,
+        });
       }
     } catch (error) {
       this.logger.error((error as Error).message || 'Forgot password failed');

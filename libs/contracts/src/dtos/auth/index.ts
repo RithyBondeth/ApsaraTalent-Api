@@ -7,3 +7,4 @@ export * from './forgot-password.dto';
 export * from './reset-password.dto';
 export * from './refresh-token.dto';
 export * from './verify-email.dto';
+export * from './social-login.dto';

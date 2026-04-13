@@ -5,7 +5,7 @@ import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
-import { VerifyEmailResponseDTO } from '../dtos/verify-email-response.dto';
+import { VerifyEmailResponseDTO } from '@app/contracts';
 
 import { IVerifyEmailService } from '@app/contracts/interfaces/service/auth-service.interface';
 
@@ -44,9 +44,9 @@ export class VerifyEmailService implements IVerifyEmailService {
       //Save user into the database
       await this.userRepository.save(user);
 
-      return new VerifyEmailResponseDTO(
-        'Your email was verified successfully. Now you can login',
-      );
+      return new VerifyEmailResponseDTO({
+        message: 'Your email was verified successfully. Now you can login',
+      });
     } catch (error) {
       this.logger.error(
         (error as Error).message || 'An error occurred while verifying email.',

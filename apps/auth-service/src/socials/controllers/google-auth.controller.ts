@@ -1,14 +1,12 @@
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
-import { GoogleAuthDTO } from '../dtos/google-auth.dto';
-
 import { IGoogleAuthMicroserviceController } from '@app/contracts/interfaces/controller/auth-controller.interface';
-
 import {
   I_GOOGLE_AUTH_SERVICE,
   IGoogleAuthService,
 } from '@app/contracts/interfaces/service/auth-service.interface';
+import { GoogleAuthDTO, GoogleLoginResponseDTO } from '@app/contracts';
 
 @Controller()
 export class GoogleAuthController implements IGoogleAuthMicroserviceController {
@@ -18,7 +16,9 @@ export class GoogleAuthController implements IGoogleAuthMicroserviceController {
   ) {}
 
   @MessagePattern(AUTH_SERVICE.ACTIONS.GOOGLE_AUTH)
-  async googleAuth(@Payload() googleData: GoogleAuthDTO) {
+  async googleAuth(
+    @Payload() googleData: GoogleAuthDTO,
+  ): Promise<GoogleLoginResponseDTO> {
     return this.googleAuthService.googleLogin(googleData);
   }
 }

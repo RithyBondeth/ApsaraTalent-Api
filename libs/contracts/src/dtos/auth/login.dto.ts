@@ -1,5 +1,5 @@
 import { IsNotEmpty, IsString } from 'class-validator';
-import { User } from '@app/common/database/entities/user.entity';
+import { UserResponseDTO } from '../user/user-response.dto';
 
 export class LoginDTO {
   @IsString()
@@ -15,7 +15,7 @@ export class LoginResponseDTO {
   message: string;
   accessToken: string;
   refreshToken: string;
-  user: User;
+  user: UserResponseDTO;
 
   constructor(partial: Partial<LoginResponseDTO>) {
     return Object.assign(this, partial);

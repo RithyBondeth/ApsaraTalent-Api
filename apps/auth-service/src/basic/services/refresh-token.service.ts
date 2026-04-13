@@ -5,10 +5,12 @@ import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
-import { RefreshTokenResponseDTO } from '../dtos/refresh-token-response.dto';
-import { RefreshTokenDTO } from '../dtos/refresh-token.dto';
-
 import { IRefreshTokenService } from '@app/contracts/interfaces/service/auth-service.interface';
+import {
+  RefreshTokenDTO,
+  RefreshTokenResponseDTO,
+  UserResponseDTO,
+} from '@app/contracts';
 
 @Injectable()
 export class RefreshTokenService implements IRefreshTokenService {
@@ -56,7 +58,11 @@ export class RefreshTokenService implements IRefreshTokenService {
         message: 'New refresh token was created successfully',
         accessToken: accessToken,
         refreshToken: refreshToken,
-        user: user,
+        user: new UserResponseDTO({
+          ...user,
+          employee: undefined,
+          company: undefined,
+        }),
       });
     } catch (error) {
       this.logger.error(

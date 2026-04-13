@@ -11,9 +11,8 @@ import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { checkEmail } from '@app/utils/functions/check-email';
-import { LoginResponseDTO } from '../dtos/login-response.dto';
-import { LoginDTO } from '../dtos/login.dto';
 import { ILoginService } from '@app/contracts/interfaces/service/auth-service.interface';
+import { LoginDTO, LoginResponseDTO, UserResponseDTO } from '@app/contracts';
 
 @Injectable()
 export class LoginService implements ILoginService {
@@ -98,7 +97,11 @@ export class LoginService implements ILoginService {
         message: 'Successfully Logged in',
         accessToken: accessToken,
         refreshToken: refreshToken,
-        user: user,
+        user: new UserResponseDTO({
+          ...user,
+          employee: undefined,
+          company: undefined,
+        }),
       });
     } catch (error) {
       this.logger.error((error as Error).message || 'Login failed');

@@ -4,46 +4,70 @@ import {
   ResetPasswordResponseDTO,
   RefreshTokenResponseDTO,
   VerifyEmailResponseDTO,
+  CompanyRegisterResponseDTO,
+  EmployeeRegisterResponseDTO,
+  LoginDTO,
+  ForgotPasswordDTO,
+  ResetPasswordDTO,
+  RefreshTokenDTO,
+  VerifyEmailDTO,
+  CompanyRegisterDTO,
+  EmployeeRegisterDTO,
+  VerifyOtpDTO,
+  VerifyOtpResponseDTO,
+  LoginOtpDTO,
+  LoginOtpResponseDTO,
 } from '@app/contracts/dtos/auth';
 
 export interface IBasicAuthLoginController {
-  login(loginDTO: any, res: any): Promise<LoginResponseDTO>;
+  login(loginDTO: LoginDTO, res: any): Promise<LoginResponseDTO>;
 }
 
 export interface IBasicAuthForgotPasswordController {
-  forgotPassword(forgotPasswordDTO: any): Promise<ForgotPasswordResponseDTO>;
+  forgotPassword(
+    forgotPasswordDTO: ForgotPasswordDTO,
+  ): Promise<ForgotPasswordResponseDTO>;
 }
 
 export interface IBasicAuthResetPasswordController {
   resetPassword(
-    resetPasswordDTO: any,
+    resetPasswordDTO: ResetPasswordDTO,
     token: string,
   ): Promise<ResetPasswordResponseDTO>;
 }
 
 export interface IBasicAuthRefreshTokenController {
   refreshToken(
-    refreshTokenDTO: any,
+    refreshTokenDTO: RefreshTokenDTO,
     res: any,
   ): Promise<RefreshTokenResponseDTO>;
 }
 
 export interface IBasicAuthVerifyEmailController {
-  verifyEmail(emailVerificationToken: any): Promise<VerifyEmailResponseDTO>;
+  verifyEmail(
+    emailVerificationToken: VerifyEmailDTO,
+  ): Promise<VerifyEmailResponseDTO>;
 }
 
 export interface IBasicAuthRegisterController {
-  registerCompany(companyRegisterDTO: any): Promise<any>;
-  registerEmployee(employeeRegisterDTO: any): Promise<any>;
+  registerCompany(
+    companyRegisterDTO: CompanyRegisterDTO,
+  ): Promise<CompanyRegisterResponseDTO>;
+  registerEmployee(
+    employeeRegisterDTO: EmployeeRegisterDTO,
+  ): Promise<EmployeeRegisterResponseDTO>;
 }
 
 export interface IBasicAuthLoginOTPController {
-  loginOtp(loginOtpDTO: any): Promise<any>;
-  verifyOtp(verifyOtpDTO: any, res: any): Promise<any>;
+  loginOtp(loginOtpDTO: LoginOtpDTO): Promise<LoginOtpResponseDTO>;
+  verifyOtp(
+    verifyOtpDTO: VerifyOtpDTO,
+    res: any,
+  ): Promise<VerifyOtpResponseDTO>;
 }
 
 export interface IBasicAuthIceServersController {
-  getIceServers(): Promise<any>;
+  getIceServers(): Promise<{ iceServers: object[] }>;
 }
 
 export interface IBasicAuthController

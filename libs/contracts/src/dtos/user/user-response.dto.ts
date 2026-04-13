@@ -1,10 +1,11 @@
 import { EGender } from '@app/common/database/enums/gender.enum';
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
+import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { Exclude, Expose, Type } from 'class-transformer';
 import { formatDateToDDMMYYYY } from '@app/utils/functions/date-formatter';
 
 export class EmployeeResponseDTO {
-  userId: string;
+  userId?: string;
   id: string;
   firstname: string;
   lastname: string;
@@ -13,7 +14,7 @@ export class EmployeeResponseDTO {
   gender: EGender;
   avatar?: string;
   phone: string;
-  email: string;
+  email?: string;
   job: string;
   yearsOfExperience: string;
   availability: string;
@@ -25,7 +26,8 @@ export class EmployeeResponseDTO {
   @Type(() => ExperienceResponseDTO) experiences?: ExperienceResponseDTO[];
   @Type(() => EducationResponseDTO) educations?: EducationResponseDTO[];
   @Type(() => SocialResponseDTO) socials?: SocialResponseDTO[];
-  @Type(() => Date) createdAt: Date;
+  @Type(() => Date) createdAt?: Date;
+  @Type(() => Date) updatedAt?: Date;
 
   constructor(partial: Partial<EmployeeResponseDTO>) {
     return Object.assign(this, partial);
@@ -89,8 +91,10 @@ export class CompanyResponseDTO {
   email?: string;
   @Type(() => ImageResponseDTO) images?: ImageResponseDTO[];
   @Type(() => JobPositionResponseDTO) openPositions?: JobPositionResponseDTO[];
-  @Type(() => ValuesAndBenefitsResponseDTO) values?: ValuesAndBenefitsResponseDTO[];
-  @Type(() => ValuesAndBenefitsResponseDTO) benefits?: ValuesAndBenefitsResponseDTO[];
+  @Type(() => ValuesAndBenefitsResponseDTO)
+  values?: ValuesAndBenefitsResponseDTO[];
+  @Type(() => ValuesAndBenefitsResponseDTO)
+  benefits?: ValuesAndBenefitsResponseDTO[];
 
   @Expose()
   get availableTimes(): string[] {
@@ -125,13 +129,19 @@ export class JobPositionResponseDTO {
   type: string;
 
   @Exclude() experienceRequired: string;
-  @Expose() get experience(): string { return this.experienceRequired; }
+  @Expose() get experience(): string {
+    return this.experienceRequired;
+  }
 
   @Exclude() educationRequired: string;
-  @Expose() get education(): string { return this.educationRequired; }
+  @Expose() get education(): string {
+    return this.educationRequired;
+  }
 
   @Exclude() skillsRequired: string;
-  @Expose() get skills(): string[] { return this.skillsRequired.split(',').map((s) => s.trim()); }
+  @Expose() get skills(): string[] {
+    return this.skillsRequired.split(',').map((s) => s.trim());
+  }
 
   @Exclude() expireDate: Date;
   @Expose() get deadlineDate(): string | null {
@@ -170,8 +180,8 @@ export class CareerScopesResponseDTO {
 export class UserResponseDTO {
   id: string;
   role: EUserRole;
-  email: string;
-  password: string;
+  email?: string;
+  password?: string;
   phone?: string;
   otpCode?: string;
   otpCodeExpires?: Date;
@@ -189,7 +199,10 @@ export class UserResponseDTO {
   githubId?: string;
   @Type(() => EmployeeResponseDTO) employee?: EmployeeResponseDTO;
   @Type(() => CompanyResponseDTO) company?: CompanyResponseDTO;
-  @Type(() => Date) createdAt: Date;
+  lastLoginMethod?: ELoginMethod;
+  @Type(() => Date) lastLoginAt?: Date;
+  @Type(() => Date) createdAt?: Date;
+  @Type(() => Date) updatedAt?: Date;
 
   constructor(partial: Partial<UserResponseDTO>) {
     return Object.assign(this, partial);

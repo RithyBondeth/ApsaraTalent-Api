@@ -25,9 +25,13 @@ import {
 } from 'apps/user-service/src/dtos/user-response.dto';
 import { PinoLogger } from 'nestjs-pino';
 import { DataSource, In, Repository } from 'typeorm';
-import { CompanyRegisterDTO } from '../dtos/company-register.dto';
-import { EmployeeRegisterDTO } from '../dtos/employee-register.dto';
 import { IRegisterService } from '@app/contracts/interfaces/service/auth-service.interface';
+import {
+  CompanyRegisterDTO,
+  CompanyRegisterResponseDTO,
+  EmployeeRegisterDTO,
+  EmployeeRegisterResponseDTO,
+} from '@app/contracts';
 
 @Injectable()
 export class RegisterService implements IRegisterService {
@@ -115,12 +119,9 @@ export class RegisterService implements IRegisterService {
     return [...existing, ...created];
   }
 
-  async companyRegister(companyRegisterDTO: CompanyRegisterDTO): Promise<{
-    message: string;
-    accessToken: string;
-    refreshToken: string;
-    user: UserResponseDTO;
-  }> {
+  async companyRegister(
+    companyRegisterDTO: CompanyRegisterDTO,
+  ): Promise<CompanyRegisterResponseDTO> {
     // Lightweight existence check — no relations loaded
     const exists = await this.userRepository.exists({
       where: companyRegisterDTO.authEmail
@@ -271,7 +272,7 @@ export class RegisterService implements IRegisterService {
         );
     }
 
-    return {
+    return new CompanyRegisterResponseDTO({
       message: companyRegisterDTO.authEmail
         ? 'Signup as company successfully. Please verify your email before login.'
         : 'Signup as company successfully.',
@@ -292,15 +293,12 @@ export class RegisterService implements IRegisterService {
           ),
         }),
       }),
-    };
+    });
   }
 
-  async employeeRegister(employeeRegisterDTO: EmployeeRegisterDTO): Promise<{
-    message: string;
-    accessToken: string;
-    refreshToken: string;
-    user: UserResponseDTO;
-  }> {
+  async employeeRegister(
+    employeeRegisterDTO: EmployeeRegisterDTO,
+  ): Promise<EmployeeRegisterResponseDTO> {
     // Lightweight existence check — no relations loaded
     const exists = await this.userRepository.exists({
       where: employeeRegisterDTO.authEmail
@@ -464,7 +462,7 @@ export class RegisterService implements IRegisterService {
         );
     }
 
-    return {
+    return new EmployeeRegisterResponseDTO({
       message: employeeRegisterDTO.authEmail
         ? 'Signup as employee successfully. Please verify your email before login.'
         : 'Signup as employee successfully.',
@@ -485,6 +483,6 @@ export class RegisterService implements IRegisterService {
             })
           : undefined,
       }),
-    };
+    });
   }
 }
