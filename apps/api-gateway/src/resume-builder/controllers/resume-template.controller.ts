@@ -17,6 +17,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/service-actions/resume-builder-service.constant';
 import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
+import { CreateResumeTemplateDTO, SearchTemplateDTO } from '@app/contracts/dtos/resume';
 import { rpcCall } from '../../utils/rpc-call';
 
 @Controller('resume/template')
@@ -50,7 +51,7 @@ export class ResumeTemplateController implements IResumeTemplateController {
   @Post('create')
   @UseInterceptors(new UploadFileInterceptor('image', 'template-images'))
   async createResumeTemplate(
-    @Body() createResumeTemplateDTO: any,
+    @Body() createResumeTemplateDTO: CreateResumeTemplateDTO,
     @UploadedFile() image: Express.Multer.File,
   ): Promise<MessageResponse> {
     return rpcCall<MessageResponse>(
@@ -61,7 +62,7 @@ export class ResumeTemplateController implements IResumeTemplateController {
   }
 
   @Get('search')
-  async searchResumeTemplate(@Query() searchTemplateQuery: any): Promise<any> {
+  async searchResumeTemplate(@Query() searchTemplateQuery: SearchTemplateDTO): Promise<any> {
     return rpcCall(
       this.resumeBuilderClient,
       RESUME_BUILDER_SERVICE.ACTIONS.SEARCH_RESUME_TEMPLATE,

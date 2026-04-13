@@ -1,5 +1,5 @@
-import { JobResponseDTO } from 'apps/job-service/src/dtos/job-response.dto';
-import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
+import { JobResponseDTO } from '@app/contracts/dtos/job';
+import { UserResponseDTO } from '@app/contracts/dtos/user';
 
 export interface IJobController {
   searchJobs(data?: any): Promise<JobResponseDTO[]>;
@@ -18,10 +18,7 @@ export interface IMatchingController {
   companyLikes(data?: any, id?: any): Promise<any>;
   findCurrentEmployeeLiked(data?: any, id?: any): Promise<UserResponseDTO[]>;
   findCurrentCompanyLiked(data?: any, id?: any): Promise<UserResponseDTO[]>;
-  findCurrentEmployeeMatching(
-    data?: any,
-    req?: any,
-  ): Promise<UserResponseDTO[]>;
+  findCurrentEmployeeMatching(data?: any, req?: any): Promise<UserResponseDTO[]>;
   findCurrentCompanyMatching(data?: any, req?: any): Promise<UserResponseDTO[]>;
   findCurrentEmployeeMatchingCount(data?: any, id?: any): Promise<any>;
   findCurrentCompanyMatchingCount(data?: any, id?: any): Promise<any>;

@@ -2,3 +2,6 @@ export * from './auth';
 export * from './user';
 export * from './job';
 export * from './payment';
+export * from './resume';
+export * from './notification';
+export * from './chat';

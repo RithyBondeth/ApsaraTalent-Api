@@ -17,6 +17,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-service.constant';
 import { chatUploadMulterOptions } from './config/chat-upload.config';
 import { IChatController } from '@app/contracts/interfaces/domain/chat.interface';
+import { ChatInitResponseDTO } from '@app/contracts/dtos/chat';
 import { rpcCall } from '../utils/rpc-call';
 
 @Controller('chat')
@@ -30,7 +31,7 @@ export class ChatController implements IChatController {
   async initiateChat(
     @Body() body: { receiverId: string },
     @Req() req: any,
-  ): Promise<any> {
+  ): Promise<ChatInitResponseDTO> {
     return rpcCall(this.chatClient, CHAT_SERVICE.ACTIONS.CREATE_OR_GET_CHAT, {
       senderId: req.user.id,
       receiverId: body.receiverId,

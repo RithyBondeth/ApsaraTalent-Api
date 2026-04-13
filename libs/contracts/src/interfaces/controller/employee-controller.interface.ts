@@ -1,4 +1,4 @@
-import { EmployeeResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
+import { EmployeeResponseDTO } from '@app/contracts/dtos/user';
 import { MessageResponse } from '../domain/message-response.interface';
 
 export interface IFindEmployeeController {

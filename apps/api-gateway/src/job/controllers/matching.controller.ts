@@ -14,7 +14,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto'; // TODO: move UserResponseDTO to @app/contracts/dtos/user when ready
+import { UserResponseDTO } from '@app/contracts/dtos/user';
 import { JobAccessBase } from '../shared/job-access.base';
 import { rpcCall } from '../../utils/rpc-call';
 

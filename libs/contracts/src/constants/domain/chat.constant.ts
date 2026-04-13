@@ -1,4 +1,4 @@
-import { parseAllowedOrigins } from 'apps/api-gateway/src/utils/cors-origin.util';
+import { parseAllowedOrigins } from '@app/common/utils/cors-origin.util';
 
 export const ALLOWED_MIME_TYPES_FOR_CHAT: string[] = [
   'image/jpeg',

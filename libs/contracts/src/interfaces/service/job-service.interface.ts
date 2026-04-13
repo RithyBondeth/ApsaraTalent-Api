@@ -1,11 +1,11 @@
-import { JobResponseDTO } from 'apps/job-service/src/dtos/job-response.dto';
-import { SearchJobDto } from 'apps/job-service/src/dtos/job-search.dto';
-import { MatchDto } from 'apps/job-service/src/dtos/match.dto';
-import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
 import {
+  JobResponseDTO,
+  SearchJobDto,
+  MatchDto,
   CreateInterviewDto,
   UpdateInterviewStatusDto,
-} from 'apps/job-service/src/dtos/interview.dto';
+} from '@app/contracts/dtos/job';
+import { UserResponseDTO } from '@app/contracts/dtos/user';
 
 export const I_JOB_SERVICE_SERVICE = 'IJobServiceService';
 export const I_MATCHING_SERVICE = 'IMatchingService';

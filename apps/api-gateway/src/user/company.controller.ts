@@ -21,7 +21,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
-import { CompanyResponseDTO } from 'apps/user-service/src/dtos/user-response.dto'; // TODO: move to @app/contracts/dtos/user
+import { CompanyResponseDTO, UpdateCompanyInfoDTO } from '@app/contracts/dtos/user';
 import { PaginationDTO } from '@app/contracts/dtos/user';
 import { rpcCall } from '../utils/rpc-call';
 
@@ -57,7 +57,7 @@ export class CompanyController implements ICompanyController {
   @Patch('update-info/:companyId')
   async updateCompanyInfo(
     @Param('companyId', ParseUUIDPipe) companyId: string,
-    @Body() updateCompanyInfoDTO: any,
+    @Body() updateCompanyInfoDTO: UpdateCompanyInfoDTO,
   ) {
     return rpcCall(this.userClient, USER_SERVICE.ACTIONS.UPDATE_COMPANY_INFO, {
       companyId,

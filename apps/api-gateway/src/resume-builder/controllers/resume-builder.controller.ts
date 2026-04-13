@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { RESUME } from '@app/contracts/constants/domain/resume.constant';
-import { BuildResumeDTO } from '../../../../resume-builder-service/src/dtos/resume-builder.dto';
+import { BuildResumeDTO } from '@app/contracts/dtos/resume';
 import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/service-actions/resume-builder-service.constant';
 import { rpcCall } from '../../utils/rpc-call';
 

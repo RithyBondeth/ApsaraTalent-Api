@@ -21,7 +21,7 @@ import { PaginationDTO } from '@app/contracts/dtos/user';
 import { ClientProxy } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
-import { EmployeeResponseDTO } from 'apps/user-service/src/dtos/user-response.dto'; // TODO: move to @app/contracts/dtos/user
+import { EmployeeResponseDTO, UpdateEmployeeInfoDTO, SearchEmployeeDto } from '@app/contracts/dtos/user';
 import { rpcCall } from '../utils/rpc-call';
 
 @Controller('user/employee')
@@ -56,7 +56,7 @@ export class EmployeeController implements IEmployeeController {
   @Patch('update-info/:employeeId')
   async updateEmployeeInfo(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
-    @Body() updateEmployeeInfoDTO: any,
+    @Body() updateEmployeeInfoDTO: UpdateEmployeeInfoDTO,
   ) {
     return rpcCall(this.userClient, USER_SERVICE.ACTIONS.UPDATE_EMPLOYEE_INFO, {
       employeeId,
@@ -163,7 +163,7 @@ export class EmployeeController implements IEmployeeController {
 
   @Get('search-employee')
   async searchEmployee(
-    @Query() searchEmployeeQuery: any,
+    @Query() searchEmployeeQuery: SearchEmployeeDto,
   ): Promise<EmployeeResponseDTO[]> {
     return rpcCall<EmployeeResponseDTO[]>(
       this.userClient,

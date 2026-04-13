@@ -15,6 +15,12 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 import { INotificationController } from '@app/contracts/interfaces/domain/notification.interface';
+import {
+  NotificationResponseDTO,
+  NotificationListResponseDTO,
+  NotificationActionResponseDTO,
+  UnreadCountResponseDTO,
+} from '@app/contracts/dtos/notification';
 import { rpcCall } from '../utils/rpc-call';
 
 @Controller('notification')
@@ -25,7 +31,7 @@ export class NotificationController implements INotificationController {
   ) {}
 
   @Get('all')
-  async getAllNotification(): Promise<any> {
+  async getAllNotification(): Promise<NotificationResponseDTO[]> {
     return rpcCall(
       this.notificationClient,
       NOTIFICATION_SERVICE.ACTIONS.FIND_ALL_NOTIFICATIONS,
@@ -40,7 +46,7 @@ export class NotificationController implements INotificationController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('unreadOnly') unreadOnly?: string,
-  ) {
+  ): Promise<NotificationListResponseDTO> {
     return rpcCall(
       this.notificationClient,
       NOTIFICATION_SERVICE.ACTIONS.LIST_BY_USER,
@@ -55,7 +61,7 @@ export class NotificationController implements INotificationController {
 
   @Get('unread-count')
   @UseGuards(AuthGuard)
-  async getUnreadCount(@Req() req) {
+  async getUnreadCount(@Req() req): Promise<UnreadCountResponseDTO> {
     return rpcCall(
       this.notificationClient,
       NOTIFICATION_SERVICE.ACTIONS.GET_UNREAD_COUNT,
@@ -65,7 +71,7 @@ export class NotificationController implements INotificationController {
 
   @Patch(':id/read')
   @UseGuards(AuthGuard)
-  async markRead(@Req() req, @Param('id') id: string) {
+  async markRead(@Req() req, @Param('id') id: string): Promise<NotificationActionResponseDTO> {
     return rpcCall(
       this.notificationClient,
       NOTIFICATION_SERVICE.ACTIONS.MARK_READ,
@@ -75,7 +81,7 @@ export class NotificationController implements INotificationController {
 
   @Patch('read-all')
   @UseGuards(AuthGuard)
-  async markAllRead(@Req() req) {
+  async markAllRead(@Req() req): Promise<NotificationActionResponseDTO> {
     return rpcCall(
       this.notificationClient,
       NOTIFICATION_SERVICE.ACTIONS.MARK_ALL_READ,
@@ -85,7 +91,7 @@ export class NotificationController implements INotificationController {
 
   @Delete(':id')
   @UseGuards(AuthGuard)
-  async deleteNotification(@Req() req, @Param('id') id: string) {
+  async deleteNotification(@Req() req, @Param('id') id: string): Promise<NotificationActionResponseDTO> {
     return rpcCall(
       this.notificationClient,
       NOTIFICATION_SERVICE.ACTIONS.DELETE_NOTIFICATION,
@@ -95,7 +101,7 @@ export class NotificationController implements INotificationController {
 
   @Delete()
   @UseGuards(AuthGuard)
-  async deleteAllNotifications(@Req() req) {
+  async deleteAllNotifications(@Req() req): Promise<NotificationActionResponseDTO> {
     return rpcCall(
       this.notificationClient,
       NOTIFICATION_SERVICE.ACTIONS.DELETE_ALL_NOTIFICATIONS,

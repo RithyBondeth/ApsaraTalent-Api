@@ -12,3 +12,4 @@ export * from './message/message.module';
 export * from './redis/redis.module';
 export * from './throttler/throttler.module';
 export * from './uploadfile/uploadfile.module';
+export * from './utils/cors-origin.util';
