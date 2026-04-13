@@ -2,23 +2,20 @@ import { User } from '@app/common/database/entities/user.entity';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
-import { firstValueFrom, timeout } from 'rxjs';
 import { Repository } from 'typeorm';
-import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { IFacebookAuthService } from '@app/contracts/interfaces/service/auth-service.interface';
-import { AUTH } from '@app/contracts/constants/domain/auth.constant';
 import { FacebookAuthDTO, FacebookLoginResponseDTO } from '@app/contracts';
+import { CacheCleanupService } from '../../shared/services/cache-cleanup.service';
 
 @Injectable()
 export class FacebookAuthService implements IFacebookAuthService {
   constructor(
-    @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
+    private readonly cacheCleanupService: CacheCleanupService,
     private readonly logger: PinoLogger,
   ) {}
 
@@ -67,7 +64,7 @@ export class FacebookAuthService implements IFacebookAuthService {
       ]);
 
       // Clear Cache in USER SERVICE (non-blocking — must not prevent login)
-      this.clearUserCacheSafe(user.id, 'Facebook');
+      this.cacheCleanupService.clearSafe(user.id, 'Facebook');
 
       return new FacebookLoginResponseDTO({
         message: 'Successfully Logged in with Facebook',
@@ -86,22 +83,10 @@ export class FacebookAuthService implements IFacebookAuthService {
       this.logger.error('Facebook login error:', {
         error: (error as Error).message,
         stack: (error as Error).stack,
-        googleId: facebookData.id,
+        facebookId: facebookData.id,
         email: facebookData.email,
       });
       throw new UnauthorizedException('Failed to authenticate with Facebook');
     }
-  }
-
-  private clearUserCacheSafe(userId: string, provider: string): void {
-    firstValueFrom(
-      this.userClient
-        .send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, { userId })
-        .pipe(timeout(AUTH.SOCIAL_AUTH_TIMEOUT)),
-    ).catch((err) => {
-      this.logger.warn(
-        `[AUTH] Cache clear after ${provider} login failed for userId=${userId}: ${(err as Error).message}`,
-      );
-    });
   }
 }

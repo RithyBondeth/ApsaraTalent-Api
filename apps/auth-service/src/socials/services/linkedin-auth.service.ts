@@ -2,23 +2,20 @@ import { User } from '@app/common/database/entities/user.entity';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
-import { Inject, Injectable } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
-import { firstValueFrom, timeout } from 'rxjs';
 import { Repository } from 'typeorm';
-import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { LinkedInAuthDTO, LinkedInLoginResponseDTO } from '@app/contracts';
 import { ILinkedInAuthService } from '@app/contracts/interfaces/service/auth-service.interface';
-import { AUTH } from '@app/contracts/constants/domain/auth.constant';
+import { CacheCleanupService } from '../../shared/services/cache-cleanup.service';
 
 @Injectable()
 export class LinkedInAuthService implements ILinkedInAuthService {
   constructor(
-    @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
     @InjectRepository(User) private users: Repository<User>,
     private readonly jwt: JwtService,
+    private readonly cacheCleanupService: CacheCleanupService,
     private readonly logger: PinoLogger,
   ) {}
 
@@ -63,7 +60,7 @@ export class LinkedInAuthService implements ILinkedInAuthService {
       ]);
 
       // Clear Cache in USER SERVICE (non-blocking — must not prevent login)
-      this.clearUserCacheSafe(user.id, 'LinkedIn');
+      this.cacheCleanupService.clearSafe(user.id, 'LinkedIn');
 
       return new LinkedInLoginResponseDTO({
         message: 'Successfully logged in with LinkedIn',
@@ -82,17 +79,5 @@ export class LinkedInAuthService implements ILinkedInAuthService {
       });
       throw new Error('Failed to login with LinkedIn');
     }
-  }
-
-  private clearUserCacheSafe(userId: string, provider: string): void {
-    firstValueFrom(
-      this.userClient
-        .send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, { userId })
-        .pipe(timeout(AUTH.SOCIAL_AUTH_TIMEOUT)),
-    ).catch((err) => {
-      this.logger.warn(
-        `[AUTH] Cache clear after ${provider} login failed for userId=${userId}: ${(err as Error).message}`,
-      );
-    });
   }
 }

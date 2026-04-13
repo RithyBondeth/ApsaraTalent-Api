@@ -3,14 +3,11 @@ import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
-import { MessageService } from '@app/common/message/message.service';
-import { Inject, Injectable } from '@nestjs/common';
-import { ClientProxy, RpcException } from '@nestjs/microservices';
+import { Injectable } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
-import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
-import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { ILoginOTPService } from '@app/contracts/interfaces/service/auth-service.interface';
 import { AUTH } from '@app/contracts/constants/domain/auth.constant';
 import {
@@ -20,14 +17,14 @@ import {
   VerifyOtpDTO,
   VerifyOtpResponseDTO,
 } from '@app/contracts';
+import { CacheCleanupService } from '../../shared/services/cache-cleanup.service';
 
 @Injectable()
 export class LoginOTPService implements ILoginOTPService {
   constructor(
-    @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
     @InjectRepository(User) private readonly userRepo: Repository<User>,
-    private readonly messageService: MessageService,
     private readonly jwtService: JwtService,
+    private readonly cacheCleanupService: CacheCleanupService,
     private readonly logger: PinoLogger,
   ) {}
 
@@ -112,16 +109,8 @@ export class LoginOTPService implements ILoginOTPService {
       // Save user updates
       await this.userRepo.save(user);
 
-      // Clear Cache in USER SERVICE
-      this.logger.debug(
-        { userId: user.id },
-        'Sending clear-current-user-cache after OTP login',
-      );
-      await firstValueFrom(
-        this.userClient.send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, {
-          userId: user.id,
-        }),
-      );
+      // Clear user login cache
+      await this.cacheCleanupService.clear(user.id);
 
       return new VerifyOtpResponseDTO({
         message: 'OTP verified successfully',

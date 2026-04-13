@@ -2,24 +2,23 @@ import { User } from '@app/common/database/entities/user.entity';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
-import { Inject, Injectable } from '@nestjs/common';
-import { ClientProxy, RpcException } from '@nestjs/microservices';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { PinoLogger } from 'nestjs-pino';
-import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
-import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { checkEmail } from '@app/utils/functions/check-email';
 import { ILoginService } from '@app/contracts/interfaces/service/auth-service.interface';
 import { LoginDTO, LoginResponseDTO, UserResponseDTO } from '@app/contracts';
+import { CacheCleanupService } from '../../shared/services/cache-cleanup.service';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class LoginService implements ILoginService {
   constructor(
-    @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
+    private readonly cacheCleanupService: CacheCleanupService,
     private readonly logger: PinoLogger,
   ) {}
 
@@ -77,20 +76,7 @@ export class LoginService implements ILoginService {
       await this.userRepository.save(user);
 
       // Clear Cache in USER SERVICE
-      try {
-        this.logger.info(
-          `[AUTH] Clearing user cache after login for userId=${user.id}`,
-        );
-        await firstValueFrom(
-          this.userClient.send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, {
-            userId: user.id,
-          }),
-        );
-      } catch (cacheError) {
-        this.logger.warn(
-          `[AUTH] Failed to clear user cache for userId=${user.id}: ${(cacheError as Error).message}`,
-        );
-      }
+      await this.cacheCleanupService.clear(user.id);
 
       //Return token and user details
       return new LoginResponseDTO({
