@@ -47,7 +47,6 @@ import { GithubAuthService } from './socials/services/github-auth.service';
 import { GoogleAuthService } from './socials/services/google-auth.service';
 import { LinkedInAuthService } from './socials/services/linkedin-auth.service';
 import { CacheCleanupService } from './shared/services/cache-cleanup.service';
-
 import {
   I_FACEBOOK_AUTH_SERVICE,
   I_FORGOT_PASSWORD_SERVICE,

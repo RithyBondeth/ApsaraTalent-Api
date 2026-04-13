@@ -1,15 +1,22 @@
-import { TChatContent } from '@app/contracts/interfaces/domain/chat.interface';
+import {
+  TChatContent,
+  IChatController,
+} from '@app/contracts/interfaces/domain/chat.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PinoLogger } from 'nestjs-pino';
-
-import { IChatController } from '@app/contracts/interfaces/domain/chat.interface';
 import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-service.constant';
 import {
   ChatInitResponseDTO,
   ChatMessageResponseDTO,
   ChatHistoryResponseDTO,
   ChatActionResponseDTO,
+  CreateOrGetChatDTO,
+  MarkMessageReadDTO,
+  EditMessageRpcDTO,
+  DeleteMessageRpcDTO,
+  GetChatHistoryRpcDTO,
+  UpdateReactionRpcDTO,
 } from '@app/contracts/dtos/chat';
 import {
   I_CHAT_SERVICE,
@@ -27,7 +34,7 @@ export class ChatController implements IChatController {
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.CREATE_OR_GET_CHAT)
   async initiateChat(
-    @Payload() payload: { senderId: string; receiverId: string },
+    @Payload() payload: CreateOrGetChatDTO,
   ): Promise<ChatInitResponseDTO> {
     this.logger.info(
       `[CHAT] createOrGetChat: sender=${payload.senderId}, receiver=${payload.receiverId}`,
@@ -36,7 +43,9 @@ export class ChatController implements IChatController {
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.CREATE_MESSAGE)
-  async createMessage(@Payload() data: TChatContent): Promise<ChatMessageResponseDTO> {
+  async createMessage(
+    @Payload() data: TChatContent,
+  ): Promise<ChatMessageResponseDTO> {
     this.logger.info(
       `[CHAT] createMessage: sender=${data.senderId}, receiver=${data.receiverId}, content="${data.content}"`,
     );
@@ -46,7 +55,9 @@ export class ChatController implements IChatController {
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.MARK_MESSAGE_READ)
-  async markAsRead(@Payload() data: { messageId: string; readerId: string }): Promise<ChatActionResponseDTO> {
+  async markAsRead(
+    @Payload() data: MarkMessageReadDTO,
+  ): Promise<ChatActionResponseDTO> {
     this.logger.info(
       `[CHAT] markAsRead: messageId=${data.messageId}, reader=${data.readerId}`,
     );
@@ -78,13 +89,7 @@ export class ChatController implements IChatController {
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.GET_CHAT_HISTORY)
   async getChatHistory(
-    @Payload()
-    data: {
-      userId1: string;
-      userId2: string;
-      limit?: number;
-      offset?: number;
-    },
+    @Payload() data: GetChatHistoryRpcDTO,
   ): Promise<ChatHistoryResponseDTO> {
     this.logger.info(
       `[CHAT] getChatHistory: userId1=${data.userId1}, userId2=${data.userId2}`,
@@ -100,13 +105,15 @@ export class ChatController implements IChatController {
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.GET_UNREAD_COUNT)
-  async getUnreadCount(@Payload() userId: string): Promise<{ count: number }> {
+  async getUnreadCount(@Payload() userId: string): Promise<number> {
     this.logger.info(`[CHAT] getUnreadCount: userId=${userId}`);
     return this.chatService.getUnreadCount(userId);
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.GET_RECENT_CHATS)
-  async getRecentChats(@Payload() userId: string): Promise<ChatInitResponseDTO[]> {
+  async getRecentChats(
+    @Payload() userId: string,
+  ): Promise<ChatInitResponseDTO[]> {
     this.logger.info(`[CHAT] getRecentChats: userId=${userId}`);
     const result = await this.chatService.getRecentChats(userId);
     this.logger.info(`[CHAT] getRecentChats returned ${result.length} chats`);
@@ -115,13 +122,8 @@ export class ChatController implements IChatController {
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.UPDATE_REACTION)
   async updateReaction(
-    @Payload()
-    data: {
-      messageId: string;
-      userId: string;
-      emoji: string | null;
-    },
-  ): Promise<ChatMessageResponseDTO> {
+    @Payload() data: UpdateReactionRpcDTO,
+  ): Promise<ChatActionResponseDTO> {
     this.logger.info(
       `[CHAT] updateReaction: messageId=${data.messageId}, userId=${data.userId}, emoji=${data.emoji}`,
     );
@@ -129,24 +131,14 @@ export class ChatController implements IChatController {
   }
 
   /**
-   * Soft-delete a message.
-   * Only the original sender can delete; the row stays in the DB
-   * with isDeleted=true so reply references and read receipts are preserved.
-   */
-  /**
    * Edit a message's content.
    * Only the original sender may edit; deleted messages cannot be edited.
    * Sets isEdited=true so the UI shows "(edited)" label.
    */
   @MessagePattern(CHAT_SERVICE.ACTIONS.EDIT_MESSAGE)
   async editMessage(
-    @Payload()
-    data: {
-      messageId: string;
-      requesterId: string;
-      newContent: string;
-    },
-  ): Promise<ChatMessageResponseDTO> {
+    @Payload() data: EditMessageRpcDTO,
+  ): Promise<ChatActionResponseDTO> {
     this.logger.info(
       `[CHAT] editMessage: messageId=${data.messageId}, requester=${data.requesterId}`,
     );
@@ -160,7 +152,7 @@ export class ChatController implements IChatController {
    */
   @MessagePattern(CHAT_SERVICE.ACTIONS.DELETE_MESSAGE)
   async deleteMessage(
-    @Payload() data: { messageId: string; requesterId: string },
+    @Payload() data: DeleteMessageRpcDTO,
   ): Promise<ChatActionResponseDTO> {
     this.logger.info(
       `[CHAT] deleteMessage: messageId=${data.messageId}, requester=${data.requesterId}`,
