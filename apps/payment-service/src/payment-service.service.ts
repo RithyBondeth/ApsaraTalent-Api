@@ -37,14 +37,14 @@ import {
 
 import { IPaymentService } from '@app/contracts/interfaces/service/payment-service.interface';
 import {
-  CheckPaymentBulkStatusResponse,
-  CheckPaymentStatusResponse,
-  DecodeKhqrResponse,
-  GenerateDeepLinkResponse,
-  GenerateIndividualKhqrResponse,
-  GenerateMerchantKhqrResponse,
-  VerifyKhqrResponse,
-} from '@app/contracts/interfaces/domain/payment-response.interface';
+  CheckPaymentBulkStatusResponseDTO,
+  CheckPaymentStatusResponseDTO,
+  DecodeKhqrResponseDTO,
+  GenerateDeepLinkResponseDTO,
+  GenerateIndividualKhqrResponseDTO,
+  GenerateMerchantKhqrResponseDTO,
+  VerifyKhqrResponseDTO,
+} from '@app/contracts/dtos/payment';
 
 @Injectable()
 export class PaymentService implements IPaymentService {

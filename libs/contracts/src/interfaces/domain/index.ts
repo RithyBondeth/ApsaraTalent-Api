@@ -4,4 +4,3 @@ export * from './company.interface';
 export * from './message-response.interface';
 export * from './notification.interface';
 export * from './payment.interface';
-export * from './payment-response.interface';

@@ -11,15 +11,13 @@ import { ClientProxy } from '@nestjs/microservices';
 import { PAYMENT_SERVICE } from '@app/contracts/constants/service-actions/payment-service.constant';
 import { IPaymentController } from '@app/contracts/interfaces/domain/payment.interface';
 import {
-  CheckPaymentBulkStatusResponse,
-  CheckPaymentStatusResponse,
-  DecodeKhqrResponse,
-  GenerateDeepLinkResponse,
-  GenerateIndividualKhqrResponse,
-  GenerateMerchantKhqrResponse,
-  VerifyKhqrResponse,
-} from '@app/contracts/interfaces/domain/payment-response.interface';
-import {
+  CheckPaymentBulkStatusResponseDTODTO,
+  CheckPaymentStatusResponseDTODTO,
+  DecodeKhqrResponseDTODTO,
+  GenerateDeepLinkResponseDTODTO,
+  GenerateIndividualKhqrResponseDTODTO,
+  GenerateMerchantKhqrResponseDTODTO,
+  VerifyKhqrResponseDTODTO,
   GenerateIndividualKhqrDTO,
   GenerateMerchantKhqrDTO,
   VerifyKhqrDTO,
@@ -43,8 +41,8 @@ export class PaymentController implements IPaymentController {
   @Post('generate-individual-khqr')
   async generateIndividualQr(
     @Body() generateIndividualQrDTO: GenerateIndividualKhqrDTO,
-  ): Promise<GenerateIndividualKhqrResponse> {
-    return rpcCall<GenerateIndividualKhqrResponse>(
+  ): Promise<GenerateIndividualKhqrResponseDTO> {
+    return rpcCall<GenerateIndividualKhqrResponseDTO>(
       this.paymentClient,
       PAYMENT_SERVICE.ACTIONS.GENERATE_INDIVIDUAL_KHQR,
       generateIndividualQrDTO,
@@ -54,8 +52,8 @@ export class PaymentController implements IPaymentController {
   @Post('generate-merchant-khqr')
   async generateMerchantQr(
     @Body() generateMerchantQrDTO: GenerateMerchantKhqrDTO,
-  ): Promise<GenerateMerchantKhqrResponse> {
-    return rpcCall<GenerateMerchantKhqrResponse>(
+  ): Promise<GenerateMerchantKhqrResponseDTO> {
+    return rpcCall<GenerateMerchantKhqrResponseDTO>(
       this.paymentClient,
       PAYMENT_SERVICE.ACTIONS.GENERATE_MERCHANT_KHQR,
       generateMerchantQrDTO,
@@ -65,8 +63,8 @@ export class PaymentController implements IPaymentController {
   @Post('verify-khqr')
   async verifyKhqr(
     @Body() verifyKhqrDTO: VerifyKhqrDTO,
-  ): Promise<VerifyKhqrResponse> {
-    return rpcCall<VerifyKhqrResponse>(
+  ): Promise<VerifyKhqrResponseDTO> {
+    return rpcCall<VerifyKhqrResponseDTO>(
       this.paymentClient,
       PAYMENT_SERVICE.ACTIONS.VERIFY_KHQR,
       verifyKhqrDTO,
@@ -76,8 +74,8 @@ export class PaymentController implements IPaymentController {
   @Post('decode-khqr')
   async decodeKhqr(
     @Body() decodeKhqrDTO: DecodeKhqrDTO,
-  ): Promise<DecodeKhqrResponse> {
-    return rpcCall<DecodeKhqrResponse>(
+  ): Promise<DecodeKhqrResponseDTO> {
+    return rpcCall<DecodeKhqrResponseDTO>(
       this.paymentClient,
       PAYMENT_SERVICE.ACTIONS.DECODE_KHQR,
       decodeKhqrDTO,
@@ -98,8 +96,8 @@ export class PaymentController implements IPaymentController {
   @Post('generate-deep-link')
   async generateDeepLink(
     @Body() generateDeepLinkDto: GenerateDeepLinkDTO,
-  ): Promise<GenerateDeepLinkResponse> {
-    return rpcCall<GenerateDeepLinkResponse>(
+  ): Promise<GenerateDeepLinkResponseDTO> {
+    return rpcCall<GenerateDeepLinkResponseDTO>(
       this.paymentClient,
       PAYMENT_SERVICE.ACTIONS.GENERATE_DEEP_LINK,
       generateDeepLinkDto,
@@ -109,8 +107,8 @@ export class PaymentController implements IPaymentController {
   @Post('payment/check-status')
   async checkPaymentStatus(
     @Body() checkPaymentStatusDTO: CheckPaymentStatusDTO,
-  ): Promise<CheckPaymentStatusResponse> {
-    return rpcCall<CheckPaymentStatusResponse>(
+  ): Promise<CheckPaymentStatusResponseDTO> {
+    return rpcCall<CheckPaymentStatusResponseDTO>(
       this.paymentClient,
       PAYMENT_SERVICE.ACTIONS.CHECK_PAYMENT_STATUS,
       checkPaymentStatusDTO,
@@ -120,8 +118,8 @@ export class PaymentController implements IPaymentController {
   @Post('payment/check-bulk-status')
   async checkPaymentBulkStatus(
     @Body() checkPaymentBulkStatusDTO: CheckPaymentBulkStatusDTO,
-  ): Promise<CheckPaymentBulkStatusResponse> {
-    return rpcCall<CheckPaymentBulkStatusResponse>(
+  ): Promise<CheckPaymentBulkStatusResponseDTO> {
+    return rpcCall<CheckPaymentBulkStatusResponseDTO>(
       this.paymentClient,
       PAYMENT_SERVICE.ACTIONS.CHECK_PAYMENT_BULK_STATUS,
       checkPaymentBulkStatusDTO,

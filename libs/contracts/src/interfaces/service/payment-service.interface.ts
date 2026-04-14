@@ -8,23 +8,23 @@ import {
   VerifyKhqrDTO,
 } from '@app/contracts/dtos/payment';
 import {
-  CheckPaymentBulkStatusResponse,
-  CheckPaymentStatusResponse,
-  DecodeKhqrResponse,
-  GenerateDeepLinkResponse,
-  GenerateIndividualKhqrResponse,
-  GenerateMerchantKhqrResponse,
-  VerifyKhqrResponse,
-} from '../domain/payment-response.interface';
+  CheckPaymentBulkStatusResponseDTO,
+  CheckPaymentStatusResponseDTO,
+  DecodeKhqrResponseDTO,
+  GenerateDeepLinkResponseDTO,
+  GenerateIndividualKhqrResponseDTO,
+  GenerateMerchantKhqrResponseDTO,
+  VerifyKhqrResponseDTO,
+} from '@app/contracts/dtos/payment';
 
 export const I_PAYMENT_SERVICE = 'IPaymentService';
 
 export interface IPaymentService {
-  generateIndividualKhqrDTO(dto: GenerateIndividualKhqrDTO): Promise<GenerateIndividualKhqrResponse>;
-  generateMerchantKhqrDTO(dto: GenerateMerchantKhqrDTO): Promise<GenerateMerchantKhqrResponse>;
-  verifyKhqr(dto: VerifyKhqrDTO): Promise<VerifyKhqrResponse>;
-  decodeKhqr(dto: DecodeKhqrDTO): Promise<DecodeKhqrResponse>;
-  generateDeepLink(dto: GenerateDeepLinkDTO): Promise<GenerateDeepLinkResponse>;
-  checkPaymentStatus(dto: CheckPaymentStatusDTO): Promise<CheckPaymentStatusResponse>;
-  checkPaymentBulkStatus(dto: CheckPaymentBulkStatusDTO): Promise<CheckPaymentBulkStatusResponse>;
+  generateIndividualKhqrDTO(dto: GenerateIndividualKhqrDTO): Promise<GenerateIndividualKhqrResponseDTO>;
+  generateMerchantKhqrDTO(dto: GenerateMerchantKhqrDTO): Promise<GenerateMerchantKhqrResponseDTO>;
+  verifyKhqr(dto: VerifyKhqrDTO): Promise<VerifyKhqrResponseDTO>;
+  decodeKhqr(dto: DecodeKhqrDTO): Promise<DecodeKhqrResponseDTO>;
+  generateDeepLink(dto: GenerateDeepLinkDTO): Promise<GenerateDeepLinkResponseDTO>;
+  checkPaymentStatus(dto: CheckPaymentStatusDTO): Promise<CheckPaymentStatusResponseDTO>;
+  checkPaymentBulkStatus(dto: CheckPaymentBulkStatusDTO): Promise<CheckPaymentBulkStatusResponseDTO>;
 }
