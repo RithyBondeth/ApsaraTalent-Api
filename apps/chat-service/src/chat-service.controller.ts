@@ -102,8 +102,8 @@ export class ChatController {
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.GET_UNREAD_COUNT)
-  async getUnreadCount(@Payload() data: { userId: string }): Promise<number> {
-    const count = await this.chatService.getUnreadCount(data.userId);
+  async getUnreadCount(@Payload() userId: string): Promise<number> {
+    const count = await this.chatService.getUnreadCount(userId);
     return count;
   }
 

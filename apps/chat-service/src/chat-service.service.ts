@@ -177,6 +177,7 @@ export class ChatService implements IChatService {
         messageType: (data.type as EMessageType) || EMessageType.TEXT,
         replyToId: data.replyToId ?? null,
         attachment: data.attachment ?? null,
+        attachmentFilename: data.attachmentFilename ?? null,
         attachmentDuration: data.attachmentDuration ?? null,
         attachmentAmplitude: data.attachmentAmplitude ?? null,
       });
@@ -224,13 +225,7 @@ export class ChatService implements IChatService {
               : chat.messageType === 'audio'
                 ? 'audio'
                 : undefined,
-        // Use the client-provided original filename if available (preserves name like "report.pdf").
-        // Fall back to extracting from the URL path for backwards compatibility.
-        attachmentFilename:
-          data.attachmentFilename ||
-          (chat.attachment
-            ? (chat.attachment.split('/').pop() ?? undefined)
-            : undefined),
+        attachmentFilename: chat.attachmentFilename ?? undefined,
         attachmentDuration: chat.attachmentDuration ?? null,
         attachmentAmplitude: chat.attachmentAmplitude ?? null,
         sender: {
@@ -344,7 +339,7 @@ export class ChatService implements IChatService {
     const requesterUserId = await this.resolveUserId(data.requesterId);
     const message = await this.chatRepository.findOne({
       where: { id: data.messageId },
-      relations: ['sender'],
+      relations: ['sender', 'receiver'],
     });
     if (!message) {
       throw new RpcException({ message: 'Message not found', statusCode: 404 });
@@ -363,7 +358,7 @@ export class ChatService implements IChatService {
       success: true,
       messageId: data.messageId,
       senderId: message.sender.id,
-      receiverId: (message as any).receiver?.id ?? null,
+      receiverId: message.receiver?.id ?? null,
     });
   }
 
@@ -486,11 +481,7 @@ export class ChatService implements IChatService {
               : msg.messageType === 'audio'
                 ? 'audio'
                 : undefined,
-        // Extract filename from the stored URL path as a best-effort label
-        // (e.g. "/uploads/chat/2024-01-15/abc123.pdf" → "abc123.pdf")
-        attachmentFilename: msg.attachment
-          ? (msg.attachment.split('/').pop() ?? undefined)
-          : undefined,
+        attachmentFilename: msg.attachmentFilename ?? undefined,
         attachmentDuration: msg.attachmentDuration ?? null,
         attachmentAmplitude: msg.attachmentAmplitude ?? null,
       };

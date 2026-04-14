@@ -1,5 +1,6 @@
 import { IsUUID } from 'class-validator';
 import { CallAnswerResponseDTO } from './call-answer.dto';
+import { RtcSessionDescription } from '../../../interfaces/domain/chat.interface';
 
 /** WebSocket event: call-offer — sent by the caller */
 export class CallOfferDTO {
@@ -9,8 +10,8 @@ export class CallOfferDTO {
   @IsUUID()
   receiverId: string;
 
-  /** WebRTC offer object */
-  offer: any;
+  /** WebRTC RTCSessionDescriptionInit (type + SDP string) */
+  offer: RtcSessionDescription;
 }
 
 export class CallOfferResponseDTO extends CallAnswerResponseDTO {}

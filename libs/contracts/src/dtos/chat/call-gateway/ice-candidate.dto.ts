@@ -1,5 +1,6 @@
 import { IsUUID } from 'class-validator';
 import { CallAnswerResponseDTO } from './call-answer.dto';
+import { RtcIceCandidate } from '../../../interfaces/domain/chat.interface';
 
 /** WebSocket event: ice-candidate — sent by either party */
 export class IceCandidateDTO {
@@ -9,8 +10,8 @@ export class IceCandidateDTO {
   @IsUUID()
   targetUserId: string;
 
-  /** WebRTC ICE candidate object */
-  candidate: any;
+  /** WebRTC RTCIceCandidateInit (candidate string + sdpMid + sdpMLineIndex) */
+  candidate: RtcIceCandidate;
 }
 
 export class IceCandidateResponseDTO extends CallAnswerResponseDTO {}

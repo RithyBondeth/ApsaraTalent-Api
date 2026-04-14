@@ -2,15 +2,17 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { EMessageType } from '../enums/message-type.enum';
-import { JobMatching } from './job-matching.entity';
 import { User } from './user.entity';
 
 @Entity()
+@Index(['sender', 'receiver', 'sentAt']) // speeds up getChatHistory queries
+@Index(['sentAt']) // speeds up getRecentChats ORDER BY sentAt DESC
 export class Chat {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -21,9 +23,6 @@ export class Chat {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   receiver: User;
 
-  @ManyToOne(() => JobMatching, { nullable: true, onDelete: 'CASCADE' })
-  jobMatching: JobMatching;
-
   @Column('text')
   content: string;
 
@@ -33,6 +32,10 @@ export class Chat {
   /** URL of uploaded file or image. Null for plain text messages. */
   @Column({ nullable: true, type: 'text' })
   attachment: string | null;
+
+  /** Original filename of the attachment as uploaded by the client (e.g. "report.pdf"). */
+  @Column({ nullable: true, type: 'text' })
+  attachmentFilename: string | null;
 
   /** Duration in seconds for audio attachments. */
   @Column({ nullable: true, type: 'int' })

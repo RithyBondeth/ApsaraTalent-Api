@@ -1,4 +1,5 @@
 import { IsUUID } from 'class-validator';
+import { RtcSessionDescription } from '../../../interfaces/domain/chat.interface';
 
 /** WebSocket event: call-answer — sent by the receiver */
 export class CallAnswerDTO {
@@ -8,8 +9,8 @@ export class CallAnswerDTO {
   @IsUUID()
   callerId: string;
 
-  /** WebRTC answer object */
-  answer: any;
+  /** WebRTC RTCSessionDescriptionInit (type + SDP string) */
+  answer: RtcSessionDescription;
 }
 
 export class CallAnswerResponseDTO {

@@ -2,12 +2,14 @@ import {
   CreateMessageDTO,
   CreateMessageResponseDTO,
   CreateOrGetChatDTO,
+  GetChatHistoryResponseDTO,
   GetChatHistoryRpcDTO,
   GetRecentChatsResponseDTO,
   InitiateChatResponseDTO,
   ValidateChatUsersDTO,
   ValidateChatUsersResponseDTO,
 } from '../../dtos/chat';
+import { UserResponseDTO } from '../../dtos/user';
 import {
   EditMessageResponseDTO,
   EditMessageRpcDTO,
@@ -36,11 +38,11 @@ export interface IChatService {
   ): Promise<UpdateReactionResponseDTO>;
   deleteMessage(data: DeleteMessageRpcDTO): Promise<DeleteMessageResponseDTO>;
   markAsRead(data: MarkAsReadRpcDTO): Promise<MarkAsReadResponseDTO>;
-  getUserByIdForChat(userId: string): Promise<any>;
+  getUserByIdForChat(userId: string): Promise<UserResponseDTO>;
   validateChatUsers(
     data: ValidateChatUsersDTO,
   ): Promise<ValidateChatUsersResponseDTO>;
-  getChatHistory(data: GetChatHistoryRpcDTO): Promise<any>;
+  getChatHistory(data: GetChatHistoryRpcDTO): Promise<GetChatHistoryResponseDTO>;
   getUnreadCount(u: string): Promise<number>;
   getRecentChats(u: string): Promise<GetRecentChatsResponseDTO[]>;
 }
