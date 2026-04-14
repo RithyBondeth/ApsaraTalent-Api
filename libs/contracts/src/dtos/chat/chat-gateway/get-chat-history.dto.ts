@@ -1,4 +1,5 @@
 import { IsNumber, IsOptional, IsUUID } from 'class-validator';
+import { MessageResponseDTO } from './send-message.dto';
 
 /** WebSocket event: getChatHistory — fetched by the client */
 export class GetChatHistoryDTO {
@@ -12,13 +13,8 @@ export class GetChatHistoryDTO {
   @IsOptional()
   @IsNumber()
   offset?: number;
-
-  constructor(partial: Partial<GetChatHistoryDTO>) {
-    Object.assign(this, partial);
-  }
 }
 
-/** Sent to chat-service: getChatHistory (RPC payload) */
 export class GetChatHistoryRpcDTO {
   @IsUUID()
   userId1: string;
@@ -33,8 +29,14 @@ export class GetChatHistoryRpcDTO {
   @IsOptional()
   @IsNumber()
   offset?: number;
+}
 
-  constructor(partial: Partial<GetChatHistoryRpcDTO>) {
+export class GetChatHistoryResponseDTO {
+  messages: MessageResponseDTO[];
+  partnerId: string;
+  partnerProfile: any;
+
+  constructor(partial: Partial<GetChatHistoryResponseDTO>) {
     Object.assign(this, partial);
   }
 }

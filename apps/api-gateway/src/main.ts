@@ -4,7 +4,7 @@ import { IoAdapter } from '@nestjs/platform-socket.io';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { RpcToHttpExceptionFilter } from './filters/rpc-to-http-exception.filter';
+import { RpcToHttpExceptionFilter } from './utils/rpc-to-http-exception.filter';
 import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';

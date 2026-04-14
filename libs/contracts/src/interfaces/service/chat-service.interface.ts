@@ -1,47 +1,46 @@
-import { IChatMessage, TChatContent } from '../domain/chat.interface';
 import {
-  ChatActionResponseDTO,
-  GetChatHistoryResponseDTO,
+  CreateMessageDTO,
+  CreateMessageResponseDTO,
+  CreateOrGetChatDTO,
+  GetChatHistoryRpcDTO,
+  GetRecentChatsResponseDTO,
   InitiateChatResponseDTO,
+  ValidateChatUsersDTO,
+  ValidateChatUsersResponseDTO,
 } from '../../dtos/chat';
+import {
+  EditMessageResponseDTO,
+  EditMessageRpcDTO,
+} from '@app/contracts/dtos/chat/chat-gateway/edit-message.dto';
+import {
+  UpdateReactionResponseDTO,
+  UpdateReactionRpcDTO,
+} from '@app/contracts/dtos/chat/chat-gateway/update-reaction.dto';
+import {
+  DeleteMessageResponseDTO,
+  DeleteMessageRpcDTO,
+} from '@app/contracts/dtos/chat/chat-gateway/delete-message.dto';
+import {
+  MarkAsReadResponseDTO,
+  MarkAsReadRpcDTO,
+} from '@app/contracts/dtos/chat/chat-gateway/mark-as-read.dto';
 
 export const I_CHAT_SERVICE = 'IChatService';
 
 export interface IChatService {
-  createOrGetChat(data: {
-    senderId: string;
-    receiverId: string;
-  }): Promise<InitiateChatResponseDTO>;
-  createMessage(payload: TChatContent): Promise<IChatMessage>;
-  editMessage(data: {
-    messageId: string;
-    requesterId: string;
-    newContent: string;
-  }): Promise<ChatActionResponseDTO>;
-  updateReaction(data: {
-    messageId: string;
-    userId: string;
-    emoji: string | null;
-  }): Promise<ChatActionResponseDTO>;
-  deleteMessage(data: {
-    messageId: string;
-    requesterId: string;
-  }): Promise<ChatActionResponseDTO>;
-  markAsRead(data: {
-    messageId: string;
-    readerId: string;
-  }): Promise<{ success: boolean }>;
+  createOrGetChat(data: CreateOrGetChatDTO): Promise<InitiateChatResponseDTO>;
+  createMessage(payload: CreateMessageDTO): Promise<CreateMessageResponseDTO>;
+  editMessage(data: EditMessageRpcDTO): Promise<EditMessageResponseDTO>;
+  updateReaction(
+    data: UpdateReactionRpcDTO,
+  ): Promise<UpdateReactionResponseDTO>;
+  deleteMessage(data: DeleteMessageRpcDTO): Promise<DeleteMessageResponseDTO>;
+  markAsRead(data: MarkAsReadRpcDTO): Promise<MarkAsReadResponseDTO>;
   getUserByIdForChat(userId: string): Promise<any>;
   validateChatUsers(
-    senderId: string,
-    receiverId: string,
-  ): Promise<{ sender: any; receiver: any }>;
-  getChatHistory(
-    userId1: string,
-    userId2: string,
-    limit?: number,
-    offset?: number,
-  ): Promise<GetChatHistoryResponseDTO>;
+    data: ValidateChatUsersDTO,
+  ): Promise<ValidateChatUsersResponseDTO>;
+  getChatHistory(data: GetChatHistoryRpcDTO): Promise<any>;
   getUnreadCount(u: string): Promise<number>;
-  getRecentChats(u: string): Promise<any[]>;
+  getRecentChats(u: string): Promise<GetRecentChatsResponseDTO[]>;
 }

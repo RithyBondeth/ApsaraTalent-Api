@@ -1,3 +1,11 @@
+import { IsUUID } from 'class-validator';
+
+/** POST /chat/initiate — initiates or retrieves an existing chat */
+export class InitiateChatDTO {
+  @IsUUID()
+  receiverId: string;
+}
+
 export class InitiateChatResponseDTO {
   id: string;
   chatId: string;

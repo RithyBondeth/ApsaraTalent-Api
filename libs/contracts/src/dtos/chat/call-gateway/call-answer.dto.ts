@@ -10,8 +10,13 @@ export class CallAnswerDTO {
 
   /** WebRTC answer object */
   answer: any;
+}
 
-  constructor(partial: Partial<CallAnswerDTO>) {
+export class CallAnswerResponseDTO {
+  success: boolean;
+  message?: string;
+
+  constructor(partial: Partial<CallAnswerResponseDTO>) {
     Object.assign(this, partial);
   }
 }

@@ -14,11 +14,6 @@ export interface TChatPayload {
   attachmentAmplitude?: number[] | null;
 }
 
-export interface TChatContent extends TChatPayload {
-  senderId: string;
-  timestamp?: Date;
-}
-
 export interface IChatMessage {
   id: string;
   senderId: string;

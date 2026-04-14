@@ -1,4 +1,5 @@
 import { IsUUID } from 'class-validator';
+import { CallAnswerResponseDTO } from './call-answer.dto';
 
 /** WebSocket event: call-offer — sent by the caller */
 export class CallOfferDTO {
@@ -10,8 +11,6 @@ export class CallOfferDTO {
 
   /** WebRTC offer object */
   offer: any;
-
-  constructor(partial: Partial<CallOfferDTO>) {
-    Object.assign(this, partial);
-  }
 }
+
+export class CallOfferResponseDTO extends CallAnswerResponseDTO {}

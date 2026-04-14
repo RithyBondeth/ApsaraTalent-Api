@@ -1,10 +1,5 @@
-// apps/chat-service/src/chat.service.ts
 import { Chat } from '@app/common/database/entities/chat.entity';
 import { EMessageType } from '@app/common/database/enums/message-type.enum';
-import {
-  IChatMessage,
-  TChatContent,
-} from '@app/contracts/interfaces/domain/chat.interface';
 import { RedisService } from '@app/common/redis/redis.service';
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
@@ -23,10 +18,33 @@ import {
 
 import { IChatService } from '@app/contracts/interfaces/service/chat-service.interface';
 import {
+  CreateMessageDTO,
+  CreateMessageResponseDTO,
+  GetChatHistoryResponseDTO,
+  GetChatHistoryRpcDTO,
+  GetRecentChatsResponseDTO,
   InitiateChatResponseDTO,
-  ChatActionResponseDTO,
+  ValidateChatUsersDTO,
+  ValidateChatUsersResponseDTO,
 } from '@app/contracts/dtos/chat';
 import { CHAT } from '@app/contracts/constants/domain/chat.constant';
+import {
+  EditMessageResponseDTO,
+  EditMessageRpcDTO,
+} from '@app/contracts/dtos/chat/chat-gateway/edit-message.dto';
+import {
+  DeleteMessageResponseDTO,
+  DeleteMessageRpcDTO,
+} from '@app/contracts/dtos/chat/chat-gateway/delete-message.dto';
+import {
+  MarkAsReadResponseDTO,
+  MarkAsReadRpcDTO,
+} from '@app/contracts/dtos/chat/chat-gateway/mark-as-read.dto';
+import { UserResponseDTO } from '@app/contracts';
+import {
+  UpdateReactionResponseDTO,
+  UpdateReactionRpcDTO,
+} from '@app/contracts/dtos/chat/chat-gateway/update-reaction.dto';
 
 const UNREAD_COUNT_TTL = 15_000; // 15s
 const RECENT_CHATS_TTL = 30_000; // 30s
@@ -141,7 +159,9 @@ export class ChatService implements IChatService {
     }
   }
 
-  async createMessage(data: TChatContent): Promise<IChatMessage> {
+  async createMessage(
+    data: CreateMessageDTO & { senderId: string },
+  ): Promise<CreateMessageResponseDTO> {
     try {
       const senderUserId = await this.resolveUserId(data.senderId);
       const receiverUserId = await this.resolveUserId(data.receiverId);
@@ -253,11 +273,7 @@ export class ChatService implements IChatService {
    *  - We do NOT store an edit history in this version (single latest content only).
    *  - Only text content is editable; message type and attachments are immutable.
    */
-  async editMessage(data: {
-    messageId: string;
-    requesterId: string;
-    newContent: string;
-  }) {
+  async editMessage(data: EditMessageRpcDTO): Promise<EditMessageResponseDTO> {
     // Resolve canonical User PK (handles employee / company IDs)
     const requesterUserId = await this.resolveUserId(data.requesterId);
 
@@ -307,7 +323,7 @@ export class ChatService implements IChatService {
     );
 
     // Return the payload needed for the gateway to broadcast the change
-    return new ChatActionResponseDTO({
+    return new EditMessageResponseDTO({
       success: true,
       messageId: data.messageId,
       newContent: trimmed,
@@ -322,7 +338,9 @@ export class ChatService implements IChatService {
    * Only the original sender can delete; the row stays in the DB
    * with isDeleted=true so reply references and read receipts are preserved.
    */
-  async deleteMessage(data: { messageId: string; requesterId: string }) {
+  async deleteMessage(
+    data: DeleteMessageRpcDTO,
+  ): Promise<DeleteMessageResponseDTO> {
     const requesterUserId = await this.resolveUserId(data.requesterId);
     const message = await this.chatRepository.findOne({
       where: { id: data.messageId },
@@ -341,7 +359,7 @@ export class ChatService implements IChatService {
     this.logger.info(
       `[CHAT] Message ${data.messageId} soft-deleted by ${requesterUserId}`,
     );
-    return new ChatActionResponseDTO({
+    return new DeleteMessageResponseDTO({
       success: true,
       messageId: data.messageId,
       senderId: message.sender.id,
@@ -349,7 +367,7 @@ export class ChatService implements IChatService {
     });
   }
 
-  async markAsRead(data: { messageId: string; readerId: string }) {
+  async markAsRead(data: MarkAsReadRpcDTO): Promise<MarkAsReadResponseDTO> {
     const result = await this.chatRepository.update(
       { id: data.messageId, receiver: { id: data.readerId } },
       { isRead: true },
@@ -361,20 +379,23 @@ export class ChatService implements IChatService {
     await this.redisService.del(
       this.redisService.generateUnreadCountKey(data.readerId),
     );
-    return { success: true };
+    return new MarkAsReadResponseDTO({ success: true });
   }
 
-  async getUserByIdForChat(userId: string) {
-    return await firstValueFrom(
+  async getUserByIdForChat(userId: string): Promise<UserResponseDTO> {
+    const user = await firstValueFrom(
       this.userServiceClient.send(USER_SERVICE.ACTIONS.FIND_ONE_BY_ID, {
         userId,
       }),
     );
+    return new UserResponseDTO(user);
   }
 
-  async validateChatUsers(senderId: string, receiverId: string) {
-    const senderUserId = await this.resolveUserId(senderId);
-    const receiverUserId = await this.resolveUserId(receiverId);
+  async validateChatUsers(
+    data: ValidateChatUsersDTO,
+  ): Promise<ValidateChatUsersResponseDTO> {
+    const senderUserId = await this.resolveUserId(data.senderId);
+    const receiverUserId = await this.resolveUserId(data.receiverId);
     const [sender, receiver] = await Promise.all([
       this.getUserByIdForChat(senderUserId),
       this.getUserByIdForChat(receiverUserId),
@@ -384,15 +405,18 @@ export class ChatService implements IChatService {
         message: 'One or both users not found',
         statusCode: 400,
       });
-    return { sender, receiver };
+    return new ValidateChatUsersResponseDTO({ sender, receiver });
   }
 
   async getChatHistory(
-    u1: string,
-    u2: string,
-    limit: number = CHAT.DEFAULT_HISTORY_LIMIT,
-    offset = 0,
-  ) {
+    data: GetChatHistoryRpcDTO,
+  ): Promise<GetChatHistoryResponseDTO> {
+    let {
+      userId1: u1,
+      userId2: u2,
+      limit = CHAT.DEFAULT_HISTORY_LIMIT,
+      offset = 0,
+    } = data;
     limit = Math.min(Math.max(1, limit), CHAT.MAX_HISTORY_LIMIT);
     offset = Math.min(Math.max(0, offset), CHAT.MAX_HISTORY_OFFSET);
     const userId1 = await this.resolveUserId(u1);
@@ -472,11 +496,11 @@ export class ChatService implements IChatService {
       };
     });
 
-    return {
+    return new GetChatHistoryResponseDTO({
       messages: formattedMessages,
       partnerId: userId2,
       partnerProfile: partner,
-    };
+    });
   }
 
   async getUnreadCount(u: string): Promise<number> {
@@ -492,11 +516,9 @@ export class ChatService implements IChatService {
     return count;
   }
 
-  async updateReaction(data: {
-    messageId: string;
-    userId: string;
-    emoji: string | null;
-  }) {
+  async updateReaction(
+    data: UpdateReactionRpcDTO,
+  ): Promise<UpdateReactionResponseDTO> {
     const chat = await this.chatRepository.findOne({
       where: { id: data.messageId },
     });
@@ -508,10 +530,10 @@ export class ChatService implements IChatService {
       delete reactions[data.userId];
     }
     await this.chatRepository.update(data.messageId, { reactions });
-    return new ChatActionResponseDTO({ success: true, reactions });
+    return new UpdateReactionResponseDTO({ success: true, reactions });
   }
 
-  async getRecentChats(u: string): Promise<any[]> {
+  async getRecentChats(u: string): Promise<GetRecentChatsResponseDTO[]> {
     const rawId = (u || '').trim();
     const candidateUserIds = new Set<string>();
 
@@ -557,6 +579,6 @@ export class ChatService implements IChatService {
       .getMany();
 
     await this.redisService.set(cacheKey, result, RECENT_CHATS_TTL);
-    return result;
+    return result.map((chat) => new GetRecentChatsResponseDTO(chat));
   }
 }

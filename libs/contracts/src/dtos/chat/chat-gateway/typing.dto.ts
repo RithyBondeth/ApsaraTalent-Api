@@ -7,8 +7,4 @@ export class TypingDTO {
 
   @IsBoolean()
   isTyping: boolean;
-
-  constructor(partial: Partial<TypingDTO>) {
-    Object.assign(this, partial);
-  }
 }

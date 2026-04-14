@@ -18,23 +18,34 @@ import {
   CHAT_ALLOW_ALL_CORS,
   CHAT_ALLOWED_ORIGINS,
   CHAT_WEBSOCKET_EVENTS,
-  ChatActionResponseDTO,
-  SendMessageResponseDTO,
-  SendMessageAckResponseDTO,
-  InitiateChatResponseDTO,
-  GetChatHistoryResponseDTO,
-  GetUnreadCountResponseDTO,
-  SendMessageDTO,
-  MarkAsReadDTO,
-  TypingDTO,
-  UpdateReactionDTO,
-  EditMessageDTO,
-  DeleteMessageDTO,
   GetChatHistoryDTO,
+  GetChatHistoryResponseDTO,
+  GetRecentChatsResponseDTO,
+  MessageResponseDTO,
+  SendMessageDTO,
+  SendMessageResponseDTO,
 } from '@app/contracts';
 import { ChatGatewayService } from './chat-gateway.service';
 import { extractChatToken } from './utils/chat-token.util';
 import { isOriginAllowed } from '../utils/cors-origin.util';
+import { GetUnreadCountResponseDTO } from '@app/contracts/dtos/chat/chat-gateway/get-unreadcount.dto';
+import {
+  MarkAsReadDTO,
+  MarkAsReadResponseDTO,
+} from '@app/contracts/dtos/chat/chat-gateway/mark-as-read.dto';
+import { TypingDTO } from '@app/contracts/dtos/chat/chat-gateway/typing.dto';
+import {
+  UpdateReactionDTO,
+  UpdateReactionResponseDTO,
+} from '@app/contracts/dtos/chat/chat-gateway/update-reaction.dto';
+import {
+  EditMessageDTO,
+  EditMessageResponseDTO,
+} from '@app/contracts/dtos/chat/chat-gateway/edit-message.dto';
+import {
+  DeleteMessageDTO,
+  DeleteMessageResponseDTO,
+} from '@app/contracts/dtos/chat/chat-gateway/delete-message.dto';
 
 @WebSocketGateway({
   namespace: '/chat',
@@ -155,7 +166,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleMessage(
     client: Socket,
     payload: SendMessageDTO,
-  ): Promise<SendMessageAckResponseDTO | void> {
+  ): Promise<SendMessageResponseDTO | void> {
     this.logger.log(
       `[WS] sendMessage received from userId=${client.data.userId}, receiverId=${payload?.receiverId}, content.length=${payload?.content?.length}`,
     );
@@ -247,9 +258,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         messageId: savedMessage.id,
       });
 
-      return new SendMessageAckResponseDTO({
+      return new SendMessageResponseDTO({
         status: 'sent',
-        message: new SendMessageResponseDTO({
+        message: new MessageResponseDTO({
           ...savedMessage,
           receiver: {
             id: usersData.receiver.id,
@@ -269,7 +280,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.GET_RECENT_CHATS)
   async handleGetRecentChats(
     client: Socket,
-  ): Promise<InitiateChatResponseDTO[]> {
+  ): Promise<GetRecentChatsResponseDTO[]> {
     const userId = client.data.userId;
     try {
       this.logger.log(`[WS] Fetching recent chats for userId=${userId}`);
@@ -346,7 +357,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleRead(
     client: Socket,
     payload: MarkAsReadDTO,
-  ): Promise<ChatActionResponseDTO | void> {
+  ): Promise<MarkAsReadResponseDTO | void> {
     try {
       if (!client.data.userId) {
         client.emit('error', { message: 'Unauthorized' });
@@ -381,7 +392,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         });
       }
 
-      return new ChatActionResponseDTO({ success: true, messageId });
+      return new MarkAsReadResponseDTO({ success: true, messageId });
     } catch (error: any) {
       const errorMessage = error?.message || 'Unknown error';
       this.logger.error(`Mark read error: ${errorMessage}`);
@@ -412,7 +423,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleReaction(
     client: Socket,
     data: UpdateReactionDTO,
-  ): Promise<ChatActionResponseDTO | void> {
+  ): Promise<UpdateReactionResponseDTO | void> {
     try {
       this.logger.log(
         `[WS] Reaction received: messageId=${data.messageId}, userId=${client.data.userId}, emoji=${data.emoji}`,
@@ -441,7 +452,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.logger.log(
         `[WS] Reaction broadcasted for message ${data.messageId}`,
       );
-      return new ChatActionResponseDTO({
+      return new UpdateReactionResponseDTO({
         success: true,
         reactions: result.reactions,
       });
@@ -457,7 +468,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleEditMessage(
     client: Socket,
     data: EditMessageDTO,
-  ): Promise<ChatActionResponseDTO | void> {
+  ): Promise<EditMessageResponseDTO | void> {
     if (!client.data.userId) {
       client.emit('error', { message: 'Unauthorized' });
       return;
@@ -513,7 +524,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleDeleteMessage(
     client: Socket,
     data: DeleteMessageDTO,
-  ): Promise<ChatActionResponseDTO | void> {
+  ): Promise<DeleteMessageResponseDTO | void> {
     if (!client.data.userId) {
       client.emit('error', { message: 'Unauthorized' });
       return;

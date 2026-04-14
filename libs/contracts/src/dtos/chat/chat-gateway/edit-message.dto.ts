@@ -1,4 +1,5 @@
 import { IsString, IsUUID, MaxLength } from 'class-validator';
+import { MarkAsReadResponseDTO } from './mark-as-read.dto';
 
 /** WebSocket event: editMessage — sent by the client */
 export class EditMessageDTO {
@@ -11,10 +12,6 @@ export class EditMessageDTO {
   @IsString()
   @MaxLength(5000)
   newContent: string;
-
-  constructor(partial: Partial<EditMessageDTO>) {
-    Object.assign(this, partial);
-  }
 }
 
 /** Sent to chat-service: editMessage (RPC payload) */
@@ -28,8 +25,6 @@ export class EditMessageRpcDTO {
   @IsString()
   @MaxLength(5000)
   newContent: string;
-
-  constructor(partial: Partial<EditMessageRpcDTO>) {
-    Object.assign(this, partial);
-  }
 }
+
+export class EditMessageResponseDTO extends MarkAsReadResponseDTO {}

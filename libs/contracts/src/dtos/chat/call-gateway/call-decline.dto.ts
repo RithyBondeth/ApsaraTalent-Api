@@ -1,4 +1,5 @@
 import { IsUUID } from 'class-validator';
+import { CallAnswerResponseDTO } from './call-answer.dto';
 
 /** WebSocket event: call-decline — sent by the receiver */
 export class CallDeclineDTO {
@@ -7,8 +8,6 @@ export class CallDeclineDTO {
 
   @IsUUID()
   callerId: string;
-
-  constructor(partial: Partial<CallDeclineDTO>) {
-    Object.assign(this, partial);
-  }
 }
+
+export class CallDeclinedResponseDTO extends CallAnswerResponseDTO {}

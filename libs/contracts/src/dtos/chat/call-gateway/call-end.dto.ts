@@ -1,4 +1,5 @@
 import { IsOptional, IsString, IsUUID } from 'class-validator';
+import { CallAnswerResponseDTO } from './call-answer.dto';
 
 /** WebSocket event: call-end — sent by either party */
 export class CallEndDTO {
@@ -11,8 +12,6 @@ export class CallEndDTO {
   @IsOptional()
   @IsString()
   reason?: string;
-
-  constructor(partial: Partial<CallEndDTO>) {
-    Object.assign(this, partial);
-  }
 }
+
+export class CallEndResponseDTO extends CallAnswerResponseDTO {}

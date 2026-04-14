@@ -1,4 +1,5 @@
 import { IsUUID } from 'class-validator';
+import { UserResponseDTO } from '../../user';
 
 /** Sent to chat-service: validateChatUsers (RPC payload) */
 export class ValidateChatUsersDTO {
@@ -7,8 +8,13 @@ export class ValidateChatUsersDTO {
 
   @IsUUID()
   receiverId: string;
+}
 
-  constructor(partial: Partial<ValidateChatUsersDTO>) {
+export class ValidateChatUsersResponseDTO {
+  sender: UserResponseDTO;
+  receiver: UserResponseDTO;
+
+  constructor(partial: Partial<ValidateChatUsersResponseDTO>) {
     Object.assign(this, partial);
   }
 }

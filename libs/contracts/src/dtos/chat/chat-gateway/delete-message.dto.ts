@@ -1,4 +1,5 @@
 import { IsUUID } from 'class-validator';
+import { MarkAsReadResponseDTO } from './mark-as-read.dto';
 
 /** WebSocket event: deleteMessage — sent by the client */
 export class DeleteMessageDTO {
@@ -7,10 +8,6 @@ export class DeleteMessageDTO {
 
   @IsUUID()
   receiverId: string;
-
-  constructor(partial: Partial<DeleteMessageDTO>) {
-    Object.assign(this, partial);
-  }
 }
 
 /** Sent to chat-service: deleteMessage (RPC payload) */
@@ -20,8 +17,6 @@ export class DeleteMessageRpcDTO {
 
   @IsUUID()
   requesterId: string;
-
-  constructor(partial: Partial<DeleteMessageRpcDTO>) {
-    Object.assign(this, partial);
-  }
 }
+
+export class DeleteMessageResponseDTO extends MarkAsReadResponseDTO {}

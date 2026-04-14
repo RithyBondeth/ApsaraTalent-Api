@@ -9,12 +9,16 @@ import {
   CHAT_ALLOW_ALL_CORS,
   CHAT_ALLOWED_ORIGINS,
   CHAT_WEBSOCKET_EVENTS,
-  CallActionResponseDTO,
   CallAnswerDTO,
   CallDeclineDTO,
   CallEndDTO,
   CallOfferDTO,
   IceCandidateDTO,
+  CallOfferResponseDTO,
+  CallAnswerResponseDTO,
+  IceCandidateResponseDTO,
+  CallDeclinedResponseDTO,
+  CallEndResponseDTO,
 } from '@app/contracts';
 import { isOriginAllowed } from '../utils/cors-origin.util';
 
@@ -41,14 +45,14 @@ export class CallGateway {
   async handleCallOffer(
     client: Socket,
     data: CallOfferDTO,
-  ): Promise<CallActionResponseDTO> {
+  ): Promise<CallOfferResponseDTO> {
     if (!client.data.userId) {
       client.emit('error', { message: 'Unauthorized' });
-      return new CallActionResponseDTO({ success: false });
+      return new CallOfferResponseDTO({ success: false });
     }
     if (!data?.callId || !data?.receiverId || !data?.offer) {
       client.emit('error', { message: 'Invalid call offer payload' });
-      return new CallActionResponseDTO({ success: false });
+      return new CallOfferResponseDTO({ success: false });
     }
 
     const callerId = client.data.userId as string;
@@ -62,21 +66,21 @@ export class CallGateway {
       offer: data.offer,
     });
 
-    return new CallActionResponseDTO({ success: true });
+    return new CallOfferResponseDTO({ success: true });
   }
 
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.CALL_ANSWER)
   async handleCallAnswer(
     client: Socket,
     data: CallAnswerDTO,
-  ): Promise<CallActionResponseDTO> {
+  ): Promise<CallAnswerResponseDTO> {
     if (!client.data.userId) {
       client.emit('error', { message: 'Unauthorized' });
-      return new CallActionResponseDTO({ success: false });
+      return new CallAnswerResponseDTO({ success: false });
     }
     if (!data?.callId || !data?.callerId || !data?.answer) {
       client.emit('error', { message: 'Invalid call answer payload' });
-      return new CallActionResponseDTO({ success: false });
+      return new CallAnswerResponseDTO({ success: false });
     }
 
     this.server.to(data.callerId).emit(CHAT_WEBSOCKET_EVENTS.CALL_ANSWERED, {
@@ -84,21 +88,21 @@ export class CallGateway {
       answer: data.answer,
     });
 
-    return new CallActionResponseDTO({ success: true });
+    return new CallAnswerResponseDTO({ success: true });
   }
 
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.ICE_CANDIDATE)
   async handleIceCandidate(
     client: Socket,
     data: IceCandidateDTO,
-  ): Promise<CallActionResponseDTO> {
+  ): Promise<IceCandidateResponseDTO> {
     if (!client.data.userId) {
       client.emit('error', { message: 'Unauthorized' });
-      return new CallActionResponseDTO({ success: false });
+      return new IceCandidateResponseDTO({ success: false });
     }
     if (!data?.callId || !data?.targetUserId || !data?.candidate) {
       client.emit('error', { message: 'Invalid ICE candidate payload' });
-      return new CallActionResponseDTO({ success: false });
+      return new IceCandidateResponseDTO({ success: false });
     }
 
     this.server
@@ -108,21 +112,21 @@ export class CallGateway {
         candidate: data.candidate,
       });
 
-    return new CallActionResponseDTO({ success: true });
+    return new IceCandidateResponseDTO({ success: true });
   }
 
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.CALL_DECLINE)
   async handleCallDecline(
     client: Socket,
     data: CallDeclineDTO,
-  ): Promise<CallActionResponseDTO> {
+  ): Promise<CallDeclinedResponseDTO> {
     if (!client.data.userId) {
       client.emit('error', { message: 'Unauthorized' });
-      return new CallActionResponseDTO({ success: false });
+      return new CallDeclinedResponseDTO({ success: false });
     }
     if (!data?.callId || !data?.callerId) {
       client.emit('error', { message: 'Invalid call decline payload' });
-      return new CallActionResponseDTO({ success: false });
+      return new CallDeclinedResponseDTO({ success: false });
     }
 
     this.server
@@ -135,21 +139,21 @@ export class CallGateway {
       content: 'Call declined',
     });
 
-    return new CallActionResponseDTO({ success: true });
+    return new CallDeclinedResponseDTO({ success: true });
   }
 
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.CALL_END)
   async handleCallEnd(
     client: Socket,
     data: CallEndDTO,
-  ): Promise<CallActionResponseDTO> {
+  ): Promise<CallEndResponseDTO> {
     if (!client.data.userId) {
       client.emit('error', { message: 'Unauthorized' });
-      return new CallActionResponseDTO({ success: false });
+      return new CallEndResponseDTO({ success: false });
     }
     if (!data?.callId || !data?.targetUserId) {
       client.emit('error', { message: 'Invalid call end payload' });
-      return new CallActionResponseDTO({ success: false });
+      return new CallEndResponseDTO({ success: false });
     }
 
     this.server.to(data.targetUserId).emit(CHAT_WEBSOCKET_EVENTS.CALL_ENDED, {
@@ -173,6 +177,6 @@ export class CallGateway {
       content,
     });
 
-    return new CallActionResponseDTO({ success: true });
+    return new CallEndResponseDTO({ success: true });
   }
 }

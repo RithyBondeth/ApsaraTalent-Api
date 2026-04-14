@@ -1,4 +1,5 @@
 import { IsUUID } from 'class-validator';
+import { CallAnswerResponseDTO } from './call-answer.dto';
 
 /** WebSocket event: ice-candidate — sent by either party */
 export class IceCandidateDTO {
@@ -10,8 +11,6 @@ export class IceCandidateDTO {
 
   /** WebRTC ICE candidate object */
   candidate: any;
-
-  constructor(partial: Partial<IceCandidateDTO>) {
-    Object.assign(this, partial);
-  }
 }
+
+export class IceCandidateResponseDTO extends CallAnswerResponseDTO {}

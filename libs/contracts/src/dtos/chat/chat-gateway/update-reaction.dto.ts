@@ -1,4 +1,5 @@
 import { IsOptional, IsString, IsUUID } from 'class-validator';
+import { MarkAsReadResponseDTO } from './mark-as-read.dto';
 
 /** WebSocket event: react — sent by the client */
 export class UpdateReactionDTO {
@@ -11,13 +12,8 @@ export class UpdateReactionDTO {
   @IsOptional()
   @IsString()
   emoji: string | null;
-
-  constructor(partial: Partial<UpdateReactionDTO>) {
-    Object.assign(this, partial);
-  }
 }
 
-/** Sent to chat-service: updateReaction (RPC payload) */
 export class UpdateReactionRpcDTO {
   @IsUUID()
   messageId: string;
@@ -28,8 +24,6 @@ export class UpdateReactionRpcDTO {
   @IsOptional()
   @IsString()
   emoji: string | null;
-
-  constructor(partial: Partial<UpdateReactionRpcDTO>) {
-    Object.assign(this, partial);
-  }
 }
+
+export class UpdateReactionResponseDTO extends MarkAsReadResponseDTO {}
