@@ -6,9 +6,7 @@ import {
   UpdateInterviewStatusDto,
 } from '@app/contracts/dtos/job';
 import { InterviewResponseDTO } from '@app/contracts/dtos/job';
-
 import { IInterviewController } from '@app/contracts/interfaces/controller/job-controller.interface';
-
 import {
   I_INTERVIEW_SERVICE,
   IInterviewService,
@@ -22,8 +20,10 @@ export class InterviewController implements IInterviewController {
   ) {}
 
   @MessagePattern(JOB_SERVICE.ACTIONS.CREATE_INTERVIEW)
-  async createInterview(@Payload() dto: CreateInterviewDto): Promise<InterviewResponseDTO> {
-    return this.interviewService.createInterview(dto);
+  async createInterview(
+    @Payload() creteInterviewDTO: CreateInterviewDto,
+  ): Promise<InterviewResponseDTO> {
+    return this.interviewService.createInterview(creteInterviewDTO);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.GET_INTERVIEWS_BY_EMPLOYEE)
@@ -42,8 +42,8 @@ export class InterviewController implements IInterviewController {
 
   @MessagePattern(JOB_SERVICE.ACTIONS.UPDATE_INTERVIEW_STATUS)
   async updateInterviewStatus(
-    @Payload() dto: UpdateInterviewStatusDto,
+    @Payload() updateInterviewDTO: UpdateInterviewStatusDto,
   ): Promise<InterviewResponseDTO> {
-    return this.interviewService.updateInterviewStatus(dto);
+    return this.interviewService.updateInterviewStatus(updateInterviewDTO);
   }
 }

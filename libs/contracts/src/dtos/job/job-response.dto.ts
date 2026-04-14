@@ -56,10 +56,14 @@ export class JobResponseDTO {
   type: string;
 
   @Exclude() experienceRequired: string;
-  @Expose() get experience(): string { return this.experienceRequired; }
+  @Expose() get experience(): string {
+    return this.experienceRequired;
+  }
 
   @Exclude() educationRequired: string;
-  @Expose() get education(): string { return this.educationRequired; }
+  @Expose() get education(): string {
+    return this.educationRequired;
+  }
 
   @Exclude() skillsRequired: string;
   @Expose() get skills(): string[] {
@@ -73,7 +77,9 @@ export class JobResponseDTO {
   expireDate: Date;
 
   @Expose() get deadlineDate(): string | null {
-    return this.expireDate ? formatDateToDDMMYYYY(new Date(this.expireDate)) : null;
+    return this.expireDate
+      ? formatDateToDDMMYYYY(new Date(this.expireDate))
+      : null;
   }
 
   @Exclude()
@@ -81,7 +87,9 @@ export class JobResponseDTO {
   createdAt: Date;
 
   @Expose() get postedDate(): string | null {
-    return this.createdAt ? formatDateToDDMMYYYY(new Date(this.createdAt)) : null;
+    return this.createdAt
+      ? formatDateToDDMMYYYY(new Date(this.createdAt))
+      : null;
   }
 
   @Type(() => CompanyInJobResponseDTO) company: CompanyInJobResponseDTO;

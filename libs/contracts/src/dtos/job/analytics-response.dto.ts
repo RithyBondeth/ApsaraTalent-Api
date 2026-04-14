@@ -3,6 +3,21 @@ export class MatchAnalyticsItemDTO {
   name: string;
   avatar: string | null;
   matchedAt: Date;
+
+  constructor(partial: Partial<MatchAnalyticsItemDTO>) {
+    return Object.assign(this, partial);
+  }
+}
+
+export class WeeklyActivityItemDTO {
+  day: string;
+  likes: number;
+  received: number;
+  matches: number;
+
+  constructor(partial: Partial<WeeklyActivityItemDTO>) {
+    return Object.assign(this, partial);
+  }
 }
 
 export class AnalyticsResponseDTO {
@@ -10,6 +25,11 @@ export class AnalyticsResponseDTO {
   totalLikesReceived: number;
   totalMatches: number;
   matchRate: number;
+  weeklyActivity: WeeklyActivityItemDTO[];
   totalFavorites: number;
   recentMatches: MatchAnalyticsItemDTO[];
+
+  constructor(partial: Partial<AnalyticsResponseDTO>) {
+    return Object.assign(this, partial);
+  }
 }

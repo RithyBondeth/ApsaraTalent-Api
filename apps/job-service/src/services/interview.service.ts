@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 import {
   CreateInterviewDto,
+  InterviewResponseDTO,
   InterviewStatus,
   UpdateInterviewStatusDto,
   VALID_STATUS_TRANSITIONS,
@@ -34,10 +35,12 @@ export class InterviewService implements IInterviewService {
     private readonly logger: Logger,
   ) {}
 
-  async createInterview(dto: CreateInterviewDto): Promise<Interview> {
+  async createInterview(
+    createInterview: CreateInterviewDto,
+  ): Promise<InterviewResponseDTO> {
     try {
       // Only companies can schedule interviews (standard hiring flow)
-      if (dto.createdBy !== 'company') {
+      if (createInterview.createdBy !== 'company') {
         throw new RpcException({
           message: 'Only companies can schedule interviews.',
           statusCode: 403,
@@ -47,8 +50,8 @@ export class InterviewService implements IInterviewService {
       // Verify that employee and company are matched
       const match = await this.jobMatchingRepo.findOne({
         where: {
-          employee: { id: dto.employeeId },
-          company: { id: dto.companyId },
+          employee: { id: createInterview.employeeId },
+          company: { id: createInterview.companyId },
           isMatched: true,
         },
       });
@@ -62,11 +65,11 @@ export class InterviewService implements IInterviewService {
 
       const [employee, company] = await Promise.all([
         this.employeeRepo.findOne({
-          where: { id: dto.employeeId },
+          where: { id: createInterview.employeeId },
           relations: ['user'],
         }),
         this.companyRepo.findOne({
-          where: { id: dto.companyId },
+          where: { id: createInterview.companyId },
           relations: ['user'],
         }),
       ]);
@@ -81,23 +84,26 @@ export class InterviewService implements IInterviewService {
       const interview = this.interviewRepo.create({
         employee,
         company,
-        title: dto.title,
-        description: dto.description,
-        scheduledAt: new Date(dto.scheduledAt),
-        durationMinutes: dto.durationMinutes || JOB.DEFAULT_INTERVIEW_DURATION,
-        location: dto.location,
-        meetingLink: dto.meetingLink,
+        title: createInterview.title,
+        description: createInterview.description,
+        scheduledAt: new Date(createInterview.scheduledAt),
+        durationMinutes:
+          createInterview.durationMinutes || JOB.DEFAULT_INTERVIEW_DURATION,
+        location: createInterview.location,
+        meetingLink: createInterview.meetingLink,
         status: 'pending',
-        createdBy: dto.createdBy,
+        createdBy: createInterview.createdBy,
       });
 
       const saved = await this.interviewRepo.save(interview);
 
       // Notify the other party
       const targetUserId =
-        dto.createdBy === 'company' ? employee.user?.id : company.user?.id;
+        createInterview.createdBy === 'company'
+          ? employee.user?.id
+          : company.user?.id;
       const senderName =
-        dto.createdBy === 'company'
+        createInterview.createdBy === 'company'
           ? company.name
           : employee.username || employee.firstname;
 
@@ -107,19 +113,19 @@ export class InterviewService implements IInterviewService {
           {
             userId: targetUserId,
             title: 'Interview Scheduled',
-            message: `${senderName} wants to schedule an interview: ${dto.title}`,
+            message: `${senderName} wants to schedule an interview: ${createInterview.title}`,
             type: 'interview',
             data: {
               interviewId: saved.id,
-              employeeId: dto.employeeId,
-              companyId: dto.companyId,
+              employeeId: createInterview.employeeId,
+              companyId: createInterview.companyId,
             },
             sendPush: true,
           },
         );
       }
 
-      return saved;
+      return new InterviewResponseDTO(saved);
     } catch (error: any) {
       this.logger.error(error?.message || error);
       throw new RpcException({
@@ -130,13 +136,16 @@ export class InterviewService implements IInterviewService {
     }
   }
 
-  async getInterviewsByEmployee(employeeId: string): Promise<Interview[]> {
+  async getInterviewsByEmployee(
+    employeeId: string,
+  ): Promise<InterviewResponseDTO[]> {
     try {
-      return this.interviewRepo.find({
+      const interviews = await this.interviewRepo.find({
         where: { employee: { id: employeeId } },
         relations: ['company'],
         order: { scheduledAt: 'ASC' },
       });
+      return interviews.map((interview) => new InterviewResponseDTO(interview));
     } catch (error: any) {
       this.logger.error(error?.message || error);
       throw new RpcException({
@@ -147,13 +156,16 @@ export class InterviewService implements IInterviewService {
     }
   }
 
-  async getInterviewsByCompany(companyId: string): Promise<Interview[]> {
+  async getInterviewsByCompany(
+    companyId: string,
+  ): Promise<InterviewResponseDTO[]> {
     try {
-      return this.interviewRepo.find({
+      const interviews = await this.interviewRepo.find({
         where: { company: { id: companyId } },
         relations: ['employee'],
         order: { scheduledAt: 'ASC' },
       });
+      return interviews.map((interview) => new InterviewResponseDTO(interview));
     } catch (error: any) {
       this.logger.error(error?.message || error);
       throw new RpcException({
@@ -165,11 +177,11 @@ export class InterviewService implements IInterviewService {
   }
 
   async updateInterviewStatus(
-    dto: UpdateInterviewStatusDto,
-  ): Promise<Interview> {
+    updateInterview: UpdateInterviewStatusDto,
+  ): Promise<InterviewResponseDTO> {
     try {
       const interview = await this.interviewRepo.findOne({
-        where: { id: dto.interviewId },
+        where: { id: updateInterview.interviewId },
         relations: ['employee', 'employee.user', 'company', 'company.user'],
       });
 
@@ -185,8 +197,8 @@ export class InterviewService implements IInterviewService {
       const companyUserId = interview.company?.user?.id;
 
       if (
-        dto.requestUserId !== employeeUserId &&
-        dto.requestUserId !== companyUserId
+        updateInterview.requestUserId !== employeeUserId &&
+        updateInterview.requestUserId !== companyUserId
       ) {
         throw new RpcException({
           message: 'You are not involved in this interview.',
@@ -195,14 +207,14 @@ export class InterviewService implements IInterviewService {
       }
 
       // ── Role-based action control ──
-      const isEmployee = dto.requestUserId === employeeUserId;
-      const isCompany = dto.requestUserId === companyUserId;
+      const isEmployee = updateInterview.requestUserId === employeeUserId;
+      const isCompany = updateInterview.requestUserId === companyUserId;
 
       // Employees can only accept or decline pending interviews
       if (
         isEmployee &&
         ![InterviewStatus.ACCEPTED, InterviewStatus.DECLINED].includes(
-          dto.status,
+          updateInterview.status,
         )
       ) {
         throw new RpcException({
@@ -215,7 +227,7 @@ export class InterviewService implements IInterviewService {
       if (
         isCompany &&
         ![InterviewStatus.CANCELLED, InterviewStatus.COMPLETED].includes(
-          dto.status,
+          updateInterview.status,
         )
       ) {
         throw new RpcException({
@@ -227,19 +239,20 @@ export class InterviewService implements IInterviewService {
       // ── Status transition validation ──
       const allowedTransitions =
         VALID_STATUS_TRANSITIONS[interview.status] || [];
-      if (!allowedTransitions.includes(dto.status)) {
+      if (!allowedTransitions.includes(updateInterview.status)) {
         throw new RpcException({
-          message: `Cannot transition from "${interview.status}" to "${dto.status}".`,
+          message: `Cannot transition from "${interview.status}" to "${updateInterview.status}".`,
           statusCode: 400,
         });
       }
 
-      interview.status = dto.status;
+      interview.status = updateInterview.status;
       const saved = await this.interviewRepo.save(interview);
 
       // Notify both parties about the status change
       const statusLabel =
-        dto.status.charAt(0).toUpperCase() + dto.status.slice(1);
+        updateInterview.status.charAt(0).toUpperCase() +
+        updateInterview.status.slice(1);
 
       [employeeUserId, companyUserId].filter(Boolean).forEach((userId) => {
         this.notificationClient.emit(
@@ -247,7 +260,7 @@ export class InterviewService implements IInterviewService {
           {
             userId,
             title: `Interview ${statusLabel}`,
-            message: `Interview "${interview.title}" has been ${dto.status}.`,
+            message: `Interview "${interview.title}" has been ${updateInterview.status}.`,
             type: 'interview',
             data: { interviewId: interview.id },
             sendPush: true,
@@ -255,7 +268,7 @@ export class InterviewService implements IInterviewService {
         );
       });
 
-      return saved;
+      return new InterviewResponseDTO(saved);
     } catch (error: any) {
       this.logger.error(error?.message || error);
       throw new RpcException({

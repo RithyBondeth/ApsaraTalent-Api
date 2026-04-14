@@ -9,7 +9,6 @@ import {
   MatchCountResponseDTO,
   AnalyticsResponseDTO,
 } from '@app/contracts/dtos/job';
-
 import {
   I_MATCHING_SERVICE,
   IMatchingService,
@@ -23,13 +22,15 @@ export class MatchingController implements IMatchingController {
   ) {}
 
   @MessagePattern(JOB_SERVICE.ACTIONS.EMPLOYEE_LIKES)
-  async employeeLikes(@Payload() payload: MatchDto): Promise<MatchResponseDTO> {
-    return this.matchingService.employeeLikes(payload);
+  async employeeLikes(
+    @Payload() matchDTO: MatchDto,
+  ): Promise<MatchResponseDTO> {
+    return this.matchingService.employeeLikes(matchDTO);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.COMPANY_LIKES)
-  async companyLikes(@Payload() payload: MatchDto): Promise<MatchResponseDTO> {
-    return this.matchingService.companyLikes(payload);
+  async companyLikes(@Payload() matchDTO: MatchDto): Promise<MatchResponseDTO> {
+    return this.matchingService.companyLikes(matchDTO);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_LIKED)

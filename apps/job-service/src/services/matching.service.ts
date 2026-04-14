@@ -12,7 +12,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserResponseDTO } from '@app/contracts/dtos/user';
 import { Logger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
-import { MatchDto } from '@app/contracts/dtos/job';
+import {
+  AnalyticsResponseDTO,
+  MatchAnalyticsItemDTO,
+  MatchCountResponseDTO,
+  MatchDto,
+  MatchResponseDTO,
+  WeeklyActivityItemDTO,
+} from '@app/contracts/dtos/job';
 
 import { IMatchingService } from '@app/contracts/interfaces/service/job-service.interface';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
@@ -37,7 +44,7 @@ export class MatchingService implements IMatchingService {
     private readonly notificationClient: ClientProxy,
   ) {}
 
-  async employeeLikes(matchDto: MatchDto): Promise<any> {
+  async employeeLikes(matchDto: MatchDto): Promise<MatchResponseDTO> {
     try {
       const [employee, company] = await Promise.all([
         this.employeeRepo.findOne({
@@ -145,7 +152,7 @@ export class MatchingService implements IMatchingService {
           );
       }
 
-      return saved;
+      return new MatchResponseDTO(saved);
     } catch (error: any) {
       this.logger.error(error?.message || error);
       throw new RpcException({
@@ -155,7 +162,7 @@ export class MatchingService implements IMatchingService {
     }
   }
 
-  async companyLikes(matchDto: MatchDto): Promise<any> {
+  async companyLikes(matchDto: MatchDto): Promise<MatchResponseDTO> {
     try {
       const [employee, company] = await Promise.all([
         this.employeeRepo.findOne({
@@ -263,7 +270,7 @@ export class MatchingService implements IMatchingService {
           );
       }
 
-      return saved;
+      return new MatchResponseDTO(saved);
     } catch (error: any) {
       this.logger.error(error?.message || error);
       throw new RpcException({
@@ -417,21 +424,21 @@ export class MatchingService implements IMatchingService {
     }
   }
 
-  async findCurrentEmployeeMatchingCount(eid: string): Promise<any> {
+  async findCurrentEmployeeMatchingCount(
+    eid: string,
+  ): Promise<MatchCountResponseDTO> {
     const cacheKey = this.redisService.generateMatchingKey(
       'employee-matching-count',
       eid,
     );
-    const cached = await this.redisService.get<{ totalMatching: number }>(
-      cacheKey,
-    );
+    const cached = await this.redisService.get<MatchCountResponseDTO>(cacheKey);
     if (cached) return cached;
 
     try {
       const count = await this.jobMatchingRepo.count({
         where: { employee: { id: eid }, isMatched: true },
       });
-      const result = { totalMatching: count };
+      const result = new MatchCountResponseDTO({ count });
       await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
       return result;
     } catch (error) {
@@ -446,7 +453,10 @@ export class MatchingService implements IMatchingService {
     }
   }
 
-  async getAnalytics(userId: string, role: 'employee' | 'company') {
+  async getAnalytics(
+    userId: string,
+    role: 'employee' | 'company',
+  ): Promise<AnalyticsResponseDTO> {
     // No caching — dashboard should always show real-time data.
     try {
       const isEmployee = role === 'employee';
@@ -498,7 +508,7 @@ export class MatchingService implements IMatchingService {
         isEmployee,
       );
 
-      return {
+      return new AnalyticsResponseDTO({
         totalLikesGiven,
         totalLikesReceived,
         totalMatches,
@@ -506,7 +516,7 @@ export class MatchingService implements IMatchingService {
         totalFavorites,
         weeklyActivity,
         recentMatches,
-      };
+      });
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
@@ -524,16 +534,10 @@ export class MatchingService implements IMatchingService {
     entityField: string,
     likeGivenField: string,
     likeReceivedField: string,
-  ) {
+  ): Promise<WeeklyActivityItemDTO[]> {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const result: {
-      day: string;
-      likes: number;
-      received: number;
-      matches: number;
-    }[] = [];
+    const result: WeeklyActivityItemDTO[] = [];
 
-    // Get date range for last 7 days
     const now = new Date();
     for (let i = 6; i >= 0; i--) {
       const date = new Date(now);
@@ -568,14 +572,14 @@ export class MatchingService implements IMatchingService {
       });
     }
 
-    return result;
+    return result.map((r) => new WeeklyActivityItemDTO(r));
   }
 
   private async getRecentMatches(
     userId: string,
     entityField: string,
     isEmployee: boolean,
-  ) {
+  ): Promise<MatchAnalyticsItemDTO[]> {
     const relations = isEmployee ? ['company'] : ['employee'];
 
     const matches = await this.jobMatchingRepo.find({
@@ -587,38 +591,38 @@ export class MatchingService implements IMatchingService {
 
     return matches.map((m) => {
       if (isEmployee) {
-        return {
+        return new MatchAnalyticsItemDTO({
           id: m.id,
           name: m.company?.name || 'Unknown',
           avatar: m.company?.avatar || null,
           matchedAt: m.createdAt,
-        };
+        });
       } else {
-        return {
+        return new MatchAnalyticsItemDTO({
           id: m.id,
           name: m.employee?.username || m.employee?.firstname || 'Unknown',
           avatar: m.employee?.avatar || null,
           matchedAt: m.createdAt,
-        };
+        });
       }
     });
   }
 
-  async findCurrentCompanyMatchingCount(cid: string): Promise<any> {
+  async findCurrentCompanyMatchingCount(
+    cid: string,
+  ): Promise<MatchCountResponseDTO> {
     const cacheKey = this.redisService.generateMatchingKey(
       'company-matching-count',
       cid,
     );
-    const cached = await this.redisService.get<{ totalMatching: number }>(
-      cacheKey,
-    );
+    const cached = await this.redisService.get<MatchCountResponseDTO>(cacheKey);
     if (cached) return cached;
 
     try {
       const count = await this.jobMatchingRepo.count({
         where: { company: { id: cid }, isMatched: true },
       });
-      const result = { totalMatching: count };
+      const result = new MatchCountResponseDTO({ count });
       await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
       return result;
     } catch (error) {

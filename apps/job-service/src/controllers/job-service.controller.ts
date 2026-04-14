@@ -8,6 +8,7 @@ import {
   I_JOB_SERVICE_SERVICE,
   IJobServiceService,
 } from '@app/contracts/interfaces/service/job-service.interface';
+import { PaginationDTO } from '@app/contracts';
 
 @Controller()
 export class JobController implements IJobController {
@@ -18,9 +19,9 @@ export class JobController implements IJobController {
 
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_ALL_JOBS)
   findAllJobs(
-    @Payload() data: { skip?: number; limit?: number } = {},
+    @Payload() paginationDTO: PaginationDTO,
   ): Promise<JobResponseDTO[]> {
-    return this.jobService.findAllJobs(data.skip, data.limit);
+    return this.jobService.findAllJobs(paginationDTO);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.SEARCH_JOBS)

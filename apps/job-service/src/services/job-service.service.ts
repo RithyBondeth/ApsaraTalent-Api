@@ -13,6 +13,7 @@ const JOB_SEARCH_TTL = 2 * 60 * 1000; // 2 min
 
 import { IJobServiceService } from '@app/contracts/interfaces/service/job-service.interface';
 import { JOB } from '@app/contracts/constants/domain/job.constant';
+import { PaginationDTO } from '@app/contracts';
 
 @Injectable()
 export class JobService implements IJobServiceService {
@@ -24,7 +25,8 @@ export class JobService implements IJobServiceService {
     this.logger.setContext(JobService.name);
   }
 
-  async findAllJobs(skip = 0, limit = 20): Promise<JobResponseDTO[]> {
+  async findAllJobs(pagination: PaginationDTO): Promise<JobResponseDTO[]> {
+    const { skip = 0, limit = 20 } = pagination;
     const cacheKey = `${this.redisService.generateJobListKey()}:skip:${skip}:limit:${limit}`;
     const cached = await this.redisService.get<JobResponseDTO[]>(cacheKey);
     if (cached) {
@@ -42,7 +44,6 @@ export class JobService implements IJobServiceService {
       });
       const result = jobs.map((job) => new JobResponseDTO(job));
       await this.redisService.set(cacheKey, result, JOB_LIST_TTL);
-      return result;
     } catch (error) {
       this.logger.error(
         (error as Error).message || 'An error occurred while fetching the job',

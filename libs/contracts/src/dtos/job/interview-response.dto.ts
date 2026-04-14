@@ -12,4 +12,8 @@ export class InterviewResponseDTO {
   company: any;
   createdAt: Date;
   updatedAt: Date;
+
+  constructor(partial: Partial<InterviewResponseDTO>) {
+    return Object.assign(this, partial);
+  }
 }
