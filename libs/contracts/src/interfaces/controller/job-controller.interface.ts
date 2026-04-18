@@ -3,7 +3,7 @@ import {
   CreateInterviewDTO,
   CreateInterviewResponseDTO,
   GetInterviewResponseDTO,
-  JobResponseDTO,
+  JobResponseDTO, SearchJobResponseDTO,
   MatchCountResponseDTO,
   MatchResponseDTO,
   SearchJobDTO,
@@ -14,8 +14,8 @@ import { PaginationDTO } from '@app/contracts/dtos/shared';
 import { UserResponseDTO } from '@app/contracts/dtos/user';
 
 export interface IJobController {
-  searchJobs(searchJobQuery: SearchJobDTO): Promise<JobResponseDTO[]>;
-  findAllJobs(pagination: PaginationDTO): Promise<JobResponseDTO[]>;
+  searchJobs(searchJobQuery: SearchJobDTO): Promise<SearchJobResponseDTO[]>;
+  findAllJobs(pagination: PaginationDTO): Promise<SearchJobResponseDTO[]>;
 }
 
 export interface IInterviewController {

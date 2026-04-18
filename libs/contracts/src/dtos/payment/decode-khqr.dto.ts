@@ -29,4 +29,8 @@ export class DecodeKhqrResponseDTO {
   success: true;
   decodedData: DecodeKhqrDecodedDataDTO;
   message: string;
+
+    constructor(partial: Partial<DecodeKhqrResponseDTO>) {
+        Object.assign(this, partial);
+    }
 }

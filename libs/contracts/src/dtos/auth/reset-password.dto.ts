@@ -20,4 +20,9 @@ export class ResetPasswordDTO {
   token?: string;
 }
 
-export class ResetPasswordResponseDTO extends ForgotPasswordResponseDTO {}
+export class ResetPasswordResponseDTO extends ForgotPasswordResponseDTO {
+    constructor(partial: Partial<ResetPasswordResponseDTO>) {
+        super(partial);
+            Object.assign(this, partial);
+    }
+}

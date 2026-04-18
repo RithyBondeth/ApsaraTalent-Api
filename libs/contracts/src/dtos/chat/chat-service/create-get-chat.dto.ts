@@ -10,4 +10,9 @@ export class CreateOrGetChatDTO {
   receiverId: string;
 }
 
-export class CreateOrGetChatResponseDTO extends InitiateChatResponseDTO {}
+export class CreateOrGetChatResponseDTO extends InitiateChatResponseDTO {
+    constructor(partial: Partial<CreateOrGetChatResponseDTO>) {
+        super(partial);
+            Object.assign(this, partial);
+    }
+}

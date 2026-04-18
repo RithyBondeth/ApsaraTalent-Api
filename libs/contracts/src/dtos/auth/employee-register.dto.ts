@@ -168,4 +168,9 @@ class EducationDTO {
   year: string;
 }
 
-export class EmployeeRegisterResponseDTO extends LoginResponseDTO {}
+export class EmployeeRegisterResponseDTO extends LoginResponseDTO {
+    constructor(partial: Partial<EmployeeRegisterResponseDTO>) {
+        super(partial);
+            Object.assign(this, partial);
+    }
+}

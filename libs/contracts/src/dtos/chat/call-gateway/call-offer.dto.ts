@@ -14,4 +14,9 @@ export class CallOfferDTO {
   offer: RtcSessionDescription;
 }
 
-export class CallOfferResponseDTO extends CallAnswerResponseDTO {}
+export class CallOfferResponseDTO extends CallAnswerResponseDTO {
+    constructor(partial: Partial<CallOfferResponseDTO>) {
+        super(partial);
+            Object.assign(this, partial);
+    }
+}

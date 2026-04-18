@@ -10,4 +10,9 @@ export class CallDeclineDTO {
   callerId: string;
 }
 
-export class CallDeclinedResponseDTO extends CallAnswerResponseDTO {}
+export class CallDeclinedResponseDTO extends CallAnswerResponseDTO {
+    constructor(partial: Partial<CallDeclinedResponseDTO>) {
+        super(partial);
+            Object.assign(this, partial);
+    }
+}

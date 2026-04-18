@@ -5,4 +5,9 @@ export class CreateMessageDTO extends SendMessageDTO {
   @IsUUID()
   senderId: string;
 }
-export class CreateMessageResponseDTO extends MessageResponseDTO {}
+export class CreateMessageResponseDTO extends MessageResponseDTO {
+    constructor(partial: Partial<CreateMessageResponseDTO>) {
+        super(partial);
+            Object.assign(this, partial);
+    }
+}

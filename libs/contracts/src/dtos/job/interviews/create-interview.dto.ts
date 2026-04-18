@@ -64,4 +64,9 @@ export class CreateInterviewResponseDTO {
 }
 
 /** Generic alias used by the job-service microservice controller. */
-export class InterviewResponseDTO extends CreateInterviewResponseDTO {}
+export class InterviewResponseDTO extends CreateInterviewResponseDTO {
+    constructor(partial: Partial<InterviewResponseDTO>) {
+        super(partial);
+            Object.assign(this, partial);
+    }
+}

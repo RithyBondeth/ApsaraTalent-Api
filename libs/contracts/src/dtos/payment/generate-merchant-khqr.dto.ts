@@ -23,4 +23,8 @@ export class GenerateMerchantKhqrResponseDTO {
   md5Hash: string;
   qrImage: string;
   message: string;
+
+    constructor(partial: Partial<GenerateMerchantKhqrResponseDTO>) {
+        Object.assign(this, partial);
+    }
 }

@@ -7,4 +7,9 @@ export class VerifyEmailDTO {
   emailVerificationToken: string;
 }
 
-export class VerifyEmailResponseDTO extends ForgotPasswordResponseDTO {}
+export class VerifyEmailResponseDTO extends ForgotPasswordResponseDTO {
+    constructor(partial: Partial<VerifyEmailResponseDTO>) {
+        super(partial);
+            Object.assign(this, partial);
+    }
+}

@@ -98,4 +98,8 @@ export class GenerateIndividualKhqrResponseDTO {
   qrImage: string;
   expiresAt: Date | null;
   message: string;
+
+    constructor(partial: Partial<GenerateIndividualKhqrResponseDTO>) {
+        Object.assign(this, partial);
+    }
 }

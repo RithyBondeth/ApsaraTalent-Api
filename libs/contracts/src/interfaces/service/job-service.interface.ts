@@ -1,5 +1,5 @@
 import {
-  JobResponseDTO,
+  JobResponseDTO, SearchJobResponseDTO,
   MatchDTO,
   CreateInterviewDTO,
   UpdateInterviewStatusDTO,
@@ -14,7 +14,7 @@ export const I_INTERVIEW_SERVICE = 'IInterviewService';
 
 export interface IJobServiceService {
   findAllJobs(data: PaginationDTO): Promise<JobResponseDTO[]>;
-  searchJobs(searchParams: SearchJobDTO): Promise<JobResponseDTO[]>;
+  searchJobs(searchParams: SearchJobDTO): Promise<SearchJobResponseDTO[]>;
 }
 
 export interface IMatchingService {

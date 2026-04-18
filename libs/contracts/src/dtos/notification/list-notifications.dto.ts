@@ -7,6 +7,10 @@ export class NotificationListResponseDTO {
   total: number;
   page: number;
   limit: number;
+
+    constructor(partial: Partial<NotificationListResponseDTO>) {
+        Object.assign(this, partial);
+    }
 }
 
 export class ListNotificationsDTO {

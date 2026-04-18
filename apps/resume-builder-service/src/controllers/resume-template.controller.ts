@@ -9,7 +9,7 @@ import {
   IResumeTemplateService,
 } from '@app/contracts/interfaces/service/resume-builder-service.interface';
 import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
-import { ResumeTemplateResponseDTO } from '@app/contracts/dtos/resume';
+import { ResumeTemplateResponseDTO, CreateResumeTemplateResponseDTO, SearchResumeTemplateResponseDTO } from '@app/contracts/dtos/resume';
 
 @Controller()
 export class ResumeTemplateController implements IResumeTemplateController {
@@ -47,7 +47,7 @@ export class ResumeTemplateController implements IResumeTemplateController {
   @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.SEARCH_RESUME_TEMPLATE)
   async searchResumeTemplate(
     @Payload() searchTemplateDTO: SearchTemplateDTO,
-  ): Promise<ResumeTemplateResponseDTO[]> {
+  ): Promise<SearchResumeTemplateResponseDTO[]> {
     return this.resumeTemplateService.searchResumeTemplate(searchTemplateDTO);
   }
 }

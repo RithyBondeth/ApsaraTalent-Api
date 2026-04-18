@@ -14,4 +14,9 @@ export class IceCandidateDTO {
   candidate: RtcIceCandidate;
 }
 
-export class IceCandidateResponseDTO extends CallAnswerResponseDTO {}
+export class IceCandidateResponseDTO extends CallAnswerResponseDTO {
+    constructor(partial: Partial<IceCandidateResponseDTO>) {
+        super(partial);
+            Object.assign(this, partial);
+    }
+}

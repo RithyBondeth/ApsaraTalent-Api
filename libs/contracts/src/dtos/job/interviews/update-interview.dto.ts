@@ -45,4 +45,9 @@ export class UpdateInterviewStatusDTO {
   requestUserRole?: string;
 }
 
-export class UpdateInterviewResponseDTO extends CreateInterviewResponseDTO {}
+export class UpdateInterviewResponseDTO extends CreateInterviewResponseDTO {
+    constructor(partial: Partial<UpdateInterviewResponseDTO>) {
+        super(partial);
+            Object.assign(this, partial);
+    }
+}

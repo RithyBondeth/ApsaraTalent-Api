@@ -2,7 +2,7 @@ import { ISearchEmployeeController } from '@app/contracts/interfaces/controller/
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { SearchEmployeeDTO, EmployeeResponseDTO } from '@app/contracts/dtos/user';
+import { SearchEmployeeDTO, SearchEmployeeResponseDTO, EmployeeResponseDTO } from '@app/contracts/dtos/user';
 import { SearchEmployeeService } from '../../services/employee-services/search-employee.service';
 
 import {
@@ -20,7 +20,7 @@ export class SearchEmployeeController implements ISearchEmployeeController {
   @MessagePattern(USER_SERVICE.ACTIONS.SEARCH_EMPLOYEES)
   async searchEmployee(
     @Payload() searchEmployeeQuery: SearchEmployeeDTO,
-  ): Promise<EmployeeResponseDTO[]> {
+  ): Promise<SearchEmployeeResponseDTO[]> {
     return this.searchEmployeeService.searchEmployee(searchEmployeeQuery);
   }
 }

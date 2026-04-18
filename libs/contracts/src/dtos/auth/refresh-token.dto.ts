@@ -7,4 +7,9 @@ export class RefreshTokenDTO {
   refreshToken: string;
 }
 
-export class RefreshTokenResponseDTO extends LoginResponseDTO {}
+export class RefreshTokenResponseDTO extends LoginResponseDTO {
+    constructor(partial: Partial<RefreshTokenResponseDTO>) {
+        super(partial);
+            Object.assign(this, partial);
+    }
+}

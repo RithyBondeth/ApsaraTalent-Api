@@ -2,7 +2,7 @@ import { IJobController } from '@app/contracts/interfaces/controller/job-control
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
-import { JobResponseDTO, SearchJobDTO } from '@app/contracts/dtos/job';
+import { JobResponseDTO, SearchJobResponseDTO, SearchJobDTO } from '@app/contracts/dtos/job';
 
 import {
   I_JOB_SERVICE_SERVICE,
@@ -25,7 +25,7 @@ export class JobController implements IJobController {
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.SEARCH_JOBS)
-  searchJobs(@Payload() searchJobDTO: SearchJobDTO): Promise<JobResponseDTO[]> {
+  searchJobs(@Payload() searchJobDTO: SearchJobDTO): Promise<SearchJobResponseDTO[]> {
     return this.jobService.searchJobs(searchJobDTO);
   }
 }

@@ -31,4 +31,8 @@ export class GenerateDeepLinkResponseDTO {
   shortUrl: string;
   qrString: string;
   message: string;
+
+    constructor(partial: Partial<GenerateDeepLinkResponseDTO>) {
+        Object.assign(this, partial);
+    }
 }

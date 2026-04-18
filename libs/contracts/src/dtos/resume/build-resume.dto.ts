@@ -55,4 +55,8 @@ export class BuildResumeResponseDTO {
   mimeType: string;
   /** Base64-encoded PDF content */
   data: string;
+
+    constructor(partial: Partial<BuildResumeResponseDTO>) {
+        Object.assign(this, partial);
+    }
 }

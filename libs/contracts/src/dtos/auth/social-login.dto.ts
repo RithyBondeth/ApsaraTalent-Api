@@ -147,7 +147,27 @@ export class SocialLoginResponseDTO extends LoginResponseDTO {
   }
 }
 
-export class FacebookLoginResponseDTO extends SocialLoginResponseDTO {}
-export class GithubLoginResponseDTO extends SocialLoginResponseDTO {}
-export class GoogleLoginResponseDTO extends SocialLoginResponseDTO {}
-export class LinkedInLoginResponseDTO extends SocialLoginResponseDTO {}
+export class FacebookLoginResponseDTO extends SocialLoginResponseDTO {
+    constructor(partial: Partial<FacebookLoginResponseDTO>) {
+        super(partial);
+            Object.assign(this, partial);
+    }
+}
+export class GithubLoginResponseDTO extends SocialLoginResponseDTO {
+    constructor(partial: Partial<GithubLoginResponseDTO>) {
+        super(partial);
+            Object.assign(this, partial);
+    }
+}
+export class GoogleLoginResponseDTO extends SocialLoginResponseDTO {
+    constructor(partial: Partial<GoogleLoginResponseDTO>) {
+        super(partial);
+            Object.assign(this, partial);
+    }
+}
+export class LinkedInLoginResponseDTO extends SocialLoginResponseDTO {
+    constructor(partial: Partial<LinkedInLoginResponseDTO>) {
+        super(partial);
+            Object.assign(this, partial);
+    }
+}

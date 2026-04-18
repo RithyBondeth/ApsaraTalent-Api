@@ -26,6 +26,10 @@ export class CheckPaymentStatusFoundResponseDTO {
   paidAt: Date | string | null;
   payerInfo: CheckPaymentStatusPayerInfoDTO | null;
   message: string;
+
+    constructor(partial: Partial<CheckPaymentStatusFoundResponseDTO>) {
+        Object.assign(this, partial);
+    }
 }
 
 export class CheckPaymentStatusNotFoundResponseDTO {
@@ -33,6 +37,10 @@ export class CheckPaymentStatusNotFoundResponseDTO {
   paymentId: string;
   paymentStatus: 'not_found';
   message: string;
+
+    constructor(partial: Partial<CheckPaymentStatusNotFoundResponseDTO>) {
+        Object.assign(this, partial);
+    }
 }
 
 export type CheckPaymentStatusResponseDTO =

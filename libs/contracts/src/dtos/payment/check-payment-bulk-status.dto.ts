@@ -46,4 +46,8 @@ export class CheckPaymentBulkStatusResponseDTO {
   payments: CheckPaymentBulkStatusItemDTO[];
   summary: CheckPaymentBulkStatusSummaryDTO;
   message: string;
+
+    constructor(partial: Partial<CheckPaymentBulkStatusResponseDTO>) {
+        Object.assign(this, partial);
+    }
 }

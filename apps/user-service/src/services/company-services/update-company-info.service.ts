@@ -13,7 +13,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import {
   UpdateCompanyInfoDTO,
-  CompanyResponseDTO,
+  CompanyResponseDTO, UpdateCompanyInfoResponseDTO,
   JobPositionResponseDTO,
 } from '@app/contracts/dtos/user';
 

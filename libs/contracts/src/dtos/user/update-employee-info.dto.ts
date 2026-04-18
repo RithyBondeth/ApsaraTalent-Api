@@ -1,3 +1,4 @@
+import { EmployeeResponseDTO } from './search-employee.dto';
 import { EGender } from '@app/common/database/enums/gender.enum';
 import { Type } from 'class-transformer';
 import {
@@ -70,4 +71,11 @@ export class UpdateEmployeeInfoDTO {
 
   @IsArray() @ValidateNested({ each: true }) @Type(() => SocialDTO) @IsOptional()
   socials?: SocialDTO[];
+}
+
+export class UpdateEmployeeInfoResponseDTO extends EmployeeResponseDTO {
+    constructor(partial: Partial<UpdateEmployeeInfoResponseDTO>) {
+        super(partial);
+            Object.assign(this, partial);
+    }
 }

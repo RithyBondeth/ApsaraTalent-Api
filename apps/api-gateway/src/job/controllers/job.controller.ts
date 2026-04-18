@@ -3,7 +3,7 @@ import { IJobController } from '@app/contracts/interfaces/controller/job-control
 import { Controller, Get, Inject, Query, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
-import { JobResponseDTO, SearchJobDTO } from '@app/contracts/dtos/job';
+import { JobResponseDTO, SearchJobResponseDTO, SearchJobDTO } from '@app/contracts/dtos/job';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
 import { rpcCall } from '../../utils/rpc-call';
 
@@ -28,7 +28,7 @@ export class JobController implements IJobController {
   @Get('search')
   async searchJobs(
     @Query() searchJobQuery: SearchJobDTO,
-  ): Promise<JobResponseDTO[]> {
+  ): Promise<SearchJobResponseDTO[]> {
     const transformedQuery = {
       ...searchJobQuery,
       ...(searchJobQuery.companySizeMin && {
@@ -39,7 +39,7 @@ export class JobController implements IJobController {
       }),
     };
 
-    return rpcCall<JobResponseDTO[]>(
+    return rpcCall<SearchJobResponseDTO[]>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.SEARCH_JOBS,
       transformedQuery,

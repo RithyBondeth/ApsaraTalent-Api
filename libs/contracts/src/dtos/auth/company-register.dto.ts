@@ -163,4 +163,9 @@ class SocialDTO {
   url?: string;
 }
 
-export class CompanyRegisterResponseDTO extends LoginResponseDTO {}
+export class CompanyRegisterResponseDTO extends LoginResponseDTO {
+    constructor(partial: Partial<CompanyRegisterResponseDTO>) {
+        super(partial);
+            Object.assign(this, partial);
+    }
+}

@@ -1,3 +1,4 @@
+import { CompanyResponseDTO } from './search-employee.dto';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -69,4 +70,11 @@ export class UpdateCompanyInfoDTO {
 
   @IsArray() @ValidateNested({ each: true }) @Type(() => SocialDTO) @IsOptional()
   socials?: SocialDTO[];
+}
+
+export class UpdateCompanyInfoResponseDTO extends CompanyResponseDTO {
+    constructor(partial: Partial<UpdateCompanyInfoResponseDTO>) {
+        super(partial);
+            Object.assign(this, partial);
+    }
 }

@@ -19,4 +19,9 @@ export class DeleteMessageRpcDTO {
   requesterId: string;
 }
 
-export class DeleteMessageResponseDTO extends MarkAsReadResponseDTO {}
+export class DeleteMessageResponseDTO extends MarkAsReadResponseDTO {
+    constructor(partial: Partial<DeleteMessageResponseDTO>) {
+        super(partial);
+            Object.assign(this, partial);
+    }
+}

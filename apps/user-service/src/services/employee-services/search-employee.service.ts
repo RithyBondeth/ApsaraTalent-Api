@@ -6,7 +6,7 @@ import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Brackets, Repository } from 'typeorm';
-import { SearchEmployeeDTO, EmployeeResponseDTO } from '@app/contracts/dtos/user';
+import { SearchEmployeeDTO, SearchEmployeeResponseDTO, EmployeeResponseDTO } from '@app/contracts/dtos/user';
 
 import { ISearchEmployeeService } from '@app/contracts/interfaces/service/user-service.interface';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
@@ -23,7 +23,7 @@ export class SearchEmployeeService implements ISearchEmployeeService {
 
   async searchEmployee(
     query: SearchEmployeeDTO,
-  ): Promise<EmployeeResponseDTO[]> {
+  ): Promise<SearchEmployeeResponseDTO[]> {
     const cacheKey = this.redisService.generateSearchKey('employee', query);
     const cached = await this.redisService.get<EmployeeResponseDTO[]>(cacheKey);
 

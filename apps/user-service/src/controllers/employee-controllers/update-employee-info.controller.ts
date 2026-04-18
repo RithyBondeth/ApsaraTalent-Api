@@ -2,7 +2,7 @@ import { IUpdateEmployeeController } from '@app/contracts/interfaces/controller/
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { UpdateEmployeeInfoDTO, EmployeeResponseDTO } from '@app/contracts/dtos/user';
+import { UpdateEmployeeInfoDTO, UpdateEmployeeInfoResponseDTO, EmployeeResponseDTO } from '@app/contracts/dtos/user';
 import { UpdateEmployeeInfoService } from '../../services/employee-services/update-employee-info.service';
 
 import {
@@ -24,7 +24,7 @@ export class UpdateEmployeeInfoController implements IUpdateEmployeeController {
       updateEmployeeInfoDTO: UpdateEmployeeInfoDTO;
       employeeId: string;
     },
-  ): Promise<EmployeeResponseDTO> {
+  ): Promise<UpdateEmployeeInfoResponseDTO> {
     return this.updateEmployeeInfoService.updateEmployeeInfo(
       payload.updateEmployeeInfoDTO,
       payload.employeeId,

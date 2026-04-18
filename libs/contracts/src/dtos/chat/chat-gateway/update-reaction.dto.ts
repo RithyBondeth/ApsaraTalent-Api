@@ -26,4 +26,9 @@ export class UpdateReactionRpcDTO {
   emoji: string | null;
 }
 
-export class UpdateReactionResponseDTO extends MarkAsReadResponseDTO {}
+export class UpdateReactionResponseDTO extends MarkAsReadResponseDTO {
+    constructor(partial: Partial<UpdateReactionResponseDTO>) {
+        super(partial);
+            Object.assign(this, partial);
+    }
+}

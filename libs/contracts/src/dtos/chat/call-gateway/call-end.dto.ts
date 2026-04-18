@@ -14,4 +14,9 @@ export class CallEndDTO {
   reason?: string;
 }
 
-export class CallEndResponseDTO extends CallAnswerResponseDTO {}
+export class CallEndResponseDTO extends CallAnswerResponseDTO {
+    constructor(partial: Partial<CallEndResponseDTO>) {
+        super(partial);
+            Object.assign(this, partial);
+    }
+}

@@ -20,7 +20,7 @@ import { MessageResponse } from '@app/contracts/interfaces/domain/message-respon
 import {
   CreateResumeTemplateDTO,
   SearchTemplateDTO,
-  ResumeTemplateResponseDTO,
+  ResumeTemplateResponseDTO, CreateResumeTemplateResponseDTO, SearchResumeTemplateResponseDTO,
 } from '@app/contracts/dtos/resume';
 import { rpcCall } from '../../utils/rpc-call';
 
@@ -66,7 +66,7 @@ export class ResumeTemplateController implements IResumeTemplateController {
   }
 
   @Get('search')
-  async searchResumeTemplate(@Query() searchTemplateQuery: SearchTemplateDTO): Promise<ResumeTemplateResponseDTO[]> {
+  async searchResumeTemplate(@Query() searchTemplateQuery: SearchTemplateDTO): Promise<SearchResumeTemplateResponseDTO[]> {
     return rpcCall(
       this.resumeBuilderClient,
       RESUME_BUILDER_SERVICE.ACTIONS.SEARCH_RESUME_TEMPLATE,

@@ -27,4 +27,9 @@ export class EditMessageRpcDTO {
   newContent: string;
 }
 
-export class EditMessageResponseDTO extends MarkAsReadResponseDTO {}
+export class EditMessageResponseDTO extends MarkAsReadResponseDTO {
+    constructor(partial: Partial<EditMessageResponseDTO>) {
+        super(partial);
+            Object.assign(this, partial);
+    }
+}
