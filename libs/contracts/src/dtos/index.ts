@@ -6,3 +6,4 @@ export * from './resume';
 export * from './notification';
 export * from './chat';
 export * from './health';
+export * from './shared';

@@ -22,7 +22,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
 import { CompanyResponseDTO, UpdateCompanyInfoDTO } from '@app/contracts/dtos/user';
-import { PaginationDTO } from '@app/contracts/dtos/user';
+import { PaginationDTO } from '@app/contracts/dtos/shared';
 import { rpcCall } from '../utils/rpc-call';
 
 @Controller('user/company')

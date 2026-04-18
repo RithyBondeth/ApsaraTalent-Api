@@ -10,7 +10,8 @@ import {
   UpdateInterviewResponseDTO,
   UpdateInterviewStatusDTO,
 } from '@app/contracts/dtos/job';
-import { PaginationDTO, UserResponseDTO } from '@app/contracts/dtos/user';
+import { PaginationDTO } from '@app/contracts/dtos/shared';
+import { UserResponseDTO } from '@app/contracts/dtos/user';
 
 export interface IJobController {
   searchJobs(searchJobQuery: SearchJobDTO): Promise<JobResponseDTO[]>;

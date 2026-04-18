@@ -5,7 +5,8 @@ import {
   UpdateInterviewStatusDTO,
   SearchJobDTO,
 } from '@app/contracts/dtos/job';
-import { PaginationDTO, UserResponseDTO } from '@app/contracts/dtos/user';
+import { PaginationDTO } from '@app/contracts/dtos/shared';
+import { UserResponseDTO } from '@app/contracts/dtos/user';
 
 export const I_JOB_SERVICE_SERVICE = 'IJobServiceService';
 export const I_MATCHING_SERVICE = 'IMatchingService';
