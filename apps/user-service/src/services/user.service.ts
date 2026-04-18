@@ -18,6 +18,7 @@ import {
   EmployeeResponseDTO,
   JobPositionResponseDTO,
   UserResponseDTO,
+  FavoriteCountResponseDTO,
 } from '@app/contracts/dtos/user';
 import { IUserService } from '@app/contracts/interfaces/service/user-service.interface';
 import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
@@ -247,7 +248,7 @@ export class UserService implements IUserService, OnModuleInit {
   async updatePushNotificationToken(
     userId: string,
     token: string | null,
-  ): Promise<{ success: boolean }> {
+  ): Promise<MessageResponse> {
     const normalizedToken =
       typeof token === 'string' && token.trim().length > 0
         ? token.trim()
@@ -268,7 +269,7 @@ export class UserService implements IUserService, OnModuleInit {
 
       await this.redisService.clearUserDetailCache(userId);
 
-      return { success: true };
+      return { message: 'Push notification token updated successfully' };
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -540,10 +541,10 @@ export class UserService implements IUserService, OnModuleInit {
     }
   }
 
-  async findAllEmployeeFavorites(eid: string): Promise<any> {
+  async findAllEmployeeFavorites(eid: string): Promise<CompanyResponseDTO[]> {
     // ✅ Use helper method
     const cacheKey = this.redisService.generateEmployeeFavoritesKey(eid);
-    const cached = await this.redisService.get(cacheKey);
+    const cached = await this.redisService.get<CompanyResponseDTO[]>(cacheKey);
 
     if (cached) {
       this.logger.info(`All employee ${eid} favorites cache HIT`);
@@ -566,14 +567,15 @@ export class UserService implements IUserService, OnModuleInit {
       }
 
       // userId is now available via the JOIN — no extra queries
-      const result = allFavorites.map((favorite) => ({
-        ...favorite,
-        userId: favorite.company?.user?.id || null,
-        company: {
-          ...favorite.company,
-          user: undefined, // Don't leak user entity to client
-        },
-      }));
+      const result = allFavorites.map(
+        (favorite) =>
+          new CompanyResponseDTO({
+            ...favorite.company,
+            openPositions: favorite.company?.openPositions?.map(
+              (job) => new JobPositionResponseDTO(job),
+            ),
+          }),
+      );
 
       await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);
 
@@ -592,10 +594,10 @@ export class UserService implements IUserService, OnModuleInit {
     }
   }
 
-  async findAllCompanyFavorites(cid: string): Promise<any> {
+  async findAllCompanyFavorites(cid: string): Promise<EmployeeResponseDTO[]> {
     // ✅ Use helper method
     const cacheKey = this.redisService.generateCompanyFavoritesKey(cid);
-    const cached = await this.redisService.get(cacheKey);
+    const cached = await this.redisService.get<EmployeeResponseDTO[]>(cacheKey);
 
     if (cached) {
       this.logger.info(`All company ${cid} favorites cache HIT`);
@@ -618,14 +620,9 @@ export class UserService implements IUserService, OnModuleInit {
       }
 
       // userId is now available via the JOIN — no extra queries
-      const result = allFavorites.map((favorite) => ({
-        ...favorite,
-        userId: favorite.employee?.user?.id || null,
-        employee: {
-          ...favorite.employee,
-          user: undefined, // Don't leak user entity to client
-        },
-      }));
+      const result = allFavorites.map(
+        (favorite) => new EmployeeResponseDTO(favorite.employee),
+      );
 
       await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);
 
@@ -644,12 +641,11 @@ export class UserService implements IUserService, OnModuleInit {
     }
   }
 
-  async countCompanyFavorite(cid: string): Promise<{ totalFavorites: number }> {
+  async countCompanyFavorite(cid: string): Promise<FavoriteCountResponseDTO> {
     // ✅ Use helper method
     const cacheKey = this.redisService.generateCompanyFavoriteCountKey(cid);
-    const cached = await this.redisService.get<{ totalFavorites: number }>(
-      cacheKey,
-    );
+    const cached =
+      await this.redisService.get<FavoriteCountResponseDTO>(cacheKey);
 
     if (cached) {
       this.logger.info(`Company ${cid} favorite count cache HIT`);
@@ -664,11 +660,11 @@ export class UserService implements IUserService, OnModuleInit {
           where: { company: { id: cid } },
         });
 
-      const result = { totalFavorites: countAllCompanyFavorites };
+      const result = { count: countAllCompanyFavorites };
 
       await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
 
-      return result;
+      return new FavoriteCountResponseDTO(result);
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
@@ -683,14 +679,11 @@ export class UserService implements IUserService, OnModuleInit {
     }
   }
 
-  async countEmployeeFavorite(
-    eid: string,
-  ): Promise<{ totalFavorites: number }> {
+  async countEmployeeFavorite(eid: string): Promise<FavoriteCountResponseDTO> {
     // ✅ Use helper method
     const cacheKey = this.redisService.generateEmployeeFavoriteCountKey(eid);
-    const cached = await this.redisService.get<{ totalFavorites: number }>(
-      cacheKey,
-    );
+    const cached =
+      await this.redisService.get<FavoriteCountResponseDTO>(cacheKey);
 
     if (cached) {
       this.logger.info(`Employee ${eid} favorite count cache HIT`);
@@ -705,11 +698,11 @@ export class UserService implements IUserService, OnModuleInit {
           where: { employee: { id: eid } },
         });
 
-      const result = { totalFavorites: countAllEmployeeFavorites };
+      const result = { count: countAllEmployeeFavorites };
 
       await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
 
-      return result;
+      return new FavoriteCountResponseDTO(result);
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
@@ -724,7 +717,7 @@ export class UserService implements IUserService, OnModuleInit {
     }
   }
 
-  async findAllCareerScopes(): Promise<Partial<CareerScope[]>> {
+  async findAllCareerScopes(): Promise<any> {
     const cacheKey = this.redisService.generateListKey('career-scopes', {});
     const cached =
       await this.redisService.get<Partial<CareerScope[]>>(cacheKey);
@@ -800,13 +793,12 @@ export class UserService implements IUserService, OnModuleInit {
         this.redisService.generateUserKey('settings', userId),
       ),
     ]);
-    return { ok: true };
   }
 
   async getEmployeeRecommendations(
     employeeId: string,
     limit = 10,
-  ): Promise<any[]> {
+  ): Promise<CompanyResponseDTO[]> {
     const cacheKey = this.redisService.generateListKey(
       'employee-recommendations',
       { employeeId, limit },
@@ -871,14 +863,15 @@ export class UserService implements IUserService, OnModuleInit {
 
       const results = await qb.getMany();
 
-      const recommendations = results.map((user) => ({
-        company: new CompanyResponseDTO({
-          ...user.company,
-          openPositions: user.company?.openPositions?.map(
-            (job) => new JobPositionResponseDTO(job),
-          ),
-        }),
-      }));
+      const recommendations = results.map(
+        (user) =>
+          new CompanyResponseDTO({
+            ...user.company,
+            openPositions: user.company?.openPositions?.map(
+              (job) => new JobPositionResponseDTO(job),
+            ),
+          }),
+      );
 
       await this.redisService.set(cacheKey, recommendations, CACHE_TTL.LONG);
 
@@ -900,7 +893,7 @@ export class UserService implements IUserService, OnModuleInit {
   async getCompanyRecommendations(
     companyId: string,
     limit = 10,
-  ): Promise<any[]> {
+  ): Promise<EmployeeResponseDTO[]> {
     const cacheKey = this.redisService.generateListKey(
       'company-recommendations',
       { companyId, limit },
@@ -965,11 +958,9 @@ export class UserService implements IUserService, OnModuleInit {
 
       const results = await qb.getMany();
 
-      const recommendations = results.map((user) => ({
-        employee: user.employee
-          ? new EmployeeResponseDTO(user.employee)
-          : undefined,
-      }));
+      const recommendations = results.map(
+        (user) => new EmployeeResponseDTO(user.employee),
+      );
 
       await this.redisService.set(cacheKey, recommendations, CACHE_TTL.LONG);
 

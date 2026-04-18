@@ -13,7 +13,8 @@ import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import {
   UpdateCompanyInfoDTO,
-  CompanyResponseDTO, UpdateCompanyInfoResponseDTO,
+  CompanyResponseDTO,
+  UpdateCompanyInfoResponseDTO,
   JobPositionResponseDTO,
 } from '@app/contracts/dtos/user';
 
@@ -40,7 +41,7 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
   async updateCompanyInfo(
     updateCompanyInfoDTO: UpdateCompanyInfoDTO,
     companyId: string,
-  ): Promise<{ message: string; company: CompanyResponseDTO }> {
+  ): Promise<UpdateCompanyInfoResponseDTO> {
     try {
       const company = await this.companyRepository.findOne({
         where: { id: companyId },
@@ -319,7 +320,7 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
 
       await Promise.all(keysToDelete.map((k) => this.redisService.del(k)));
 
-      return {
+      return new UpdateCompanyInfoResponseDTO({
         message: 'Company information updated successfully',
         company: new CompanyResponseDTO({
           ...(freshCompany ?? company),
@@ -327,7 +328,7 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
             freshCompany?.openPositions ?? company.openPositions
           )?.map((job) => new JobPositionResponseDTO(job)),
         }),
-      };
+      });
     } catch (error) {
       this.logger.error(
         (error as Error).message ||

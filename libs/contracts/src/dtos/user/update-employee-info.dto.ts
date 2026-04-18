@@ -57,25 +57,42 @@ export class UpdateEmployeeInfoDTO {
   @IsString() @IsOptional() location?: string;
   @IsString() @IsOptional() phone?: string;
 
-  @IsArray() @ValidateNested({ each: true }) @Type(() => EducationDTO) @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => EducationDTO)
+  @IsOptional()
   educations?: EducationDTO[];
 
-  @IsArray() @ValidateNested({ each: true }) @Type(() => SkillDTO) @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SkillDTO)
+  @IsOptional()
   skills?: SkillDTO[];
 
-  @IsArray() @ValidateNested({ each: true }) @Type(() => ExperienceDTO) @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ExperienceDTO)
+  @IsOptional()
   experiences?: ExperienceDTO[];
 
-  @IsArray() @ValidateNested({ each: true }) @Type(() => CareerScopeDTO) @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CareerScopeDTO)
+  @IsOptional()
   careerScopes?: CareerScopeDTO[];
 
-  @IsArray() @ValidateNested({ each: true }) @Type(() => SocialDTO) @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SocialDTO)
+  @IsOptional()
   socials?: SocialDTO[];
 }
 
-export class UpdateEmployeeInfoResponseDTO extends EmployeeResponseDTO {
-    constructor(partial: Partial<UpdateEmployeeInfoResponseDTO>) {
-        super(partial);
-            Object.assign(this, partial);
-    }
+export class UpdateEmployeeInfoResponseDTO {
+  message: string;
+  employee: EmployeeResponseDTO;
+
+  constructor(partial: Partial<UpdateEmployeeInfoResponseDTO>) {
+    Object.assign(this, partial);
+  }
 }

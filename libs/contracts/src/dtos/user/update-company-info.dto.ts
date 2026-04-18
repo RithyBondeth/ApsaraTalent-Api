@@ -51,7 +51,10 @@ export class UpdateCompanyInfoDTO {
   @IsNumber() @Type(() => Number) @IsOptional() companySize?: number;
   @IsNumber() @Type(() => Number) @IsOptional() foundedYear?: number;
 
-  @IsArray() @ValidateNested({ each: true }) @Type(() => JobDTO) @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => JobDTO)
+  @IsOptional()
   jobs?: JobDTO[];
 
   @IsArray() @IsOptional() benefitIdsToDelete?: number[];
@@ -59,22 +62,36 @@ export class UpdateCompanyInfoDTO {
   @IsArray() @IsOptional() careerScopeIdsToDelete?: string[];
   @IsArray() @IsOptional() socialIdsToDelete?: string[];
 
-  @IsArray() @ValidateNested({ each: true }) @Type(() => BenefitDTO) @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BenefitDTO)
+  @IsOptional()
   benefits?: BenefitDTO[];
 
-  @IsArray() @ValidateNested({ each: true }) @Type(() => ValueDTO) @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ValueDTO)
+  @IsOptional()
   values?: ValueDTO[];
 
-  @IsArray() @ValidateNested({ each: true }) @Type(() => CareerScopeDTO) @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CareerScopeDTO)
+  @IsOptional()
   careerScopes?: CareerScopeDTO[];
 
-  @IsArray() @ValidateNested({ each: true }) @Type(() => SocialDTO) @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SocialDTO)
+  @IsOptional()
   socials?: SocialDTO[];
 }
 
-export class UpdateCompanyInfoResponseDTO extends CompanyResponseDTO {
-    constructor(partial: Partial<UpdateCompanyInfoResponseDTO>) {
-        super(partial);
-            Object.assign(this, partial);
-    }
+export class UpdateCompanyInfoResponseDTO {
+  message: string;
+  company: CompanyResponseDTO;
+
+  constructor(partial: Partial<UpdateCompanyInfoResponseDTO>) {
+    Object.assign(this, partial);
+  }
 }

@@ -6,7 +6,12 @@ import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
-import { CreateResumeTemplateDTO, SearchTemplateDTO } from '@app/contracts/dtos/resume';
+import {
+  CreateResumeTemplateDTO,
+  ResumeTemplateResponseDTO,
+  SearchResumeTemplateResponseDTO,
+  SearchTemplateDTO,
+} from '@app/contracts/dtos/resume';
 
 const TEMPLATE_TTL = 60 * 60 * 1000; // 1 hour — static data
 const TEMPLATE_SEARCH_TTL = 30 * 60 * 1000; // 30 min
@@ -24,7 +29,7 @@ export class ResumeTemplateService implements IResumeTemplateService {
     private readonly redisService: RedisService,
   ) {}
 
-  async findAllResumeTemplate(): Promise<any> {
+  async findAllResumeTemplate(): Promise<ResumeTemplateResponseDTO[]> {
     const cacheKey = this.redisService.generateTemplateListKey();
     const cached = await this.redisService.get<ResumeTemplate[]>(cacheKey);
     if (cached) {
@@ -41,8 +46,11 @@ export class ResumeTemplateService implements IResumeTemplateService {
           statusCode: 404,
         });
 
-      await this.redisService.set(cacheKey, templates, TEMPLATE_TTL);
-      return templates;
+      const result = templates.map(
+        (template) => new ResumeTemplateResponseDTO(template),
+      );
+      await this.redisService.set(cacheKey, result, TEMPLATE_TTL);
+      return result;
     } catch (error) {
       if (error instanceof RpcException) throw error;
       this.logger.error(
@@ -58,7 +66,9 @@ export class ResumeTemplateService implements IResumeTemplateService {
     }
   }
 
-  async findOneResumeTemplate(resumeId: string): Promise<any> {
+  async findOneResumeTemplate(
+    resumeId: string,
+  ): Promise<ResumeTemplateResponseDTO> {
     const cacheKey = this.redisService.generateTemplateDetailKey(resumeId);
     const cached = await this.redisService.get<ResumeTemplate>(cacheKey);
     if (cached) {
@@ -77,8 +87,9 @@ export class ResumeTemplateService implements IResumeTemplateService {
           statusCode: 404,
         });
 
-      await this.redisService.set(cacheKey, template, TEMPLATE_TTL);
-      return template;
+      const result = new ResumeTemplateResponseDTO(template);
+      await this.redisService.set(cacheKey, result, TEMPLATE_TTL);
+      return result;
     } catch (error) {
       if (error instanceof RpcException) throw error;
       this.logger.error(
@@ -136,7 +147,7 @@ export class ResumeTemplateService implements IResumeTemplateService {
 
   async searchResumeTemplate(
     searchTemplateDTO: SearchTemplateDTO,
-  ): Promise<any> {
+  ): Promise<SearchResumeTemplateResponseDTO[]> {
     const cacheKey =
       this.redisService.generateTemplateSearchKey(searchTemplateDTO);
     const cached = await this.redisService.get<ResumeTemplate[]>(cacheKey);
@@ -181,8 +192,11 @@ export class ResumeTemplateService implements IResumeTemplateService {
         });
       }
 
-      await this.redisService.set(cacheKey, templates, TEMPLATE_SEARCH_TTL);
-      return templates;
+      const result = templates.map(
+        (template) => new SearchResumeTemplateResponseDTO(template),
+      );
+      await this.redisService.set(cacheKey, result, TEMPLATE_SEARCH_TTL);
+      return result;
     } catch (error) {
       if (error instanceof RpcException) throw error;
       this.logger.error(

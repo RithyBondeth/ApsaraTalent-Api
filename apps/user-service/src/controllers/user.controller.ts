@@ -124,12 +124,12 @@ export class UserController implements IUserController {
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_CAREER_SCOPES)
-  async findAllCareerScopes(): Promise<CareerScopesResponseDTO[]> {
+  async findAllCareerScopes(): Promise<any[]> {
     return this.userService.findAllCareerScopes();
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE)
-  async clearUserCache(@Payload() payload: { userId: string }) {
+  async clearUserCache(@Payload() payload: { userId: string }): Promise<void> {
     return this.userService.clearCurrentUserCache(payload.userId);
   }
 

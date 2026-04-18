@@ -6,7 +6,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Brackets, Repository } from 'typeorm';
 import { extractSalaryRange } from '@app/utils/functions/extract-salary-range';
-import { JobResponseDTO, SearchJobResponseDTO, SearchJobDTO } from '@app/contracts/dtos/job';
+import {
+  JobResponseDTO,
+  SearchJobResponseDTO,
+  SearchJobDTO,
+} from '@app/contracts/dtos/job';
 
 const JOB_LIST_TTL = 5 * 60 * 1000; // 5 min
 const JOB_SEARCH_TTL = 2 * 60 * 1000; // 2 min
@@ -56,7 +60,9 @@ export class JobService implements IJobServiceService {
     }
   }
 
-  async searchJobs(searchParams: SearchJobDTO): Promise<SearchJobResponseDTO[]> {
+  async searchJobs(
+    searchParams: SearchJobDTO,
+  ): Promise<SearchJobResponseDTO[]> {
     const cacheKey = this.redisService.generateJobSearchKey(searchParams);
     const cached = await this.redisService.get<JobResponseDTO[]>(cacheKey);
     if (cached) {
@@ -236,7 +242,7 @@ export class JobService implements IJobServiceService {
         });
       }
 
-      const result = jobs.map((job) => new JobResponseDTO(job));
+      const result = jobs.map((job) => new SearchJobResponseDTO(job));
       await this.redisService.set(cacheKey, result, JOB_SEARCH_TTL);
       return result;
     } catch (error) {

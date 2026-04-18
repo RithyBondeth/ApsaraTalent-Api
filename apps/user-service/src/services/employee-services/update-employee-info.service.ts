@@ -12,7 +12,11 @@ import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
-import { UpdateEmployeeInfoDTO, UpdateEmployeeInfoResponseDTO, EmployeeResponseDTO } from '@app/contracts/dtos/user';
+import {
+  UpdateEmployeeInfoDTO,
+  UpdateEmployeeInfoResponseDTO,
+  EmployeeResponseDTO,
+} from '@app/contracts/dtos/user';
 
 import { IUpdateEmployeeInfoService } from '@app/contracts/interfaces/service/user-service.interface';
 
@@ -41,7 +45,7 @@ export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
   async updateEmployeeInfo(
     updateEmployeeInfoDTO: UpdateEmployeeInfoDTO,
     employeeId: string,
-  ): Promise<{ message: string; employee: EmployeeResponseDTO }> {
+  ): Promise<UpdateEmployeeInfoResponseDTO> {
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
@@ -324,10 +328,10 @@ export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
       ======================================================= */
       await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
 
-      return {
+      return new UpdateEmployeeInfoResponseDTO({
         message: 'Employee information updated successfully',
         employee: new EmployeeResponseDTO(freshEmployee ?? employee),
-      };
+      });
     } catch (error) {
       // preserve intended RpcException status codes (404, etc.)
       if (error instanceof RpcException) throw error;

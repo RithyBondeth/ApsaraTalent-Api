@@ -1,7 +1,12 @@
 import {
-  JobResponseDTO, SearchJobResponseDTO,
+  JobResponseDTO,
+  SearchJobResponseDTO,
   MatchDTO,
+  MatchResponseDTO,
+  MatchCountResponseDTO,
+  AnalyticsResponseDTO,
   CreateInterviewDTO,
+  InterviewResponseDTO,
   UpdateInterviewStatusDTO,
   SearchJobDTO,
 } from '@app/contracts/dtos/job';
@@ -18,20 +23,25 @@ export interface IJobServiceService {
 }
 
 export interface IMatchingService {
-  employeeLikes(matchDto: MatchDTO): Promise<any>;
-  companyLikes(matchDto: MatchDTO): Promise<any>;
+  employeeLikes(matchDto: MatchDTO): Promise<MatchResponseDTO>;
+  companyLikes(matchDto: MatchDTO): Promise<MatchResponseDTO>;
   findCurrentEmployeeLiked(eid: string): Promise<UserResponseDTO[]>;
   findCurrentCompanyLiked(cid: string): Promise<UserResponseDTO[]>;
   findCurrentEmployeeMatching(eid: string): Promise<UserResponseDTO[]>;
   findCurrentCompanyMatching(cid: string): Promise<UserResponseDTO[]>;
-  findCurrentEmployeeMatchingCount(eid: string): Promise<any>;
-  findCurrentCompanyMatchingCount(cid: string): Promise<any>;
-  getAnalytics(userId: string, role: 'employee' | 'company'): Promise<any>;
+  findCurrentEmployeeMatchingCount(eid: string): Promise<MatchCountResponseDTO>;
+  findCurrentCompanyMatchingCount(cid: string): Promise<MatchCountResponseDTO>;
+  getAnalytics(
+    userId: string,
+    role: 'employee' | 'company',
+  ): Promise<AnalyticsResponseDTO>;
 }
 
 export interface IInterviewService {
-  createInterview(dto: CreateInterviewDTO): Promise<any>;
-  getInterviewsByEmployee(employeeId: string): Promise<any[]>;
-  getInterviewsByCompany(companyId: string): Promise<any[]>;
-  updateInterviewStatus(dto: UpdateInterviewStatusDTO): Promise<any>;
+  createInterview(dto: CreateInterviewDTO): Promise<InterviewResponseDTO>;
+  getInterviewsByEmployee(employeeId: string): Promise<InterviewResponseDTO[]>;
+  getInterviewsByCompany(companyId: string): Promise<InterviewResponseDTO[]>;
+  updateInterviewStatus(
+    dto: UpdateInterviewStatusDTO,
+  ): Promise<InterviewResponseDTO>;
 }

@@ -1,3 +1,20 @@
+import { CareerScope } from '@app/common/database/entities/career-scope.entity';
+import {
+  CompanyResponseDTO,
+  CountAllUsersResponseDTO,
+  EmployeeResponseDTO,
+  SearchEmployeeResponseDTO,
+  UpdateCompanyInfoResponseDTO,
+  UpdateEmployeeInfoResponseDTO,
+  UserResponseDTO,
+  FavoriteCountResponseDTO,
+  UpdateCompanyInfoDTO,
+  UpdateEmployeeInfoDTO,
+  SearchEmployeeDTO,
+} from '../../dtos/user';
+import { UserPaginationDTO } from '../../dtos/shared';
+import { MessageResponse } from '../domain/message-response.interface';
+
 export const I_UPDATE_EMPLOYEE_INFO_SERVICE = 'IUpdateEmployeeInfoService';
 export const I_IMAGE_EMPLOYEE_SERVICE = 'IImageEmployeeService';
 export const I_UPDATE_COMPANY_INFO_SERVICE = 'IUpdateCompanyInfoService';
@@ -13,7 +30,10 @@ export const I_EXPERIENCE_AND_EDUCATION_SERVICE =
   'IExperienceAndEducationService';
 
 export interface IUpdateEmployeeInfoService {
-  updateEmployeeInfo(...args: any[]): Promise<any>;
+  updateEmployeeInfo(
+    updateEmployeeInfoDTO: UpdateEmployeeInfoDTO,
+    employeeId: string,
+  ): Promise<UpdateEmployeeInfoResponseDTO>;
 }
 
 export interface IImageEmployeeService {
@@ -21,15 +41,22 @@ export interface IImageEmployeeService {
 }
 
 export interface IUpdateCompanyInfoService {
-  updateCompanyInfo(...args: any[]): Promise<any>;
+  updateCompanyInfo(
+    updateCompanyInfoDTO: UpdateCompanyInfoDTO,
+    companyId: string,
+  ): Promise<UpdateCompanyInfoResponseDTO>;
 }
 
 export interface IFindEmployeeService {
-  [key: string]: any;
+  findAll(pagination: UserPaginationDTO): Promise<EmployeeResponseDTO[]>;
+  countAllEmployees(): Promise<CountAllUsersResponseDTO>;
+  findOneById(employeeId: string): Promise<EmployeeResponseDTO>;
 }
 
 export interface IFindCompanyService {
-  [key: string]: any;
+  findAll(pagination: UserPaginationDTO): Promise<CompanyResponseDTO[]>;
+  countAllCompanies(): Promise<CountAllUsersResponseDTO>;
+  findOneById(companyId: string): Promise<CompanyResponseDTO>;
 }
 
 export interface IImageCompanyService {
@@ -41,11 +68,45 @@ export interface IUploadEmployeeReferenceService {
 }
 
 export interface ISearchEmployeeService {
-  [key: string]: any;
+  searchEmployee(
+    query: SearchEmployeeDTO,
+  ): Promise<SearchEmployeeResponseDTO[]>;
 }
 
 export interface IUserService {
-  [key: string]: any;
+  findAllUsers(skip?: number, limit?: number): Promise<UserResponseDTO[]>;
+  countAllUsers(): Promise<CountAllUsersResponseDTO>;
+  findOneUserByID(userId: string): Promise<UserResponseDTO>;
+  updatePushNotificationToken(
+    userId: string,
+    token: string | null,
+  ): Promise<MessageResponse>;
+  findAllCareerScopes(): Promise<any>;
+  employeeFavoriteCompany(eid: string, cid: string): Promise<MessageResponse>;
+  employeeUnfavoriteCompany(
+    eid: string,
+    cid: string,
+    favoriteId: string,
+  ): Promise<MessageResponse>;
+  companyUnfavoriteEmployee(
+    cid: string,
+    eid: string,
+    favoriteId: string,
+  ): Promise<MessageResponse>;
+  companyFavoriteEmployee(cid: string, eid: string): Promise<MessageResponse>;
+  findAllEmployeeFavorites(eid: string): Promise<CompanyResponseDTO[]>;
+  findAllCompanyFavorites(cid: string): Promise<EmployeeResponseDTO[]>;
+  countCompanyFavorite(cid: string): Promise<FavoriteCountResponseDTO>;
+  countEmployeeFavorite(eid: string): Promise<FavoriteCountResponseDTO>;
+  clearCurrentUserCache(userId: string): Promise<void>;
+  getEmployeeRecommendations(
+    employeeId: string,
+    limit?: number,
+  ): Promise<CompanyResponseDTO[]>;
+  getCompanyRecommendations(
+    companyId: string,
+    limit?: number,
+  ): Promise<EmployeeResponseDTO[]>;
 }
 
 export interface IOpenPositionService {
