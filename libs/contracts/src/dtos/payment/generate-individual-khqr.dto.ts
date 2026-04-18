@@ -88,3 +88,14 @@ export class GenerateIndividualKhqrDTO {
   @Transform(({ value }) => value === 'true' || value === true)
   isStatic?: boolean;
 }
+
+
+export class GenerateIndividualKhqrResponseDTO {
+  success: true;
+  paymentId: string;
+  qrString: string;
+  md5Hash: string;
+  qrImage: string;
+  expiresAt: Date | null;
+  message: string;
+}

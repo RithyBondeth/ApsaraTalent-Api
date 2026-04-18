@@ -14,3 +14,13 @@ export class GenerateMerchantKhqrDTO extends GenerateIndividualKhqrDTO {
   })
   acquiringBank: string;
 }
+
+
+export class GenerateMerchantKhqrResponseDTO {
+  success: true;
+  paymentId: string;
+  qrString: string;
+  md5Hash: string;
+  qrImage: string;
+  message: string;
+}

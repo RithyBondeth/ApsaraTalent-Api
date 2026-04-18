@@ -9,3 +9,32 @@ export class CheckPaymentStatusDTO {
   })
   md5Hash: string;
 }
+
+
+export class CheckPaymentStatusPayerInfoDTO {
+  name: string | null;
+  phone: string | null;
+}
+
+export class CheckPaymentStatusFoundResponseDTO {
+  success: true;
+  paymentId: string;
+  paymentStatus: string;
+  transactionId: string | null;
+  amount: number | null;
+  currency: string | null;
+  paidAt: Date | string | null;
+  payerInfo: CheckPaymentStatusPayerInfoDTO | null;
+  message: string;
+}
+
+export class CheckPaymentStatusNotFoundResponseDTO {
+  success: false;
+  paymentId: string;
+  paymentStatus: 'not_found';
+  message: string;
+}
+
+export type CheckPaymentStatusResponseDTO =
+  | CheckPaymentStatusFoundResponseDTO
+  | CheckPaymentStatusNotFoundResponseDTO;

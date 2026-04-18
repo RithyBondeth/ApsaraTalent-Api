@@ -23,3 +23,12 @@ export class GenerateDeepLinkDTO {
   @Length(1, 25, { message: 'App name must be between 1 and 25 characters' })
   appName?: string;
 }
+
+
+export class GenerateDeepLinkResponseDTO {
+  success: true;
+  deepLink: string;
+  shortUrl: string;
+  qrString: string;
+  message: string;
+}

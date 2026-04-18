@@ -11,3 +11,22 @@ export class DecodeKhqrDTO {
   @Transform(({ value }) => value === 'true' || value === true)
   includeRaw?: boolean;
 }
+
+
+export class DecodeKhqrDecodedDataDTO {
+  merchantName: string | null;
+  merchantCity: string | null;
+  amount: number | null;
+  currency: string | null;
+  bakongAccountId: string | null;
+  billNumber: string | null;
+  mobileNumber: string | null;
+  storeLabel: string | null;
+  terminalLabel: string | null;
+}
+
+export class DecodeKhqrResponseDTO {
+  success: true;
+  decodedData: DecodeKhqrDecodedDataDTO;
+  message: string;
+}

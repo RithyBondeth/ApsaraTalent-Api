@@ -12,18 +12,3 @@ export class NotificationResponseDTO {
   }
 }
 
-export class NotificationListResponseDTO {
-  items: NotificationResponseDTO[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
-export class UnreadCountResponseDTO {
-  unreadCount: number;
-}
-
-export class NotificationActionResponseDTO {
-  success: boolean;
-  affected?: number;
-}
