@@ -16,7 +16,7 @@ import {
   AnalyticsResponseDTO,
   MatchAnalyticsItemDTO,
   MatchCountResponseDTO,
-  MatchDto,
+  MatchDTO,
   MatchResponseDTO,
   WeeklyActivityItemDTO,
 } from '@app/contracts/dtos/job';
@@ -44,7 +44,7 @@ export class MatchingService implements IMatchingService {
     private readonly notificationClient: ClientProxy,
   ) {}
 
-  async employeeLikes(matchDto: MatchDto): Promise<MatchResponseDTO> {
+  async employeeLikes(matchDto: MatchDTO): Promise<MatchResponseDTO> {
     try {
       const [employee, company] = await Promise.all([
         this.employeeRepo.findOne({
@@ -162,7 +162,7 @@ export class MatchingService implements IMatchingService {
     }
   }
 
-  async companyLikes(matchDto: MatchDto): Promise<MatchResponseDTO> {
+  async companyLikes(matchDto: MatchDTO): Promise<MatchResponseDTO> {
     try {
       const [employee, company] = await Promise.all([
         this.employeeRepo.findOne({

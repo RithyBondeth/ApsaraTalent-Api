@@ -3,7 +3,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
 import {
   CreateInterviewDTO,
-  UpdateInterviewStatusDto,
+  UpdateInterviewStatusDTO,
 } from '@app/contracts/dtos/job';
 import { InterviewResponseDTO } from '@app/contracts/dtos/job';
 import {
@@ -41,7 +41,7 @@ export class InterviewController {
 
   @MessagePattern(JOB_SERVICE.ACTIONS.UPDATE_INTERVIEW_STATUS)
   async updateInterviewStatus(
-    @Payload() updateInterviewDTO: UpdateInterviewStatusDto,
+    @Payload() updateInterviewDTO: UpdateInterviewStatusDTO,
   ): Promise<InterviewResponseDTO> {
     return this.interviewService.updateInterviewStatus(updateInterviewDTO);
   }

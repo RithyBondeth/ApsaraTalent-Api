@@ -21,7 +21,7 @@ import { PaginationDTO } from '@app/contracts/dtos/user';
 import { ClientProxy } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
-import { EmployeeResponseDTO, UpdateEmployeeInfoDTO, SearchEmployeeDto } from '@app/contracts/dtos/user';
+import { EmployeeResponseDTO, UpdateEmployeeInfoDTO, SearchEmployeeDTO } from '@app/contracts/dtos/user';
 import { rpcCall } from '../utils/rpc-call';
 
 @Controller('user/employee')
@@ -163,7 +163,7 @@ export class EmployeeController implements IEmployeeController {
 
   @Get('search-employee')
   async searchEmployee(
-    @Query() searchEmployeeQuery: SearchEmployeeDto,
+    @Query() searchEmployeeQuery: SearchEmployeeDTO,
   ): Promise<EmployeeResponseDTO[]> {
     return rpcCall<EmployeeResponseDTO[]>(
       this.userClient,

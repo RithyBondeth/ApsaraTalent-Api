@@ -8,7 +8,7 @@ import {
   MatchResponseDTO,
   SearchJobDTO,
   UpdateInterviewResponseDTO,
-  UpdateInterviewStatusDto,
+  UpdateInterviewStatusDTO,
 } from '@app/contracts/dtos/job';
 import { PaginationDTO, UserResponseDTO } from '@app/contracts/dtos/user';
 
@@ -31,7 +31,7 @@ export interface IInterviewController {
     req?: any,
   ): Promise<GetInterviewResponseDTO[]>;
   updateInterviewStatus(
-    dto: UpdateInterviewStatusDto,
+    dto: UpdateInterviewStatusDTO,
     req?: any,
   ): Promise<UpdateInterviewResponseDTO>;
 }

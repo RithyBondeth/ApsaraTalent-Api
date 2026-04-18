@@ -25,7 +25,7 @@ export const VALID_STATUS_TRANSITIONS: Record<string, InterviewStatus[]> = {
   [InterviewStatus.COMPLETED]: [],
 };
 
-export class UpdateInterviewStatusDto {
+export class UpdateInterviewStatusDTO {
   @IsString()
   @IsNotEmpty()
   interviewId: string;

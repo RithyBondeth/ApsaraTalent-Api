@@ -10,7 +10,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-export class PersonalInfoDto {
+export class PersonalInfoDTO {
   @IsString() fullName: string;
   @IsEmail() email: string;
   @IsString() @IsOptional() phone?: string;
@@ -21,7 +21,7 @@ export class PersonalInfoDto {
   @IsObject() @IsOptional() socials?: { [platform: string]: string };
 }
 
-export class ExperienceDto {
+export class ExperienceDTO {
   @IsString() company: string;
   @IsString() position: string;
   @IsString() startDate: string;
@@ -31,11 +31,11 @@ export class ExperienceDto {
 }
 
 export class BuildResumeDTO {
-  @ValidateNested() @Type(() => PersonalInfoDto) personalInfo: PersonalInfoDto;
+  @ValidateNested() @Type(() => PersonalInfoDTO) personalInfo: PersonalInfoDTO;
   @IsString() @IsOptional() summary?: string;
   @IsString() @IsOptional() yearsOfExperience?: string;
   @IsString() @IsOptional() availability?: string;
-  @ValidateNested({ each: true }) @Type(() => ExperienceDto) experience: ExperienceDto[];
+  @ValidateNested({ each: true }) @Type(() => ExperienceDTO) experience: ExperienceDTO[];
   @IsArray() @IsString({ each: true }) skills: string[];
   @IsString() @IsOptional() education?: string;
   @IsArray() @IsString({ each: true }) @IsOptional() careerScopes?: string[];

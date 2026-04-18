@@ -75,36 +75,36 @@ export class EmployeeRegisterDTO {
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => EducationDto)
+  @Type(() => EducationDTO)
   @IsOptional()
-  educations?: EducationDto[];
+  educations?: EducationDTO[];
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => SkillDto)
+  @Type(() => SkillDTO)
   @IsOptional()
-  skills?: SkillDto[];
+  skills?: SkillDTO[];
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => ExperienceDto)
+  @Type(() => ExperienceDTO)
   @IsOptional()
-  experiences?: ExperienceDto[];
+  experiences?: ExperienceDTO[];
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CareerScopeDto)
+  @Type(() => CareerScopeDTO)
   @IsOptional()
-  careerScopes?: CareerScopeDto[];
+  careerScopes?: CareerScopeDTO[];
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => SocialDto)
+  @Type(() => SocialDTO)
   @IsOptional()
-  socials?: SocialDto[];
+  socials?: SocialDTO[];
 }
 
-class SkillDto {
+class SkillDTO {
   @IsString()
   @IsNotEmpty()
   name: string;
@@ -114,7 +114,7 @@ class SkillDto {
   description?: string;
 }
 
-class ExperienceDto {
+class ExperienceDTO {
   @IsString()
   @IsNotEmpty()
   title: string;
@@ -134,7 +134,7 @@ class ExperienceDto {
   endDate: Date;
 }
 
-class CareerScopeDto {
+class CareerScopeDTO {
   @IsString()
   @IsNotEmpty()
   name: string;
@@ -144,7 +144,7 @@ class CareerScopeDto {
   description?: string;
 }
 
-class SocialDto {
+class SocialDTO {
   @IsString()
   @IsOptional()
   platform?: string;
@@ -154,7 +154,7 @@ class SocialDto {
   url?: string;
 }
 
-class EducationDto {
+class EducationDTO {
   @IsString()
   @IsOptional()
   school?: string;

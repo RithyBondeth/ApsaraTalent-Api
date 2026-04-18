@@ -1,8 +1,8 @@
 import {
   JobResponseDTO,
-  MatchDto,
+  MatchDTO,
   CreateInterviewDTO,
-  UpdateInterviewStatusDto,
+  UpdateInterviewStatusDTO,
   SearchJobDTO,
 } from '@app/contracts/dtos/job';
 import { PaginationDTO, UserResponseDTO } from '@app/contracts/dtos/user';
@@ -17,8 +17,8 @@ export interface IJobServiceService {
 }
 
 export interface IMatchingService {
-  employeeLikes(matchDto: MatchDto): Promise<any>;
-  companyLikes(matchDto: MatchDto): Promise<any>;
+  employeeLikes(matchDto: MatchDTO): Promise<any>;
+  companyLikes(matchDto: MatchDTO): Promise<any>;
   findCurrentEmployeeLiked(eid: string): Promise<UserResponseDTO[]>;
   findCurrentCompanyLiked(cid: string): Promise<UserResponseDTO[]>;
   findCurrentEmployeeMatching(eid: string): Promise<UserResponseDTO[]>;
@@ -32,5 +32,5 @@ export interface IInterviewService {
   createInterview(dto: CreateInterviewDTO): Promise<any>;
   getInterviewsByEmployee(employeeId: string): Promise<any[]>;
   getInterviewsByCompany(companyId: string): Promise<any[]>;
-  updateInterviewStatus(dto: UpdateInterviewStatusDto): Promise<any>;
+  updateInterviewStatus(dto: UpdateInterviewStatusDTO): Promise<any>;
 }

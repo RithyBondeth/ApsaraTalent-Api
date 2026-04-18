@@ -12,7 +12,7 @@ import {
   CreateInterviewDTO,
   InterviewResponseDTO,
   InterviewStatus,
-  UpdateInterviewStatusDto,
+  UpdateInterviewStatusDTO,
   VALID_STATUS_TRANSITIONS,
 } from '@app/contracts/dtos/job';
 
@@ -177,7 +177,7 @@ export class InterviewService implements IInterviewService {
   }
 
   async updateInterviewStatus(
-    updateInterview: UpdateInterviewStatusDto,
+    updateInterview: UpdateInterviewStatusDTO,
   ): Promise<InterviewResponseDTO> {
     try {
       const interview = await this.interviewRepo.findOne({

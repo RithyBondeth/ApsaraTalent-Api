@@ -7,7 +7,7 @@ import {
   CreateInterviewResponseDTO,
   GetInterviewResponseDTO,
   UpdateInterviewResponseDTO,
-  UpdateInterviewStatusDto,
+  UpdateInterviewStatusDTO,
 } from '@app/contracts/dtos/job';
 import {
   Body,
@@ -79,7 +79,7 @@ export class InterviewController
 
   @Patch('status')
   async updateInterviewStatus(
-    @Body() dto: UpdateInterviewStatusDto,
+    @Body() dto: UpdateInterviewStatusDTO,
     @Req() req?: any,
   ): Promise<UpdateInterviewResponseDTO> {
     if (!req?.user?.id) {

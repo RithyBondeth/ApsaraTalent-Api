@@ -10,13 +10,13 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-class SkillDto {
+class SkillDTO {
   @IsString() @IsOptional() id?: string;
   @IsString() @IsOptional() name?: string;
   @IsString() @IsOptional() description?: string;
 }
 
-class ExperienceDto {
+class ExperienceDTO {
   @IsString() @IsOptional() id?: string;
   @IsString() @IsOptional() title?: string;
   @IsString() @IsOptional() description?: string;
@@ -24,19 +24,19 @@ class ExperienceDto {
   @IsDate() @Type(() => Date) @IsOptional() endDate?: Date;
 }
 
-class CareerScopeDto {
+class CareerScopeDTO {
   @IsString() @IsOptional() id?: string;
   @IsString() @IsOptional() name?: string;
   @IsString() @IsOptional() description?: string;
 }
 
-class SocialDto {
+class SocialDTO {
   @IsString() @IsOptional() id?: string;
   @IsString() @IsOptional() platform?: string;
   @IsUrl() @IsOptional() url?: string;
 }
 
-class EducationDto {
+class EducationDTO {
   @IsString() @IsOptional() id?: string;
   @IsString() @IsOptional() school?: string;
   @IsString() @IsOptional() degree: string;
@@ -56,18 +56,18 @@ export class UpdateEmployeeInfoDTO {
   @IsString() @IsOptional() location?: string;
   @IsString() @IsOptional() phone?: string;
 
-  @IsArray() @ValidateNested({ each: true }) @Type(() => EducationDto) @IsOptional()
-  educations?: EducationDto[];
+  @IsArray() @ValidateNested({ each: true }) @Type(() => EducationDTO) @IsOptional()
+  educations?: EducationDTO[];
 
-  @IsArray() @ValidateNested({ each: true }) @Type(() => SkillDto) @IsOptional()
-  skills?: SkillDto[];
+  @IsArray() @ValidateNested({ each: true }) @Type(() => SkillDTO) @IsOptional()
+  skills?: SkillDTO[];
 
-  @IsArray() @ValidateNested({ each: true }) @Type(() => ExperienceDto) @IsOptional()
-  experiences?: ExperienceDto[];
+  @IsArray() @ValidateNested({ each: true }) @Type(() => ExperienceDTO) @IsOptional()
+  experiences?: ExperienceDTO[];
 
-  @IsArray() @ValidateNested({ each: true }) @Type(() => CareerScopeDto) @IsOptional()
-  careerScopes?: CareerScopeDto[];
+  @IsArray() @ValidateNested({ each: true }) @Type(() => CareerScopeDTO) @IsOptional()
+  careerScopes?: CareerScopeDTO[];
 
-  @IsArray() @ValidateNested({ each: true }) @Type(() => SocialDto) @IsOptional()
-  socials?: SocialDto[];
+  @IsArray() @ValidateNested({ each: true }) @Type(() => SocialDTO) @IsOptional()
+  socials?: SocialDTO[];
 }

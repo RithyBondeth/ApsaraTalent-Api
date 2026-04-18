@@ -1,7 +1,7 @@
 import { Transform } from 'class-transformer';
 import { IsArray, IsEnum, IsOptional, IsString } from 'class-validator';
 
-export class SearchEmployeeDto {
+export class SearchEmployeeDTO {
   @IsOptional() @IsString() keyword?: string;
   @IsOptional() @IsString() location?: string;
 
