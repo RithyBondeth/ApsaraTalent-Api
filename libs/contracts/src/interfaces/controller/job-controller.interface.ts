@@ -1,26 +1,61 @@
-import { JobResponseDTO } from '@app/contracts/dtos/job';
-import { UserResponseDTO } from '@app/contracts/dtos/user';
+import {
+  AnalyticsResponseDTO,
+  CreateInterviewDTO,
+  CreateInterviewResponseDTO,
+  GetInterviewResponseDTO,
+  JobResponseDTO,
+  MatchCountResponseDTO,
+  MatchResponseDTO,
+  SearchJobDTO,
+  UpdateInterviewResponseDTO,
+  UpdateInterviewStatusDto,
+} from '@app/contracts/dtos/job';
+import { PaginationDTO, UserResponseDTO } from '@app/contracts/dtos/user';
 
 export interface IJobController {
-  searchJobs(data?: any): Promise<JobResponseDTO[]>;
-  findAllJobs(data?: any): Promise<JobResponseDTO[]>;
+  searchJobs(searchJobQuery: SearchJobDTO): Promise<JobResponseDTO[]>;
+  findAllJobs(pagination: PaginationDTO): Promise<JobResponseDTO[]>;
 }
 
 export interface IInterviewController {
-  createInterview(dto?: any, req?: any): Promise<any>;
-  getInterviewsByEmployee(employeeId?: any, req?: any): Promise<any>;
-  getInterviewsByCompany(companyId?: any, req?: any): Promise<any>;
-  updateInterviewStatus(dto?: any, req?: any): Promise<any>;
+  createInterview(
+    dto: CreateInterviewDTO,
+    req?: any,
+  ): Promise<CreateInterviewResponseDTO>;
+  getInterviewsByEmployee(
+    employeeId: string,
+    req?: any,
+  ): Promise<GetInterviewResponseDTO[]>;
+  getInterviewsByCompany(
+    companyId: string,
+    req?: any,
+  ): Promise<GetInterviewResponseDTO[]>;
+  updateInterviewStatus(
+    dto: UpdateInterviewStatusDto,
+    req?: any,
+  ): Promise<UpdateInterviewResponseDTO>;
 }
 
 export interface IMatchingController {
-  employeeLikes(data?: any, id?: any): Promise<any>;
-  companyLikes(data?: any, id?: any): Promise<any>;
-  findCurrentEmployeeLiked(data?: any, id?: any): Promise<UserResponseDTO[]>;
-  findCurrentCompanyLiked(data?: any, id?: any): Promise<UserResponseDTO[]>;
-  findCurrentEmployeeMatching(data?: any, req?: any): Promise<UserResponseDTO[]>;
-  findCurrentCompanyMatching(data?: any, req?: any): Promise<UserResponseDTO[]>;
-  findCurrentEmployeeMatchingCount(data?: any, id?: any): Promise<any>;
-  findCurrentCompanyMatchingCount(data?: any, id?: any): Promise<any>;
-  getAnalytics(id?: any, role?: any): Promise<any>;
+  employeeLikes(eid: string, cid: string, req?: any): Promise<MatchResponseDTO>;
+  companyLikes(cid: string, eid: string, req?: any): Promise<MatchResponseDTO>;
+  findCurrentEmployeeLiked(eid: string, req?: any): Promise<UserResponseDTO[]>;
+  findCurrentCompanyLiked(cid: string, req?: any): Promise<UserResponseDTO[]>;
+  findCurrentEmployeeMatching(
+    eid: string,
+    req?: any,
+  ): Promise<UserResponseDTO[]>;
+  findCurrentCompanyMatching(
+    cid: string,
+    req?: any,
+  ): Promise<UserResponseDTO[]>;
+  findCurrentEmployeeMatchingCount(
+    eid: string,
+    req?: any,
+  ): Promise<MatchCountResponseDTO>;
+  findCurrentCompanyMatchingCount(
+    cid: string,
+    req?: any,
+  ): Promise<MatchCountResponseDTO>;
+  getAnalytics(id: string, role: string): Promise<AnalyticsResponseDTO>;
 }

@@ -6,7 +6,7 @@ import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
-import { UserPaginationDTO } from '../../dtos/user-pagination.dto';
+import { UserPaginationDTO } from '@app/contracts/dtos/user';
 import {
   CountAllUsersResponseDTO,
   EmployeeResponseDTO,

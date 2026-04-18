@@ -38,7 +38,7 @@ export class PaymentController implements IPaymentController {
   @RateLimit(50) // Lower limit for QR generation
   async generateIndividualQr(
     @Payload() generateIndividualKhqrDTO: GenerateIndividualKhqrDTO,
-  ): Promise<GenerateIndividualKhqrResponse> {
+  ): Promise<GenerateIndividualKhqrResponseDTO> {
     return this.paymentService.generateIndividualKhqrDTO(
       generateIndividualKhqrDTO,
     );
@@ -48,42 +48,42 @@ export class PaymentController implements IPaymentController {
   @RateLimit(50) // Lower limit for QR generation
   async generateMerchantQr(
     @Payload() generateMerchantKhqrDTO: GenerateMerchantKhqrDTO,
-  ): Promise<GenerateMerchantKhqrResponse> {
+  ): Promise<GenerateMerchantKhqrResponseDTO> {
     return this.paymentService.generateMerchantKhqrDTO(generateMerchantKhqrDTO);
   }
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.VERIFY_KHQR)
   async verifyKhqr(
     @Payload() verifyKhqrDTO: VerifyKhqrDTO,
-  ): Promise<VerifyKhqrResponse> {
+  ): Promise<VerifyKhqrResponseDTO> {
     return this.paymentService.verifyKhqr(verifyKhqrDTO);
   }
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.DECODE_KHQR)
   async decodeKhqr(
     @Payload() decodeKhqrDTO: DecodeKhqrDTO,
-  ): Promise<DecodeKhqrResponse> {
+  ): Promise<DecodeKhqrResponseDTO> {
     return this.paymentService.decodeKhqr(decodeKhqrDTO);
   }
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.GENERATE_DEEP_LINK)
   async generateDeepLink(
     @Payload() generateDeepLinkDTO: GenerateDeepLinkDTO,
-  ): Promise<GenerateDeepLinkResponse> {
+  ): Promise<GenerateDeepLinkResponseDTO> {
     return this.paymentService.generateDeepLink(generateDeepLinkDTO);
   }
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.CHECK_PAYMENT_STATUS)
   async checkPaymentStatus(
     @Payload() checkPaymentStatusDTO: CheckPaymentStatusDTO,
-  ): Promise<CheckPaymentStatusResponse> {
+  ): Promise<CheckPaymentStatusResponseDTO> {
     return this.paymentService.checkPaymentStatus(checkPaymentStatusDTO);
   }
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.CHECK_PAYMENT_BULK_STATUS)
   async checkPaymentBulkStatus(
     @Payload() checkPaymentBulkStatusDTO: CheckPaymentBulkStatusDTO,
-  ): Promise<CheckPaymentBulkStatusResponse> {
+  ): Promise<CheckPaymentBulkStatusResponseDTO> {
     return this.paymentService.checkPaymentBulkStatus(
       checkPaymentBulkStatusDTO,
     );

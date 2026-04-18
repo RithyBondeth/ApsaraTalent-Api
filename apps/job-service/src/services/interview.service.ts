@@ -9,7 +9,7 @@ import { Logger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 import {
-  CreateInterviewDto,
+  CreateInterviewDTO,
   InterviewResponseDTO,
   InterviewStatus,
   UpdateInterviewStatusDto,
@@ -36,7 +36,7 @@ export class InterviewService implements IInterviewService {
   ) {}
 
   async createInterview(
-    createInterview: CreateInterviewDto,
+    createInterview: CreateInterviewDTO,
   ): Promise<InterviewResponseDTO> {
     try {
       // Only companies can schedule interviews (standard hiring flow)

@@ -2,18 +2,17 @@ import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
 import {
-  CreateInterviewDto,
+  CreateInterviewDTO,
   UpdateInterviewStatusDto,
 } from '@app/contracts/dtos/job';
 import { InterviewResponseDTO } from '@app/contracts/dtos/job';
-import { IInterviewController } from '@app/contracts/interfaces/controller/job-controller.interface';
 import {
   I_INTERVIEW_SERVICE,
   IInterviewService,
 } from '@app/contracts/interfaces/service/job-service.interface';
 
 @Controller()
-export class InterviewController implements IInterviewController {
+export class InterviewController {
   constructor(
     @Inject(I_INTERVIEW_SERVICE)
     private readonly interviewService: IInterviewService,
@@ -21,7 +20,7 @@ export class InterviewController implements IInterviewController {
 
   @MessagePattern(JOB_SERVICE.ACTIONS.CREATE_INTERVIEW)
   async createInterview(
-    @Payload() creteInterviewDTO: CreateInterviewDto,
+    @Payload() creteInterviewDTO: CreateInterviewDTO,
   ): Promise<InterviewResponseDTO> {
     return this.interviewService.createInterview(creteInterviewDTO);
   }

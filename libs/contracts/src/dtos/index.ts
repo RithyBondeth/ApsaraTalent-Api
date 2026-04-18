@@ -5,5 +5,4 @@ export * from './payment';
 export * from './resume';
 export * from './notification';
 export * from './chat';
-export * from './chat/call-gateway';
 export * from './health';

@@ -79,7 +79,7 @@ export class PaymentService implements IPaymentService {
   }
   async generateIndividualKhqrDTO(
     generateIndividualKhqrDTO: GenerateIndividualKhqrDTO,
-  ): Promise<GenerateIndividualKhqrResponse> {
+  ): Promise<GenerateIndividualKhqrResponseDTO> {
     try {
       this.logger.info(
         { merchantName: generateIndividualKhqrDTO.merchantName },
@@ -171,7 +171,7 @@ export class PaymentService implements IPaymentService {
 
   async generateMerchantKhqrDTO(
     generateMerchantKhqrDTO: GenerateMerchantKhqrDTO,
-  ): Promise<GenerateMerchantKhqrResponse> {
+  ): Promise<GenerateMerchantKhqrResponseDTO> {
     try {
       this.logger.info(
         { merchantName: generateMerchantKhqrDTO.merchantName },
@@ -257,7 +257,7 @@ export class PaymentService implements IPaymentService {
     }
   }
 
-  async verifyKhqr(verifyKhqrDTO: VerifyKhqrDTO): Promise<VerifyKhqrResponse> {
+  async verifyKhqr(verifyKhqrDTO: VerifyKhqrDTO): Promise<VerifyKhqrResponseDTO> {
     try {
       this.logger.info('Verifying KHQR code');
 
@@ -289,7 +289,7 @@ export class PaymentService implements IPaymentService {
     }
   }
 
-  async decodeKhqr(decodeKhqrDTO: DecodeKhqrDTO): Promise<DecodeKhqrResponse> {
+  async decodeKhqr(decodeKhqrDTO: DecodeKhqrDTO): Promise<DecodeKhqrResponseDTO> {
     try {
       this.logger.info('Decoding KHQR code');
 
@@ -329,7 +329,7 @@ export class PaymentService implements IPaymentService {
 
   async generateDeepLink(
     generateDeepLinkDTO: GenerateDeepLinkDTO,
-  ): Promise<GenerateDeepLinkResponse> {
+  ): Promise<GenerateDeepLinkResponseDTO> {
     try {
       this.logger.info('Generating payment deep link');
 
@@ -364,7 +364,7 @@ export class PaymentService implements IPaymentService {
 
   async checkPaymentStatus(
     checkPaymentStatusDTO: CheckPaymentStatusDTO,
-  ): Promise<CheckPaymentStatusResponse> {
+  ): Promise<CheckPaymentStatusResponseDTO> {
     try {
       this.logger.info(
         { md5Hash: checkPaymentStatusDTO.md5Hash.substring(0, 8) + '...' },
@@ -459,7 +459,7 @@ export class PaymentService implements IPaymentService {
 
   async checkPaymentBulkStatus(
     checkPaymentBulkStatusDTO: CheckPaymentBulkStatusDTO,
-  ): Promise<CheckPaymentBulkStatusResponse> {
+  ): Promise<CheckPaymentBulkStatusResponseDTO> {
     try {
       this.logger.info(
         { count: checkPaymentBulkStatusDTO.md5Hashes.length },

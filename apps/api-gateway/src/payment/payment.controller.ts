@@ -11,13 +11,13 @@ import { ClientProxy } from '@nestjs/microservices';
 import { PAYMENT_SERVICE } from '@app/contracts/constants/service-actions/payment-service.constant';
 import { IPaymentController } from '@app/contracts/interfaces/domain/payment.interface';
 import {
-  CheckPaymentBulkStatusResponseDTODTO,
-  CheckPaymentStatusResponseDTODTO,
-  DecodeKhqrResponseDTODTO,
-  GenerateDeepLinkResponseDTODTO,
-  GenerateIndividualKhqrResponseDTODTO,
-  GenerateMerchantKhqrResponseDTODTO,
-  VerifyKhqrResponseDTODTO,
+  CheckPaymentBulkStatusResponseDTO,
+  CheckPaymentStatusResponseDTO,
+  DecodeKhqrResponseDTO,
+  GenerateDeepLinkResponseDTO,
+  GenerateIndividualKhqrResponseDTO,
+  GenerateMerchantKhqrResponseDTO,
+  VerifyKhqrResponseDTO,
   GenerateIndividualKhqrDTO,
   GenerateMerchantKhqrDTO,
   VerifyKhqrDTO,

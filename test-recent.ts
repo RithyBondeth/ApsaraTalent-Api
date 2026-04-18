@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ChatServiceModule } from './apps/chat-service/src/chat-service.module';
-import { ChatServiceService } from './apps/chat-service/src/chat-service.service';
+import { ChatService as ChatServiceService } from './apps/chat-service/src/chat-service.service';
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(ChatServiceModule);

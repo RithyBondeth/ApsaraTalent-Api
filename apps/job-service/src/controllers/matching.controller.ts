@@ -1,4 +1,3 @@
-import { IMatchingController } from '@app/contracts/interfaces/controller/job-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { UserResponseDTO } from '@app/contracts/dtos/user';
@@ -15,7 +14,7 @@ import {
 } from '@app/contracts/interfaces/service/job-service.interface';
 
 @Controller()
-export class MatchingController implements IMatchingController {
+export class MatchingController {
   constructor(
     @Inject(I_MATCHING_SERVICE)
     private readonly matchingService: IMatchingService,

@@ -7,7 +7,7 @@ import {
   IsString,
 } from 'class-validator';
 
-export class SearchJobDto {
+export class SearchJobDTO {
   @IsOptional()
   @IsString()
   keyword?: string;

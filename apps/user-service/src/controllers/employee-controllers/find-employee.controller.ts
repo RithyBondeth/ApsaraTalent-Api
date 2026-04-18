@@ -2,7 +2,7 @@ import { IFindEmployeeController } from '@app/contracts/interfaces/controller/em
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { UserPaginationDTO } from '../../dtos/user-pagination.dto';
+import { UserPaginationDTO } from '@app/contracts/dtos/user';
 import {
   CountAllUsersResponseDTO,
   EmployeeResponseDTO,

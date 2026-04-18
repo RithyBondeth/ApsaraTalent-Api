@@ -92,7 +92,7 @@ export class CheckPaymentStatusFoundResponseDTO {
   transactionId: string | null;
   amount: number | null;
   currency: string | null;
-  paidAt: string | null;
+  paidAt: Date | string | null;
   payerInfo: CheckPaymentStatusPayerInfoDTO | null;
   message: string;
 }
