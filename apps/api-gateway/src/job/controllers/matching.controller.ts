@@ -43,10 +43,14 @@ export class JobMatchingController
     @Req() req?: any,
   ): Promise<MatchResponseDTO> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
-    return rpcCall(this.jobClient, JOB_SERVICE.ACTIONS.EMPLOYEE_LIKES, {
-      eid,
-      cid,
-    });
+    return rpcCall<MatchResponseDTO>(
+      this.jobClient,
+      JOB_SERVICE.ACTIONS.EMPLOYEE_LIKES,
+      {
+        eid,
+        cid,
+      },
+    );
   }
 
   @Post('company/:cid/like/:eid')
@@ -56,10 +60,14 @@ export class JobMatchingController
     @Req() req?: any,
   ): Promise<MatchResponseDTO> {
     await this.assertCompanyAccess(req?.user?.id, cid);
-    return rpcCall(this.jobClient, JOB_SERVICE.ACTIONS.COMPANY_LIKES, {
-      cid,
-      eid,
-    });
+    return rpcCall<MatchResponseDTO>(
+      this.jobClient,
+      JOB_SERVICE.ACTIONS.COMPANY_LIKES,
+      {
+        cid,
+        eid,
+      },
+    );
   }
 
   @Get('current-employee-liked/:eid')
@@ -120,7 +128,7 @@ export class JobMatchingController
     @Req() req?: any,
   ): Promise<MatchCountResponseDTO> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
-    return rpcCall(
+    return rpcCall<MatchCountResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_MATCHING_COUNT,
       { eid },
@@ -133,7 +141,7 @@ export class JobMatchingController
     @Req() req?: any,
   ): Promise<MatchCountResponseDTO> {
     await this.assertCompanyAccess(req?.user?.id, cid);
-    return rpcCall(
+    return rpcCall<MatchCountResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_MATCHING_COUNT,
       { cid },
@@ -145,9 +153,13 @@ export class JobMatchingController
     @Param('id') id: string,
     @Query('role') role: string,
   ): Promise<AnalyticsResponseDTO> {
-    return rpcCall(this.jobClient, JOB_SERVICE.ACTIONS.GET_ANALYTICS, {
-      userId: id,
-      role,
-    });
+    return rpcCall<AnalyticsResponseDTO>(
+      this.jobClient,
+      JOB_SERVICE.ACTIONS.GET_ANALYTICS,
+      {
+        userId: id,
+        role,
+      },
+    );
   }
 }

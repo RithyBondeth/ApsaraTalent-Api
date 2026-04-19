@@ -80,7 +80,6 @@ export class AuthController implements IBasicAuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<LoginResponseDTO> {
     const payload = { ...loginDTO };
-
     const { accessToken, refreshToken, user, message } =
       await sendAuthServiceRequest<LoginResponseDTO>(
         this.authClient,
@@ -90,12 +89,12 @@ export class AuthController implements IBasicAuthController {
 
     setAuthTokenCookies(res, { accessToken, refreshToken });
 
-    return {
+    return new LoginResponseDTO({
       message,
       refreshToken,
       accessToken,
       user,
-    };
+    });
   }
 
   @Post('login-otp')
@@ -128,13 +127,13 @@ export class AuthController implements IBasicAuthController {
 
     setAuthTokenCookies(res, { accessToken, refreshToken });
 
-    return {
+    return new VerifyOtpResponseDTO({
       message,
       refreshToken,
       accessToken,
       user,
       isSuccess,
-    };
+    });
   }
 
   @Post('forgot-password')

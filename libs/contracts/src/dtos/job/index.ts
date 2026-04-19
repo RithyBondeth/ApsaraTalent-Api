@@ -1,3 +1,3 @@
-export * from './search-job.dto';
+export * from './jobs';
 export * from './interviews';
 export * from './matches';

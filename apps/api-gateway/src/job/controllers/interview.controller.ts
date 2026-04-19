@@ -45,10 +45,14 @@ export class InterviewController
     @Req() req?: any,
   ): Promise<CreateInterviewResponseDTO> {
     await this.assertCompanyAccess(req?.user?.id, dto.companyId);
-    return rpcCall(this.jobClient, JOB_SERVICE.ACTIONS.CREATE_INTERVIEW, {
-      ...dto,
-      createdBy: 'company',
-    });
+    return rpcCall<CreateInterviewResponseDTO>(
+      this.jobClient,
+      JOB_SERVICE.ACTIONS.CREATE_INTERVIEW,
+      {
+        ...dto,
+        createdBy: 'company',
+      },
+    );
   }
 
   @Get('employee/:employeeId')
@@ -57,7 +61,7 @@ export class InterviewController
     @Req() req?: any,
   ): Promise<GetInterviewResponseDTO[]> {
     await this.assertEmployeeAccess(req?.user?.id, employeeId);
-    return rpcCall(
+    return rpcCall<GetInterviewResponseDTO[]>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.GET_INTERVIEWS_BY_EMPLOYEE,
       { employeeId },
@@ -70,7 +74,7 @@ export class InterviewController
     @Req() req?: any,
   ): Promise<GetInterviewResponseDTO[]> {
     await this.assertCompanyAccess(req?.user?.id, companyId);
-    return rpcCall(
+    return rpcCall<GetInterviewResponseDTO[]>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.GET_INTERVIEWS_BY_COMPANY,
       { companyId },
@@ -93,7 +97,7 @@ export class InterviewController
       throw new ForbiddenException('Invalid user role.');
     }
 
-    return rpcCall(
+    return rpcCall<UpdateInterviewResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.UPDATE_INTERVIEW_STATUS,
       { ...dto, requestUserId: req.user.id, requestUserRole: role },
