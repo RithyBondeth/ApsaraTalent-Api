@@ -1,5 +1,4 @@
 import { LoginResponseDTO } from './login.dto';
-import { UserResponseDTO } from '../shared/user.dto';
 import { IsNotEmpty, IsString } from 'class-validator';
 
 export class VerifyOtpDTO {

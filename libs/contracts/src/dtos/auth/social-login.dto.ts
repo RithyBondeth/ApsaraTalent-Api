@@ -105,23 +105,7 @@ export class SocialLoginResponseDTO extends LoginResponseDTO {
 
   @IsString()
   @IsOptional()
-  email?: string;
-
-  @IsString()
-  @IsOptional()
-  username?: string;
-
-  @IsString()
-  @IsOptional()
-  firstname?: string; // For platforms that use lowercase
-
-  @IsString()
-  @IsOptional()
-  lastname?: string;
-
-  @IsString()
-  @IsOptional()
-  firstName?: string; // For platforms that use camelCase
+  firstName?: string;
 
   @IsString()
   @IsOptional()
