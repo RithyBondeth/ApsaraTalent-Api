@@ -99,30 +99,12 @@ export class LinkedInAuthDTO {
 }
 
 export class SocialLoginResponseDTO extends LoginResponseDTO {
-  @IsBoolean()
-  @IsOptional()
   newUser?: boolean;
-
-  @IsString()
-  @IsOptional()
   firstName?: string;
-
-  @IsString()
-  @IsOptional()
   lastName?: string;
-
-  @IsString()
-  @IsOptional()
   picture?: string;
-
-  @IsString()
-  @IsOptional()
   provider?: string;
-
-  @IsOptional()
   lastLoginMethod?: ELoginMethod;
-
-  @IsOptional()
   lastLoginAt?: Date;
 
   constructor(partial: Partial<SocialLoginResponseDTO>) {
