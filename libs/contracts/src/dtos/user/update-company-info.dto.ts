@@ -1,4 +1,4 @@
-import { CompanyResponseDTO } from './search-employee.dto';
+import { CompanyResponseDTO } from '../shared/user.dto';
 import { Type } from 'class-transformer';
 import {
   IsArray,

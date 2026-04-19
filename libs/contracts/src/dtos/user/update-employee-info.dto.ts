@@ -1,4 +1,4 @@
-import { EmployeeResponseDTO } from './search-employee.dto';
+import { EmployeeResponseDTO } from '../shared/user.dto';
 import { EGender } from '@app/common/database/enums/gender.enum';
 import { Type } from 'class-transformer';
 import {

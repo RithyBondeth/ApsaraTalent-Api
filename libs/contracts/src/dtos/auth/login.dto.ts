@@ -1,5 +1,5 @@
 import { IsNotEmpty, IsString } from 'class-validator';
-import { UserResponseDTO } from '../user/search-employee.dto';
+import { UserResponseDTO } from '../shared/user.dto';
 
 export class LoginDTO {
   @IsString()
