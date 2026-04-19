@@ -23,7 +23,17 @@ export interface IBasicAuthLoginController {
   login(loginDTO: LoginDTO, res: any): Promise<LoginResponseDTO>;
 }
 
+export interface IBasicAuthLoginRpcController {
+  login(loginDTO: LoginDTO): Promise<LoginResponseDTO>;
+}
+
 export interface IBasicAuthForgotPasswordController {
+  forgotPassword(
+    forgotPasswordDTO: ForgotPasswordDTO,
+  ): Promise<ForgotPasswordResponseDTO>;
+}
+
+export interface IBasicAuthForgotPasswordRpcController {
   forgotPassword(
     forgotPasswordDTO: ForgotPasswordDTO,
   ): Promise<ForgotPasswordResponseDTO>;
@@ -36,6 +46,12 @@ export interface IBasicAuthResetPasswordController {
   ): Promise<ResetPasswordResponseDTO>;
 }
 
+export interface IBasicAuthResetPasswordRpcController {
+  resetPassword(
+    resetPasswordDTO: ResetPasswordDTO,
+  ): Promise<ResetPasswordResponseDTO>;
+}
+
 export interface IBasicAuthRefreshTokenController {
   refreshToken(
     refreshTokenDTO: RefreshTokenDTO,
@@ -43,7 +59,19 @@ export interface IBasicAuthRefreshTokenController {
   ): Promise<RefreshTokenResponseDTO>;
 }
 
+export interface IBasicAuthRefreshTokenRpcController {
+  refreshToken(
+    refreshTokenDTO: RefreshTokenDTO,
+  ): Promise<RefreshTokenResponseDTO>;
+}
+
 export interface IBasicAuthVerifyEmailController {
+  verifyEmail(
+    emailVerificationToken: VerifyEmailDTO,
+  ): Promise<VerifyEmailResponseDTO>;
+}
+
+export interface IBasicAuthVerifyEmailRpcController {
   verifyEmail(
     emailVerificationToken: VerifyEmailDTO,
   ): Promise<VerifyEmailResponseDTO>;
@@ -58,12 +86,26 @@ export interface IBasicAuthRegisterController {
   ): Promise<EmployeeRegisterResponseDTO>;
 }
 
+export interface IBasicAuthRegisterRpcController {
+  registerCompany(
+    companyRegisterDTO: CompanyRegisterDTO,
+  ): Promise<CompanyRegisterResponseDTO>;
+  registerEmployee(
+    employeeRegisterDTO: EmployeeRegisterDTO,
+  ): Promise<EmployeeRegisterResponseDTO>;
+}
+
 export interface IBasicAuthLoginOTPController {
   loginOtp(loginOtpDTO: LoginOtpDTO): Promise<LoginOtpResponseDTO>;
   verifyOtp(
     verifyOtpDTO: VerifyOtpDTO,
     res: any,
   ): Promise<VerifyOtpResponseDTO>;
+}
+
+export interface IBasicAuthLoginOTPRpcController {
+  loginOtp(loginOtpDTO: LoginOtpDTO): Promise<LoginOtpResponseDTO>;
+  verifyOtp(verifyOtpDTO: VerifyOtpDTO): Promise<VerifyOtpResponseDTO>;
 }
 
 export interface IBasicAuthIceServersController {

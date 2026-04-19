@@ -1,4 +1,4 @@
-import { IBasicAuthRegisterController } from '@app/contracts/interfaces/controller/auth-controller.interface';
+import { IBasicAuthRegisterRpcController } from '@app/contracts/interfaces/controller/auth-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
@@ -14,7 +14,7 @@ import {
 } from '@app/contracts';
 
 @Controller()
-export class RegisterController implements IBasicAuthRegisterController {
+export class RegisterController implements IBasicAuthRegisterRpcController {
   constructor(
     @Inject(I_REGISTER_SERVICE)
     private readonly registerService: IRegisterService,

@@ -1,4 +1,15 @@
 import {
+  CheckPaymentBulkStatusDTO,
+  CheckPaymentStatusDTO,
+  DecodeKhqrDTO,
+  GenerateDeepLinkDTO,
+  GenerateIndividualKhqrDTO,
+  GenerateMd5HashDTO,
+  GenerateMerchantKhqrDTO,
+  GenerateQrImageDTO,
+  GenerateQrImageQueryDTO,
+  KhqrInfoLookupDTO,
+  PaymentInfoLookupDTO,
   CheckPaymentBulkStatusResponseDTO,
   CheckPaymentStatusResponseDTO,
   DecodeKhqrResponseDTO,
@@ -10,28 +21,32 @@ import {
   PaymentInfoResponseDTO,
   QrImageResponseDTO,
   VerifyKhqrResponseDTO,
+  VerifyKhqrDTO,
 } from '@app/contracts/dtos/payment';
 
 export interface IPaymentController {
   generateIndividualQr(
-    generateIndividualQrDTO?: any,
+    generateIndividualQrDTO: GenerateIndividualKhqrDTO,
   ): Promise<GenerateIndividualKhqrResponseDTO>;
   generateMerchantQr(
-    generateMerchantQrDTO?: any,
-  ): Promise<GenerateMerchantKhqrResponseDTO | void>;
-  verifyKhqr(verifyKhqrDTO?: any): Promise<VerifyKhqrResponseDTO>;
-  decodeKhqr(verifyKhqrDTO?: any): Promise<DecodeKhqrResponseDTO>;
-  generateQRImage?(body?: any, format?: any): Promise<QrImageResponseDTO>;
+    generateMerchantQrDTO: GenerateMerchantKhqrDTO,
+  ): Promise<GenerateMerchantKhqrResponseDTO>;
+  verifyKhqr(verifyKhqrDTO: VerifyKhqrDTO): Promise<VerifyKhqrResponseDTO>;
+  decodeKhqr(verifyKhqrDTO: DecodeKhqrDTO): Promise<DecodeKhqrResponseDTO>;
+  generateQRImage?(
+    body: GenerateQrImageDTO,
+    format?: GenerateQrImageQueryDTO['format'],
+  ): Promise<QrImageResponseDTO>;
   generateDeepLink(
-    generateDeepLinkDto?: any,
+    generateDeepLinkDto: GenerateDeepLinkDTO,
   ): Promise<GenerateDeepLinkResponseDTO>;
   checkPaymentStatus(
-    checkPaymentStatusDTO?: any,
+    checkPaymentStatusDTO: CheckPaymentStatusDTO,
   ): Promise<CheckPaymentStatusResponseDTO>;
   checkPaymentBulkStatus(
-    checkPaymentBulkStatusDTO?: any,
+    checkPaymentBulkStatusDTO: CheckPaymentBulkStatusDTO,
   ): Promise<CheckPaymentBulkStatusResponseDTO>;
-  getPaymentInfo?(md5Hash?: any): Promise<PaymentInfoResponseDTO>;
-  getKHQRInfo?(qrString?: any): Promise<KhqrInfoResponseDTO>;
-  generateMd5Hash?(body?: any): Promise<Md5HashResponseDTO>;
+  getPaymentInfo?(md5Hash: PaymentInfoLookupDTO['md5Hash']): Promise<PaymentInfoResponseDTO>;
+  getKHQRInfo?(qrString: KhqrInfoLookupDTO['qrString']): Promise<KhqrInfoResponseDTO>;
+  generateMd5Hash?(body: GenerateMd5HashDTO): Promise<Md5HashResponseDTO>;
 }

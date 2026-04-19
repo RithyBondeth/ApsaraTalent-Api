@@ -1,4 +1,4 @@
-import { IBasicAuthLoginOTPController } from '@app/contracts/interfaces/controller/auth-controller.interface';
+import { IBasicAuthLoginOTPRpcController } from '@app/contracts/interfaces/controller/auth-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
@@ -14,7 +14,7 @@ import {
 } from '@app/contracts';
 
 @Controller()
-export class LoginOTPController implements IBasicAuthLoginOTPController {
+export class LoginOTPController implements IBasicAuthLoginOTPRpcController {
   constructor(
     @Inject(I_LOGIN_OTP_SERVICE)
     private readonly loginOtpService: ILoginOTPService,

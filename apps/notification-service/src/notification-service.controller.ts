@@ -1,18 +1,15 @@
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
-  DeleteAllNotificationsPayload,
-  DeleteNotificationPayload,
-  ListNotificationsPayload,
-  MarkAllReadPayload,
-  MarkReadPayload,
-  UnreadCountPayload,
+  INotificationRpcController,
 } from '@app/contracts/interfaces/domain/notification.interface';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 
-import { INotificationController } from '@app/contracts/interfaces/domain/notification.interface';
 import {
   GetAllNotificationResponseDTO,
+  ListNotificationsDTO,
+  NotificationIdDTO,
+  NotificationUserDTO,
   NotificationListByUserResponseDTO,
   MarkNotificationAsReadResponseDTO,
   ReadAllNotificationResponseDTO,
@@ -27,7 +24,7 @@ import {
 } from '@app/contracts/interfaces/service/notification-service.interface';
 
 @Controller()
-export class NotificationController implements INotificationController {
+export class NotificationController implements INotificationRpcController {
   constructor(
     @Inject(I_NOTIFICATION_SERVICE)
     private readonly notificationService: INotificationService,
@@ -47,42 +44,42 @@ export class NotificationController implements INotificationController {
 
   @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.LIST_BY_USER)
   async listByUser(
-    @Payload() payload: ListNotificationsPayload,
+    @Payload() payload: ListNotificationsDTO,
   ): Promise<NotificationListByUserResponseDTO> {
     return this.notificationService.listByUser(payload);
   }
 
   @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.MARK_READ)
   async markRead(
-    @Payload() payload: MarkReadPayload,
+    @Payload() payload: NotificationIdDTO,
   ): Promise<MarkNotificationAsReadResponseDTO> {
     return this.notificationService.markRead(payload);
   }
 
   @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.MARK_ALL_READ)
   async markAllRead(
-    @Payload() payload: MarkAllReadPayload,
+    @Payload() payload: NotificationUserDTO,
   ): Promise<ReadAllNotificationResponseDTO> {
     return this.notificationService.markAllRead(payload);
   }
 
   @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.GET_UNREAD_COUNT)
   async getUnreadCount(
-    @Payload() payload: UnreadCountPayload,
+    @Payload() payload: NotificationUserDTO,
   ): Promise<UnreadCountResponseDTO> {
     return this.notificationService.getUnreadCount(payload);
   }
 
   @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.DELETE_NOTIFICATION)
   async deleteNotification(
-    @Payload() payload: DeleteNotificationPayload,
+    @Payload() payload: NotificationIdDTO,
   ): Promise<DeleteNotificationResponseDTO> {
     return this.notificationService.deleteNotification(payload);
   }
 
   @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.DELETE_ALL_NOTIFICATIONS)
   async deleteAllNotifications(
-    @Payload() payload: DeleteAllNotificationsPayload,
+    @Payload() payload: NotificationUserDTO,
   ): Promise<DeleteNotificationResponseDTO> {
     return this.notificationService.deleteAllNotifications(payload);
   }

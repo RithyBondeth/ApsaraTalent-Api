@@ -1,4 +1,4 @@
-import { IBasicAuthRefreshTokenController } from '@app/contracts/interfaces/controller/auth-controller.interface';
+import { IBasicAuthRefreshTokenRpcController } from '@app/contracts/interfaces/controller/auth-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
@@ -9,7 +9,7 @@ import {
 import { RefreshTokenDTO, RefreshTokenResponseDTO } from '@app/contracts';
 
 @Controller()
-export class RefreshTokenController implements IBasicAuthRefreshTokenController {
+export class RefreshTokenController implements IBasicAuthRefreshTokenRpcController {
   constructor(
     @Inject(I_REFRESH_TOKEN_SERVICE)
     private readonly refreshTokenService: IRefreshTokenService,

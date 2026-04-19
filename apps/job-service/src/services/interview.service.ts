@@ -10,6 +10,8 @@ import { Repository } from 'typeorm';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 import {
   CreateInterviewDTO,
+  GetInterviewsByCompanyDTO,
+  GetInterviewsByEmployeeDTO,
   InterviewResponseDTO,
   InterviewStatus,
   UpdateInterviewStatusDTO,
@@ -137,11 +139,11 @@ export class InterviewService implements IInterviewService {
   }
 
   async getInterviewsByEmployee(
-    employeeId: string,
+    dto: GetInterviewsByEmployeeDTO,
   ): Promise<InterviewResponseDTO[]> {
     try {
       const interviews = await this.interviewRepo.find({
-        where: { employee: { id: employeeId } },
+        where: { employee: { id: dto.employeeId } },
         relations: ['company'],
         order: { scheduledAt: 'ASC' },
       });
@@ -157,11 +159,11 @@ export class InterviewService implements IInterviewService {
   }
 
   async getInterviewsByCompany(
-    companyId: string,
+    dto: GetInterviewsByCompanyDTO,
   ): Promise<InterviewResponseDTO[]> {
     try {
       const interviews = await this.interviewRepo.find({
-        where: { company: { id: companyId } },
+        where: { company: { id: dto.companyId } },
         relations: ['employee'],
         order: { scheduledAt: 'ASC' },
       });

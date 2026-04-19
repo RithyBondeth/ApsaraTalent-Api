@@ -1,39 +1,99 @@
-import { EmployeeResponseDTO } from '@app/contracts/dtos/user';
-import { CoreResponseDTO } from '@app/contracts/dtos/shared';
+import { CoreResponseDTO, PaginationDTO } from '@app/contracts/dtos/shared';
+import {
+  EmployeeIdDTO,
+  EmployeeResponseDTO,
+  PaginationRequestDTO,
+  RemoveEmployeeEducationDTO,
+  RemoveEmployeeExperienceDTO,
+  SearchEmployeeDTO,
+  SearchEmployeeResponseDTO,
+  UpdateEmployeeInfoDTO,
+  UpdateEmployeeInfoRequestDTO,
+  UpdateEmployeeInfoResponseDTO,
+  UploadEmployeeAvatarDTO,
+  UploadEmployeeCoverLetterDTO,
+  UploadEmployeeResumeDTO,
+} from '@app/contracts/dtos/user';
 
 export interface IFindEmployeeController {
-  findAll(data?: any): Promise<EmployeeResponseDTO[]>;
-  findOneById(data?: any): Promise<EmployeeResponseDTO>;
+  findAll(data: PaginationDTO): Promise<EmployeeResponseDTO[]>;
+  findOneById(data: string): Promise<EmployeeResponseDTO>;
+}
+
+export interface IFindEmployeeRpcController {
+  findAll(data: PaginationRequestDTO): Promise<EmployeeResponseDTO[]>;
+  findOneById(data: EmployeeIdDTO): Promise<EmployeeResponseDTO>;
 }
 
 export interface IImageEmployeeController {
-  uploadEmployeeAvatar(data?: any, file?: any): Promise<CoreResponseDTO>;
-  removeEmployeeAvatar(data?: any, file?: any): Promise<CoreResponseDTO>;
+  uploadEmployeeAvatar(
+    employeeId: string,
+    file: Express.Multer.File,
+  ): Promise<CoreResponseDTO>;
+  removeEmployeeAvatar(employeeId: string): Promise<CoreResponseDTO>;
+}
+
+export interface IImageEmployeeRpcController {
+  uploadEmployeeAvatar(data: UploadEmployeeAvatarDTO): Promise<CoreResponseDTO>;
+  removeEmployeeAvatar(data: EmployeeIdDTO): Promise<CoreResponseDTO>;
 }
 
 export interface ISearchEmployeeController {
-  searchEmployee(data?: any): Promise<EmployeeResponseDTO[]>;
+  searchEmployee(data: SearchEmployeeDTO): Promise<SearchEmployeeResponseDTO[]>;
 }
 
 export interface IUpdateEmployeeController {
-  updateEmployeeInfo(data?: any, body?: any): Promise<any>;
+  updateEmployeeInfo(
+    employeeId: string,
+    body: UpdateEmployeeInfoDTO,
+  ): Promise<UpdateEmployeeInfoResponseDTO>;
+}
+
+export interface IUpdateEmployeeRpcController {
+  updateEmployeeInfo(
+    data: UpdateEmployeeInfoRequestDTO,
+  ): Promise<UpdateEmployeeInfoResponseDTO>;
 }
 
 export interface IUploadEmployeeController {
-  uploadEmployeeResume(data?: any, file?: any): Promise<CoreResponseDTO>;
-  removeEmployeeResume(data?: any): Promise<CoreResponseDTO>;
-  uploadEmployeeCoverLetter(data?: any, file?: any): Promise<CoreResponseDTO>;
-  removeEmployeeCoverLetter(data?: any): Promise<CoreResponseDTO>;
+  uploadEmployeeResume(
+    employeeId: string,
+    file: Express.Multer.File,
+  ): Promise<CoreResponseDTO>;
+  removeEmployeeResume(employeeId: string): Promise<CoreResponseDTO>;
+  uploadEmployeeCoverLetter(
+    employeeId: string,
+    file: Express.Multer.File,
+  ): Promise<CoreResponseDTO>;
+  removeEmployeeCoverLetter(employeeId: string): Promise<CoreResponseDTO>;
+}
+
+export interface IUploadEmployeeRpcController {
+  uploadEmployeeResume(data: UploadEmployeeResumeDTO): Promise<CoreResponseDTO>;
+  removeEmployeeResume(data: EmployeeIdDTO): Promise<CoreResponseDTO>;
+  uploadEmployeeCoverLetter(
+    data: UploadEmployeeCoverLetterDTO,
+  ): Promise<CoreResponseDTO>;
+  removeEmployeeCoverLetter(data: EmployeeIdDTO): Promise<CoreResponseDTO>;
 }
 
 export interface IRemoveEmployeeItemsController {
   removeEmployeeEducation(
-    employeeId?: any,
-    educationId?: any,
+    employeeId: string,
+    educationId: string,
   ): Promise<CoreResponseDTO>;
   removeEmployeeExperience(
-    employeeId?: any,
-    experienceId?: any,
+    employeeId: string,
+    experienceId: string,
+  ): Promise<CoreResponseDTO>;
+}
+
+export interface IRemoveEmployeeItemsRpcController {
+  removeEmployeeEducation(
+    data: RemoveEmployeeEducationDTO,
+  ): Promise<CoreResponseDTO>;
+  removeEmployeeExperience(
+    data: RemoveEmployeeExperienceDTO,
   ): Promise<CoreResponseDTO>;
 }
 
@@ -45,3 +105,12 @@ export interface IEmployeeController
     IUpdateEmployeeController,
     IUploadEmployeeController,
     IRemoveEmployeeItemsController {}
+
+export interface IEmployeeRpcController
+  extends
+    IFindEmployeeRpcController,
+    IImageEmployeeRpcController,
+    ISearchEmployeeController,
+    IUpdateEmployeeRpcController,
+    IUploadEmployeeRpcController,
+    IRemoveEmployeeItemsRpcController {}

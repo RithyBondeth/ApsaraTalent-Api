@@ -3,3 +3,4 @@ export * from './analytics.dto';
 export * from './count-matching.dto';
 export * from './find-current-matching.dto';
 export * from './find-current-like.dto';
+export * from './request.dto';

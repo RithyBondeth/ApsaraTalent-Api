@@ -1,41 +1,79 @@
 import {
+  CompanyEmployeeFavoriteDTO,
+  CompanyEmployeeFavoriteWithFavoriteIdDTO,
   UserResponseDTO,
   CompanyResponseDTO,
+  CompanyFavoriteLookupDTO,
+  CompanyRecommendationsDTO,
+  EmployeeCompanyFavoriteDTO,
+  EmployeeCompanyFavoriteWithFavoriteIdDTO,
   EmployeeResponseDTO,
+  EmployeeFavoriteLookupDTO,
+  EmployeeRecommendationsDTO,
   FavoriteCountResponseDTO,
+  PaginationRequestDTO,
+  UpdatePushNotificationTokenBodyDTO,
+  UpdatePushNotificationTokenDTO,
+  UserIdDTO,
 } from '@app/contracts/dtos/user';
 import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 
 export interface IUserController {
-  findAllUsers(data?: any): Promise<UserResponseDTO[]>;
-  findOneUserById(data?: any): Promise<UserResponseDTO>;
+  findAllUsers(data: PaginationRequestDTO): Promise<UserResponseDTO[]>;
+  findOneUserById(data: string): Promise<UserResponseDTO>;
   getCurrentUser(data?: any): Promise<UserResponseDTO>;
-  findAllCareerScopes(data?: any): Promise<any>;
-  employeeFavoriteCompany(eid?: any, cid?: any): Promise<CoreResponseDTO>;
+  findAllCareerScopes(): Promise<any>;
+  employeeFavoriteCompany(dto: EmployeeCompanyFavoriteDTO): Promise<CoreResponseDTO>;
   employeeUnfavoriteCompany(
-    eid?: any,
-    cid?: any,
-    favoriteId?: string,
+    dto: EmployeeCompanyFavoriteWithFavoriteIdDTO,
   ): Promise<CoreResponseDTO>;
-  companyFavoriteEmployee(cid?: any, eid?: any): Promise<CoreResponseDTO>;
+  companyFavoriteEmployee(dto: CompanyEmployeeFavoriteDTO): Promise<CoreResponseDTO>;
   companyUnfavoriteEmployee(
-    cid?: any,
-    eid?: any,
-    favoriteId?: string,
+    dto: CompanyEmployeeFavoriteWithFavoriteIdDTO,
   ): Promise<CoreResponseDTO>;
-  findAllEmployeeFavorite(eid?: any): Promise<CompanyResponseDTO[]>;
-  findAllCompanyFavorite(cid?: any): Promise<EmployeeResponseDTO[]>;
-  countEmployeeFavorite(eid?: any): Promise<FavoriteCountResponseDTO>;
-  countCompanyFavorite(cid?: any): Promise<FavoriteCountResponseDTO>;
-  updatePushNotificationToken?(...args: any[]): Promise<CoreResponseDTO>;
+  findAllEmployeeFavorite(dto: EmployeeFavoriteLookupDTO): Promise<CompanyResponseDTO[]>;
+  findAllCompanyFavorite(dto: CompanyFavoriteLookupDTO): Promise<EmployeeResponseDTO[]>;
+  countEmployeeFavorite(dto: EmployeeFavoriteLookupDTO): Promise<FavoriteCountResponseDTO>;
+  countCompanyFavorite(dto: CompanyFavoriteLookupDTO): Promise<FavoriteCountResponseDTO>;
+  updatePushNotificationToken?(
+    req: any,
+    body: UpdatePushNotificationTokenBodyDTO,
+  ): Promise<CoreResponseDTO>;
   getEmployeeRecommendations(
-    employeeId?: any,
-    limit?: any,
+    employeeId: string,
+    limit?: number,
     req?: any,
   ): Promise<CompanyResponseDTO[]>;
   getCompanyRecommendations(
-    companyId?: any,
-    limit?: any,
+    companyId: string,
+    limit?: number,
     req?: any,
+  ): Promise<EmployeeResponseDTO[]>;
+}
+
+export interface IUserRpcController {
+  findAllUsers(data: PaginationRequestDTO): Promise<UserResponseDTO[]>;
+  findOneUserById(data: UserIdDTO): Promise<UserResponseDTO>;
+  getCurrentUser(data: UserIdDTO): Promise<UserResponseDTO>;
+  findAllCareerScopes(): Promise<any>;
+  employeeFavoriteCompany(dto: EmployeeCompanyFavoriteDTO): Promise<CoreResponseDTO>;
+  employeeUnfavoriteCompany(
+    dto: EmployeeCompanyFavoriteWithFavoriteIdDTO,
+  ): Promise<CoreResponseDTO>;
+  companyFavoriteEmployee(dto: CompanyEmployeeFavoriteDTO): Promise<CoreResponseDTO>;
+  companyUnfavoriteEmployee(
+    dto: CompanyEmployeeFavoriteWithFavoriteIdDTO,
+  ): Promise<CoreResponseDTO>;
+  findAllEmployeeFavorite(dto: EmployeeFavoriteLookupDTO): Promise<CompanyResponseDTO[]>;
+  findAllCompanyFavorite(dto: CompanyFavoriteLookupDTO): Promise<EmployeeResponseDTO[]>;
+  countEmployeeFavorite(dto: EmployeeFavoriteLookupDTO): Promise<FavoriteCountResponseDTO>;
+  countCompanyFavorite(dto: CompanyFavoriteLookupDTO): Promise<FavoriteCountResponseDTO>;
+  updatePushNotificationToken(dto: UpdatePushNotificationTokenDTO): Promise<CoreResponseDTO>;
+  clearUserCache(dto: UserIdDTO): Promise<void>;
+  getEmployeeRecommendations(
+    dto: EmployeeRecommendationsDTO,
+  ): Promise<CompanyResponseDTO[]>;
+  getCompanyRecommendations(
+    dto: CompanyRecommendationsDTO,
   ): Promise<EmployeeResponseDTO[]>;
 }

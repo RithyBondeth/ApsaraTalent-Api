@@ -1,9 +1,25 @@
 import {
+  CompanyRegisterDTO,
+  CompanyRegisterResponseDTO,
+  EmployeeRegisterDTO,
+  EmployeeRegisterResponseDTO,
+  FacebookAuthDTO,
   LoginResponseDTO,
   ForgotPasswordResponseDTO,
+  ForgotPasswordDTO,
+  GithubAuthDTO,
+  GoogleAuthDTO,
+  LinkedInAuthDTO,
+  LoginDTO,
+  LoginOtpDTO,
+  LoginOtpResponseDTO,
   ResetPasswordResponseDTO,
+  ResetPasswordDTO,
   RefreshTokenResponseDTO,
+  RefreshTokenDTO,
   VerifyEmailResponseDTO,
+  VerifyOtpDTO,
+  VerifyOtpResponseDTO,
   FacebookLoginResponseDTO,
   GithubLoginResponseDTO,
   GoogleLoginResponseDTO,
@@ -24,24 +40,34 @@ export const I_GITHUB_AUTH_SERVICE = 'IGithubAuthService';
 export const I_FACEBOOK_AUTH_SERVICE = 'IFacebookAuthService';
 
 export interface ILoginService {
-  login(loginDTO: any): Promise<LoginResponseDTO>;
+  login(loginDTO: LoginDTO): Promise<LoginResponseDTO>;
 }
 
 export interface IRegisterService {
-  companyRegister(companyRegisterDTO: any): Promise<any>;
-  employeeRegister(employeeRegisterDTO: any): Promise<any>;
+  companyRegister(
+    companyRegisterDTO: CompanyRegisterDTO,
+  ): Promise<CompanyRegisterResponseDTO>;
+  employeeRegister(
+    employeeRegisterDTO: EmployeeRegisterDTO,
+  ): Promise<EmployeeRegisterResponseDTO>;
 }
 
 export interface IForgotPasswordService {
-  forgotPassword(forgotPasswordDTO: any): Promise<ForgotPasswordResponseDTO>;
+  forgotPassword(
+    forgotPasswordDTO: ForgotPasswordDTO,
+  ): Promise<ForgotPasswordResponseDTO>;
 }
 
 export interface IResetPasswordService {
-  resetPassword(resetPasswordDTO: any): Promise<ResetPasswordResponseDTO>;
+  resetPassword(
+    resetPasswordDTO: ResetPasswordDTO,
+  ): Promise<ResetPasswordResponseDTO>;
 }
 
 export interface IRefreshTokenService {
-  refreshToken(refreshTokenDTO: any): Promise<RefreshTokenResponseDTO>;
+  refreshToken(
+    refreshTokenDTO: RefreshTokenDTO,
+  ): Promise<RefreshTokenResponseDTO>;
 }
 
 export interface IVerifyEmailService {
@@ -49,22 +75,22 @@ export interface IVerifyEmailService {
 }
 
 export interface ILoginOTPService {
-  loginOtp(loginOtpDTO: any): Promise<any>;
-  verifyOtp(verifyOtpDTO: any): Promise<any>;
+  loginOtp(loginOtpDTO: LoginOtpDTO): Promise<LoginOtpResponseDTO>;
+  verifyOtp(verifyOtpDTO: VerifyOtpDTO): Promise<VerifyOtpResponseDTO>;
 }
 
 export interface IGoogleAuthService {
-  googleLogin(googleData: any): Promise<GoogleLoginResponseDTO>;
+  googleLogin(googleData: GoogleAuthDTO): Promise<GoogleLoginResponseDTO>;
 }
 
 export interface ILinkedInAuthService {
-  linkedInLogin(linkedInData: any): Promise<LinkedInLoginResponseDTO>;
+  linkedInLogin(linkedInData: LinkedInAuthDTO): Promise<LinkedInLoginResponseDTO>;
 }
 
 export interface IGithubAuthService {
-  githubLogin(githubData: any): Promise<GithubLoginResponseDTO>;
+  githubLogin(githubData: GithubAuthDTO): Promise<GithubLoginResponseDTO>;
 }
 
 export interface IFacebookAuthService {
-  facebookLogin(facebookData: any): Promise<FacebookLoginResponseDTO>;
+  facebookLogin(facebookData: FacebookAuthDTO): Promise<FacebookLoginResponseDTO>;
 }

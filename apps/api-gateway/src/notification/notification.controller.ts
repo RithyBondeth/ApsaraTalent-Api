@@ -18,6 +18,7 @@ import { INotificationController } from '@app/contracts/interfaces/domain/notifi
 import {
   UnreadCountResponseDTO,
   GetAllNotificationResponseDTO,
+  ListNotificationsQueryDTO,
   NotificationListByUserResponseDTO,
   MarkNotificationAsReadResponseDTO,
   ReadAllNotificationResponseDTO,
@@ -47,18 +48,14 @@ export class NotificationController implements INotificationController {
   @UseGuards(AuthGuard)
   async listByUser(
     @Req() req: any,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('unreadOnly') unreadOnly?: string,
+    @Query() query: ListNotificationsQueryDTO,
   ): Promise<NotificationListByUserResponseDTO> {
     return rpcCall<NotificationListByUserResponseDTO>(
       this.notificationClient,
       NOTIFICATION_SERVICE.ACTIONS.LIST_BY_USER,
       {
         userId: req.user.id,
-        page: page ? Number(page) : undefined,
-        limit: limit ? Number(limit) : undefined,
-        unreadOnly: unreadOnly === 'true',
+        ...query,
       },
     );
   }

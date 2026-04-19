@@ -3,6 +3,8 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
 import {
   CreateInterviewDTO,
+  GetInterviewsByCompanyDTO,
+  GetInterviewsByEmployeeDTO,
   UpdateInterviewStatusDTO,
 } from '@app/contracts/dtos/job';
 import { InterviewResponseDTO } from '@app/contracts/dtos/job';
@@ -27,16 +29,16 @@ export class InterviewController {
 
   @MessagePattern(JOB_SERVICE.ACTIONS.GET_INTERVIEWS_BY_EMPLOYEE)
   async getInterviewsByEmployee(
-    @Payload() payload: { employeeId: string },
+    @Payload() payload: GetInterviewsByEmployeeDTO,
   ): Promise<InterviewResponseDTO[]> {
-    return this.interviewService.getInterviewsByEmployee(payload.employeeId);
+    return this.interviewService.getInterviewsByEmployee(payload);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.GET_INTERVIEWS_BY_COMPANY)
   async getInterviewsByCompany(
-    @Payload() payload: { companyId: string },
+    @Payload() payload: GetInterviewsByCompanyDTO,
   ): Promise<InterviewResponseDTO[]> {
-    return this.interviewService.getInterviewsByCompany(payload.companyId);
+    return this.interviewService.getInterviewsByCompany(payload);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.UPDATE_INTERVIEW_STATUS)

@@ -4,15 +4,13 @@ import {
   NotificationListByUserResponseDTO,
   CreateNotificationCurrentUserResponseDTO,
   CreateNotificationCurrentUserDTO,
-  MarkNotificationAsReadResponseDTO,
-  ReadAllNotificationResponseDTO,
   DeleteNotificationResponseDTO,
+  ListNotificationsDTO,
+  MarkNotificationAsReadResponseDTO,
+  NotificationIdDTO,
+  NotificationUserDTO,
+  ReadAllNotificationResponseDTO,
 } from '@app/contracts/dtos/notification';
-import {
-  DeleteNotificationPayload,
-  ListNotificationsPayload,
-  UnreadCountPayload,
-} from '../domain';
 
 export const I_NOTIFICATION_SERVICE = 'INotificationService';
 
@@ -22,20 +20,15 @@ export interface INotificationService {
     body: CreateNotificationCurrentUserDTO,
   ): Promise<CreateNotificationCurrentUserResponseDTO>;
   listByUser(
-    payload: ListNotificationsPayload,
+    payload: ListNotificationsDTO,
   ): Promise<NotificationListByUserResponseDTO>;
-  markRead(payload: {
-    userId: string;
-    notificationId: string;
-  }): Promise<MarkNotificationAsReadResponseDTO>;
-  markAllRead(payload: {
-    userId: string;
-  }): Promise<ReadAllNotificationResponseDTO>;
-  getUnreadCount(payload: UnreadCountPayload): Promise<UnreadCountResponseDTO>;
+  markRead(payload: NotificationIdDTO): Promise<MarkNotificationAsReadResponseDTO>;
+  markAllRead(payload: NotificationUserDTO): Promise<ReadAllNotificationResponseDTO>;
+  getUnreadCount(payload: NotificationUserDTO): Promise<UnreadCountResponseDTO>;
   deleteNotification(
-    payload: DeleteNotificationPayload,
+    payload: NotificationIdDTO,
   ): Promise<DeleteNotificationResponseDTO>;
-  deleteAllNotifications(payload: {
-    userId: string;
-  }): Promise<DeleteNotificationResponseDTO>;
+  deleteAllNotifications(
+    payload: NotificationUserDTO,
+  ): Promise<DeleteNotificationResponseDTO>;
 }

@@ -2,6 +2,8 @@ import {
   JobResponseDTO,
   SearchJobResponseDTO,
   CreateInterviewDTO,
+  GetInterviewsByCompanyDTO,
+  GetInterviewsByEmployeeDTO,
   InterviewResponseDTO,
   UpdateInterviewStatusDTO,
   SearchJobDTO,
@@ -11,6 +13,9 @@ import {
   FindCurrentMatchingResponseDTO,
   MatchCountResponseDTO,
   AnalyticsResponseDTO,
+  CompanyMatchLookupDTO,
+  EmployeeMatchLookupDTO,
+  MatchAnalyticsRequestDTO,
 } from '@app/contracts/dtos/job';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
 
@@ -26,26 +31,35 @@ export interface IJobServiceService {
 export interface IMatchingService {
   employeeLikes(matchDto: MatchDTO): Promise<MatchResponseDTO>;
   companyLikes(matchDto: MatchDTO): Promise<MatchResponseDTO>;
-  findCurrentEmployeeLiked(eid: string): Promise<FindCurrentLikeResponseDTO[]>;
-  findCurrentCompanyLiked(cid: string): Promise<FindCurrentLikeResponseDTO[]>;
+  findCurrentEmployeeLiked(
+    dto: EmployeeMatchLookupDTO,
+  ): Promise<FindCurrentLikeResponseDTO[]>;
+  findCurrentCompanyLiked(
+    dto: CompanyMatchLookupDTO,
+  ): Promise<FindCurrentLikeResponseDTO[]>;
   findCurrentEmployeeMatching(
-    eid: string,
+    dto: EmployeeMatchLookupDTO,
   ): Promise<FindCurrentMatchingResponseDTO[]>;
   findCurrentCompanyMatching(
-    cid: string,
+    dto: CompanyMatchLookupDTO,
   ): Promise<FindCurrentMatchingResponseDTO[]>;
-  findCurrentEmployeeMatchingCount(eid: string): Promise<MatchCountResponseDTO>;
-  findCurrentCompanyMatchingCount(cid: string): Promise<MatchCountResponseDTO>;
-  getAnalytics(
-    userId: string,
-    role: 'employee' | 'company',
-  ): Promise<AnalyticsResponseDTO>;
+  findCurrentEmployeeMatchingCount(
+    dto: EmployeeMatchLookupDTO,
+  ): Promise<MatchCountResponseDTO>;
+  findCurrentCompanyMatchingCount(
+    dto: CompanyMatchLookupDTO,
+  ): Promise<MatchCountResponseDTO>;
+  getAnalytics(dto: MatchAnalyticsRequestDTO): Promise<AnalyticsResponseDTO>;
 }
 
 export interface IInterviewService {
   createInterview(dto: CreateInterviewDTO): Promise<InterviewResponseDTO>;
-  getInterviewsByEmployee(employeeId: string): Promise<InterviewResponseDTO[]>;
-  getInterviewsByCompany(companyId: string): Promise<InterviewResponseDTO[]>;
+  getInterviewsByEmployee(
+    dto: GetInterviewsByEmployeeDTO,
+  ): Promise<InterviewResponseDTO[]>;
+  getInterviewsByCompany(
+    dto: GetInterviewsByCompanyDTO,
+  ): Promise<InterviewResponseDTO[]>;
   updateInterviewStatus(
     dto: UpdateInterviewStatusDTO,
   ): Promise<InterviewResponseDTO>;

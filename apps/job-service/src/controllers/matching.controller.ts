@@ -7,6 +7,9 @@ import {
   MatchResponseDTO,
   MatchCountResponseDTO,
   AnalyticsResponseDTO,
+  CompanyMatchLookupDTO,
+  EmployeeMatchLookupDTO,
+  MatchAnalyticsRequestDTO,
 } from '@app/contracts/dtos/job';
 import {
   I_MATCHING_SERVICE,
@@ -34,53 +37,50 @@ export class MatchingController {
 
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_LIKED)
   async findCurrentEmployeeLiked(
-    @Payload() payload: { eid: string },
+    @Payload() payload: EmployeeMatchLookupDTO,
   ): Promise<UserResponseDTO[]> {
-    return this.matchingService.findCurrentEmployeeLiked(payload.eid);
+    return this.matchingService.findCurrentEmployeeLiked(payload);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_LIKED)
   async findCurrentCompanyLiked(
-    @Payload() payload: { cid: string },
+    @Payload() payload: CompanyMatchLookupDTO,
   ): Promise<UserResponseDTO[]> {
-    return this.matchingService.findCurrentCompanyLiked(payload.cid);
+    return this.matchingService.findCurrentCompanyLiked(payload);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_MATCHING)
   async findCurrentEmployeeMatching(
-    @Payload() payload: { eid: string },
+    @Payload() payload: EmployeeMatchLookupDTO,
   ): Promise<UserResponseDTO[]> {
-    return this.matchingService.findCurrentEmployeeMatching(payload.eid);
+    return this.matchingService.findCurrentEmployeeMatching(payload);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_MATCHING)
   async findCurrentCompanyMatching(
-    @Payload() payload: { cid: string },
+    @Payload() payload: CompanyMatchLookupDTO,
   ): Promise<UserResponseDTO[]> {
-    return this.matchingService.findCurrentCompanyMatching(payload.cid);
+    return this.matchingService.findCurrentCompanyMatching(payload);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_MATCHING_COUNT)
   async findCurrentEmployeeMatchingCount(
-    @Payload() payload: { eid: string },
+    @Payload() payload: EmployeeMatchLookupDTO,
   ): Promise<MatchCountResponseDTO> {
-    return this.matchingService.findCurrentEmployeeMatchingCount(payload.eid);
+    return this.matchingService.findCurrentEmployeeMatchingCount(payload);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_MATCHING_COUNT)
   async findCurrentCompanyMatchingCount(
-    @Payload() payload: { cid: string },
+    @Payload() payload: CompanyMatchLookupDTO,
   ): Promise<MatchCountResponseDTO> {
-    return this.matchingService.findCurrentCompanyMatchingCount(payload.cid);
+    return this.matchingService.findCurrentCompanyMatchingCount(payload);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.GET_ANALYTICS)
   async getAnalytics(
-    @Payload() payload: { userId: string; role: string },
+    @Payload() payload: MatchAnalyticsRequestDTO,
   ): Promise<AnalyticsResponseDTO> {
-    return this.matchingService.getAnalytics(
-      payload.userId,
-      payload.role as 'employee' | 'company',
-    );
+    return this.matchingService.getAnalytics(payload);
   }
 }

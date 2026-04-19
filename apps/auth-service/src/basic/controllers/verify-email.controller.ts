@@ -1,4 +1,4 @@
-import { IBasicAuthVerifyEmailController } from '@app/contracts/interfaces/controller/auth-controller.interface';
+import { IBasicAuthVerifyEmailRpcController } from '@app/contracts/interfaces/controller/auth-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
@@ -9,7 +9,7 @@ import {
 import { VerifyEmailDTO, VerifyEmailResponseDTO } from '@app/contracts';
 
 @Controller()
-export class VerifyEmailController implements IBasicAuthVerifyEmailController {
+export class VerifyEmailController implements IBasicAuthVerifyEmailRpcController {
   constructor(
     @Inject(I_VERIFY_EMAIL_SERVICE)
     private readonly verifyEmailService: IVerifyEmailService,

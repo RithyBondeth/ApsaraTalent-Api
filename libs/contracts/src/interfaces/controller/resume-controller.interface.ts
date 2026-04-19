@@ -3,17 +3,20 @@ import {
   CreateResumeTemplateDTO,
   CreateResumeTemplateResponseDTO,
   ResumeTemplateResponseDTO,
+  SearchResumeTemplateDTO,
   SearchResumeTemplateResponseDTO,
 } from '@app/contracts/dtos/resume/template';
 
 export interface IResumeTemplateController {
-  findAllResumeTemplate(data?: any): Promise<ResumeTemplateResponseDTO[]>;
-  findOneResumeTemplateById(data?: any): Promise<ResumeTemplateResponseDTO>;
+  findAllResumeTemplate(): Promise<ResumeTemplateResponseDTO[]>;
+  findOneResumeTemplateById(resumeId: string): Promise<ResumeTemplateResponseDTO>;
   createResumeTemplate(
     dto: CreateResumeTemplateDTO,
     image: Express.Multer.File,
   ): Promise<CreateResumeTemplateResponseDTO>;
-  searchResumeTemplate(data?: any): Promise<SearchResumeTemplateResponseDTO[]>;
+  searchResumeTemplate(
+    data: SearchResumeTemplateDTO,
+  ): Promise<SearchResumeTemplateResponseDTO[]>;
 }
 
 export interface IResumeBuilderController {
