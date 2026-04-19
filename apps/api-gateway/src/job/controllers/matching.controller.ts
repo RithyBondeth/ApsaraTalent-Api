@@ -14,11 +14,12 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { UserResponseDTO } from '@app/contracts/dtos/user';
 import {
-  MatchResponseDTO,
-  MatchCountResponseDTO,
-  AnalyticsResponseDTO,
+  LikeResponseDTO,
+  CountMatchingResponseDTO,
+  GetAnalyticsResponseDTO,
+  FindCurrentMatchingResponseDTO,
+  FindCurrentLikeResponseDTO,
 } from '@app/contracts/dtos/job';
 import { JobAccessBase } from '../shared/job-access.base';
 import { rpcCall } from '../../utils/rpc-call';
@@ -41,9 +42,9 @@ export class JobMatchingController
     @Param('eid', ParseUUIDPipe) eid: string,
     @Param('cid', ParseUUIDPipe) cid: string,
     @Req() req?: any,
-  ): Promise<MatchResponseDTO> {
+  ): Promise<LikeResponseDTO> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
-    return rpcCall<MatchResponseDTO>(
+    return rpcCall<LikeResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.EMPLOYEE_LIKES,
       {
@@ -58,9 +59,9 @@ export class JobMatchingController
     @Param('cid', ParseUUIDPipe) cid: string,
     @Param('eid', ParseUUIDPipe) eid: string,
     @Req() req?: any,
-  ): Promise<MatchResponseDTO> {
+  ): Promise<LikeResponseDTO> {
     await this.assertCompanyAccess(req?.user?.id, cid);
-    return rpcCall<MatchResponseDTO>(
+    return rpcCall<LikeResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.COMPANY_LIKES,
       {
@@ -74,9 +75,9 @@ export class JobMatchingController
   async findCurrentEmployeeLiked(
     @Param('eid', ParseUUIDPipe) eid: string,
     @Req() req?: any,
-  ): Promise<UserResponseDTO[]> {
+  ): Promise<FindCurrentLikeResponseDTO[]> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
-    return rpcCall<UserResponseDTO[]>(
+    return rpcCall<FindCurrentLikeResponseDTO[]>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_LIKED,
       { eid },
@@ -87,9 +88,9 @@ export class JobMatchingController
   async findCurrentCompanyLiked(
     @Param('cid', ParseUUIDPipe) cid: string,
     @Req() req?: any,
-  ): Promise<UserResponseDTO[]> {
+  ): Promise<FindCurrentLikeResponseDTO[]> {
     await this.assertCompanyAccess(req?.user?.id, cid);
-    return rpcCall<UserResponseDTO[]>(
+    return rpcCall<FindCurrentLikeResponseDTO[]>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_LIKED,
       { cid },
@@ -100,9 +101,9 @@ export class JobMatchingController
   async findCurrentEmployeeMatching(
     @Param('eid', ParseUUIDPipe) eid: string,
     @Req() req?: any,
-  ): Promise<UserResponseDTO[]> {
+  ): Promise<FindCurrentMatchingResponseDTO[]> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
-    return rpcCall<UserResponseDTO[]>(
+    return rpcCall<FindCurrentMatchingResponseDTO[]>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_MATCHING,
       { eid },
@@ -113,9 +114,9 @@ export class JobMatchingController
   async findCurrentCompanyMatching(
     @Param('cid', ParseUUIDPipe) cid: string,
     @Req() req?: any,
-  ): Promise<UserResponseDTO[]> {
+  ): Promise<FindCurrentMatchingResponseDTO[]> {
     await this.assertCompanyAccess(req?.user?.id, cid);
-    return rpcCall<UserResponseDTO[]>(
+    return rpcCall<FindCurrentMatchingResponseDTO[]>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_MATCHING,
       { cid },
@@ -126,9 +127,9 @@ export class JobMatchingController
   async findCurrentEmployeeMatchingCount(
     @Param('eid', ParseUUIDPipe) eid: string,
     @Req() req?: any,
-  ): Promise<MatchCountResponseDTO> {
+  ): Promise<CountMatchingResponseDTO> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
-    return rpcCall<MatchCountResponseDTO>(
+    return rpcCall<CountMatchingResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_MATCHING_COUNT,
       { eid },
@@ -139,9 +140,9 @@ export class JobMatchingController
   async findCurrentCompanyMatchingCount(
     @Param('cid', ParseUUIDPipe) cid: string,
     @Req() req?: any,
-  ): Promise<MatchCountResponseDTO> {
+  ): Promise<CountMatchingResponseDTO> {
     await this.assertCompanyAccess(req?.user?.id, cid);
-    return rpcCall<MatchCountResponseDTO>(
+    return rpcCall<CountMatchingResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_MATCHING_COUNT,
       { cid },
@@ -152,8 +153,8 @@ export class JobMatchingController
   async getAnalytics(
     @Param('id') id: string,
     @Query('role') role: string,
-  ): Promise<AnalyticsResponseDTO> {
-    return rpcCall<AnalyticsResponseDTO>(
+  ): Promise<GetAnalyticsResponseDTO> {
+    return rpcCall<GetAnalyticsResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.GET_ANALYTICS,
       {

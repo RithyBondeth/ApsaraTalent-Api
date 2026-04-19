@@ -20,7 +20,7 @@ export class WeeklyActivityItemDTO {
   }
 }
 
-export class AnalyticsResponseDTO {
+export class GetAnalyticsResponseDTO {
   totalLikesGiven: number;
   totalLikesReceived: number;
   totalMatches: number;
@@ -29,7 +29,7 @@ export class AnalyticsResponseDTO {
   totalFavorites: number;
   recentMatches: MatchAnalyticsItemDTO[];
 
-  constructor(partial: Partial<AnalyticsResponseDTO>) {
+  constructor(partial: Partial<GetAnalyticsResponseDTO>) {
     return Object.assign(this, partial);
   }
 }

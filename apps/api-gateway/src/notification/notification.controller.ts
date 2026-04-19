@@ -42,7 +42,7 @@ export class NotificationController implements INotificationController {
   @Get()
   @UseGuards(AuthGuard)
   async listByUser(
-    @Req() req,
+    @Req() req: any,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('unreadOnly') unreadOnly?: string,
@@ -61,7 +61,7 @@ export class NotificationController implements INotificationController {
 
   @Get('unread-count')
   @UseGuards(AuthGuard)
-  async getUnreadCount(@Req() req): Promise<UnreadCountResponseDTO> {
+  async getUnreadCount(@Req() req: any): Promise<UnreadCountResponseDTO> {
     return rpcCall(
       this.notificationClient,
       NOTIFICATION_SERVICE.ACTIONS.GET_UNREAD_COUNT,
@@ -72,7 +72,7 @@ export class NotificationController implements INotificationController {
   @Patch(':id/read')
   @UseGuards(AuthGuard)
   async markRead(
-    @Req() req,
+    @Req() req: any,
     @Param('id') id: string,
   ): Promise<NotificationActionResponseDTO> {
     return rpcCall(
@@ -84,7 +84,7 @@ export class NotificationController implements INotificationController {
 
   @Patch('read-all')
   @UseGuards(AuthGuard)
-  async markAllRead(@Req() req): Promise<NotificationActionResponseDTO> {
+  async markAllRead(@Req() req: any): Promise<NotificationActionResponseDTO> {
     return rpcCall(
       this.notificationClient,
       NOTIFICATION_SERVICE.ACTIONS.MARK_ALL_READ,
@@ -95,7 +95,7 @@ export class NotificationController implements INotificationController {
   @Delete(':id')
   @UseGuards(AuthGuard)
   async deleteNotification(
-    @Req() req,
+    @Req() req: any,
     @Param('id') id: string,
   ): Promise<NotificationActionResponseDTO> {
     return rpcCall(
@@ -108,7 +108,7 @@ export class NotificationController implements INotificationController {
   @Delete()
   @UseGuards(AuthGuard)
   async deleteAllNotifications(
-    @Req() req,
+    @Req() req: any,
   ): Promise<NotificationActionResponseDTO> {
     return rpcCall(
       this.notificationClient,
@@ -120,7 +120,7 @@ export class NotificationController implements INotificationController {
   @Post()
   @UseGuards(AuthGuard)
   async createForCurrentUser(
-    @Req() req,
+    @Req() req: any,
     @Body()
     body: {
       title: string;
