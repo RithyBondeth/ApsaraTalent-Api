@@ -305,12 +305,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userId1 = client.data.userId;
     try {
       this.logger.log(
-        `[WS] Fetching history: user1=${userId1}, user2=${payload.userId2}`,
+        `[WS] Fetching history: user1=${userId1}, user2=${payload.partnerId}`,
       );
       const history = await firstValueFrom(
         this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.GET_CHAT_HISTORY, {
           userId1,
-          userId2: payload.userId2,
+          userId2: payload.partnerId,
           limit: Math.min(
             Math.max(1, payload.limit || CHAT.DEFAULT_HISTORY_LIMIT),
             CHAT.MAX_HISTORY_LIMIT,
@@ -326,7 +326,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.logger.error(`getChatHistory error: ${error?.message || 'Unknown'}`);
       return new GetChatHistoryResponseDTO({
         messages: [],
-        partnerId: payload.userId2,
+        partnerId: payload.partnerId,
         partnerProfile: null,
       });
     }

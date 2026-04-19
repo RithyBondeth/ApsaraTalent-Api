@@ -27,7 +27,7 @@ export interface IChatMessage {
   content: string;
   messageType: string;
   isRead: boolean;
-  reactions: {};
+  reactions: Record<string, string>;
   sentAt: Date;
   /** True when sender deleted the message (soft-delete tombstone) */
   isDeleted?: boolean;

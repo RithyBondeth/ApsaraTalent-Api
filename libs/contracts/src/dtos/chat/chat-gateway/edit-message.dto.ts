@@ -28,8 +28,11 @@ export class EditMessageRpcDTO {
 }
 
 export class EditMessageResponseDTO extends MarkAsReadResponseDTO {
-    constructor(partial: Partial<EditMessageResponseDTO>) {
-        super(partial);
-            Object.assign(this, partial);
-    }
+  newContent?: string;
+  senderId?: string;
+  receiverId?: string | null;
+
+  constructor(partial: Partial<EditMessageResponseDTO>) {
+    super(partial);
+  }
 }

@@ -11,8 +11,7 @@ export class CreateOrGetChatDTO {
 }
 
 export class CreateOrGetChatResponseDTO extends InitiateChatResponseDTO {
-    constructor(partial: Partial<CreateOrGetChatResponseDTO>) {
-        super(partial);
-            Object.assign(this, partial);
-    }
+  constructor(partial: Partial<CreateOrGetChatResponseDTO>) {
+    super(partial);
+  }
 }

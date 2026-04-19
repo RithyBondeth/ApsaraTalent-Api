@@ -1,10 +1,13 @@
 import {
+  IsArray,
   IsIn,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   IsUUID,
   MaxLength,
+  ValidateIf,
 } from 'class-validator';
 
 /** WebSocket event: sendMessage — sent by the client */
@@ -12,6 +15,8 @@ export class SendMessageDTO {
   @IsUUID()
   receiverId: string;
 
+  @ValidateIf((o) => !o.attachment)
+  @IsNotEmpty()
   @IsString()
   @MaxLength(5000)
   content: string;
@@ -37,6 +42,8 @@ export class SendMessageDTO {
   attachmentDuration?: number | null;
 
   @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
   attachmentAmplitude?: number[] | null;
 }
 

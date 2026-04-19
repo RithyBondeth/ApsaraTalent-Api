@@ -15,8 +15,7 @@ export class CallOfferDTO {
 }
 
 export class CallOfferResponseDTO extends CallAnswerResponseDTO {
-    constructor(partial: Partial<CallOfferResponseDTO>) {
-        super(partial);
-            Object.assign(this, partial);
-    }
+  constructor(partial: Partial<CallOfferResponseDTO>) {
+    super(partial);
+  }
 }

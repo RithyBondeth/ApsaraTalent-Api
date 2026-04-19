@@ -6,8 +6,7 @@ export class CreateMessageDTO extends SendMessageDTO {
   senderId: string;
 }
 export class CreateMessageResponseDTO extends MessageResponseDTO {
-    constructor(partial: Partial<CreateMessageResponseDTO>) {
-        super(partial);
-            Object.assign(this, partial);
-    }
+  constructor(partial: Partial<CreateMessageResponseDTO>) {
+    super(partial);
+  }
 }

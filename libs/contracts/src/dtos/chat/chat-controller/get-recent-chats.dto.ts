@@ -1,8 +1,7 @@
-import { InitiateChatResponseDTO } from './initate-chat.dto';
+import { InitiateChatResponseDTO } from './initiate-chat.dto';
 
 export class GetRecentChatsResponseDTO extends InitiateChatResponseDTO {
-    constructor(partial: Partial<GetRecentChatsResponseDTO>) {
-        super(partial);
-            Object.assign(this, partial);
-    }
+  constructor(partial: Partial<GetRecentChatsResponseDTO>) {
+    super(partial);
+  }
 }

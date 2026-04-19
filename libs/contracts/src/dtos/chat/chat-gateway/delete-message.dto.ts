@@ -20,8 +20,10 @@ export class DeleteMessageRpcDTO {
 }
 
 export class DeleteMessageResponseDTO extends MarkAsReadResponseDTO {
-    constructor(partial: Partial<DeleteMessageResponseDTO>) {
-        super(partial);
-            Object.assign(this, partial);
-    }
+  senderId?: string;
+  receiverId?: string | null;
+
+  constructor(partial: Partial<DeleteMessageResponseDTO>) {
+    super(partial);
+  }
 }

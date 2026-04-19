@@ -5,7 +5,7 @@ import { UserResponseDTO } from '../../user';
 /** WebSocket event: getChatHistory — fetched by the client */
 export class GetChatHistoryDTO {
   @IsUUID()
-  userId2: string;
+  partnerId: string;
 
   @IsOptional()
   @IsNumber()

@@ -1,11 +1,14 @@
 import { IsOptional, IsUUID } from 'class-validator';
-import { CallAnswerResponseDTO } from '../call-gateway';
 
 /** WebSocket event: markAsRead — sent by the client */
 export class MarkAsReadDTO {
   @IsUUID()
   messageId: string;
 
+  /**
+   * ID of the message's original sender — used only for WebSocket notification routing.
+   * Not required for the read operation itself (reader is taken from auth context).
+   */
   @IsOptional()
   @IsUUID()
   senderId?: string;
@@ -19,14 +22,10 @@ export class MarkAsReadRpcDTO {
   readerId: string;
 }
 
-/** Standard response for chat-related actions (e.g., mark as read, delete, edit) */
+/** Base response for simple chat operations (mark as read). */
 export class MarkAsReadResponseDTO {
   success: boolean;
   messageId?: string;
-  newContent?: string;
-  senderId?: string;
-  receiverId?: string | null;
-  reactions?: Record<string, string>;
 
   constructor(partial: Partial<MarkAsReadResponseDTO>) {
     Object.assign(this, partial);

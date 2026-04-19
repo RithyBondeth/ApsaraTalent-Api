@@ -41,7 +41,10 @@ export interface IImageCompanyController {
     companyId: string,
     file: Express.Multer.File[],
   ): Promise<CoreResponseDTO>;
-  removeCompanyImage(companyId: string, imageId: string): Promise<CoreResponseDTO>;
+  removeCompanyImage(
+    companyId: string,
+    imageId: string,
+  ): Promise<CoreResponseDTO>;
 }
 
 export interface IImageCompanyRpcController {
