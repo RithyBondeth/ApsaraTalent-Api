@@ -6,7 +6,7 @@ import {
   I_IMAGE_COMPANY_SERVICE,
   IImageCompanyService,
 } from '@app/contracts/interfaces/service/user-service.interface';
-import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
+import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 
 @Controller()
 export class ImageCompanyController implements IImageCompanyController {
@@ -18,7 +18,7 @@ export class ImageCompanyController implements IImageCompanyController {
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_AVATAR)
   async uploadCompanyAvatar(
     @Payload() payload: { companyId: string; avatar: Express.Multer.File },
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     return this.imageCompanyService.uploadCompanyAvatar(
       payload.companyId,
       payload.avatar,
@@ -28,14 +28,14 @@ export class ImageCompanyController implements IImageCompanyController {
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_COMPANY_AVATAR)
   async removeCompanyAvatar(
     @Payload() payload: { companyId: string },
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     return this.imageCompanyService.removeCompanyAvatar(payload.companyId);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_COVER)
   async uploadCompanyCover(
     @Payload() payload: { companyId: string; cover: Express.Multer.File },
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     return this.imageCompanyService.uploadCompanyCover(
       payload.companyId,
       payload.cover,
@@ -45,14 +45,14 @@ export class ImageCompanyController implements IImageCompanyController {
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_COMPANY_COVER)
   async removeCompanyCover(
     @Payload() payload: { companyId: string },
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     return this.imageCompanyService.removeCompanyCover(payload.companyId);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_IMAGES)
   async uploadCompanyImages(
     @Payload() payload: { companyId: string; images: Express.Multer.File[] },
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     return this.imageCompanyService.uploadCompanyImage(
       payload.companyId,
       payload.images,
@@ -62,7 +62,7 @@ export class ImageCompanyController implements IImageCompanyController {
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_COMPANY_IMAGES)
   async removeCompanyImage(
     @Payload() payload: { companyId: string; imageId: string },
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     return this.imageCompanyService.removeCompanyImage(
       payload.companyId,
       payload.imageId,

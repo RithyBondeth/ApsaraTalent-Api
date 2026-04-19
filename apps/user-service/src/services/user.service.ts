@@ -21,7 +21,7 @@ import {
   FavoriteCountResponseDTO,
 } from '@app/contracts/dtos/user';
 import { IUserService } from '@app/contracts/interfaces/service/user-service.interface';
-import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
+import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
 
 @Injectable()
@@ -248,7 +248,7 @@ export class UserService implements IUserService, OnModuleInit {
   async updatePushNotificationToken(
     userId: string,
     token: string | null,
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     const normalizedToken =
       typeof token === 'string' && token.trim().length > 0
         ? token.trim()
@@ -269,7 +269,9 @@ export class UserService implements IUserService, OnModuleInit {
 
       await this.redisService.clearUserDetailCache(userId);
 
-      return { message: 'Push notification token updated successfully' };
+      return new CoreResponseDTO({
+        message: 'Push notification token updated successfully',
+      });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -284,7 +286,7 @@ export class UserService implements IUserService, OnModuleInit {
   async employeeFavoriteCompany(
     eid: string,
     cid: string,
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     try {
       const exists = await this.empFavoriteCmpRepository.findOne({
         where: {
@@ -328,7 +330,9 @@ export class UserService implements IUserService, OnModuleInit {
 
       this.logger.info(`Employee ${eid} favorited company ${cid}`);
 
-      return { message: 'Successfully added company to favorites' };
+      return new CoreResponseDTO({
+        message: 'Successfully added company to favorites',
+      });
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
@@ -354,7 +358,7 @@ export class UserService implements IUserService, OnModuleInit {
     eid: string,
     cid: string,
     favoriteId: string,
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     try {
       const favoriteToRemove = await this.empFavoriteCmpRepository.findOne({
         where: {
@@ -395,7 +399,9 @@ export class UserService implements IUserService, OnModuleInit {
 
       this.logger.info(`Employee ${eid} unfavorited company ${cid}`);
 
-      return { message: 'Successfully removed company from favorites' };
+      return new CoreResponseDTO({
+        message: 'Successfully removed company from favorites',
+      });
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
@@ -414,7 +420,7 @@ export class UserService implements IUserService, OnModuleInit {
   async companyFavoriteEmployee(
     cid: string,
     eid: string,
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     try {
       const exists = await this.cmpFavoriteEmpRepository.findOne({
         where: {
@@ -458,7 +464,9 @@ export class UserService implements IUserService, OnModuleInit {
 
       this.logger.info(`Company ${cid} favorited employee ${eid}`);
 
-      return { message: 'Successfully added employee to favorites' };
+      return new CoreResponseDTO({
+        message: 'Successfully added employee to favorites',
+      });
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
@@ -484,7 +492,7 @@ export class UserService implements IUserService, OnModuleInit {
     cid: string,
     eid: string,
     favoriteId: string,
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     try {
       const favoriteToRemove = await this.cmpFavoriteEmpRepository.findOne({
         where: {
@@ -525,7 +533,9 @@ export class UserService implements IUserService, OnModuleInit {
 
       this.logger.info(`Company ${cid} unfavorited employee ${eid}`);
 
-      return { message: 'Successfully removed employee from favorites' };
+      return new CoreResponseDTO({
+        message: 'Successfully removed employee from favorites',
+      });
     } catch (error) {
       this.logger.error(
         (error as Error).message ||

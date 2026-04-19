@@ -12,8 +12,7 @@ import {
   UpdateEmployeeInfoDTO,
   SearchEmployeeDTO,
 } from '../../dtos/user';
-import { UserPaginationDTO } from '../../dtos/shared';
-import { MessageResponse } from '../domain/message-response.interface';
+import { UserPaginationDTO, CoreResponseDTO } from '../../dtos/shared';
 
 export const I_UPDATE_EMPLOYEE_INFO_SERVICE = 'IUpdateEmployeeInfoService';
 export const I_IMAGE_EMPLOYEE_SERVICE = 'IImageEmployeeService';
@@ -80,20 +79,20 @@ export interface IUserService {
   updatePushNotificationToken(
     userId: string,
     token: string | null,
-  ): Promise<MessageResponse>;
+  ): Promise<CoreResponseDTO>;
   findAllCareerScopes(): Promise<any>;
-  employeeFavoriteCompany(eid: string, cid: string): Promise<MessageResponse>;
+  employeeFavoriteCompany(eid: string, cid: string): Promise<CoreResponseDTO>;
   employeeUnfavoriteCompany(
     eid: string,
     cid: string,
     favoriteId: string,
-  ): Promise<MessageResponse>;
+  ): Promise<CoreResponseDTO>;
   companyUnfavoriteEmployee(
     cid: string,
     eid: string,
     favoriteId: string,
-  ): Promise<MessageResponse>;
-  companyFavoriteEmployee(cid: string, eid: string): Promise<MessageResponse>;
+  ): Promise<CoreResponseDTO>;
+  companyFavoriteEmployee(cid: string, eid: string): Promise<CoreResponseDTO>;
   findAllEmployeeFavorites(eid: string): Promise<CompanyResponseDTO[]>;
   findAllCompanyFavorites(cid: string): Promise<EmployeeResponseDTO[]>;
   countCompanyFavorite(cid: string): Promise<FavoriteCountResponseDTO>;

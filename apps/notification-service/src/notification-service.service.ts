@@ -1,19 +1,19 @@
 import { Notification } from '@app/common/database/entities/notification.entity';
 import { User } from '@app/common/database/entities/user.entity';
 import {
-  CreateNotificationPayload,
-  DeleteAllNotificationsPayload,
   DeleteNotificationPayload,
   ListNotificationsPayload,
-  MarkAllReadPayload,
-  MarkReadPayload,
   UnreadCountPayload,
 } from '@app/contracts/interfaces/domain/notification.interface';
 import {
-  NotificationActionResponseDTO,
-  NotificationListResponseDTO,
-  NotificationResponseDTO,
   UnreadCountResponseDTO,
+  GetAllNotificationResponseDTO,
+  NotificationListByUserResponseDTO,
+  CreateNotificationCurrentUserResponseDTO,
+  CreateNotificationCurrentUserDTO,
+  MarkNotificationAsReadResponseDTO,
+  ReadAllNotificationResponseDTO,
+  DeleteNotificationResponseDTO,
 } from '@app/contracts/dtos/notification';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -37,57 +37,60 @@ export class NotificationService implements INotificationService {
     this.logger.setContext(NotificationService.name);
   }
 
-  async findAllNotification(): Promise<NotificationResponseDTO[]> {
+  async findAllNotification(): Promise<GetAllNotificationResponseDTO[]> {
     const entities = await this.notificationRepo.find({
       order: { createdAt: 'DESC' },
       take: 100,
     });
-    return entities.map((n) => new NotificationResponseDTO({
-      id: n.id,
-      title: n.title,
-      message: n.message,
-      type: n.type,
-      data: n.data,
-      isRead: n.isRead,
-      createdAt: n.createdAt,
-    }));
+    return entities.map(
+      (n) =>
+        new GetAllNotificationResponseDTO({
+          id: n.id,
+          title: n.title,
+          message: n.message,
+          type: n.type,
+          data: n.data,
+          isRead: n.isRead,
+          createdAt: n.createdAt,
+        }),
+    );
   }
 
-  async createNotification(payload: CreateNotificationPayload) {
+  async createNotification(
+    body: CreateNotificationCurrentUserDTO,
+  ): Promise<CreateNotificationCurrentUserResponseDTO> {
     const notification = this.notificationRepo.create({
-      user: { id: payload.userId } as any,
-      title: payload.title,
-      message: payload.message,
-      type: payload.type ?? null,
-      data: payload.data ?? null,
+      user: { id: body.userId } as any,
+      title: body.title,
+      message: body.message,
+      type: body.type ?? null,
+      data: body.data ?? null,
       isRead: false,
     });
     let saved = await this.notificationRepo.save(notification);
 
-    if (payload.sendPush) {
+    if (body.sendPush) {
       try {
         const user = await this.userRepo.findOne({
-          where: { id: payload.userId },
+          where: { id: body.userId },
         });
         const token = user?.pushNotificationToken;
         if (!token) {
-          this.logger.warn(
-            `Push skipped: no token for userId=${payload.userId}`,
-          );
+          this.logger.warn(`Push skipped: no token for userId=${body.userId}`);
         } else {
           const result = await this.pushNotificationService.sendToToken(token, {
-            title: payload.title,
-            body: payload.message,
-            data: payload.data ?? undefined,
-            senderAvatar: payload.senderAvatar ?? null,
+            title: body.title,
+            body: body.message,
+            data: body.data ?? undefined,
+            senderAvatar: body.senderAvatar ?? null,
           });
           if (result?.success) {
             this.logger.info(
-              `Push sent to userId=${payload.userId} (token length ${token.length})`,
+              `Push sent to userId=${body.userId} (token length ${token.length})`,
             );
           } else if (result?.skipped) {
             this.logger.warn(
-              `Push skipped for userId=${payload.userId}: ${result.reason}`,
+              `Push skipped for userId=${body.userId}: ${result.reason}`,
             );
           }
         }
@@ -98,7 +101,7 @@ export class NotificationService implements INotificationService {
       }
     }
 
-    return new NotificationResponseDTO({
+    return new CreateNotificationCurrentUserResponseDTO({
       id: saved.id,
       title: saved.title,
       message: saved.message,
@@ -109,7 +112,9 @@ export class NotificationService implements INotificationService {
     });
   }
 
-  async listByUser(payload: ListNotificationsPayload): Promise<NotificationListResponseDTO> {
+  async listByUser(
+    payload: ListNotificationsPayload,
+  ): Promise<NotificationListByUserResponseDTO> {
     const page = Math.max(
       NOTIFICATION.MIN_PAGE,
       payload.page ?? NOTIFICATION.MIN_PAGE,
@@ -130,57 +135,79 @@ export class NotificationService implements INotificationService {
       skip,
     });
 
-    return {
-      items: entities.map((n) => new NotificationResponseDTO({
-        id: n.id,
-        title: n.title,
-        message: n.message,
-        type: n.type,
-        data: n.data,
-        isRead: n.isRead,
-        createdAt: n.createdAt,
-      })),
+    return new NotificationListByUserResponseDTO({
+      items: entities.map(
+        (n) =>
+          new GetAllNotificationResponseDTO({
+            id: n.id,
+            title: n.title,
+            message: n.message,
+            type: n.type,
+            data: n.data,
+            isRead: n.isRead,
+            createdAt: n.createdAt,
+          }),
+      ),
       total,
       page,
       limit,
-    };
+    });
   }
 
-  async markRead(payload: MarkReadPayload): Promise<NotificationActionResponseDTO> {
+  async markRead(payload: {
+    userId: string;
+    notificationId: string;
+  }): Promise<MarkNotificationAsReadResponseDTO> {
     const result = await this.notificationRepo.update(
       { id: payload.notificationId, user: { id: payload.userId } as any },
       { isRead: true },
     );
-    return { success: result.affected > 0 };
+    return new MarkNotificationAsReadResponseDTO({
+      success: result.affected > 0,
+    });
   }
 
-  async markAllRead(payload: MarkAllReadPayload): Promise<NotificationActionResponseDTO> {
+  async markAllRead(payload: {
+    userId: string;
+  }): Promise<ReadAllNotificationResponseDTO> {
     const result = await this.notificationRepo.update(
       { user: { id: payload.userId } as any, isRead: false },
       { isRead: true },
     );
-    return { success: true, affected: result.affected ?? 0 };
+    return new ReadAllNotificationResponseDTO({
+      success: true,
+      affected: result.affected ?? 0,
+    });
   }
 
-  async getUnreadCount(payload: UnreadCountPayload): Promise<UnreadCountResponseDTO> {
+  async getUnreadCount(
+    payload: UnreadCountPayload,
+  ): Promise<UnreadCountResponseDTO> {
     const count = await this.notificationRepo.count({
       where: { user: { id: payload.userId } as any, isRead: false },
     });
-    return { unreadCount: count };
+    return new UnreadCountResponseDTO({ unreadCount: count });
   }
 
-  async deleteNotification(payload: DeleteNotificationPayload): Promise<NotificationActionResponseDTO> {
+  async deleteNotification(
+    payload: DeleteNotificationPayload,
+  ): Promise<DeleteNotificationResponseDTO> {
     const result = await this.notificationRepo.delete({
       id: payload.notificationId,
       user: { id: payload.userId } as any,
     });
-    return { success: result.affected > 0 };
+    return new DeleteNotificationResponseDTO({ success: result.affected > 0 });
   }
 
-  async deleteAllNotifications(payload: DeleteAllNotificationsPayload): Promise<NotificationActionResponseDTO> {
+  async deleteAllNotifications(payload: {
+    userId: string;
+  }): Promise<DeleteNotificationResponseDTO> {
     const result = await this.notificationRepo.delete({
       user: { id: payload.userId } as any,
     });
-    return { success: true, affected: result.affected ?? 0 };
+    return new DeleteNotificationResponseDTO({
+      success: true,
+      affected: result.affected ?? 0,
+    });
   }
 }

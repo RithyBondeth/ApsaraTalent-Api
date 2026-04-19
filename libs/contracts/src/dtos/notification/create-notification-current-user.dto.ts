@@ -10,11 +10,22 @@ export class CreateNotificationCurrentUserDTO {
 
   @IsString()
   @IsOptional()
+  userId?: string;
+
+  @IsString()
+  @IsOptional()
   type?: string;
 
   @IsObject()
   @IsOptional()
   data?: Record<string, any>;
+
+  @IsOptional()
+  sendPush?: boolean;
+
+  @IsString()
+  @IsOptional()
+  senderAvatar?: string;
 }
 
 export class CreateNotificationCurrentUserResponseDTO extends GetAllNotificationResponseDTO {}

@@ -2,14 +2,18 @@ import { IResumeTemplateController } from '@app/contracts/interfaces/controller/
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/service-actions/resume-builder-service.constant';
-import { CreateResumeTemplateDTO, SearchTemplateDTO } from '@app/contracts/dtos/resume';
+import {
+  CreateResumeTemplateDTO,
+  CreateResumeTemplateResponseDTO,
+  ResumeTemplateResponseDTO,
+  SearchResumeTemplateDTO,
+  SearchResumeTemplateResponseDTO,
+} from '@app/contracts/dtos/resume/template';
 
 import {
   I_RESUME_TEMPLATE_SERVICE,
   IResumeTemplateService,
 } from '@app/contracts/interfaces/service/resume-builder-service.interface';
-import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
-import { ResumeTemplateResponseDTO, CreateResumeTemplateResponseDTO, SearchResumeTemplateResponseDTO } from '@app/contracts/dtos/resume';
 
 @Controller()
 export class ResumeTemplateController implements IResumeTemplateController {
@@ -32,21 +36,15 @@ export class ResumeTemplateController implements IResumeTemplateController {
 
   @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.CREATE_RESUME_TEMPLATE)
   async createResumeTemplate(
-    @Payload()
-    payload: {
-      createResumeTemplateDTO: CreateResumeTemplateDTO;
-      image: Express.Multer.File;
-    },
-  ): Promise<MessageResponse> {
-    return this.resumeTemplateService.createResumeTemplate(
-      payload.createResumeTemplateDTO,
-      payload.image,
-    );
+    @Payload('dto') dto: CreateResumeTemplateDTO,
+    @Payload('image') image: Express.Multer.File,
+  ): Promise<CreateResumeTemplateResponseDTO> {
+    return this.resumeTemplateService.createResumeTemplate(dto, image);
   }
 
   @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.SEARCH_RESUME_TEMPLATE)
   async searchResumeTemplate(
-    @Payload() searchTemplateDTO: SearchTemplateDTO,
+    @Payload() searchTemplateDTO: SearchResumeTemplateDTO,
   ): Promise<SearchResumeTemplateResponseDTO[]> {
     return this.resumeTemplateService.searchResumeTemplate(searchTemplateDTO);
   }

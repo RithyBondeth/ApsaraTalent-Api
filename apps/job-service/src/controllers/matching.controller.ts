@@ -2,8 +2,8 @@ import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { UserResponseDTO } from '@app/contracts/dtos/user';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
-import { MatchDTO } from '@app/contracts/dtos/job';
 import {
+  MatchDTO,
   MatchResponseDTO,
   MatchCountResponseDTO,
   AnalyticsResponseDTO,

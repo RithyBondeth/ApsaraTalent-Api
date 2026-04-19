@@ -7,7 +7,6 @@ import {
   UserResponseDTO,
   CompanyResponseDTO,
   EmployeeResponseDTO,
-  CareerScopesResponseDTO,
   FavoriteCountResponseDTO,
 } from '@app/contracts/dtos/user';
 
@@ -15,7 +14,7 @@ import {
   I_USER_SERVICE,
   IUserService,
 } from '@app/contracts/interfaces/service/user-service.interface';
-import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
+import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 
 @Controller()
 export class UserController implements IUserController {
@@ -52,7 +51,7 @@ export class UserController implements IUserController {
   @MessagePattern(USER_SERVICE.ACTIONS.UPDATE_PUSH_TOKEN)
   async updatePushNotificationToken(
     @Payload() payload: { userId: string; token: string | null },
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     return this.userService.updatePushNotificationToken(
       payload.userId,
       payload.token,
@@ -62,14 +61,14 @@ export class UserController implements IUserController {
   @MessagePattern(USER_SERVICE.ACTIONS.ADD_COMPANY_TO_FAVORITE)
   async employeeFavoriteCompany(
     @Payload() payload: { eid: string; cid: string },
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     return this.userService.employeeFavoriteCompany(payload.eid, payload.cid);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_COMPANY_FROM_FAVORITE)
   async employeeUnfavoriteCompany(
     @Payload() payload: { eid: string; cid: string; favoriteId: string },
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     return this.userService.employeeUnfavoriteCompany(
       payload.eid,
       payload.cid,
@@ -80,7 +79,7 @@ export class UserController implements IUserController {
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_FROM_FAVORITE)
   async companyUnfavoriteEmployee(
     @Payload() payload: { cid: string; eid: string; favoriteId: string },
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     return this.userService.companyUnfavoriteEmployee(
       payload.cid,
       payload.eid,
@@ -91,7 +90,7 @@ export class UserController implements IUserController {
   @MessagePattern(USER_SERVICE.ACTIONS.ADD_EMPLOYEE_TO_FAVORITE)
   async companyFavoriteEmployee(
     @Payload() payload: { eid: string; cid: string },
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     return this.userService.companyFavoriteEmployee(payload.cid, payload.eid);
   }
 

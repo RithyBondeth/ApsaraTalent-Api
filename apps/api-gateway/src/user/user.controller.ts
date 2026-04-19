@@ -16,7 +16,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
+import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 import {
   UserResponseDTO,
   CompanyResponseDTO,
@@ -114,7 +114,7 @@ export class UserController implements IUserController {
   async updatePushNotificationToken(
     @Req() req,
     @Body() body: { token: string | null },
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     return rpcCall(this.userClient, USER_SERVICE.ACTIONS.UPDATE_PUSH_TOKEN, {
       userId: req.user.id,
       token: body?.token ?? null,
@@ -126,9 +126,9 @@ export class UserController implements IUserController {
     @Param('eid', ParseUUIDPipe) eid: string,
     @Param('cid', ParseUUIDPipe) cid: string,
     @Req() req?: any,
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
-    return rpcCall<MessageResponse>(
+    return rpcCall<CoreResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.ADD_COMPANY_TO_FAVORITE,
       { eid, cid },
@@ -141,9 +141,9 @@ export class UserController implements IUserController {
     @Param('cid', ParseUUIDPipe) cid: string,
     @Param('favoriteId', ParseUUIDPipe) favoriteId: string,
     @Req() req?: any,
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     await this.assertEmployeeAccess(req?.user?.id, eid);
-    return rpcCall<MessageResponse>(
+    return rpcCall<CoreResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.REMOVE_COMPANY_FROM_FAVORITE,
       { eid, cid, favoriteId },
@@ -155,9 +155,9 @@ export class UserController implements IUserController {
     @Param('cid', ParseUUIDPipe) cid: string,
     @Param('eid', ParseUUIDPipe) eid: string,
     @Req() req?: any,
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     await this.assertCompanyAccess(req?.user?.id, cid);
-    return rpcCall<MessageResponse>(
+    return rpcCall<CoreResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.ADD_EMPLOYEE_TO_FAVORITE,
       { cid, eid },
@@ -170,9 +170,9 @@ export class UserController implements IUserController {
     @Param('eid', ParseUUIDPipe) eid: string,
     @Param('favoriteId', ParseUUIDPipe) favoriteId: string,
     @Req() req?: any,
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     await this.assertCompanyAccess(req?.user?.id, cid);
-    return rpcCall<MessageResponse>(
+    return rpcCall<CoreResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_FROM_FAVORITE,
       { cid, eid, favoriteId },

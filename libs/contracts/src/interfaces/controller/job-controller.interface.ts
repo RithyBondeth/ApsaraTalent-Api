@@ -1,5 +1,5 @@
 import {
-  GetAnalyticsResponseDTO,
+  AnalyticsResponseDTO,
   CreateInterviewDTO,
   CreateInterviewResponseDTO,
   GetInterviewResponseDTO,
@@ -7,9 +7,10 @@ import {
   SearchJobDTO,
   UpdateInterviewResponseDTO,
   UpdateInterviewStatusDTO,
-  CountMatchingResponseDTO,
-  LikeResponseDTO,
+  MatchCountResponseDTO,
+  MatchResponseDTO,
   FindCurrentMatchingResponseDTO,
+  MatchDTO,
 } from '@app/contracts/dtos/job';
 import { FindCurrentLikeResponseDTO } from '@app/contracts/dtos/job/matching/find-current-like.dto';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
@@ -39,8 +40,8 @@ export interface IInterviewController {
 }
 
 export interface IMatchingController {
-  employeeLikes(eid: string, cid: string, req?: any): Promise<LikeResponseDTO>;
-  companyLikes(cid: string, eid: string, req?: any): Promise<LikeResponseDTO>;
+  employeeLikes(matchDto: MatchDTO, req?: any): Promise<MatchResponseDTO>;
+  companyLikes(matchDto: MatchDTO, req?: any): Promise<MatchResponseDTO>;
   findCurrentEmployeeLiked(
     eid: string,
     req?: any,
@@ -60,10 +61,10 @@ export interface IMatchingController {
   findCurrentEmployeeMatchingCount(
     eid: string,
     req?: any,
-  ): Promise<CountMatchingResponseDTO>;
+  ): Promise<MatchCountResponseDTO>;
   findCurrentCompanyMatchingCount(
     cid: string,
     req?: any,
-  ): Promise<CountMatchingResponseDTO>;
-  getAnalytics(id: string, role: string): Promise<GetAnalyticsResponseDTO>;
+  ): Promise<MatchCountResponseDTO>;
+  getAnalytics(id: string, role: string): Promise<AnalyticsResponseDTO>;
 }

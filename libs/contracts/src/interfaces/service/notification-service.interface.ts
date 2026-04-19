@@ -1,28 +1,41 @@
 import {
-  CreateNotificationPayload,
-  DeleteAllNotificationsPayload,
+  UnreadCountResponseDTO,
+  GetAllNotificationResponseDTO,
+  NotificationListByUserResponseDTO,
+  CreateNotificationCurrentUserResponseDTO,
+  CreateNotificationCurrentUserDTO,
+  MarkNotificationAsReadResponseDTO,
+  ReadAllNotificationResponseDTO,
+  DeleteNotificationResponseDTO,
+} from '@app/contracts/dtos/notification';
+import {
   DeleteNotificationPayload,
   ListNotificationsPayload,
-  MarkAllReadPayload,
-  MarkReadPayload,
   UnreadCountPayload,
-} from '../domain/notification.interface';
-import {
-  NotificationActionResponseDTO,
-  NotificationListResponseDTO,
-  NotificationResponseDTO,
-  UnreadCountResponseDTO,
-} from '@app/contracts/dtos/notification';
+} from '../domain';
 
 export const I_NOTIFICATION_SERVICE = 'INotificationService';
 
 export interface INotificationService {
-  findAllNotification(): Promise<NotificationResponseDTO[]>;
-  createNotification(payload: CreateNotificationPayload): Promise<NotificationResponseDTO>;
-  listByUser(payload: ListNotificationsPayload): Promise<NotificationListResponseDTO>;
-  markRead(payload: MarkReadPayload): Promise<NotificationActionResponseDTO>;
-  markAllRead(payload: MarkAllReadPayload): Promise<NotificationActionResponseDTO>;
+  findAllNotification(): Promise<GetAllNotificationResponseDTO[]>;
+  createNotification(
+    body: CreateNotificationCurrentUserDTO,
+  ): Promise<CreateNotificationCurrentUserResponseDTO>;
+  listByUser(
+    payload: ListNotificationsPayload,
+  ): Promise<NotificationListByUserResponseDTO>;
+  markRead(payload: {
+    userId: string;
+    notificationId: string;
+  }): Promise<MarkNotificationAsReadResponseDTO>;
+  markAllRead(payload: {
+    userId: string;
+  }): Promise<ReadAllNotificationResponseDTO>;
   getUnreadCount(payload: UnreadCountPayload): Promise<UnreadCountResponseDTO>;
-  deleteNotification(payload: DeleteNotificationPayload): Promise<NotificationActionResponseDTO>;
-  deleteAllNotifications(payload: DeleteAllNotificationsPayload): Promise<NotificationActionResponseDTO>;
+  deleteNotification(
+    payload: DeleteNotificationPayload,
+  ): Promise<DeleteNotificationResponseDTO>;
+  deleteAllNotifications(payload: {
+    userId: string;
+  }): Promise<DeleteNotificationResponseDTO>;
 }

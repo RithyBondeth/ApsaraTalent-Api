@@ -1,12 +1,14 @@
 import {
   BuildResumeDTO,
   BuildResumeResponseDTO,
-  CreateResumeTemplateDTO,
-  ResumeTemplateResponseDTO,
+  SearchResumeTemplateDTO,
   SearchResumeTemplateResponseDTO,
-  SearchTemplateDTO,
-} from '@app/contracts/dtos/resume';
-import { MessageResponse } from '../domain/message-response.interface';
+} from '@app/contracts/dtos';
+import {
+  CreateResumeTemplateDTO,
+  CreateResumeTemplateResponseDTO,
+  ResumeTemplateResponseDTO,
+} from '@app/contracts/dtos/resume/template';
 
 export const I_RESUME_BUILDER_SERVICE = 'IResumeBuilderService';
 export const I_RESUME_TEMPLATE_SERVICE = 'IResumeTemplateService';
@@ -21,8 +23,8 @@ export interface IResumeTemplateService {
   createResumeTemplate(
     createResumeTemplateDTO: CreateResumeTemplateDTO,
     image: Express.Multer.File,
-  ): Promise<MessageResponse>;
+  ): Promise<CreateResumeTemplateResponseDTO>;
   searchResumeTemplate(
-    searchTemplateDTO: SearchTemplateDTO,
+    searchTemplateDTO: SearchResumeTemplateDTO,
   ): Promise<SearchResumeTemplateResponseDTO[]>;
 }

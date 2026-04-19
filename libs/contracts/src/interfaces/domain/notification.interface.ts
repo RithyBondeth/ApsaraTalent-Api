@@ -9,17 +9,6 @@ import {
   UnreadCountResponseDTO,
 } from '@app/contracts/dtos';
 
-export interface CreateNotificationPayload {
-  userId: string;
-  title: string;
-  message: string;
-  type?: string | null;
-  data?: Record<string, any> | null;
-  sendPush?: boolean;
-  /** Sender's avatar URL — used to show the sender's photo in the push notification */
-  senderAvatar?: string | null;
-}
-
 export interface ListNotificationsPayload {
   userId: string;
   page?: number;

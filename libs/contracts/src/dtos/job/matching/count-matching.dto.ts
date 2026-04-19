@@ -1,7 +1,7 @@
-export class CountMatchingResponseDTO {
+export class MatchCountResponseDTO {
   count: number;
 
-  constructor(partial: Partial<CountMatchingResponseDTO>) {
-    return Object.assign(this, partial);
+  constructor(partial: Partial<MatchCountResponseDTO>) {
+    Object.assign(this, partial);
   }
 }

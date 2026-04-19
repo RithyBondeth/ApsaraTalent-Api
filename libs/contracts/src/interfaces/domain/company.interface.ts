@@ -1,4 +1,4 @@
-import { MessageResponse } from './message-response.interface';
+import { CoreResponseDTO } from '../../dtos/shared';
 
 export interface IFindCompanyController {
   findAll(data?: any): Promise<any>;
@@ -6,12 +6,12 @@ export interface IFindCompanyController {
 }
 
 export interface IImageCompanyController {
-  uploadCompanyAvatar(data?: any, file?: any): Promise<MessageResponse>;
-  removeCompanyAvatar(data?: any): Promise<MessageResponse>;
-  uploadCompanyCover(data?: any, file?: any): Promise<MessageResponse>;
-  removeCompanyCover(data?: any): Promise<MessageResponse>;
-  uploadCompanyImages(data?: any, file?: any): Promise<MessageResponse>;
-  removeCompanyImage(data1?: any, data2?: any): Promise<MessageResponse>;
+  uploadCompanyAvatar(data?: any, file?: any): Promise<CoreResponseDTO>;
+  removeCompanyAvatar(data?: any): Promise<CoreResponseDTO>;
+  uploadCompanyCover(data?: any, file?: any): Promise<CoreResponseDTO>;
+  removeCompanyCover(data?: any): Promise<CoreResponseDTO>;
+  uploadCompanyImages(data?: any, file?: any): Promise<CoreResponseDTO>;
+  removeCompanyImage(data1?: any, data2?: any): Promise<CoreResponseDTO>;
 }
 
 export interface IUpdateCompanyInfoController {
@@ -19,7 +19,7 @@ export interface IUpdateCompanyInfoController {
 }
 
 export interface IOpenPositionController {
-  removeOpenPosition(data?: any, body?: any): Promise<MessageResponse>;
+  removeOpenPosition(data?: any, body?: any): Promise<CoreResponseDTO>;
 }
 
 export interface ICompanyController

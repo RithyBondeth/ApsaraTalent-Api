@@ -8,16 +8,16 @@ import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import {
   CreateResumeTemplateDTO,
+  CreateResumeTemplateResponseDTO,
   ResumeTemplateResponseDTO,
+  SearchResumeTemplateDTO,
   SearchResumeTemplateResponseDTO,
-  SearchTemplateDTO,
-} from '@app/contracts/dtos/resume';
+} from '@app/contracts/dtos/resume/template';
 
 const TEMPLATE_TTL = 60 * 60 * 1000; // 1 hour — static data
 const TEMPLATE_SEARCH_TTL = 30 * 60 * 1000; // 30 min
 
 import { IResumeTemplateService } from '@app/contracts/interfaces/service/resume-builder-service.interface';
-import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
 
 @Injectable()
 export class ResumeTemplateService implements IResumeTemplateService {
@@ -31,7 +31,8 @@ export class ResumeTemplateService implements IResumeTemplateService {
 
   async findAllResumeTemplate(): Promise<ResumeTemplateResponseDTO[]> {
     const cacheKey = this.redisService.generateTemplateListKey();
-    const cached = await this.redisService.get<ResumeTemplate[]>(cacheKey);
+    const cached =
+      await this.redisService.get<ResumeTemplateResponseDTO[]>(cacheKey);
     if (cached) {
       this.logger.info('All resume templates cache HIT');
       return cached;
@@ -70,7 +71,8 @@ export class ResumeTemplateService implements IResumeTemplateService {
     resumeId: string,
   ): Promise<ResumeTemplateResponseDTO> {
     const cacheKey = this.redisService.generateTemplateDetailKey(resumeId);
-    const cached = await this.redisService.get<ResumeTemplate>(cacheKey);
+    const cached =
+      await this.redisService.get<ResumeTemplateResponseDTO>(cacheKey);
     if (cached) {
       this.logger.info(`Resume template ${resumeId} cache HIT`);
       return cached;
@@ -108,7 +110,7 @@ export class ResumeTemplateService implements IResumeTemplateService {
   async createResumeTemplate(
     createResumeTemplateDTO: CreateResumeTemplateDTO,
     image: Express.Multer.File,
-  ): Promise<MessageResponse> {
+  ): Promise<CreateResumeTemplateResponseDTO> {
     try {
       const template = this.resumeTemplateRepository.create({
         title: createResumeTemplateDTO.title,
@@ -130,7 +132,9 @@ export class ResumeTemplateService implements IResumeTemplateService {
       // Invalidate list cache so the new template appears immediately
       await this.redisService.invalidateTemplateCaches();
 
-      return { message: "Resume's template was successfully created." };
+      return new CreateResumeTemplateResponseDTO({
+        message: "Resume's template was successfully created.",
+      });
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
@@ -146,11 +150,12 @@ export class ResumeTemplateService implements IResumeTemplateService {
   }
 
   async searchResumeTemplate(
-    searchTemplateDTO: SearchTemplateDTO,
+    searchTemplateDTO: SearchResumeTemplateDTO,
   ): Promise<SearchResumeTemplateResponseDTO[]> {
     const cacheKey =
       this.redisService.generateTemplateSearchKey(searchTemplateDTO);
-    const cached = await this.redisService.get<ResumeTemplate[]>(cacheKey);
+    const cached =
+      await this.redisService.get<SearchResumeTemplateResponseDTO[]>(cacheKey);
     if (cached) {
       this.logger.info('Resume template search cache HIT');
       return cached;

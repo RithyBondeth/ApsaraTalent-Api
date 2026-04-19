@@ -20,8 +20,14 @@ import {
 import { PaginationDTO } from '@app/contracts/dtos/shared';
 import { ClientProxy } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
-import { EmployeeResponseDTO, SearchEmployeeResponseDTO, UpdateEmployeeInfoResponseDTO, UpdateEmployeeInfoDTO, SearchEmployeeDTO } from '@app/contracts/dtos/user';
+import { CoreResponseDTO } from '@app/contracts/dtos/shared';
+import {
+  EmployeeResponseDTO,
+  SearchEmployeeResponseDTO,
+  UpdateEmployeeInfoResponseDTO,
+  UpdateEmployeeInfoDTO,
+  SearchEmployeeDTO,
+} from '@app/contracts/dtos/user';
 import { rpcCall } from '../utils/rpc-call';
 
 @Controller('user/employee')
@@ -69,9 +75,9 @@ export class EmployeeController implements IEmployeeController {
   async uploadEmployeeAvatar(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @UploadedFile() avatar: Express.Multer.File,
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     if (!avatar) throw new BadRequestException('No file uploaded');
-    return rpcCall<MessageResponse>(
+    return rpcCall<CoreResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_AVATAR,
       { employeeId, avatar },
@@ -81,8 +87,8 @@ export class EmployeeController implements IEmployeeController {
   @Post('remove-avatar/:employeeId')
   async removeEmployeeAvatar(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
-  ): Promise<MessageResponse> {
-    return rpcCall<MessageResponse>(
+  ): Promise<CoreResponseDTO> {
+    return rpcCall<CoreResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_AVATAR,
       { employeeId },
@@ -94,8 +100,8 @@ export class EmployeeController implements IEmployeeController {
   async uploadEmployeeResume(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @UploadedFile() resume: Express.Multer.File,
-  ): Promise<MessageResponse> {
-    return rpcCall<MessageResponse>(
+  ): Promise<CoreResponseDTO> {
+    return rpcCall<CoreResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_RESUME,
       { employeeId, resume },
@@ -105,8 +111,8 @@ export class EmployeeController implements IEmployeeController {
   @Post('remove-resume/:employeeId')
   async removeEmployeeResume(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
-  ): Promise<MessageResponse> {
-    return rpcCall<MessageResponse>(
+  ): Promise<CoreResponseDTO> {
+    return rpcCall<CoreResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_RESUME,
       { employeeId },
@@ -118,8 +124,8 @@ export class EmployeeController implements IEmployeeController {
   async uploadEmployeeCoverLetter(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @UploadedFile() coverLetter: Express.Multer.File,
-  ): Promise<MessageResponse> {
-    return rpcCall<MessageResponse>(
+  ): Promise<CoreResponseDTO> {
+    return rpcCall<CoreResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_COVER_LETTER,
       { employeeId, coverLetter },
@@ -129,8 +135,8 @@ export class EmployeeController implements IEmployeeController {
   @Post('remove-cover-letter/:employeeId')
   async removeEmployeeCoverLetter(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
-  ): Promise<MessageResponse> {
-    return rpcCall<MessageResponse>(
+  ): Promise<CoreResponseDTO> {
+    return rpcCall<CoreResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_COVER_LETTER,
       { employeeId },
@@ -141,7 +147,7 @@ export class EmployeeController implements IEmployeeController {
   async removeEmployeeEducation(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @Param('educationId', ParseUUIDPipe) educationId: string,
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     return rpcCall(
       this.userClient,
       USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_EDUCATION,
@@ -153,7 +159,7 @@ export class EmployeeController implements IEmployeeController {
   async removeEmployeeExperience(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @Param('experienceId', ParseUUIDPipe) experienceId: string,
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     return rpcCall(
       this.userClient,
       USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_EXPERIENCE,

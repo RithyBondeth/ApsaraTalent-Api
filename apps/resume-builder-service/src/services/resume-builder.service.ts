@@ -4,7 +4,10 @@ import { RpcException } from '@nestjs/microservices';
 import { PinoLogger } from 'nestjs-pino';
 import OpenAI from 'openai';
 import * as puppeteer from 'puppeteer';
-import { BuildResumeDTO } from '@app/contracts/dtos/resume';
+import {
+  BuildResumeDTO,
+  BuildResumeResponseDTO,
+} from '@app/contracts/dtos/resume';
 import { ImageService } from './image.service';
 
 import { IResumeBuilderService } from '@app/contracts/interfaces/service/resume-builder-service.interface';
@@ -25,7 +28,9 @@ export class ResumeBuilderService implements IResumeBuilderService {
     });
   }
 
-  async buildResume(buildResumeDTO: BuildResumeDTO): Promise<any> {
+  async buildResume(
+    buildResumeDTO: BuildResumeDTO,
+  ): Promise<BuildResumeResponseDTO> {
     try {
       if (buildResumeDTO.personalInfo.profilePicture) {
         buildResumeDTO.personalInfo.profilePicture =
@@ -37,11 +42,11 @@ export class ResumeBuilderService implements IResumeBuilderService {
       const htmlContent = await this.generateHTMLContent(buildResumeDTO);
       const pdfBuffer = await this.pdfGenerator(htmlContent);
 
-      return {
+      return new BuildResumeResponseDTO({
         filename: 'resume.pdf',
         mimeType: 'application/pdf',
         data: pdfBuffer.toString('base64'),
-      };
+      });
     } catch (error) {
       this.logger.error({ err: error }, 'Resume generation failed');
       throw new RpcException(

@@ -1,17 +1,18 @@
 import {
   JobResponseDTO,
   SearchJobResponseDTO,
-  MatchDTO,
-  MatchResponseDTO,
-  MatchCountResponseDTO,
-  AnalyticsResponseDTO,
   CreateInterviewDTO,
   InterviewResponseDTO,
   UpdateInterviewStatusDTO,
   SearchJobDTO,
+  MatchDTO,
+  MatchResponseDTO,
+  FindCurrentLikeResponseDTO,
+  FindCurrentMatchingResponseDTO,
+  MatchCountResponseDTO,
+  AnalyticsResponseDTO,
 } from '@app/contracts/dtos/job';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
-import { UserResponseDTO } from '@app/contracts/dtos/user';
 
 export const I_JOB_SERVICE_SERVICE = 'IJobServiceService';
 export const I_MATCHING_SERVICE = 'IMatchingService';
@@ -25,10 +26,14 @@ export interface IJobServiceService {
 export interface IMatchingService {
   employeeLikes(matchDto: MatchDTO): Promise<MatchResponseDTO>;
   companyLikes(matchDto: MatchDTO): Promise<MatchResponseDTO>;
-  findCurrentEmployeeLiked(eid: string): Promise<UserResponseDTO[]>;
-  findCurrentCompanyLiked(cid: string): Promise<UserResponseDTO[]>;
-  findCurrentEmployeeMatching(eid: string): Promise<UserResponseDTO[]>;
-  findCurrentCompanyMatching(cid: string): Promise<UserResponseDTO[]>;
+  findCurrentEmployeeLiked(eid: string): Promise<FindCurrentLikeResponseDTO[]>;
+  findCurrentCompanyLiked(cid: string): Promise<FindCurrentLikeResponseDTO[]>;
+  findCurrentEmployeeMatching(
+    eid: string,
+  ): Promise<FindCurrentMatchingResponseDTO[]>;
+  findCurrentCompanyMatching(
+    cid: string,
+  ): Promise<FindCurrentMatchingResponseDTO[]>;
   findCurrentEmployeeMatchingCount(eid: string): Promise<MatchCountResponseDTO>;
   findCurrentCompanyMatchingCount(cid: string): Promise<MatchCountResponseDTO>;
   getAnalytics(

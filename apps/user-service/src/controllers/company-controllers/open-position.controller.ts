@@ -9,7 +9,7 @@ import {
   I_OPEN_POSITION_SERVICE,
   IOpenPositionService,
 } from '@app/contracts/interfaces/service/user-service.interface';
-import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
+import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 
 @Controller()
 export class OpenPositionController implements IOpenPositionController {
@@ -21,7 +21,7 @@ export class OpenPositionController implements IOpenPositionController {
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_OPEN_POSITION)
   async removeOpenPosition(
     @Payload() payload: { companyId: string; opId: string },
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     return this.openPositionService.removeOpenPosition(
       payload.companyId,
       payload.opId,

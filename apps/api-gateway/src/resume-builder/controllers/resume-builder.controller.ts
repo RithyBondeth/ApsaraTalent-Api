@@ -11,7 +11,10 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { RESUME } from '@app/contracts/constants/domain/resume.constant';
-import { BuildResumeDTO, BuildResumeResponseDTO } from '@app/contracts/dtos/resume';
+import {
+  BuildResumeDTO,
+  BuildResumeResponseDTO,
+} from '@app/contracts/dtos/resume';
 import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/service-actions/resume-builder-service.constant';
 import { rpcCall } from '../../utils/rpc-call';
 
@@ -25,7 +28,9 @@ export class ResumeBuilderController implements IResumeBuilderController {
 
   @Post('build-resume')
   @HttpCode(HttpStatus.CREATED)
-  async buildResume(@Body() buildResumeDTO: BuildResumeDTO): Promise<BuildResumeResponseDTO> {
+  async buildResume(
+    @Body() buildResumeDTO: BuildResumeDTO,
+  ): Promise<BuildResumeResponseDTO> {
     return rpcCall(
       this.resumeBuilderClient,
       RESUME_BUILDER_SERVICE.ACTIONS.BUILD_RESUME,

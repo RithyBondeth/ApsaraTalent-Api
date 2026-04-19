@@ -1,5 +1,5 @@
 import { EmployeeResponseDTO } from '@app/contracts/dtos/user';
-import { MessageResponse } from '../domain/message-response.interface';
+import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 
 export interface IFindEmployeeController {
   findAll(data?: any): Promise<EmployeeResponseDTO[]>;
@@ -7,8 +7,8 @@ export interface IFindEmployeeController {
 }
 
 export interface IImageEmployeeController {
-  uploadEmployeeAvatar(data?: any, file?: any): Promise<MessageResponse>;
-  removeEmployeeAvatar(data?: any, file?: any): Promise<MessageResponse>;
+  uploadEmployeeAvatar(data?: any, file?: any): Promise<CoreResponseDTO>;
+  removeEmployeeAvatar(data?: any, file?: any): Promise<CoreResponseDTO>;
 }
 
 export interface ISearchEmployeeController {
@@ -20,15 +20,21 @@ export interface IUpdateEmployeeController {
 }
 
 export interface IUploadEmployeeController {
-  uploadEmployeeResume(data?: any, file?: any): Promise<MessageResponse>;
-  removeEmployeeResume(data?: any): Promise<MessageResponse>;
-  uploadEmployeeCoverLetter(data?: any, file?: any): Promise<MessageResponse>;
-  removeEmployeeCoverLetter(data?: any): Promise<MessageResponse>;
+  uploadEmployeeResume(data?: any, file?: any): Promise<CoreResponseDTO>;
+  removeEmployeeResume(data?: any): Promise<CoreResponseDTO>;
+  uploadEmployeeCoverLetter(data?: any, file?: any): Promise<CoreResponseDTO>;
+  removeEmployeeCoverLetter(data?: any): Promise<CoreResponseDTO>;
 }
 
 export interface IRemoveEmployeeItemsController {
-  removeEmployeeEducation(employeeId?: any, educationId?: any): Promise<any>;
-  removeEmployeeExperience(employeeId?: any, experienceId?: any): Promise<any>;
+  removeEmployeeEducation(
+    employeeId?: any,
+    educationId?: any,
+  ): Promise<CoreResponseDTO>;
+  removeEmployeeExperience(
+    employeeId?: any,
+    experienceId?: any,
+  ): Promise<CoreResponseDTO>;
 }
 
 export interface IEmployeeController

@@ -9,7 +9,7 @@ import * as path from 'path';
 import { Repository } from 'typeorm';
 
 import { IImageEmployeeService } from '@app/contracts/interfaces/service/user-service.interface';
-import { MessageResponse } from '@app/contracts/interfaces/domain/message-response.interface';
+import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 
 @Injectable()
 export class ImageEmployeeService implements IImageEmployeeService {
@@ -24,7 +24,7 @@ export class ImageEmployeeService implements IImageEmployeeService {
   async uploadEmployeeAvatar(
     employeeId: string,
     avatar: Express.Multer.File,
-  ): Promise<MessageResponse> {
+  ): Promise<CoreResponseDTO> {
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
@@ -65,7 +65,9 @@ export class ImageEmployeeService implements IImageEmployeeService {
       // Invalidate user caches (fix for stale avatar in findOneUserByID)
       await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
 
-      return { message: "Employee's avatar was successfully set." };
+      return new CoreResponseDTO({
+        message: "Employee's avatar was successfully set.",
+      });
     } catch (error) {
       // Handle error
       this.logger.error(
@@ -81,7 +83,7 @@ export class ImageEmployeeService implements IImageEmployeeService {
     }
   }
 
-  async removeEmployeeAvatar(employeeId: string): Promise<MessageResponse> {
+  async removeEmployeeAvatar(employeeId: string): Promise<CoreResponseDTO> {
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
@@ -108,7 +110,9 @@ export class ImageEmployeeService implements IImageEmployeeService {
       // Invalidate user caches
       await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
 
-      return { message: "Employee's avatar was successfully deleted." };
+      return new CoreResponseDTO({
+        message: "Employee's avatar was successfully deleted.",
+      });
     } catch (error) {
       // Handle error
       this.logger.error(
