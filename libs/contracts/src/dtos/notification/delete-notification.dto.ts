@@ -1,3 +1,7 @@
-import { MarkNotificationAsReadResponseDTO } from './mark-notification-as-read.dto';
+import { MarkNotificationAsReadResponseDTO } from './mark-notification.dto';
 
-export class DeleteNotificationResponseDTO extends MarkNotificationAsReadResponseDTO {}
+export class DeleteNotificationResponseDTO extends MarkNotificationAsReadResponseDTO {
+  constructor(partial: Partial<DeleteNotificationResponseDTO>) {
+    super(partial);
+  }
+}
