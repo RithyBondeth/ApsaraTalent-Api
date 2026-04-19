@@ -8,8 +8,7 @@ export class VerifyEmailDTO {
 }
 
 export class VerifyEmailResponseDTO extends ForgotPasswordResponseDTO {
-    constructor(partial: Partial<VerifyEmailResponseDTO>) {
-        super(partial);
-            Object.assign(this, partial);
-    }
+  constructor(partial: Partial<VerifyEmailResponseDTO>) {
+    super(partial);
+  }
 }

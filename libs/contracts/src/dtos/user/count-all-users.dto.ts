@@ -5,7 +5,7 @@ export class CountAllUsersResponseDTO {
   totalCompanies?: number;
 
   constructor(partial: Partial<CountAllUsersResponseDTO>) {
-    return Object.assign(this, partial);
+    Object.assign(this, partial);
   }
 }
 

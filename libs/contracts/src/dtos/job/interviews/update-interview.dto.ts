@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 import { CreateInterviewResponseDTO } from './create-interview.dto';
 
 export enum InterviewStatus {
@@ -26,8 +26,7 @@ export const VALID_STATUS_TRANSITIONS: Record<string, InterviewStatus[]> = {
 };
 
 export class UpdateInterviewStatusDTO {
-  @IsString()
-  @IsNotEmpty()
+  @IsUUID()
   interviewId: string;
 
   @IsEnum(InterviewStatus, {
@@ -36,7 +35,7 @@ export class UpdateInterviewStatusDTO {
   })
   status: InterviewStatus;
 
-  @IsString()
+  @IsUUID()
   @IsOptional()
   requestUserId?: string;
 
@@ -46,8 +45,7 @@ export class UpdateInterviewStatusDTO {
 }
 
 export class UpdateInterviewResponseDTO extends CreateInterviewResponseDTO {
-    constructor(partial: Partial<UpdateInterviewResponseDTO>) {
-        super(partial);
-            Object.assign(this, partial);
-    }
+  constructor(partial: Partial<UpdateInterviewResponseDTO>) {
+    super(partial);
+  }
 }

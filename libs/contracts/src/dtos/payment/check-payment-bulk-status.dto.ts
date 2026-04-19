@@ -22,7 +22,6 @@ export class CheckPaymentBulkStatusDTO {
   md5Hashes: string[];
 }
 
-
 export class CheckPaymentBulkStatusItemDTO {
   md5Hash: string;
   status: string;
@@ -47,7 +46,7 @@ export class CheckPaymentBulkStatusResponseDTO {
   summary: CheckPaymentBulkStatusSummaryDTO;
   message: string;
 
-    constructor(partial: Partial<CheckPaymentBulkStatusResponseDTO>) {
-        Object.assign(this, partial);
-    }
+  constructor(partial: Partial<CheckPaymentBulkStatusResponseDTO>) {
+    Object.assign(this, partial);
+  }
 }

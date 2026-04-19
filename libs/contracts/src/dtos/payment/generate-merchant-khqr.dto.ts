@@ -15,7 +15,6 @@ export class GenerateMerchantKhqrDTO extends GenerateIndividualKhqrDTO {
   acquiringBank: string;
 }
 
-
 export class GenerateMerchantKhqrResponseDTO {
   success: true;
   paymentId: string;
@@ -24,7 +23,7 @@ export class GenerateMerchantKhqrResponseDTO {
   qrImage: string;
   message: string;
 
-    constructor(partial: Partial<GenerateMerchantKhqrResponseDTO>) {
-        Object.assign(this, partial);
-    }
+  constructor(partial: Partial<GenerateMerchantKhqrResponseDTO>) {
+    Object.assign(this, partial);
+  }
 }

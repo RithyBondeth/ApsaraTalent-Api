@@ -21,8 +21,7 @@ export class ResetPasswordDTO {
 }
 
 export class ResetPasswordResponseDTO extends ForgotPasswordResponseDTO {
-    constructor(partial: Partial<ResetPasswordResponseDTO>) {
-        super(partial);
-            Object.assign(this, partial);
-    }
+  constructor(partial: Partial<ResetPasswordResponseDTO>) {
+    super(partial);
+  }
 }

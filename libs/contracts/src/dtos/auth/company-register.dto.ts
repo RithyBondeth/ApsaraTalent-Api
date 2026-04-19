@@ -164,8 +164,7 @@ class SocialDTO {
 }
 
 export class CompanyRegisterResponseDTO extends LoginResponseDTO {
-    constructor(partial: Partial<CompanyRegisterResponseDTO>) {
-        super(partial);
-            Object.assign(this, partial);
-    }
+  constructor(partial: Partial<CompanyRegisterResponseDTO>) {
+    super(partial);
+  }
 }

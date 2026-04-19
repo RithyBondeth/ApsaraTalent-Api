@@ -11,6 +11,6 @@ export class LoginOtpResponseDTO {
   isSuccess: boolean;
 
   constructor(partial: Partial<LoginOtpResponseDTO>) {
-    return Object.assign(this, partial);
+    Object.assign(this, partial);
   }
 }

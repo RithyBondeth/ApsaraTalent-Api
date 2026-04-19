@@ -169,8 +169,7 @@ class EducationDTO {
 }
 
 export class EmployeeRegisterResponseDTO extends LoginResponseDTO {
-    constructor(partial: Partial<EmployeeRegisterResponseDTO>) {
-        super(partial);
-            Object.assign(this, partial);
-    }
+  constructor(partial: Partial<EmployeeRegisterResponseDTO>) {
+    super(partial);
+  }
 }

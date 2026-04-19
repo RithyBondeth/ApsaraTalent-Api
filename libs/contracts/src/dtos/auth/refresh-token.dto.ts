@@ -8,8 +8,7 @@ export class RefreshTokenDTO {
 }
 
 export class RefreshTokenResponseDTO extends LoginResponseDTO {
-    constructor(partial: Partial<RefreshTokenResponseDTO>) {
-        super(partial);
-            Object.assign(this, partial);
-    }
+  constructor(partial: Partial<RefreshTokenResponseDTO>) {
+    super(partial);
+  }
 }

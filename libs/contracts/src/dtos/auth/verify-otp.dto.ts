@@ -17,6 +17,5 @@ export class VerifyOtpResponseDTO extends LoginResponseDTO {
 
   constructor(partial: Partial<VerifyOtpResponseDTO>) {
     super(partial);
-    return Object.assign(this, partial);
   }
 }

@@ -143,31 +143,26 @@ export class SocialLoginResponseDTO extends LoginResponseDTO {
 
   constructor(partial: Partial<SocialLoginResponseDTO>) {
     super(partial);
-    Object.assign(this, partial);
   }
 }
 
 export class FacebookLoginResponseDTO extends SocialLoginResponseDTO {
-    constructor(partial: Partial<FacebookLoginResponseDTO>) {
-        super(partial);
-            Object.assign(this, partial);
-    }
+  constructor(partial: Partial<FacebookLoginResponseDTO>) {
+    super(partial);
+  }
 }
 export class GithubLoginResponseDTO extends SocialLoginResponseDTO {
-    constructor(partial: Partial<GithubLoginResponseDTO>) {
-        super(partial);
-            Object.assign(this, partial);
-    }
+  constructor(partial: Partial<GithubLoginResponseDTO>) {
+    super(partial);
+  }
 }
 export class GoogleLoginResponseDTO extends SocialLoginResponseDTO {
-    constructor(partial: Partial<GoogleLoginResponseDTO>) {
-        super(partial);
-            Object.assign(this, partial);
-    }
+  constructor(partial: Partial<GoogleLoginResponseDTO>) {
+    super(partial);
+  }
 }
 export class LinkedInLoginResponseDTO extends SocialLoginResponseDTO {
-    constructor(partial: Partial<LinkedInLoginResponseDTO>) {
-        super(partial);
-            Object.assign(this, partial);
-    }
+  constructor(partial: Partial<LinkedInLoginResponseDTO>) {
+    super(partial);
+  }
 }

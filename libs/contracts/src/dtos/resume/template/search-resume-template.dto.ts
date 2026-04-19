@@ -16,6 +16,5 @@ export class SearchResumeTemplateDTO {
 export class SearchResumeTemplateResponseDTO extends ResumeTemplateResponseDTO {
   constructor(partial: Partial<SearchResumeTemplateResponseDTO>) {
     super(partial);
-    Object.assign(this, partial);
   }
 }

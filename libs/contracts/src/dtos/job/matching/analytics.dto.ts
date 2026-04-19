@@ -5,7 +5,7 @@ export class MatchAnalyticsItemDTO {
   matchedAt: Date;
 
   constructor(partial: Partial<MatchAnalyticsItemDTO>) {
-    return Object.assign(this, partial);
+    Object.assign(this, partial);
   }
 }
 
@@ -16,7 +16,7 @@ export class WeeklyActivityItemDTO {
   matches: number;
 
   constructor(partial: Partial<WeeklyActivityItemDTO>) {
-    return Object.assign(this, partial);
+    Object.assign(this, partial);
   }
 }
 

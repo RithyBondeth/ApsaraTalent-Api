@@ -116,7 +116,7 @@ export class UserInJobResponseDTO {
   createdAt: Date;
 
   constructor(partial: Partial<UserInJobResponseDTO>) {
-    return Object.assign(this, partial);
+    Object.assign(this, partial);
   }
 }
 
@@ -141,7 +141,7 @@ export class CompanyInJobResponseDTO {
   user: UserInJobResponseDTO;
 
   constructor(partial: Partial<CompanyInJobResponseDTO>) {
-    return Object.assign(this, partial);
+    Object.assign(this, partial);
   }
 }
 
@@ -168,7 +168,7 @@ export class JobResponseDTO {
   isHide: boolean;
 
   constructor(partial: Partial<JobResponseDTO>) {
-    return Object.assign(this, partial);
+    Object.assign(this, partial);
   }
 
   @Expose()
@@ -204,6 +204,5 @@ export class JobResponseDTO {
 export class SearchJobResponseDTO extends JobResponseDTO {
   constructor(partial: Partial<SearchJobResponseDTO>) {
     super(partial);
-    Object.assign(this, partial);
   }
 }

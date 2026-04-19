@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsBoolean, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 
 export class ListNotificationsDTO {
   @IsString()
@@ -43,11 +43,11 @@ export class ListNotificationsQueryDTO {
 }
 
 export class NotificationUserDTO {
-  @IsString()
+  @IsUUID()
   userId: string;
 }
 
 export class NotificationIdDTO extends NotificationUserDTO {
-  @IsString()
+  @IsUUID()
   notificationId: string;
 }

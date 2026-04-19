@@ -2,9 +2,9 @@ import { IsOptional, IsString } from 'class-validator';
 export class FavoriteCountResponseDTO {
   count: number;
 
-    constructor(partial: Partial<FavoriteCountResponseDTO>) {
-        Object.assign(this, partial);
-    }
+  constructor(partial: Partial<FavoriteCountResponseDTO>) {
+    Object.assign(this, partial);
+  }
 }
 
 export class FavoriteCountDTO {

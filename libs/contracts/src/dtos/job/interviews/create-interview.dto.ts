@@ -4,15 +4,15 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
 } from 'class-validator';
+import { EmployeeResponseDTO, CompanyResponseDTO } from '../../shared/user.dto';
 
 export class CreateInterviewDTO {
-  @IsString()
-  @IsNotEmpty()
+  @IsUUID()
   employeeId: string;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsUUID()
   companyId: string;
 
   @IsString()
@@ -24,6 +24,7 @@ export class CreateInterviewDTO {
   description?: string;
 
   @IsDateString()
+  @IsNotEmpty()
   scheduledAt: string;
 
   @IsNumber()
@@ -53,20 +54,19 @@ export class CreateInterviewResponseDTO {
   meetingLink: string | null;
   status: string;
   createdBy: string | null;
-  employee: any;
-  company: any;
+  employee: EmployeeResponseDTO;
+  company: CompanyResponseDTO;
   createdAt: Date;
   updatedAt: Date;
 
   constructor(partial: Partial<CreateInterviewResponseDTO>) {
-    return Object.assign(this, partial);
+    Object.assign(this, partial);
   }
 }
 
 /** Generic alias used by the job-service microservice controller. */
 export class InterviewResponseDTO extends CreateInterviewResponseDTO {
-    constructor(partial: Partial<InterviewResponseDTO>) {
-        super(partial);
-            Object.assign(this, partial);
-    }
+  constructor(partial: Partial<InterviewResponseDTO>) {
+    super(partial);
+  }
 }

@@ -18,6 +18,6 @@ export class LoginResponseDTO {
   user: UserResponseDTO;
 
   constructor(partial: Partial<LoginResponseDTO>) {
-    return Object.assign(this, partial);
+    Object.assign(this, partial);
   }
 }

@@ -31,6 +31,5 @@ export class SearchEmployeeDTO {
 export class SearchEmployeeResponseDTO extends EmployeeResponseDTO {
   constructor(partial: Partial<SearchEmployeeResponseDTO>) {
     super(partial);
-    Object.assign(this, partial);
   }
 }

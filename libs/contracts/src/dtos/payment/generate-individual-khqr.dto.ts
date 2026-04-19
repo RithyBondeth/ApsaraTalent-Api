@@ -89,7 +89,6 @@ export class GenerateIndividualKhqrDTO {
   isStatic?: boolean;
 }
 
-
 export class GenerateIndividualKhqrResponseDTO {
   success: true;
   paymentId: string;
@@ -99,7 +98,7 @@ export class GenerateIndividualKhqrResponseDTO {
   expiresAt: Date | null;
   message: string;
 
-    constructor(partial: Partial<GenerateIndividualKhqrResponseDTO>) {
-        Object.assign(this, partial);
-    }
+  constructor(partial: Partial<GenerateIndividualKhqrResponseDTO>) {
+    Object.assign(this, partial);
+  }
 }

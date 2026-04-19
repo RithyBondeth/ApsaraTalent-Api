@@ -10,6 +10,6 @@ export class ForgotPasswordResponseDTO {
   message: string;
 
   constructor(partial: Partial<ForgotPasswordResponseDTO>) {
-    return Object.assign(this, partial);
+    Object.assign(this, partial);
   }
 }

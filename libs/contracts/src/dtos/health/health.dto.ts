@@ -5,9 +5,9 @@ export class LivenessResponseDTO {
   uptime: number;
   timestamp: string;
 
-    constructor(partial: Partial<LivenessResponseDTO>) {
-        Object.assign(this, partial);
-    }
+  constructor(partial: Partial<LivenessResponseDTO>) {
+    Object.assign(this, partial);
+  }
 }
 
 export class HealthDTO {}
