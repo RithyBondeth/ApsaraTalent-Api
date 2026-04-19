@@ -28,7 +28,7 @@ import {
 import { ChatGatewayService } from './chat-gateway.service';
 import { extractChatToken } from './utils/chat-token.util';
 import { isOriginAllowed } from '../utils/cors-origin.util';
-import { GetUnreadCountResponseDTO } from '@app/contracts/dtos/chat/chat-gateway/get-unreadcount.dto';
+import { GetUnreadCountResponseDTO } from '@app/contracts/dtos/chat/chat-gateway/get-unread-count.dto';
 import {
   MarkAsReadDTO,
   MarkAsReadResponseDTO,

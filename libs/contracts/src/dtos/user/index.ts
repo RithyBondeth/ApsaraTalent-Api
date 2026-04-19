@@ -5,4 +5,4 @@ export * from './update-employee-info.dto';
 export * from './landing-stats.dto';
 export * from './favorite-count.dto';
 export * from './count-all-users.dto';
-export * from './user-request.dto';
+export * from './user-rpc.dto';

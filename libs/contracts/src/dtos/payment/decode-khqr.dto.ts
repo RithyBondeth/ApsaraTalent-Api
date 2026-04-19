@@ -12,7 +12,6 @@ export class DecodeKhqrDTO {
   includeRaw?: boolean;
 }
 
-
 export class DecodeKhqrDecodedDataDTO {
   merchantName: string | null;
   merchantCity: string | null;
@@ -30,7 +29,7 @@ export class DecodeKhqrResponseDTO {
   decodedData: DecodeKhqrDecodedDataDTO;
   message: string;
 
-    constructor(partial: Partial<DecodeKhqrResponseDTO>) {
-        Object.assign(this, partial);
-    }
+  constructor(partial: Partial<DecodeKhqrResponseDTO>) {
+    Object.assign(this, partial);
+  }
 }

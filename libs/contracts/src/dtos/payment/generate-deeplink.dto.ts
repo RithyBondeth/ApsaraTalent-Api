@@ -24,7 +24,6 @@ export class GenerateDeepLinkDTO {
   appName?: string;
 }
 
-
 export class GenerateDeepLinkResponseDTO {
   success: true;
   deepLink: string;
@@ -32,7 +31,7 @@ export class GenerateDeepLinkResponseDTO {
   qrString: string;
   message: string;
 
-    constructor(partial: Partial<GenerateDeepLinkResponseDTO>) {
-        Object.assign(this, partial);
-    }
+  constructor(partial: Partial<GenerateDeepLinkResponseDTO>) {
+    Object.assign(this, partial);
+  }
 }
