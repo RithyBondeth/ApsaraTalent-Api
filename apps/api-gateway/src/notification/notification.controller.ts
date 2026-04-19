@@ -16,10 +16,14 @@ import { ClientProxy } from '@nestjs/microservices';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 import { INotificationController } from '@app/contracts/interfaces/domain/notification.interface';
 import {
-  NotificationListResponseDTO,
-  NotificationActionResponseDTO,
   UnreadCountResponseDTO,
-  NotificationResponseDTO,
+  GetAllNotificationResponseDTO,
+  NotificationListByUserResponseDTO,
+  MarkNotificationAsReadResponseDTO,
+  ReadAllNotificationResponseDTO,
+  DeleteNotificationResponseDTO,
+  CreateNotificationCurrentUserResponseDTO,
+  CreateNotificationCurrentUserDTO,
 } from '@app/contracts/dtos/notification';
 import { rpcCall } from '../utils/rpc-call';
 
@@ -31,8 +35,8 @@ export class NotificationController implements INotificationController {
   ) {}
 
   @Get('all')
-  async getAllNotification(): Promise<NotificationResponseDTO[]> {
-    return rpcCall(
+  async getAllNotification(): Promise<GetAllNotificationResponseDTO[]> {
+    return rpcCall<GetAllNotificationResponseDTO[]>(
       this.notificationClient,
       NOTIFICATION_SERVICE.ACTIONS.FIND_ALL_NOTIFICATIONS,
       {},
@@ -46,8 +50,8 @@ export class NotificationController implements INotificationController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('unreadOnly') unreadOnly?: string,
-  ): Promise<NotificationListResponseDTO> {
-    return rpcCall(
+  ): Promise<NotificationListByUserResponseDTO> {
+    return rpcCall<NotificationListByUserResponseDTO>(
       this.notificationClient,
       NOTIFICATION_SERVICE.ACTIONS.LIST_BY_USER,
       {
@@ -62,7 +66,7 @@ export class NotificationController implements INotificationController {
   @Get('unread-count')
   @UseGuards(AuthGuard)
   async getUnreadCount(@Req() req: any): Promise<UnreadCountResponseDTO> {
-    return rpcCall(
+    return rpcCall<UnreadCountResponseDTO>(
       this.notificationClient,
       NOTIFICATION_SERVICE.ACTIONS.GET_UNREAD_COUNT,
       { userId: req.user.id },
@@ -74,8 +78,8 @@ export class NotificationController implements INotificationController {
   async markRead(
     @Req() req: any,
     @Param('id') id: string,
-  ): Promise<NotificationActionResponseDTO> {
-    return rpcCall(
+  ): Promise<MarkNotificationAsReadResponseDTO> {
+    return rpcCall<MarkNotificationAsReadResponseDTO>(
       this.notificationClient,
       NOTIFICATION_SERVICE.ACTIONS.MARK_READ,
       { userId: req.user.id, notificationId: id },
@@ -84,8 +88,8 @@ export class NotificationController implements INotificationController {
 
   @Patch('read-all')
   @UseGuards(AuthGuard)
-  async markAllRead(@Req() req: any): Promise<NotificationActionResponseDTO> {
-    return rpcCall(
+  async markAllRead(@Req() req: any): Promise<ReadAllNotificationResponseDTO> {
+    return rpcCall<ReadAllNotificationResponseDTO>(
       this.notificationClient,
       NOTIFICATION_SERVICE.ACTIONS.MARK_ALL_READ,
       { userId: req.user.id },
@@ -97,8 +101,8 @@ export class NotificationController implements INotificationController {
   async deleteNotification(
     @Req() req: any,
     @Param('id') id: string,
-  ): Promise<NotificationActionResponseDTO> {
-    return rpcCall(
+  ): Promise<DeleteNotificationResponseDTO> {
+    return rpcCall<DeleteNotificationResponseDTO>(
       this.notificationClient,
       NOTIFICATION_SERVICE.ACTIONS.DELETE_NOTIFICATION,
       { userId: req.user.id, notificationId: id },
@@ -109,8 +113,8 @@ export class NotificationController implements INotificationController {
   @UseGuards(AuthGuard)
   async deleteAllNotifications(
     @Req() req: any,
-  ): Promise<NotificationActionResponseDTO> {
-    return rpcCall(
+  ): Promise<DeleteNotificationResponseDTO> {
+    return rpcCall<DeleteNotificationResponseDTO>(
       this.notificationClient,
       NOTIFICATION_SERVICE.ACTIONS.DELETE_ALL_NOTIFICATIONS,
       { userId: req.user.id },
@@ -122,22 +126,17 @@ export class NotificationController implements INotificationController {
   async createForCurrentUser(
     @Req() req: any,
     @Body()
-    body: {
-      title: string;
-      message: string;
-      type?: string;
-      data?: Record<string, any>;
-    },
-  ): Promise<NotificationResponseDTO> {
-    return rpcCall(
+    dto: CreateNotificationCurrentUserDTO,
+  ): Promise<CreateNotificationCurrentUserResponseDTO> {
+    return rpcCall<CreateNotificationCurrentUserResponseDTO>(
       this.notificationClient,
       NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION,
       {
         userId: req.user.id,
-        title: body.title,
-        message: body.message,
-        type: body.type,
-        data: body.data,
+        title: dto.title,
+        message: dto.message,
+        type: dto.type,
+        data: dto.data,
       },
     );
   }

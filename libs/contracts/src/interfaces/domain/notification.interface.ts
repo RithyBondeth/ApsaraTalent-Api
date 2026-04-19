@@ -1,3 +1,14 @@
+import {
+  CreateNotificationCurrentUserDTO,
+  CreateNotificationCurrentUserResponseDTO,
+  DeleteNotificationResponseDTO,
+  GetAllNotificationResponseDTO,
+  MarkNotificationAsReadResponseDTO,
+  NotificationListByUserResponseDTO,
+  ReadAllNotificationResponseDTO,
+  UnreadCountResponseDTO,
+} from '@app/contracts/dtos';
+
 export interface CreateNotificationPayload {
   userId: string;
   title: string;
@@ -39,17 +50,23 @@ export interface DeleteAllNotificationsPayload {
 }
 
 export interface INotificationController {
-  getAllNotification(): Promise<any>;
+  getAllNotification(): Promise<GetAllNotificationResponseDTO[]>;
   listByUser(
     req?: any,
-    page?: any,
-    limit?: any,
-    unreadOnly?: any,
-  ): Promise<any>;
-  getUnreadCount(req?: any): Promise<any>;
-  markRead(req?: any, id?: any): Promise<any>;
-  markAllRead(req?: any): Promise<any>;
-  deleteNotification(req?: any, id?: any): Promise<any>;
-  deleteAllNotifications(req?: any): Promise<any>;
-  createForCurrentUser(req?: any, body?: any): Promise<any>;
+    page?: string,
+    limit?: string,
+    unreadOnly?: string,
+  ): Promise<NotificationListByUserResponseDTO>;
+  getUnreadCount(req?: any): Promise<UnreadCountResponseDTO>;
+  markRead(req?: any, id?: any): Promise<MarkNotificationAsReadResponseDTO>;
+  markAllRead(req?: any): Promise<ReadAllNotificationResponseDTO>;
+  deleteNotification(
+    req?: any,
+    id?: any,
+  ): Promise<DeleteNotificationResponseDTO>;
+  deleteAllNotifications(req?: any): Promise<DeleteNotificationResponseDTO>;
+  createForCurrentUser(
+    req?: any,
+    body?: CreateNotificationCurrentUserDTO,
+  ): Promise<CreateNotificationCurrentUserResponseDTO>;
 }

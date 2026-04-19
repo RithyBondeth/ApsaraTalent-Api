@@ -1,4 +1,4 @@
-export class NotificationResponseDTO {
+export class GetAllNotificationResponseDTO {
   id: string;
   title: string;
   message: string;
@@ -7,8 +7,7 @@ export class NotificationResponseDTO {
   isRead: boolean;
   createdAt: Date;
 
-  constructor(partial: Partial<NotificationResponseDTO>) {
+  constructor(partial: Partial<GetAllNotificationResponseDTO>) {
     Object.assign(this, partial);
   }
 }
-
