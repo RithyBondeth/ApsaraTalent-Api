@@ -14,11 +14,22 @@ import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import {
   CompanyResponseDTO,
+  UserResponseDTO,
+  FavoriteCountResponseDTO,
+  PaginationRequestDTO,
+  UserIdDTO,
+  UpdatePushNotificationTokenDTO,
+  EmployeeCompanyFavoriteDTO,
+  EmployeeCompanyFavoriteWithFavoriteIdDTO,
+  CompanyEmployeeFavoriteDTO,
+  CompanyEmployeeFavoriteWithFavoriteIdDTO,
+  EmployeeFavoriteLookupDTO,
+  CompanyFavoriteLookupDTO,
+  EmployeeRecommendationsDTO,
+  CompanyRecommendationsDTO,
   CountAllUsersResponseDTO,
   EmployeeResponseDTO,
   JobPositionResponseDTO,
-  UserResponseDTO,
-  FavoriteCountResponseDTO,
 } from '@app/contracts/dtos/user';
 import { IUserService } from '@app/contracts/interfaces/service/user-service.interface';
 import { CoreResponseDTO } from '@app/contracts/dtos/shared';
@@ -47,7 +58,10 @@ export class UserService implements IUserService, OnModuleInit {
       this.logger.info(
         'Cache warming: loading career scopes and first page of users...',
       );
-      await Promise.all([this.findAllCareerScopes(), this.findAllUsers(0, 20)]);
+      await Promise.all([
+        this.findAllCareerScopes(),
+        this.findAllUsers({ skip: 0, limit: 20 }),
+      ]);
       this.logger.info('Cache warming complete');
     } catch (error) {
       this.logger.warn(
@@ -56,7 +70,8 @@ export class UserService implements IUserService, OnModuleInit {
     }
   }
 
-  async findAllUsers(skip = 0, limit = 20): Promise<UserResponseDTO[]> {
+  async findAllUsers(dto: PaginationRequestDTO): Promise<UserResponseDTO[]> {
+    const { skip = 0, limit = 20 } = dto;
     const cacheKey = this.redisService.generateListKey('user', { skip, limit });
     const cached = await this.redisService.get<UserResponseDTO[]>(cacheKey);
 
@@ -167,7 +182,8 @@ export class UserService implements IUserService, OnModuleInit {
     }
   }
 
-  async findOneUserByID(userId: string): Promise<UserResponseDTO> {
+  async findOneUserByID(dto: UserIdDTO): Promise<UserResponseDTO> {
+    const { userId } = dto;
     const cacheKey = this.redisService.generateUserKey('detail', userId);
     const cached = await this.redisService.get<UserResponseDTO>(cacheKey);
 
@@ -246,9 +262,9 @@ export class UserService implements IUserService, OnModuleInit {
   }
 
   async updatePushNotificationToken(
-    userId: string,
-    token: string | null,
+    dto: UpdatePushNotificationTokenDTO,
   ): Promise<CoreResponseDTO> {
+    const { userId, token } = dto;
     const normalizedToken =
       typeof token === 'string' && token.trim().length > 0
         ? token.trim()
@@ -284,9 +300,9 @@ export class UserService implements IUserService, OnModuleInit {
   }
 
   async employeeFavoriteCompany(
-    eid: string,
-    cid: string,
+    dto: EmployeeCompanyFavoriteDTO,
   ): Promise<CoreResponseDTO> {
+    const { eid, cid } = dto;
     try {
       const exists = await this.empFavoriteCmpRepository.findOne({
         where: {
@@ -355,10 +371,9 @@ export class UserService implements IUserService, OnModuleInit {
   }
 
   async employeeUnfavoriteCompany(
-    eid: string,
-    cid: string,
-    favoriteId: string,
+    dto: EmployeeCompanyFavoriteWithFavoriteIdDTO,
   ): Promise<CoreResponseDTO> {
+    const { eid, cid, favoriteId } = dto;
     try {
       const favoriteToRemove = await this.empFavoriteCmpRepository.findOne({
         where: {
@@ -418,9 +433,9 @@ export class UserService implements IUserService, OnModuleInit {
   }
 
   async companyFavoriteEmployee(
-    cid: string,
-    eid: string,
+    dto: CompanyEmployeeFavoriteDTO,
   ): Promise<CoreResponseDTO> {
+    const { cid, eid } = dto;
     try {
       const exists = await this.cmpFavoriteEmpRepository.findOne({
         where: {
@@ -489,10 +504,9 @@ export class UserService implements IUserService, OnModuleInit {
   }
 
   async companyUnfavoriteEmployee(
-    cid: string,
-    eid: string,
-    favoriteId: string,
+    dto: CompanyEmployeeFavoriteWithFavoriteIdDTO,
   ): Promise<CoreResponseDTO> {
+    const { cid, eid, favoriteId } = dto;
     try {
       const favoriteToRemove = await this.cmpFavoriteEmpRepository.findOne({
         where: {
@@ -551,7 +565,10 @@ export class UserService implements IUserService, OnModuleInit {
     }
   }
 
-  async findAllEmployeeFavorites(eid: string): Promise<CompanyResponseDTO[]> {
+  async findAllEmployeeFavorites(
+    dto: EmployeeFavoriteLookupDTO,
+  ): Promise<CompanyResponseDTO[]> {
+    const { eid } = dto;
     // ✅ Use helper method
     const cacheKey = this.redisService.generateEmployeeFavoritesKey(eid);
     const cached = await this.redisService.get<CompanyResponseDTO[]>(cacheKey);
@@ -604,7 +621,10 @@ export class UserService implements IUserService, OnModuleInit {
     }
   }
 
-  async findAllCompanyFavorites(cid: string): Promise<EmployeeResponseDTO[]> {
+  async findAllCompanyFavorites(
+    dto: CompanyFavoriteLookupDTO,
+  ): Promise<EmployeeResponseDTO[]> {
+    const { cid } = dto;
     // ✅ Use helper method
     const cacheKey = this.redisService.generateCompanyFavoritesKey(cid);
     const cached = await this.redisService.get<EmployeeResponseDTO[]>(cacheKey);
@@ -651,7 +671,10 @@ export class UserService implements IUserService, OnModuleInit {
     }
   }
 
-  async countCompanyFavorite(cid: string): Promise<FavoriteCountResponseDTO> {
+  async countCompanyFavorite(
+    dto: CompanyFavoriteLookupDTO,
+  ): Promise<FavoriteCountResponseDTO> {
+    const { cid } = dto;
     // ✅ Use helper method
     const cacheKey = this.redisService.generateCompanyFavoriteCountKey(cid);
     const cached =
@@ -689,7 +712,10 @@ export class UserService implements IUserService, OnModuleInit {
     }
   }
 
-  async countEmployeeFavorite(eid: string): Promise<FavoriteCountResponseDTO> {
+  async countEmployeeFavorite(
+    dto: EmployeeFavoriteLookupDTO,
+  ): Promise<FavoriteCountResponseDTO> {
+    const { eid } = dto;
     // ✅ Use helper method
     const cacheKey = this.redisService.generateEmployeeFavoriteCountKey(eid);
     const cached =
@@ -791,7 +817,8 @@ export class UserService implements IUserService, OnModuleInit {
     });
   }
 
-  async clearCurrentUserCache(userId: string) {
+  async clearCurrentUserCache(dto: UserIdDTO) {
+    const { userId } = dto;
     await Promise.all([
       this.redisService.del(
         this.redisService.generateUserKey('detail', userId),
@@ -806,9 +833,9 @@ export class UserService implements IUserService, OnModuleInit {
   }
 
   async getEmployeeRecommendations(
-    employeeId: string,
-    limit = 10,
+    dto: EmployeeRecommendationsDTO,
   ): Promise<CompanyResponseDTO[]> {
+    const { employeeId, limit = 10 } = dto;
     const cacheKey = this.redisService.generateListKey(
       'employee-recommendations',
       { employeeId, limit },
@@ -901,9 +928,9 @@ export class UserService implements IUserService, OnModuleInit {
   }
 
   async getCompanyRecommendations(
-    companyId: string,
-    limit = 10,
+    dto: CompanyRecommendationsDTO,
   ): Promise<EmployeeResponseDTO[]> {
+    const { companyId, limit = 10 } = dto;
     const cacheKey = this.redisService.generateListKey(
       'company-recommendations',
       { companyId, limit },

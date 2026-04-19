@@ -13,6 +13,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import {
   UpdateCompanyInfoDTO,
+  UpdateCompanyInfoRequestDTO,
   CompanyResponseDTO,
   UpdateCompanyInfoResponseDTO,
   JobPositionResponseDTO,
@@ -39,9 +40,9 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
     private readonly redisService: RedisService,
   ) {}
   async updateCompanyInfo(
-    updateCompanyInfoDTO: UpdateCompanyInfoDTO,
-    companyId: string,
+    dto: UpdateCompanyInfoRequestDTO,
   ): Promise<UpdateCompanyInfoResponseDTO> {
+    const { companyId, updateCompanyInfoDTO } = dto;
     try {
       const company = await this.companyRepository.findOne({
         where: { id: companyId },

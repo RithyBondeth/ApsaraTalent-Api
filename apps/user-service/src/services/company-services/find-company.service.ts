@@ -6,11 +6,12 @@ import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
-import { UserPaginationDTO } from '@app/contracts/dtos/shared';
 import {
   CompanyResponseDTO,
   CountAllUsersResponseDTO,
   JobPositionResponseDTO,
+  PaginationRequestDTO,
+  CompanyIdDTO,
 } from '@app/contracts/dtos/user';
 
 import { IFindCompanyService } from '@app/contracts/interfaces/service/user-service.interface';
@@ -27,8 +28,14 @@ export class FindCompanyService implements IFindCompanyService {
     private readonly redisService: RedisService,
   ) {}
 
-  async findAll(pagination: UserPaginationDTO): Promise<CompanyResponseDTO[]> {
-    const cacheKey = this.redisService.generateListKey('company', pagination);
+  async findAll(
+    pagination: PaginationRequestDTO,
+  ): Promise<CompanyResponseDTO[]> {
+    const { skip = 0, limit = 10 } = pagination;
+    const cacheKey = this.redisService.generateListKey('company', {
+      skip,
+      limit,
+    });
     const cached = await this.redisService.get<CompanyResponseDTO[]>(cacheKey);
 
     if (cached) {
@@ -48,8 +55,8 @@ export class FindCompanyService implements IFindCompanyService {
           'socials',
           'images',
         ],
-        skip: pagination?.skip || 0,
-        take: pagination?.limit || 10,
+        skip,
+        take: limit,
       });
       if (!companies)
         throw new RpcException({
@@ -118,7 +125,8 @@ export class FindCompanyService implements IFindCompanyService {
     }
   }
 
-  async findOneById(companyId: string): Promise<CompanyResponseDTO> {
+  async findOneById(dto: CompanyIdDTO): Promise<CompanyResponseDTO> {
+    const { companyId } = dto;
     const cacheKey = this.redisService.generateCompanyKey('detail', companyId);
     const cached = await this.redisService.get<CompanyResponseDTO>(cacheKey);
 

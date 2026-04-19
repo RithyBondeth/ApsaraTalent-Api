@@ -56,7 +56,6 @@ export class LoginOTPService implements ILoginOTPService {
 
       return new LoginOtpResponseDTO({
         message: `OTP sent successfully to ${loginOtpDTO.phone}`,
-        isSuccess: true,
       });
     } catch (error) {
       this.logger.error((error as Error).message || 'Login OTP failed.');
@@ -114,7 +113,6 @@ export class LoginOTPService implements ILoginOTPService {
 
       return new VerifyOtpResponseDTO({
         message: 'OTP verified successfully',
-        isSuccess: true,
         accessToken,
         refreshToken,
         user: new UserResponseDTO({

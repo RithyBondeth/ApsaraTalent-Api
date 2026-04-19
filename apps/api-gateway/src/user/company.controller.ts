@@ -25,6 +25,7 @@ import {
   CompanyResponseDTO,
   UpdateCompanyInfoResponseDTO,
   UpdateCompanyInfoDTO,
+  CountAllUsersResponseDTO,
 } from '@app/contracts/dtos/user';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
 import { rpcCall } from '../utils/rpc-call';
@@ -151,6 +152,15 @@ export class CompanyController implements ICompanyController {
       this.userClient,
       USER_SERVICE.ACTIONS.REMOVE_OPEN_POSITION,
       { companyId, opId },
+    );
+  }
+
+  @Get('count')
+  async countAllCompanies(): Promise<CountAllUsersResponseDTO> {
+    return rpcCall<CountAllUsersResponseDTO>(
+      this.userClient,
+      USER_SERVICE.ACTIONS.COUNT_ALL_COMPANY,
+      {},
     );
   }
 }

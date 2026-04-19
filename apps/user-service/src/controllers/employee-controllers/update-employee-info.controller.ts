@@ -1,8 +1,13 @@
-import { IUpdateEmployeeController } from '@app/contracts/interfaces/controller/employee-controller.interface';
+import { IUpdateEmployeeRpcController } from '@app/contracts/interfaces/controller/employee-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { UpdateEmployeeInfoDTO, UpdateEmployeeInfoResponseDTO, EmployeeResponseDTO } from '@app/contracts/dtos/user';
+import {
+  UpdateEmployeeInfoDTO,
+  UpdateEmployeeInfoRequestDTO,
+  UpdateEmployeeInfoResponseDTO,
+  EmployeeResponseDTO,
+} from '@app/contracts/dtos/user';
 import { UpdateEmployeeInfoService } from '../../services/employee-services/update-employee-info.service';
 
 import {
@@ -11,7 +16,7 @@ import {
 } from '@app/contracts/interfaces/service/user-service.interface';
 
 @Controller()
-export class UpdateEmployeeInfoController implements IUpdateEmployeeController {
+export class UpdateEmployeeInfoController implements IUpdateEmployeeRpcController {
   constructor(
     @Inject(I_UPDATE_EMPLOYEE_INFO_SERVICE)
     private readonly updateEmployeeInfoService: IUpdateEmployeeInfoService,
@@ -19,15 +24,8 @@ export class UpdateEmployeeInfoController implements IUpdateEmployeeController {
 
   @MessagePattern(USER_SERVICE.ACTIONS.UPDATE_EMPLOYEE_INFO)
   async updateEmployeeInfo(
-    @Payload()
-    payload: {
-      updateEmployeeInfoDTO: UpdateEmployeeInfoDTO;
-      employeeId: string;
-    },
+    @Payload() payload: UpdateEmployeeInfoRequestDTO,
   ): Promise<UpdateEmployeeInfoResponseDTO> {
-    return this.updateEmployeeInfoService.updateEmployeeInfo(
-      payload.updateEmployeeInfoDTO,
-      payload.employeeId,
-    );
+    return this.updateEmployeeInfoService.updateEmployeeInfo(payload);
   }
 }

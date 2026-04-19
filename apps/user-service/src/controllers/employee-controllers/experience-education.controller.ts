@@ -7,10 +7,14 @@ import {
   IExperienceAndEducationService,
 } from '@app/contracts/interfaces/service/user-service.interface';
 
-import { IRemoveEmployeeItemsController } from '@app/contracts/interfaces/controller/employee-controller.interface';
+import { IRemoveEmployeeItemsRpcController } from '@app/contracts/interfaces/controller/employee-controller.interface';
+import {
+  RemoveEmployeeEducationDTO,
+  RemoveEmployeeExperienceDTO,
+} from '@app/contracts/dtos/user';
 
 @Controller()
-export class ExperienceAndEducationController implements IRemoveEmployeeItemsController {
+export class ExperienceAndEducationController implements IRemoveEmployeeItemsRpcController {
   constructor(
     @Inject(I_EXPERIENCE_AND_EDUCATION_SERVICE)
     private readonly experienceAndEducationService: IExperienceAndEducationService,
@@ -18,21 +22,15 @@ export class ExperienceAndEducationController implements IRemoveEmployeeItemsCon
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_EXPERIENCE)
   async removeEmployeeExperience(
-    @Payload() payload: { employeeId: string; experienceId: string },
+    @Payload() payload: RemoveEmployeeExperienceDTO,
   ): Promise<CoreResponseDTO> {
-    return this.experienceAndEducationService.removeEmployeeExperience(
-      payload.employeeId,
-      payload.experienceId,
-    );
+    return this.experienceAndEducationService.removeEmployeeExperience(payload);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_EDUCATION)
   async removeEmployeeEducation(
-    @Payload() payload: { employeeId: string; educationId: string },
+    @Payload() payload: RemoveEmployeeEducationDTO,
   ): Promise<CoreResponseDTO> {
-    return this.experienceAndEducationService.removeEmployeeEducation(
-      payload.employeeId,
-      payload.educationId,
-    );
+    return this.experienceAndEducationService.removeEmployeeEducation(payload);
   }
 }

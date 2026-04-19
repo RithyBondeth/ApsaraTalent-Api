@@ -6,10 +6,11 @@ import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
-import { UserPaginationDTO } from '@app/contracts/dtos/shared';
 import {
   CountAllUsersResponseDTO,
   EmployeeResponseDTO,
+  PaginationRequestDTO,
+  EmployeeIdDTO,
 } from '@app/contracts/dtos/user';
 
 import { IFindEmployeeService } from '@app/contracts/interfaces/service/user-service.interface';
@@ -26,8 +27,14 @@ export class FindEmployeeService implements IFindEmployeeService {
     private readonly redisService: RedisService,
   ) {}
 
-  async findAll(pagination: UserPaginationDTO): Promise<EmployeeResponseDTO[]> {
-    const cacheKey = this.redisService.generateListKey('employee', pagination);
+  async findAll(
+    pagination: PaginationRequestDTO,
+  ): Promise<EmployeeResponseDTO[]> {
+    const { skip = 0, limit = 10 } = pagination;
+    const cacheKey = this.redisService.generateListKey('employee', {
+      skip,
+      limit,
+    });
     const cached = await this.redisService.get<EmployeeResponseDTO[]>(cacheKey);
 
     if (cached) {
@@ -46,8 +53,8 @@ export class FindEmployeeService implements IFindEmployeeService {
           'socials',
           'educations',
         ],
-        skip: pagination?.skip || 0,
-        take: pagination?.limit || 10,
+        skip,
+        take: limit,
       });
       if (!employees)
         throw new RpcException({
@@ -107,7 +114,8 @@ export class FindEmployeeService implements IFindEmployeeService {
     }
   }
 
-  async findOneById(employeeId: string): Promise<EmployeeResponseDTO> {
+  async findOneById(dto: EmployeeIdDTO): Promise<EmployeeResponseDTO> {
+    const { employeeId } = dto;
     const cacheKey = this.redisService.generateEmployeeKey(
       'detail',
       employeeId,

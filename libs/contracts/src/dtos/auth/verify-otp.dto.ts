@@ -12,8 +12,6 @@ export class VerifyOtpDTO {
 }
 
 export class VerifyOtpResponseDTO extends LoginResponseDTO {
-  isSuccess: boolean;
-
   constructor(partial: Partial<VerifyOtpResponseDTO>) {
     super(partial);
   }

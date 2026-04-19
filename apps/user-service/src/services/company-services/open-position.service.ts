@@ -6,6 +6,7 @@ import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
+import { RemoveOpenPositionDTO } from '@app/contracts/dtos/user';
 
 import { IOpenPositionService } from '@app/contracts/interfaces/service/user-service.interface';
 import { CoreResponseDTO } from '@app/contracts/dtos/shared';
@@ -41,9 +42,9 @@ export class OpenPositionService implements IOpenPositionService {
   }
 
   async removeOpenPosition(
-    companyId: string,
-    opId: string,
+    dto: RemoveOpenPositionDTO,
   ): Promise<CoreResponseDTO> {
+    const { companyId, opId } = dto;
     try {
       const removedJob = await this.jobRepository.findOne({
         where: { id: opId, company: { id: companyId } },

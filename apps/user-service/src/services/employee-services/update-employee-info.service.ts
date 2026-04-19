@@ -14,6 +14,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import {
   UpdateEmployeeInfoDTO,
+  UpdateEmployeeInfoRequestDTO,
   UpdateEmployeeInfoResponseDTO,
   EmployeeResponseDTO,
 } from '@app/contracts/dtos/user';
@@ -43,9 +44,9 @@ export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
   ) {}
 
   async updateEmployeeInfo(
-    updateEmployeeInfoDTO: UpdateEmployeeInfoDTO,
-    employeeId: string,
+    dto: UpdateEmployeeInfoRequestDTO,
   ): Promise<UpdateEmployeeInfoResponseDTO> {
+    const { employeeId, updateEmployeeInfoDTO } = dto;
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },

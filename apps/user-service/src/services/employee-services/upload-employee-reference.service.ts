@@ -9,6 +9,11 @@ import * as path from 'path';
 import { Repository } from 'typeorm';
 
 import { IUploadEmployeeReferenceService } from '@app/contracts/interfaces/service/user-service.interface';
+import {
+  EmployeeIdDTO,
+  UploadEmployeeCoverLetterDTO,
+  UploadEmployeeResumeDTO,
+} from '@app/contracts/dtos/user';
 import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 
 @Injectable()
@@ -22,9 +27,9 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
   ) {}
 
   async uploadEmployeeResume(
-    employeeId: string,
-    resume: Express.Multer.File,
+    dto: UploadEmployeeResumeDTO,
   ): Promise<CoreResponseDTO> {
+    const { employeeId, resume } = dto;
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
@@ -77,7 +82,8 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
     }
   }
 
-  async removeEmployeeResume(employeeId: string): Promise<CoreResponseDTO> {
+  async removeEmployeeResume(dto: EmployeeIdDTO): Promise<CoreResponseDTO> {
+    const { employeeId } = dto;
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
@@ -124,9 +130,9 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
   }
 
   async uploadEmployeeCoverLetter(
-    employeeId: string,
-    coverLetter: Express.Multer.File,
+    dto: UploadEmployeeCoverLetterDTO,
   ): Promise<CoreResponseDTO> {
+    const { employeeId, coverLetter } = dto;
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
@@ -188,8 +194,9 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
   }
 
   async removeEmployeeCoverLetter(
-    employeeId: string,
+    dto: EmployeeIdDTO,
   ): Promise<CoreResponseDTO> {
+    const { employeeId } = dto;
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },

@@ -123,7 +123,7 @@ export class AuthController implements IBasicAuthController {
       verifyOtpDTO,
     );
 
-    const { message, accessToken, refreshToken, user, isSuccess } = response;
+    const { message, accessToken, refreshToken, user } = response;
 
     setAuthTokenCookies(res, { accessToken, refreshToken });
 
@@ -132,7 +132,6 @@ export class AuthController implements IBasicAuthController {
       refreshToken,
       accessToken,
       user,
-      isSuccess,
     });
   }
 

@@ -7,6 +7,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 
+import {
+  RemoveEmployeeEducationDTO,
+  RemoveEmployeeExperienceDTO,
+} from '@app/contracts/dtos/user';
+import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 import { IExperienceAndEducationService } from '@app/contracts/interfaces/service/user-service.interface';
 
 @Injectable()
@@ -20,7 +25,10 @@ export class ExperienceAndEducationService implements IExperienceAndEducationSer
     private readonly cacheInvalidationService: CacheInvalidationService,
   ) {}
 
-  async removeEmployeeExperience(employeeId: string, experienceId: string) {
+  async removeEmployeeExperience(
+    dto: RemoveEmployeeExperienceDTO,
+  ): Promise<CoreResponseDTO> {
+    const { employeeId, experienceId } = dto;
     try {
       const removeExp = await this.expRepository.findOne({
         where: { id: experienceId, employee: { id: employeeId } },
@@ -38,9 +46,9 @@ export class ExperienceAndEducationService implements IExperienceAndEducationSer
 
       await this.expRepository.delete(experienceId);
 
-      return {
+      return new CoreResponseDTO({
         message: `${removeExp.title} experience was removed successfully.`,
-      };
+      });
     } catch (error) {
       // Handle error
       this.logger.error(
@@ -54,7 +62,10 @@ export class ExperienceAndEducationService implements IExperienceAndEducationSer
     }
   }
 
-  async removeEmployeeEducation(employeeId: string, educationId: string) {
+  async removeEmployeeEducation(
+    dto: RemoveEmployeeEducationDTO,
+  ): Promise<CoreResponseDTO> {
+    const { employeeId, educationId } = dto;
     try {
       const removeEdu = await this.eduRepository.findOne({
         where: { id: educationId, employee: { id: employeeId } },
@@ -72,9 +83,9 @@ export class ExperienceAndEducationService implements IExperienceAndEducationSer
 
       await this.eduRepository.delete(educationId);
 
-      return {
+      return new CoreResponseDTO({
         message: `${removeEdu.school} education was removed successfully`,
-      };
+      });
     } catch (error) {
       // Handle error
       this.logger.error(

@@ -9,6 +9,10 @@ import * as path from 'path';
 import { Repository } from 'typeorm';
 
 import { IImageEmployeeService } from '@app/contracts/interfaces/service/user-service.interface';
+import {
+  EmployeeIdDTO,
+  UploadEmployeeAvatarDTO,
+} from '@app/contracts/dtos/user';
 import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 
 @Injectable()
@@ -22,9 +26,9 @@ export class ImageEmployeeService implements IImageEmployeeService {
   ) {}
 
   async uploadEmployeeAvatar(
-    employeeId: string,
-    avatar: Express.Multer.File,
+    dto: UploadEmployeeAvatarDTO,
   ): Promise<CoreResponseDTO> {
+    const { employeeId, avatar } = dto;
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
@@ -83,7 +87,8 @@ export class ImageEmployeeService implements IImageEmployeeService {
     }
   }
 
-  async removeEmployeeAvatar(employeeId: string): Promise<CoreResponseDTO> {
+  async removeEmployeeAvatar(dto: EmployeeIdDTO): Promise<CoreResponseDTO> {
+    const { employeeId } = dto;
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },

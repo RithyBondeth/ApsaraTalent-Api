@@ -1,11 +1,12 @@
-import { IFindEmployeeController } from '@app/contracts/interfaces/controller/employee-controller.interface';
+import { IFindEmployeeRpcController } from '@app/contracts/interfaces/controller/employee-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { UserPaginationDTO } from '@app/contracts/dtos/shared';
 import {
   CountAllUsersResponseDTO,
   EmployeeResponseDTO,
+  PaginationRequestDTO,
+  EmployeeIdDTO,
 } from '@app/contracts/dtos/user';
 import {
   I_FIND_EMPLOYEE_SERVICE,
@@ -13,7 +14,7 @@ import {
 } from '@app/contracts/interfaces/service/user-service.interface';
 
 @Controller()
-export class FindEmployeeController implements IFindEmployeeController {
+export class FindEmployeeController implements IFindEmployeeRpcController {
   constructor(
     @Inject(I_FIND_EMPLOYEE_SERVICE)
     private readonly findEmployeeService: IFindEmployeeService,
@@ -21,9 +22,9 @@ export class FindEmployeeController implements IFindEmployeeController {
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_EMPLOYEE)
   async findAll(
-    @Payload() payload: { pagination: UserPaginationDTO },
+    @Payload() payload: PaginationRequestDTO,
   ): Promise<EmployeeResponseDTO[]> {
-    return this.findEmployeeService.findAll(payload.pagination);
+    return this.findEmployeeService.findAll(payload);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.COUNT_ALL_EMPLOYEE)
@@ -33,8 +34,8 @@ export class FindEmployeeController implements IFindEmployeeController {
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ONE_EMPLOYEE_BY_ID)
   async findOneById(
-    @Payload() payload: { employeeId: string },
+    @Payload() payload: EmployeeIdDTO,
   ): Promise<EmployeeResponseDTO> {
-    return this.findEmployeeService.findOneById(payload.employeeId);
+    return this.findEmployeeService.findOneById(payload);
   }
 }

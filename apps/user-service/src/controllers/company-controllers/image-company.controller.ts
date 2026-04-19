@@ -1,4 +1,4 @@
-import { IImageCompanyController } from '@app/contracts/interfaces/domain/company.interface';
+import { IImageCompanyRpcController } from '@app/contracts/interfaces/domain/company.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
@@ -7,9 +7,16 @@ import {
   IImageCompanyService,
 } from '@app/contracts/interfaces/service/user-service.interface';
 import { CoreResponseDTO } from '@app/contracts/dtos/shared';
+import {
+  CompanyIdDTO,
+  RemoveCompanyImageDTO,
+  UploadCompanyAvatarDTO,
+  UploadCompanyCoverDTO,
+  UploadCompanyImagesDTO,
+} from '@app/contracts/dtos/user';
 
 @Controller()
-export class ImageCompanyController implements IImageCompanyController {
+export class ImageCompanyController implements IImageCompanyRpcController {
   constructor(
     @Inject(I_IMAGE_COMPANY_SERVICE)
     private readonly imageCompanyService: IImageCompanyService,
@@ -17,55 +24,43 @@ export class ImageCompanyController implements IImageCompanyController {
 
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_AVATAR)
   async uploadCompanyAvatar(
-    @Payload() payload: { companyId: string; avatar: Express.Multer.File },
+    @Payload() payload: UploadCompanyAvatarDTO,
   ): Promise<CoreResponseDTO> {
-    return this.imageCompanyService.uploadCompanyAvatar(
-      payload.companyId,
-      payload.avatar,
-    );
+    return this.imageCompanyService.uploadCompanyAvatar(payload);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_COMPANY_AVATAR)
   async removeCompanyAvatar(
-    @Payload() payload: { companyId: string },
+    @Payload() payload: CompanyIdDTO,
   ): Promise<CoreResponseDTO> {
-    return this.imageCompanyService.removeCompanyAvatar(payload.companyId);
+    return this.imageCompanyService.removeCompanyAvatar(payload);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_COVER)
   async uploadCompanyCover(
-    @Payload() payload: { companyId: string; cover: Express.Multer.File },
+    @Payload() payload: UploadCompanyCoverDTO,
   ): Promise<CoreResponseDTO> {
-    return this.imageCompanyService.uploadCompanyCover(
-      payload.companyId,
-      payload.cover,
-    );
+    return this.imageCompanyService.uploadCompanyCover(payload);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_COMPANY_COVER)
   async removeCompanyCover(
-    @Payload() payload: { companyId: string },
+    @Payload() payload: CompanyIdDTO,
   ): Promise<CoreResponseDTO> {
-    return this.imageCompanyService.removeCompanyCover(payload.companyId);
+    return this.imageCompanyService.removeCompanyCover(payload);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_IMAGES)
   async uploadCompanyImages(
-    @Payload() payload: { companyId: string; images: Express.Multer.File[] },
+    @Payload() payload: UploadCompanyImagesDTO,
   ): Promise<CoreResponseDTO> {
-    return this.imageCompanyService.uploadCompanyImage(
-      payload.companyId,
-      payload.images,
-    );
+    return this.imageCompanyService.uploadCompanyImages(payload);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_COMPANY_IMAGES)
   async removeCompanyImage(
-    @Payload() payload: { companyId: string; imageId: string },
+    @Payload() payload: RemoveCompanyImageDTO,
   ): Promise<CoreResponseDTO> {
-    return this.imageCompanyService.removeCompanyImage(
-      payload.companyId,
-      payload.imageId,
-    );
+    return this.imageCompanyService.removeCompanyImage(payload);
   }
 }

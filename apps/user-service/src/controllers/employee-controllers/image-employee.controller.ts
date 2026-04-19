@@ -1,4 +1,4 @@
-import { IImageEmployeeController } from '@app/contracts/interfaces/controller/employee-controller.interface';
+import { IImageEmployeeRpcController } from '@app/contracts/interfaces/controller/employee-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
@@ -6,10 +6,14 @@ import {
   I_IMAGE_EMPLOYEE_SERVICE,
   IImageEmployeeService,
 } from '@app/contracts/interfaces/service/user-service.interface';
+import {
+  EmployeeIdDTO,
+  UploadEmployeeAvatarDTO,
+} from '@app/contracts/dtos/user';
 import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 
 @Controller()
-export class ImageEmployeeController implements IImageEmployeeController {
+export class ImageEmployeeController implements IImageEmployeeRpcController {
   constructor(
     @Inject(I_IMAGE_EMPLOYEE_SERVICE)
     private readonly imageEmployeeService: IImageEmployeeService,
@@ -17,18 +21,15 @@ export class ImageEmployeeController implements IImageEmployeeController {
 
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_AVATAR)
   async uploadEmployeeAvatar(
-    @Payload() payload: { employeeId: string; avatar: Express.Multer.File },
+    @Payload() payload: UploadEmployeeAvatarDTO,
   ): Promise<CoreResponseDTO> {
-    return this.imageEmployeeService.uploadEmployeeAvatar(
-      payload.employeeId,
-      payload.avatar,
-    );
+    return this.imageEmployeeService.uploadEmployeeAvatar(payload);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_AVATAR)
   async removeEmployeeAvatar(
-    @Payload() payload: { employeeId: string },
+    @Payload() payload: EmployeeIdDTO,
   ): Promise<CoreResponseDTO> {
-    return this.imageEmployeeService.removeEmployeeAvatar(payload.employeeId);
+    return this.imageEmployeeService.removeEmployeeAvatar(payload);
   }
 }
