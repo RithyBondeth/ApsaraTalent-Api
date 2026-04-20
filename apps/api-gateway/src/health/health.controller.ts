@@ -14,7 +14,7 @@ import {
   RESUME_BUILDER_SERVICE,
   USER_SERVICE,
 } from '@app/contracts/constants';
-import { IHealthController } from '@app/contracts/interfaces/service/health.interface';
+import { IHealthController } from '@app/contracts/interfaces/controller/health-controller.interface';
 import {
   HEALTH_DATABASE_TIMEOUT_MS,
   RedisCacheHealthIndicator,

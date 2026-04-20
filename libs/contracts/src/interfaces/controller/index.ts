@@ -1,5 +1,6 @@
 export * from './auth-controller.interface';
 export * from './chat-controller.interface';
+export * from './health-controller.interface';
 export * from './company-controller.interface';
 export * from './employee-controller.interface';
 export * from './job-controller.interface';

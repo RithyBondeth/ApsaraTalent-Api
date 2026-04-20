@@ -1,6 +1,5 @@
 export * from './auth-service.interface';
 export * from './chat-service.interface';
-export * from './health.interface';
 export * from './job-service.interface';
 export * from './notification-service.interface';
 export * from './payment-service.interface';
