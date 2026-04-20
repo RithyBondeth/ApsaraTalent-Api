@@ -9,7 +9,6 @@ import {
   BuildResumeResponseDTO,
 } from '@app/contracts/dtos/resume';
 import { ImageService } from './image.service';
-
 import { IResumeBuilderService } from '@app/contracts/interfaces/service/resume-builder-service.interface';
 import { RESUME } from '@app/contracts/constants/domain/resume.constant';
 

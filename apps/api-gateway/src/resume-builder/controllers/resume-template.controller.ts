@@ -56,24 +56,24 @@ export class ResumeTemplateController implements IResumeTemplateController {
   @Post('create')
   @UseInterceptors(new UploadFileInterceptor('image', 'template-images'))
   async createResumeTemplate(
-    @Body() dto: CreateResumeTemplateDTO,
+    @Body() createResumeTemplateDTO: CreateResumeTemplateDTO,
     @UploadedFile() image: Express.Multer.File,
   ): Promise<CreateResumeTemplateResponseDTO> {
     return rpcCall<CreateResumeTemplateResponseDTO>(
       this.resumeBuilderClient,
       RESUME_BUILDER_SERVICE.ACTIONS.CREATE_RESUME_TEMPLATE,
-      { dto, image },
+      { createResumeTemplateDTO, image },
     );
   }
 
   @Get('search')
   async searchResumeTemplate(
-    @Query() dto: SearchResumeTemplateDTO,
+    @Query() searchResumeTemplateDTO: SearchResumeTemplateDTO,
   ): Promise<SearchResumeTemplateResponseDTO[]> {
     return rpcCall<SearchResumeTemplateResponseDTO[]>(
       this.resumeBuilderClient,
       RESUME_BUILDER_SERVICE.ACTIONS.SEARCH_RESUME_TEMPLATE,
-      dto,
+      searchResumeTemplateDTO,
     );
   }
 }

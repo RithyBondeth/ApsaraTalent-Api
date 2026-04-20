@@ -25,6 +25,6 @@ export interface IResumeTemplateService {
     image: Express.Multer.File,
   ): Promise<CreateResumeTemplateResponseDTO>;
   searchResumeTemplate(
-    searchTemplateDTO: SearchResumeTemplateDTO,
+    searchResumeTemplateDTO: SearchResumeTemplateDTO,
   ): Promise<SearchResumeTemplateResponseDTO[]>;
 }

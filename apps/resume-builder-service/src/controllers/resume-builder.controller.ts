@@ -1,19 +1,21 @@
-import { IResumeBuilderController } from '@app/contracts/interfaces/controller/resume-controller.interface';
+import { IResumeBuilderRpcController } from '@app/contracts/interfaces/controller/resume-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/service-actions/resume-builder-service.constant';
-import { BuildResumeDTO, BuildResumeResponseDTO } from '@app/contracts/dtos/resume';
-
-const BUILD_RESUME_PATTERN = { cmd: 'build-resume' } as const;
-const LEGACY_BUILD_RESUME_PATTERN = { cmd: 'build-resume ' } as const;
-
+import {
+  BuildResumeDTO,
+  BuildResumeResponseDTO,
+} from '@app/contracts/dtos/resume';
 import {
   I_RESUME_BUILDER_SERVICE,
   IResumeBuilderService,
 } from '@app/contracts/interfaces/service/resume-builder-service.interface';
 
+const BUILD_RESUME_PATTERN = { cmd: 'build-resume' } as const;
+const LEGACY_BUILD_RESUME_PATTERN = { cmd: 'build-resume ' } as const;
+
 @Controller()
-export class ResumeBuilderController implements IResumeBuilderController {
+export class ResumeBuilderController implements IResumeBuilderRpcController {
   constructor(
     @Inject(I_RESUME_BUILDER_SERVICE)
     private readonly resumeBuilderService: IResumeBuilderService,
@@ -22,7 +24,9 @@ export class ResumeBuilderController implements IResumeBuilderController {
   @MessagePattern(LEGACY_BUILD_RESUME_PATTERN)
   @MessagePattern(BUILD_RESUME_PATTERN)
   @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.BUILD_RESUME)
-  async buildResume(@Payload() buildResumeDTO: BuildResumeDTO): Promise<BuildResumeResponseDTO> {
+  async buildResume(
+    @Payload() buildResumeDTO: BuildResumeDTO,
+  ): Promise<BuildResumeResponseDTO> {
     return await this.resumeBuilderService.buildResume(buildResumeDTO);
   }
 }

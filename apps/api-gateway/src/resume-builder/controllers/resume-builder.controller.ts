@@ -31,7 +31,7 @@ export class ResumeBuilderController implements IResumeBuilderController {
   async buildResume(
     @Body() buildResumeDTO: BuildResumeDTO,
   ): Promise<BuildResumeResponseDTO> {
-    return rpcCall(
+    return rpcCall<BuildResumeResponseDTO>(
       this.resumeBuilderClient,
       RESUME_BUILDER_SERVICE.ACTIONS.BUILD_RESUME,
       buildResumeDTO,

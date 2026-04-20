@@ -9,16 +9,22 @@ import {
 
 export interface IResumeTemplateController {
   findAllResumeTemplate(): Promise<ResumeTemplateResponseDTO[]>;
-  findOneResumeTemplateById(resumeId: string): Promise<ResumeTemplateResponseDTO>;
+  findOneResumeTemplateById(
+    resumeId: string,
+  ): Promise<ResumeTemplateResponseDTO>;
   createResumeTemplate(
-    dto: CreateResumeTemplateDTO,
+    createResumeTemplateDTO: CreateResumeTemplateDTO,
     image: Express.Multer.File,
   ): Promise<CreateResumeTemplateResponseDTO>;
   searchResumeTemplate(
-    data: SearchResumeTemplateDTO,
+    searchResumeTemplateDTO: SearchResumeTemplateDTO,
   ): Promise<SearchResumeTemplateResponseDTO[]>;
 }
 
+export interface IResumeTemplateRpcController extends IResumeTemplateController {}
+
 export interface IResumeBuilderController {
-  buildResume(data: BuildResumeDTO): Promise<BuildResumeResponseDTO>;
+  buildResume(buildResumeDTO: BuildResumeDTO): Promise<BuildResumeResponseDTO>;
 }
+
+export interface IResumeBuilderRpcController extends IResumeBuilderController {}

@@ -13,12 +13,10 @@ import {
   SearchResumeTemplateDTO,
   SearchResumeTemplateResponseDTO,
 } from '@app/contracts/dtos/resume/template';
+import { IResumeTemplateService } from '@app/contracts/interfaces/service/resume-builder-service.interface';
 
 const TEMPLATE_TTL = 60 * 60 * 1000; // 1 hour — static data
 const TEMPLATE_SEARCH_TTL = 30 * 60 * 1000; // 30 min
-
-import { IResumeTemplateService } from '@app/contracts/interfaces/service/resume-builder-service.interface';
-
 @Injectable()
 export class ResumeTemplateService implements IResumeTemplateService {
   constructor(
@@ -150,10 +148,11 @@ export class ResumeTemplateService implements IResumeTemplateService {
   }
 
   async searchResumeTemplate(
-    searchTemplateDTO: SearchResumeTemplateDTO,
+    searchResumeTemplateDTO: SearchResumeTemplateDTO,
   ): Promise<SearchResumeTemplateResponseDTO[]> {
-    const cacheKey =
-      this.redisService.generateTemplateSearchKey(searchTemplateDTO);
+    const cacheKey = this.redisService.generateTemplateSearchKey(
+      searchResumeTemplateDTO,
+    );
     const cached =
       await this.redisService.get<SearchResumeTemplateResponseDTO[]>(cacheKey);
     if (cached) {
@@ -167,16 +166,16 @@ export class ResumeTemplateService implements IResumeTemplateService {
 
       let whereUsed = false;
 
-      if (searchTemplateDTO.title) {
+      if (searchResumeTemplateDTO.title) {
         query.where('resume.title LIKE :title', {
-          title: `%${searchTemplateDTO.title}%`,
+          title: `%${searchResumeTemplateDTO.title}%`,
         });
         whereUsed = true;
       }
 
-      if (typeof searchTemplateDTO.isPremium !== 'undefined') {
+      if (typeof searchResumeTemplateDTO.isPremium !== 'undefined') {
         const isPremiumBool =
-          String(searchTemplateDTO.isPremium).toLowerCase() === 'true';
+          String(searchResumeTemplateDTO.isPremium).toLowerCase() === 'true';
         if (whereUsed) {
           query.andWhere('resume.isPremium = :isPremium', {
             isPremium: isPremiumBool,
