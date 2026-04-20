@@ -18,7 +18,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { PushNotificationService } from './push-notification.service';
-
 import { INotificationService } from '@app/contracts/interfaces/service/notification-service.interface';
 import { NOTIFICATION } from '@app/contracts/constants/domain/notification.constant';
 
@@ -55,40 +54,42 @@ export class NotificationService implements INotificationService {
   }
 
   async createNotification(
-    body: CreateNotificationCurrentUserDTO,
+    createNotificationCurrentUserDTO: CreateNotificationCurrentUserDTO,
   ): Promise<CreateNotificationCurrentUserResponseDTO> {
     const notification = this.notificationRepo.create({
-      user: { id: body.userId } as any,
-      title: body.title,
-      message: body.message,
-      type: body.type ?? null,
-      data: body.data ?? null,
+      user: { id: createNotificationCurrentUserDTO.userId } as any,
+      title: createNotificationCurrentUserDTO.title,
+      message: createNotificationCurrentUserDTO.message,
+      type: createNotificationCurrentUserDTO.type ?? null,
+      data: createNotificationCurrentUserDTO.data ?? null,
       isRead: false,
     });
     let saved = await this.notificationRepo.save(notification);
 
-    if (body.sendPush) {
+    if (createNotificationCurrentUserDTO.sendPush) {
       try {
         const user = await this.userRepo.findOne({
-          where: { id: body.userId },
+          where: { id: createNotificationCurrentUserDTO.userId },
         });
         const token = user?.pushNotificationToken;
         if (!token) {
-          this.logger.warn(`Push skipped: no token for userId=${body.userId}`);
+          this.logger.warn(
+            `Push skipped: no token for userId=${createNotificationCurrentUserDTO.userId}`,
+          );
         } else {
           const result = await this.pushNotificationService.sendToToken(token, {
-            title: body.title,
-            body: body.message,
-            data: body.data ?? undefined,
-            senderAvatar: body.senderAvatar ?? null,
+            title: createNotificationCurrentUserDTO.title,
+            body: createNotificationCurrentUserDTO.message,
+            data: createNotificationCurrentUserDTO.data ?? undefined,
+            senderAvatar: createNotificationCurrentUserDTO.senderAvatar ?? null,
           });
           if (result?.success) {
             this.logger.info(
-              `Push sent to userId=${body.userId} (token length ${token.length})`,
+              `Push sent to userId=${createNotificationCurrentUserDTO.userId} (token length ${token.length})`,
             );
           } else if (result?.skipped) {
             this.logger.warn(
-              `Push skipped for userId=${body.userId}: ${result.reason}`,
+              `Push skipped for userId=${createNotificationCurrentUserDTO.userId}: ${result.reason}`,
             );
           }
         }
@@ -111,20 +112,20 @@ export class NotificationService implements INotificationService {
   }
 
   async listByUser(
-    payload: ListNotificationsDTO,
+    listNotificationsDTO: ListNotificationsDTO,
   ): Promise<NotificationListByUserResponseDTO> {
     const page = Math.max(
       NOTIFICATION.MIN_PAGE,
-      payload.page ?? NOTIFICATION.MIN_PAGE,
+      listNotificationsDTO.page ?? NOTIFICATION.MIN_PAGE,
     );
     const limit = Math.min(
-      Math.max(1, payload.limit ?? NOTIFICATION.DEFAULT_LIMIT),
+      Math.max(1, listNotificationsDTO.limit ?? NOTIFICATION.DEFAULT_LIMIT),
       NOTIFICATION.MAX_LIMIT,
     );
     const skip = (page - 1) * limit;
 
-    const where: any = { user: { id: payload.userId } };
-    if (payload.unreadOnly) where.isRead = false;
+    const where: any = { user: { id: listNotificationsDTO.userId } };
+    if (listNotificationsDTO.unreadOnly) where.isRead = false;
 
     const [entities, total] = await this.notificationRepo.findAndCount({
       where,
@@ -153,10 +154,13 @@ export class NotificationService implements INotificationService {
   }
 
   async markRead(
-    payload: NotificationIdDTO,
+    notificationIdDTO: NotificationIdDTO,
   ): Promise<MarkNotificationAsReadResponseDTO> {
     const result = await this.notificationRepo.update(
-      { id: payload.notificationId, user: { id: payload.userId } as any },
+      {
+        id: notificationIdDTO.notificationId,
+        user: { id: notificationIdDTO.userId } as any,
+      },
       { isRead: true },
     );
     return new MarkNotificationAsReadResponseDTO({
@@ -165,10 +169,10 @@ export class NotificationService implements INotificationService {
   }
 
   async markAllRead(
-    payload: NotificationUserDTO,
+    notificationUserDTO: NotificationUserDTO,
   ): Promise<ReadAllNotificationResponseDTO> {
     const result = await this.notificationRepo.update(
-      { user: { id: payload.userId } as any, isRead: false },
+      { user: { id: notificationUserDTO.userId } as any, isRead: false },
       { isRead: true },
     );
     return new ReadAllNotificationResponseDTO({
@@ -177,28 +181,30 @@ export class NotificationService implements INotificationService {
     });
   }
 
-  async getUnreadCount(payload: NotificationUserDTO): Promise<UnreadCountResponseDTO> {
+  async getUnreadCount(
+    notificationUserDTO: NotificationUserDTO,
+  ): Promise<UnreadCountResponseDTO> {
     const count = await this.notificationRepo.count({
-      where: { user: { id: payload.userId } as any, isRead: false },
+      where: { user: { id: notificationUserDTO.userId } as any, isRead: false },
     });
     return new UnreadCountResponseDTO({ unreadCount: count });
   }
 
   async deleteNotification(
-    payload: NotificationIdDTO,
+    notificationIdDTO: NotificationIdDTO,
   ): Promise<DeleteNotificationResponseDTO> {
     const result = await this.notificationRepo.delete({
-      id: payload.notificationId,
-      user: { id: payload.userId } as any,
+      id: notificationIdDTO.notificationId,
+      user: { id: notificationIdDTO.userId } as any,
     });
     return new DeleteNotificationResponseDTO({ success: result.affected > 0 });
   }
 
   async deleteAllNotifications(
-    payload: NotificationUserDTO,
+    notificationUserDTO: NotificationUserDTO,
   ): Promise<DeleteNotificationResponseDTO> {
     const result = await this.notificationRepo.delete({
-      user: { id: payload.userId } as any,
+      user: { id: notificationUserDTO.userId } as any,
     });
     return new DeleteNotificationResponseDTO({
       success: true,

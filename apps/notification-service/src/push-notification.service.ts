@@ -23,7 +23,7 @@ export class PushNotificationService {
     this.initializeFirebase();
   }
 
-  private initializeFirebase() {
+  private initializeFirebase(): void {
     const raw = this.configService.get<string>('firebase.serviceAccount');
     if (!raw) {
       this.logger.warn(
@@ -71,7 +71,9 @@ export class PushNotificationService {
     }
   }
 
-  private normalizeData(data?: Record<string, any> | null) {
+  private normalizeData(
+    data?: Record<string, any> | null,
+  ): Record<string, string> | undefined {
     if (!data) return undefined;
     const normalized: Record<string, string> = {};
     for (const [key, value] of Object.entries(data)) {
@@ -86,7 +88,16 @@ export class PushNotificationService {
     return this.firebaseApp !== null;
   }
 
-  async sendToToken(token: string, payload: PushPayload) {
+  async sendToToken(
+    token: string,
+    payload: PushPayload,
+  ): Promise<{
+    success: boolean;
+    skipped?: boolean;
+    reason?: string;
+    response?: any;
+    error?: string;
+  }> {
     if (!token) {
       return { success: false, skipped: true, reason: 'missing token' };
     }

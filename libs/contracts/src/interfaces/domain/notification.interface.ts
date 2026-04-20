@@ -29,23 +29,31 @@ export interface INotificationController {
   deleteAllNotifications(req: any): Promise<DeleteNotificationResponseDTO>;
   createForCurrentUser(
     req: any,
-    body: CreateNotificationCurrentUserDTO,
+    createNotificationCurrentUserDTO: CreateNotificationCurrentUserDTO,
   ): Promise<CreateNotificationCurrentUserResponseDTO>;
 }
 
 export interface INotificationRpcController {
   getAllNotification(): Promise<GetAllNotificationResponseDTO[]>;
-  listByUser(payload: ListNotificationsDTO): Promise<NotificationListByUserResponseDTO>;
-  getUnreadCount(payload: NotificationUserDTO): Promise<UnreadCountResponseDTO>;
-  markRead(payload: NotificationIdDTO): Promise<MarkNotificationAsReadResponseDTO>;
-  markAllRead(payload: NotificationUserDTO): Promise<ReadAllNotificationResponseDTO>;
+  listByUser(
+    listNotificationsDTO: ListNotificationsDTO,
+  ): Promise<NotificationListByUserResponseDTO>;
+  getUnreadCount(
+    notificationUserDTO: NotificationUserDTO,
+  ): Promise<UnreadCountResponseDTO>;
+  markRead(
+    notificationIdDTO: NotificationIdDTO,
+  ): Promise<MarkNotificationAsReadResponseDTO>;
+  markAllRead(
+    notificationUserDTO: NotificationUserDTO,
+  ): Promise<ReadAllNotificationResponseDTO>;
+  createForCurrentUser(
+    createNotificationCurrentUserDTO: CreateNotificationCurrentUserDTO,
+  ): Promise<CreateNotificationCurrentUserResponseDTO>;
   deleteNotification(
-    payload: NotificationIdDTO,
+    notificationIdDTO: NotificationIdDTO,
   ): Promise<DeleteNotificationResponseDTO>;
   deleteAllNotifications(
-    payload: NotificationUserDTO,
+    notificationUserDTO: NotificationUserDTO,
   ): Promise<DeleteNotificationResponseDTO>;
-  createForCurrentUser(
-    body: CreateNotificationCurrentUserDTO,
-  ): Promise<CreateNotificationCurrentUserResponseDTO>;
 }

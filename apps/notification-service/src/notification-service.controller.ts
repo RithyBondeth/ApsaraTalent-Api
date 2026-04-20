@@ -1,10 +1,7 @@
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import {
-  INotificationRpcController,
-} from '@app/contracts/interfaces/domain/notification.interface';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
-
+import { INotificationRpcController } from '@app/contracts/interfaces/domain/notification.interface';
 import {
   GetAllNotificationResponseDTO,
   ListNotificationsDTO,
@@ -30,13 +27,6 @@ export class NotificationController implements INotificationRpcController {
     private readonly notificationService: INotificationService,
   ) {}
 
-  @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION)
-  async createForCurrentUser(
-    @Payload() payload: CreateNotificationCurrentUserDTO,
-  ): Promise<CreateNotificationCurrentUserResponseDTO> {
-    return this.notificationService.createNotification(payload);
-  }
-
   @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.FIND_ALL_NOTIFICATIONS)
   async getAllNotification(): Promise<GetAllNotificationResponseDTO[]> {
     return this.notificationService.findAllNotification();
@@ -44,43 +34,53 @@ export class NotificationController implements INotificationRpcController {
 
   @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.LIST_BY_USER)
   async listByUser(
-    @Payload() payload: ListNotificationsDTO,
+    @Payload() listNotificationsDTO: ListNotificationsDTO,
   ): Promise<NotificationListByUserResponseDTO> {
-    return this.notificationService.listByUser(payload);
-  }
-
-  @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.MARK_READ)
-  async markRead(
-    @Payload() payload: NotificationIdDTO,
-  ): Promise<MarkNotificationAsReadResponseDTO> {
-    return this.notificationService.markRead(payload);
-  }
-
-  @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.MARK_ALL_READ)
-  async markAllRead(
-    @Payload() payload: NotificationUserDTO,
-  ): Promise<ReadAllNotificationResponseDTO> {
-    return this.notificationService.markAllRead(payload);
+    return this.notificationService.listByUser(listNotificationsDTO);
   }
 
   @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.GET_UNREAD_COUNT)
   async getUnreadCount(
-    @Payload() payload: NotificationUserDTO,
+    @Payload() notificationUserDTO: NotificationUserDTO,
   ): Promise<UnreadCountResponseDTO> {
-    return this.notificationService.getUnreadCount(payload);
+    return this.notificationService.getUnreadCount(notificationUserDTO);
+  }
+
+  @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.MARK_READ)
+  async markRead(
+    @Payload() notificationIdDTO: NotificationIdDTO,
+  ): Promise<MarkNotificationAsReadResponseDTO> {
+    return this.notificationService.markRead(notificationIdDTO);
+  }
+
+  @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.MARK_ALL_READ)
+  async markAllRead(
+    @Payload() notificationUserDTO: NotificationUserDTO,
+  ): Promise<ReadAllNotificationResponseDTO> {
+    return this.notificationService.markAllRead(notificationUserDTO);
+  }
+
+  @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION)
+  async createForCurrentUser(
+    @Payload()
+    createNotificationCurrentUserDTO: CreateNotificationCurrentUserDTO,
+  ): Promise<CreateNotificationCurrentUserResponseDTO> {
+    return this.notificationService.createNotification(
+      createNotificationCurrentUserDTO,
+    );
   }
 
   @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.DELETE_NOTIFICATION)
   async deleteNotification(
-    @Payload() payload: NotificationIdDTO,
+    @Payload() notificationIdDTO: NotificationIdDTO,
   ): Promise<DeleteNotificationResponseDTO> {
-    return this.notificationService.deleteNotification(payload);
+    return this.notificationService.deleteNotification(notificationIdDTO);
   }
 
   @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.DELETE_ALL_NOTIFICATIONS)
   async deleteAllNotifications(
-    @Payload() payload: NotificationUserDTO,
+    @Payload() notificationUserDTO: NotificationUserDTO,
   ): Promise<DeleteNotificationResponseDTO> {
-    return this.notificationService.deleteAllNotifications(payload);
+    return this.notificationService.deleteAllNotifications(notificationUserDTO);
   }
 }

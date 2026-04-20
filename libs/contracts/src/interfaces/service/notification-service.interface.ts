@@ -17,18 +17,24 @@ export const I_NOTIFICATION_SERVICE = 'INotificationService';
 export interface INotificationService {
   findAllNotification(): Promise<GetAllNotificationResponseDTO[]>;
   createNotification(
-    body: CreateNotificationCurrentUserDTO,
+    createNotificationCurrentUserDTO: CreateNotificationCurrentUserDTO,
   ): Promise<CreateNotificationCurrentUserResponseDTO>;
   listByUser(
-    payload: ListNotificationsDTO,
+    listNotificationsDTO: ListNotificationsDTO,
   ): Promise<NotificationListByUserResponseDTO>;
-  markRead(payload: NotificationIdDTO): Promise<MarkNotificationAsReadResponseDTO>;
-  markAllRead(payload: NotificationUserDTO): Promise<ReadAllNotificationResponseDTO>;
-  getUnreadCount(payload: NotificationUserDTO): Promise<UnreadCountResponseDTO>;
+  markRead(
+    notificationIdDTO: NotificationIdDTO,
+  ): Promise<MarkNotificationAsReadResponseDTO>;
+  markAllRead(
+    notificationUserDTO: NotificationUserDTO,
+  ): Promise<ReadAllNotificationResponseDTO>;
+  getUnreadCount(
+    notificationUserDTO: NotificationUserDTO,
+  ): Promise<UnreadCountResponseDTO>;
   deleteNotification(
-    payload: NotificationIdDTO,
+    notificationIdDTO: NotificationIdDTO,
   ): Promise<DeleteNotificationResponseDTO>;
   deleteAllNotifications(
-    payload: NotificationUserDTO,
+    notificationUserDTO: NotificationUserDTO,
   ): Promise<DeleteNotificationResponseDTO>;
 }

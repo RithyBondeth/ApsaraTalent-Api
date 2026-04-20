@@ -48,14 +48,14 @@ export class NotificationController implements INotificationController {
   @UseGuards(AuthGuard)
   async listByUser(
     @Req() req: any,
-    @Query() query: ListNotificationsQueryDTO,
+    @Query() listNotificationsQueryDTO: ListNotificationsQueryDTO,
   ): Promise<NotificationListByUserResponseDTO> {
     return rpcCall<NotificationListByUserResponseDTO>(
       this.notificationClient,
       NOTIFICATION_SERVICE.ACTIONS.LIST_BY_USER,
       {
         userId: req.user.id,
-        ...query,
+        ...listNotificationsQueryDTO,
       },
     );
   }
@@ -123,17 +123,17 @@ export class NotificationController implements INotificationController {
   async createForCurrentUser(
     @Req() req: any,
     @Body()
-    dto: CreateNotificationCurrentUserDTO,
+    createNotificationCurrentUserDTO: CreateNotificationCurrentUserDTO,
   ): Promise<CreateNotificationCurrentUserResponseDTO> {
     return rpcCall<CreateNotificationCurrentUserResponseDTO>(
       this.notificationClient,
       NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION,
       {
         userId: req.user.id,
-        title: dto.title,
-        message: dto.message,
-        type: dto.type,
-        data: dto.data,
+        title: createNotificationCurrentUserDTO.title,
+        message: createNotificationCurrentUserDTO.message,
+        type: createNotificationCurrentUserDTO.type,
+        data: createNotificationCurrentUserDTO.data,
       },
     );
   }
