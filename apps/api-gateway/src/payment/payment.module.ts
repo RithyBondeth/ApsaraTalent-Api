@@ -1,4 +1,3 @@
-import { DatabaseModule } from '@app/common';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -20,7 +19,6 @@ import { PaymentController } from './controllers/payment.controller';
         inject: [ConfigService],
       },
     ]),
-    DatabaseModule,
   ],
   controllers: [PaymentController],
 })

@@ -3,7 +3,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { IPublicUserController } from '@app/contracts/interfaces/controller/public-user-controller.interface';
 import { LandingStatsResponseDTO } from '@app/contracts/dtos/user';
-import { rpcCall } from '../utils/rpc-call';
+import { rpcCall } from '../../utils/rpc-call';
 
 @Controller('public/user')
 export class PublicUserController implements IPublicUserController {

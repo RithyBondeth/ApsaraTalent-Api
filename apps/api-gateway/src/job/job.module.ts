@@ -39,6 +39,5 @@ import { JobMatchingController } from './controllers/matching.controller';
 
   ],
   controllers: [JobController, JobMatchingController, InterviewController],
-  providers: [],
 })
 export class JobModule {}

@@ -1,4 +1,4 @@
-import { DatabaseModule, JwtModule } from '@app/common';
+import { JwtModule } from '@app/common';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -47,7 +47,6 @@ import { ChatGatewayService } from './services/chat-gateway.service';
         inject: [ConfigService],
       },
     ]),
-    DatabaseModule,
     JwtModule,
   ],
   controllers: [ChatController],

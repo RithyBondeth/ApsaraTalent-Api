@@ -1,4 +1,4 @@
-import { DatabaseModule, JwtModule, UploadfileModule } from '@app/common';
+import { JwtModule, UploadfileModule } from '@app/common';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -23,10 +23,8 @@ import { UserController } from './controllers/user.controller';
         inject: [ConfigService],
       },
     ]),
-    DatabaseModule,
     UploadfileModule,
     JwtModule,
-
   ],
   controllers: [
     UserController,
@@ -34,6 +32,5 @@ import { UserController } from './controllers/user.controller';
     CompanyController,
     PublicUserController,
   ],
-  providers: [],
 })
 export class UserModule {}
