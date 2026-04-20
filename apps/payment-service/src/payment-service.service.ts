@@ -21,11 +21,15 @@ import { BAKONG_CONSTANTS } from './constants/bakong.constant';
 import {
   CheckPaymentBulkStatusDTO,
   CheckPaymentStatusDTO,
+  CheckPaymentStatusFoundResponseDTO,
+  CheckPaymentStatusNotFoundResponseDTO,
   DecodeKhqrDTO,
   GenerateDeepLinkDTO,
   GenerateIndividualKhqrDTO,
   GenerateMerchantKhqrDTO,
   VerifyKhqrDTO,
+  VerifyKhqrResponseInvalidDTO,
+  VerifyKhqrResponseValidDTO,
 } from '@app/contracts/dtos/payment';
 import {
   BakongApiConnectionException,
@@ -34,7 +38,6 @@ import {
   BakongQRGenerationException,
   BakongQRValidationException,
 } from './exceptions/bakong.exceptions';
-
 import { IPaymentService } from '@app/contracts/interfaces/service/payment-service.interface';
 import {
   CheckPaymentBulkStatusResponseDTO,
@@ -77,6 +80,7 @@ export class PaymentService implements IPaymentService {
       },
     });
   }
+
   async generateIndividualKhqrDTO(
     generateIndividualKhqrDTO: GenerateIndividualKhqrDTO,
   ): Promise<GenerateIndividualKhqrResponseDTO> {
@@ -145,7 +149,7 @@ export class PaymentService implements IPaymentService {
 
         const savedPayment = await this.paymentRepository.save(payment);
 
-        return {
+        return new GenerateIndividualKhqrResponseDTO({
           success: true,
           paymentId: savedPayment.id,
           qrString,
@@ -153,7 +157,7 @@ export class PaymentService implements IPaymentService {
           qrImage,
           expiresAt,
           message: BAKONG_CONSTANTS.MESSAGES.SUCCESS.QR_GENERATED,
-        };
+        });
       } else {
         throw new BakongQRGenerationException(
           response.data?.error_message || 'Failed to generate individual KHQR',
@@ -234,14 +238,14 @@ export class PaymentService implements IPaymentService {
 
         const savedPayment = await this.paymentRepository.save(payment);
 
-        return {
+        return new GenerateMerchantKhqrResponseDTO({
           success: true,
           paymentId: savedPayment.id,
           qrString,
           md5Hash,
           qrImage,
           message: BAKONG_CONSTANTS.MESSAGES.SUCCESS.QR_GENERATED,
-        };
+        });
       } else {
         throw new BakongQRGenerationException(
           response.data?.error_message || 'Failed to generate merchant KHQR',
@@ -257,7 +261,9 @@ export class PaymentService implements IPaymentService {
     }
   }
 
-  async verifyKhqr(verifyKhqrDTO: VerifyKhqrDTO): Promise<VerifyKhqrResponseDTO> {
+  async verifyKhqr(
+    verifyKhqrDTO: VerifyKhqrDTO,
+  ): Promise<VerifyKhqrResponseDTO> {
     try {
       this.logger.info('Verifying KHQR code');
 
@@ -266,20 +272,20 @@ export class PaymentService implements IPaymentService {
       });
 
       if (response.data?.response_code === '00') {
-        return {
+        return new VerifyKhqrResponseValidDTO({
           success: true,
           isValid: true,
           qrData: response.data.qr_data,
           message: BAKONG_CONSTANTS.MESSAGES.SUCCESS.QR_VERIFIED,
-        };
+        });
       } else {
-        return {
+        return new VerifyKhqrResponseInvalidDTO({
           success: false,
           isValid: false,
           message:
             response.data?.error_message ||
             BAKONG_CONSTANTS.MESSAGES.ERROR.INVALID_QR,
-        };
+        });
       }
     } catch (error) {
       this.logger.error({ err: error }, 'Failed to verify KHQR');
@@ -289,7 +295,9 @@ export class PaymentService implements IPaymentService {
     }
   }
 
-  async decodeKhqr(decodeKhqrDTO: DecodeKhqrDTO): Promise<DecodeKhqrResponseDTO> {
+  async decodeKhqr(
+    decodeKhqrDTO: DecodeKhqrDTO,
+  ): Promise<DecodeKhqrResponseDTO> {
     try {
       this.logger.info('Decoding KHQR code');
 
@@ -298,7 +306,7 @@ export class PaymentService implements IPaymentService {
       });
 
       if (response.data?.response_code === '00') {
-        return {
+        return new DecodeKhqrResponseDTO({
           success: true,
           decodedData: {
             merchantName: response.data.merchant_name,
@@ -312,7 +320,7 @@ export class PaymentService implements IPaymentService {
             terminalLabel: response.data.terminal_label,
           },
           message: BAKONG_CONSTANTS.MESSAGES.SUCCESS.QR_DECODED,
-        };
+        });
       } else {
         throw new BakongQRValidationException(
           response.data?.error_message || 'Failed to decode KHQR',
@@ -341,13 +349,13 @@ export class PaymentService implements IPaymentService {
       });
 
       if (response.data?.response_code === '00') {
-        return {
+        return new GenerateDeepLinkResponseDTO({
           success: true,
           deepLink: response.data.deep_link,
           shortUrl: response.data.short_url,
           qrString: generateDeepLinkDTO.qrString,
           message: BAKONG_CONSTANTS.MESSAGES.SUCCESS.DEEPLINK_GENERATED,
-        };
+        });
       } else {
         throw new BakongQRGenerationException(
           response.data?.error_message || 'Failed to generate deep link',
@@ -387,7 +395,7 @@ export class PaymentService implements IPaymentService {
           .filter((t) => t.status === TransactionStatus.SUCCESS)
           .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
 
-        return {
+        return new CheckPaymentStatusFoundResponseDTO({
           success: true,
           paymentId: payment.id,
           paymentStatus: payment.status,
@@ -402,7 +410,7 @@ export class PaymentService implements IPaymentService {
               }
             : null,
           message: BAKONG_CONSTANTS.MESSAGES.SUCCESS.PAYMENT_FOUND,
-        };
+        });
       }
 
       // Check with Bakong API for status updates
@@ -418,7 +426,7 @@ export class PaymentService implements IPaymentService {
           await this.updatePaymentStatus(payment, paymentData);
         }
 
-        return {
+        return new CheckPaymentStatusFoundResponseDTO({
           success: true,
           paymentId: payment.id,
           paymentStatus: paymentData.status,
@@ -431,7 +439,7 @@ export class PaymentService implements IPaymentService {
             phone: paymentData.payer_phone,
           },
           message: BAKONG_CONSTANTS.MESSAGES.SUCCESS.PAYMENT_FOUND,
-        };
+        });
       } else if (response.data?.response_code === '01') {
         // Update payment status to expired if not found
         if (payment.status === PaymentStatus.PENDING) {
@@ -439,12 +447,12 @@ export class PaymentService implements IPaymentService {
           await this.paymentRepository.save(payment);
         }
 
-        return {
+        return new CheckPaymentStatusNotFoundResponseDTO({
           success: false,
           paymentId: payment.id,
           paymentStatus: 'not_found',
           message: BAKONG_CONSTANTS.MESSAGES.SUCCESS.PAYMENT_NOT_FOUND,
-        };
+        });
       } else {
         throw new BakongPaymentNotFoundException(checkPaymentStatusDTO.md5Hash);
       }
@@ -489,7 +497,7 @@ export class PaymentService implements IPaymentService {
             : null,
         }));
 
-        return {
+        return new CheckPaymentBulkStatusResponseDTO({
           success: true,
           totalChecked: checkPaymentBulkStatusDTO.md5Hashes.length,
           payments: results,
@@ -500,7 +508,7 @@ export class PaymentService implements IPaymentService {
             failed: results.filter((p) => p.status === 'failed').length,
           },
           message: BAKONG_CONSTANTS.MESSAGES.SUCCESS.BULK_CHECK_COMPLETED,
-        };
+        });
       } else {
         throw new BakongApiConnectionException(
           response.data?.error_message || 'Failed to check bulk payment status',

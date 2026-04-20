@@ -20,11 +20,21 @@ import {
 export const I_PAYMENT_SERVICE = 'IPaymentService';
 
 export interface IPaymentService {
-  generateIndividualKhqrDTO(dto: GenerateIndividualKhqrDTO): Promise<GenerateIndividualKhqrResponseDTO>;
-  generateMerchantKhqrDTO(dto: GenerateMerchantKhqrDTO): Promise<GenerateMerchantKhqrResponseDTO>;
-  verifyKhqr(dto: VerifyKhqrDTO): Promise<VerifyKhqrResponseDTO>;
-  decodeKhqr(dto: DecodeKhqrDTO): Promise<DecodeKhqrResponseDTO>;
-  generateDeepLink(dto: GenerateDeepLinkDTO): Promise<GenerateDeepLinkResponseDTO>;
-  checkPaymentStatus(dto: CheckPaymentStatusDTO): Promise<CheckPaymentStatusResponseDTO>;
-  checkPaymentBulkStatus(dto: CheckPaymentBulkStatusDTO): Promise<CheckPaymentBulkStatusResponseDTO>;
+  generateIndividualKhqrDTO(
+    generateIndividualKhqrDTO: GenerateIndividualKhqrDTO,
+  ): Promise<GenerateIndividualKhqrResponseDTO>;
+  generateMerchantKhqrDTO(
+    generateMerchantKhqrDTO: GenerateMerchantKhqrDTO,
+  ): Promise<GenerateMerchantKhqrResponseDTO>;
+  verifyKhqr(verifyKhqrDTO: VerifyKhqrDTO): Promise<VerifyKhqrResponseDTO>;
+  decodeKhqr(decodeKhqrDTO: DecodeKhqrDTO): Promise<DecodeKhqrResponseDTO>;
+  generateDeepLink(
+    generateDeepLinkDTO: GenerateDeepLinkDTO,
+  ): Promise<GenerateDeepLinkResponseDTO>;
+  checkPaymentStatus(
+    checkPaymentStatusDTO: CheckPaymentStatusDTO,
+  ): Promise<CheckPaymentStatusResponseDTO>;
+  checkPaymentBulkStatus(
+    checkPaymentBulkStatusDTO: CheckPaymentBulkStatusDTO,
+  ): Promise<CheckPaymentBulkStatusResponseDTO>;
 }

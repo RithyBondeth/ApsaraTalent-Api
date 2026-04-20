@@ -11,8 +11,7 @@ import {
   GenerateMerchantKhqrDTO,
   VerifyKhqrDTO,
 } from '@app/contracts/dtos/payment';
-
-import { IPaymentController } from '@app/contracts/interfaces/domain/payment.interface';
+import { IPaymentRpcController } from '@app/contracts/interfaces/domain/payment.interface';
 import {
   I_PAYMENT_SERVICE,
   IPaymentService,
@@ -28,14 +27,14 @@ import {
 } from '@app/contracts/dtos/payment';
 
 @Controller()
-export class PaymentController implements IPaymentController {
+export class PaymentController implements IPaymentRpcController {
   constructor(
     @Inject(I_PAYMENT_SERVICE)
     private readonly paymentService: IPaymentService,
   ) {}
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.GENERATE_INDIVIDUAL_KHQR)
-  @RateLimit(50) // Lower limit for QR generation
+  @RateLimit(50)
   async generateIndividualQr(
     @Payload() generateIndividualKhqrDTO: GenerateIndividualKhqrDTO,
   ): Promise<GenerateIndividualKhqrResponseDTO> {
@@ -45,7 +44,7 @@ export class PaymentController implements IPaymentController {
   }
 
   @MessagePattern(PAYMENT_SERVICE.ACTIONS.GENERATE_MERCHANT_KHQR)
-  @RateLimit(50) // Lower limit for QR generation
+  @RateLimit(50)
   async generateMerchantQr(
     @Payload() generateMerchantKhqrDTO: GenerateMerchantKhqrDTO,
   ): Promise<GenerateMerchantKhqrResponseDTO> {

@@ -10,7 +10,6 @@ export class CheckPaymentStatusDTO {
   md5Hash: string;
 }
 
-
 export class CheckPaymentStatusPayerInfoDTO {
   name: string | null;
   phone: string | null;

@@ -29,6 +29,11 @@ import {
   Md5HashResponseDTO,
   PaymentInfoResponseDTO,
   KhqrInfoResponseDTO,
+  GenerateQrImageDTO,
+  GenerateQrImageQueryDTO,
+  PaymentInfoLookupDTO,
+  KhqrInfoLookupDTO,
+  GenerateMd5HashDTO,
 } from '@app/contracts/dtos/payment';
 import { rpcCall } from '../utils/rpc-call';
 
@@ -84,23 +89,27 @@ export class PaymentController implements IPaymentController {
 
   @Post('generate-qr-image')
   async generateQRImage(
-    @Body() body: { qrString: string; width?: number; margin?: number },
-    @Query('format') format: 'base64' | 'url' = 'base64',
+    @Body() generateQrImageDTO: GenerateQrImageDTO,
+    @Query('format') format: GenerateQrImageQueryDTO['format'],
   ): Promise<QrImageResponseDTO> {
-    return rpcCall(this.paymentClient, PAYMENT_SERVICE.ACTIONS.KHQR_GENERATE, {
-      body,
-      format,
-    });
+    return rpcCall<QrImageResponseDTO>(
+      this.paymentClient,
+      PAYMENT_SERVICE.ACTIONS.KHQR_GENERATE,
+      {
+        body: generateQrImageDTO,
+        format,
+      },
+    );
   }
 
   @Post('generate-deep-link')
   async generateDeepLink(
-    @Body() generateDeepLinkDto: GenerateDeepLinkDTO,
+    @Body() generateDeepLinkDTO: GenerateDeepLinkDTO,
   ): Promise<GenerateDeepLinkResponseDTO> {
     return rpcCall<GenerateDeepLinkResponseDTO>(
       this.paymentClient,
       PAYMENT_SERVICE.ACTIONS.GENERATE_DEEP_LINK,
-      generateDeepLinkDto,
+      generateDeepLinkDTO,
     );
   }
 
@@ -127,8 +136,10 @@ export class PaymentController implements IPaymentController {
   }
 
   @Get('payment-info/:md5Hash')
-  async getPaymentInfo(@Param('md5Hash') md5Hash: string): Promise<PaymentInfoResponseDTO> {
-    return rpcCall(
+  async getPaymentInfo(
+    @Param('md5Hash') md5Hash: PaymentInfoLookupDTO['md5Hash'],
+  ): Promise<PaymentInfoResponseDTO> {
+    return rpcCall<PaymentInfoResponseDTO>(
       this.paymentClient,
       PAYMENT_SERVICE.ACTIONS.GET_PAYMENT_INFO,
       md5Hash,
@@ -136,8 +147,10 @@ export class PaymentController implements IPaymentController {
   }
 
   @Get('khqr-info/:qrString')
-  async getKHQRInfo(@Param('qrString') qrString: string): Promise<KhqrInfoResponseDTO> {
-    return rpcCall(
+  async getKHQRInfo(
+    @Param('qrString') qrString: KhqrInfoLookupDTO['qrString'],
+  ): Promise<KhqrInfoResponseDTO> {
+    return rpcCall<KhqrInfoResponseDTO>(
       this.paymentClient,
       PAYMENT_SERVICE.ACTIONS.GET_KHQR_INFO,
       decodeURIComponent(qrString),
@@ -145,11 +158,13 @@ export class PaymentController implements IPaymentController {
   }
 
   @Post('generate-md5')
-  async generateMd5Hash(@Body() body: { data: string }): Promise<Md5HashResponseDTO> {
-    return rpcCall(
+  async generateMd5Hash(
+    @Body() generateMd5HashDTO: GenerateMd5HashDTO,
+  ): Promise<Md5HashResponseDTO> {
+    return rpcCall<Md5HashResponseDTO>(
       this.paymentClient,
       PAYMENT_SERVICE.ACTIONS.GENERATE_MD5_HASH,
-      body,
+      generateMd5HashDTO,
     );
   }
 }

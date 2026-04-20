@@ -33,12 +33,12 @@ export interface IPaymentController {
   ): Promise<GenerateMerchantKhqrResponseDTO>;
   verifyKhqr(verifyKhqrDTO: VerifyKhqrDTO): Promise<VerifyKhqrResponseDTO>;
   decodeKhqr(verifyKhqrDTO: DecodeKhqrDTO): Promise<DecodeKhqrResponseDTO>;
-  generateQRImage?(
-    body: GenerateQrImageDTO,
+  generateQRImage(
+    generateQrImageDTO: GenerateQrImageDTO,
     format?: GenerateQrImageQueryDTO['format'],
   ): Promise<QrImageResponseDTO>;
   generateDeepLink(
-    generateDeepLinkDto: GenerateDeepLinkDTO,
+    generateDeepLinkDTO: GenerateDeepLinkDTO,
   ): Promise<GenerateDeepLinkResponseDTO>;
   checkPaymentStatus(
     checkPaymentStatusDTO: CheckPaymentStatusDTO,
@@ -46,7 +46,32 @@ export interface IPaymentController {
   checkPaymentBulkStatus(
     checkPaymentBulkStatusDTO: CheckPaymentBulkStatusDTO,
   ): Promise<CheckPaymentBulkStatusResponseDTO>;
-  getPaymentInfo?(md5Hash: PaymentInfoLookupDTO['md5Hash']): Promise<PaymentInfoResponseDTO>;
-  getKHQRInfo?(qrString: KhqrInfoLookupDTO['qrString']): Promise<KhqrInfoResponseDTO>;
-  generateMd5Hash?(body: GenerateMd5HashDTO): Promise<Md5HashResponseDTO>;
+  getPaymentInfo(
+    md5Hash: PaymentInfoLookupDTO['md5Hash'],
+  ): Promise<PaymentInfoResponseDTO>;
+  getKHQRInfo(
+    qrString: KhqrInfoLookupDTO['qrString'],
+  ): Promise<KhqrInfoResponseDTO>;
+  generateMd5Hash(
+    generateMd5HashDTO: GenerateMd5HashDTO,
+  ): Promise<Md5HashResponseDTO>;
+}
+
+export interface IPaymentRpcController {
+  generateIndividualQr(
+    generateIndividualQrDTO: GenerateIndividualKhqrDTO,
+  ): Promise<GenerateIndividualKhqrResponseDTO>;
+  generateMerchantQr(
+    generateMerchantQrDTO: GenerateMerchantKhqrDTO,
+  ): Promise<GenerateMerchantKhqrResponseDTO>;
+  verifyKhqr(verifyKhqrDTO: VerifyKhqrDTO): Promise<VerifyKhqrResponseDTO>;
+  generateDeepLink(
+    generateDeepLinkDTO: GenerateDeepLinkDTO,
+  ): Promise<GenerateDeepLinkResponseDTO>;
+  checkPaymentStatus(
+    checkPaymentStatusDTO: CheckPaymentStatusDTO,
+  ): Promise<CheckPaymentStatusResponseDTO>;
+  checkPaymentBulkStatus(
+    checkPaymentBulkStatusDTO: CheckPaymentBulkStatusDTO,
+  ): Promise<CheckPaymentBulkStatusResponseDTO>;
 }
