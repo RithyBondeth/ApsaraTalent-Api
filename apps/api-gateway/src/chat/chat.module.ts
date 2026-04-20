@@ -1,9 +1,7 @@
 import { DatabaseModule, JwtModule } from '@app/common';
-import { User } from '@app/common/database/entities/user.entity';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-service.constant';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
@@ -51,7 +49,6 @@ import { ChatGatewayService } from './services/chat-gateway.service';
     ]),
     DatabaseModule,
     JwtModule,
-    TypeOrmModule.forFeature([User]),
   ],
   controllers: [ChatController],
   providers: [ChatGateway, CallGateway, ChatGatewayService],
