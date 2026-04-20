@@ -28,6 +28,7 @@ import {
 import { ChatGatewayService } from '../services/chat-gateway.service';
 import { extractChatToken } from '../utils/chat-token.util';
 import { isOriginAllowed } from '../../utils/cors-origin.util';
+import { IChatGateway } from '@app/contracts/interfaces/gateway/chat-gateway.interface';
 import { GetUnreadCountResponseDTO } from '@app/contracts/dtos/chat/chat-gateway/get-unread-count.dto';
 import {
   MarkAsReadDTO,
@@ -62,7 +63,7 @@ import {
     credentials: true,
   },
 })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, IChatGateway {
   @WebSocketServer() server: Server;
   private logger = new Logger('ChatGateway');
 

@@ -21,6 +21,7 @@ import {
   CallEndResponseDTO,
 } from '@app/contracts';
 import { isOriginAllowed } from '../../utils/cors-origin.util';
+import { ICallGateway } from '@app/contracts/interfaces/gateway/call-gateway.interface';
 
 @WebSocketGateway({
   namespace: '/chat',
@@ -37,7 +38,7 @@ import { isOriginAllowed } from '../../utils/cors-origin.util';
     credentials: true,
   },
 })
-export class CallGateway {
+export class CallGateway implements ICallGateway {
   @WebSocketServer() server: Server;
   constructor(private readonly chatGatewayService: ChatGatewayService) {}
 
