@@ -11,9 +11,6 @@ import {
   IResumeBuilderService,
 } from '@app/contracts/interfaces/service/resume-builder-service.interface';
 
-const BUILD_RESUME_PATTERN = { cmd: 'build-resume' } as const;
-const LEGACY_BUILD_RESUME_PATTERN = { cmd: 'build-resume ' } as const;
-
 @Controller()
 export class ResumeBuilderController implements IResumeBuilderRpcController {
   constructor(
@@ -21,8 +18,6 @@ export class ResumeBuilderController implements IResumeBuilderRpcController {
     private readonly resumeBuilderService: IResumeBuilderService,
   ) {}
 
-  @MessagePattern(LEGACY_BUILD_RESUME_PATTERN)
-  @MessagePattern(BUILD_RESUME_PATTERN)
   @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.BUILD_RESUME)
   async buildResume(
     @Payload() buildResumeDTO: BuildResumeDTO,
