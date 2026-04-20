@@ -1,9 +1,7 @@
 import { DatabaseModule, JwtModule, UploadfileModule } from '@app/common';
-import { User } from '@app/common/database/entities/user.entity';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { CompanyController } from './controllers/company.controller';
 import { EmployeeController } from './controllers/employee.controller';
@@ -28,7 +26,7 @@ import { UserController } from './controllers/user.controller';
     DatabaseModule,
     UploadfileModule,
     JwtModule,
-    TypeOrmModule.forFeature([User]),
+
   ],
   controllers: [
     UserController,

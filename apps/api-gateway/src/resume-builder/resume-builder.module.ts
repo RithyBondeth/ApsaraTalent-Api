@@ -1,9 +1,7 @@
 import { JwtModule, UploadfileModule } from '@app/common';
-import { User } from '@app/common/database/entities/user.entity';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/service-actions/resume-builder-service.constant';
 import { ResumeBuilderController } from './controllers/resume-builder.controller';
 import { ResumeTemplateController } from './controllers/resume-template.controller';
@@ -25,7 +23,7 @@ import { ResumeTemplateController } from './controllers/resume-template.controll
     ]),
     UploadfileModule,
     JwtModule,
-    TypeOrmModule.forFeature([User]),
+
   ],
   controllers: [ResumeBuilderController, ResumeTemplateController],
 })

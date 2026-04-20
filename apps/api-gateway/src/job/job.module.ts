@@ -1,9 +1,7 @@
 import { JwtModule, ThrottlerModule } from '@app/common';
-import { User } from '@app/common/database/entities/user.entity';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { InterviewController } from './controllers/interview.controller';
@@ -38,7 +36,7 @@ import { JobMatchingController } from './controllers/matching.controller';
     ]),
     ThrottlerModule,
     JwtModule,
-    TypeOrmModule.forFeature([User]),
+
   ],
   controllers: [JobController, JobMatchingController, InterviewController],
   providers: [],

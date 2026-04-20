@@ -1,9 +1,7 @@
 import { DatabaseModule, JwtModule } from '@app/common';
-import { User } from '@app/common/database/entities/user.entity';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 import { NotificationController } from './controllers/notification.controller';
 
@@ -24,7 +22,7 @@ import { NotificationController } from './controllers/notification.controller';
     ]),
     DatabaseModule,
     JwtModule,
-    TypeOrmModule.forFeature([User]),
+
   ],
   controllers: [NotificationController],
 })

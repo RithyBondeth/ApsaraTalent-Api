@@ -1,10 +1,8 @@
 import { JwtModule, ThrottlerModule } from '@app/common';
-import { User } from '@app/common/database/entities/user.entity';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PassportModule } from '@nestjs/passport';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
 import { AuthController } from './basic/controllers/auth.controller';
 import { FacebookController } from './socials/controllers/facebook.controller';
@@ -34,7 +32,7 @@ import { LinkedInStrategy } from './socials/strategies/linkedin.strategy';
     ThrottlerModule,
     PassportModule,
     JwtModule,
-    TypeOrmModule.forFeature([User]),
+
   ],
   controllers: [
     AuthController,
