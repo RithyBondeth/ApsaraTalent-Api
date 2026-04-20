@@ -10,14 +10,15 @@ import { Repository } from 'typeorm';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 import {
   CreateInterviewDTO,
+  CreateInterviewResponseDTO,
+  GetInterviewResponseDTO,
   GetInterviewsByCompanyDTO,
   GetInterviewsByEmployeeDTO,
-  InterviewResponseDTO,
   InterviewStatus,
+  UpdateInterviewStatusResponseDTO,
   UpdateInterviewStatusDTO,
   VALID_STATUS_TRANSITIONS,
 } from '@app/contracts/dtos/job';
-
 import { IInterviewService } from '@app/contracts/interfaces/service/job-service.interface';
 import { JOB } from '@app/contracts/constants/domain/job.constant';
 
@@ -39,7 +40,7 @@ export class InterviewService implements IInterviewService {
 
   async createInterview(
     createInterview: CreateInterviewDTO,
-  ): Promise<InterviewResponseDTO> {
+  ): Promise<CreateInterviewResponseDTO> {
     try {
       // Only companies can schedule interviews (standard hiring flow)
       if (createInterview.createdBy !== 'company') {
@@ -127,7 +128,7 @@ export class InterviewService implements IInterviewService {
         );
       }
 
-      return new InterviewResponseDTO(saved);
+      return new CreateInterviewResponseDTO(saved);
     } catch (error: any) {
       this.logger.error(error?.message || error);
       throw new RpcException({
@@ -140,14 +141,16 @@ export class InterviewService implements IInterviewService {
 
   async getInterviewsByEmployee(
     dto: GetInterviewsByEmployeeDTO,
-  ): Promise<InterviewResponseDTO[]> {
+  ): Promise<GetInterviewResponseDTO[]> {
     try {
       const interviews = await this.interviewRepo.find({
         where: { employee: { id: dto.employeeId } },
         relations: ['company'],
         order: { scheduledAt: 'ASC' },
       });
-      return interviews.map((interview) => new InterviewResponseDTO(interview));
+      return interviews.map(
+        (interview) => new GetInterviewResponseDTO(interview),
+      );
     } catch (error: any) {
       this.logger.error(error?.message || error);
       throw new RpcException({
@@ -160,14 +163,16 @@ export class InterviewService implements IInterviewService {
 
   async getInterviewsByCompany(
     dto: GetInterviewsByCompanyDTO,
-  ): Promise<InterviewResponseDTO[]> {
+  ): Promise<GetInterviewResponseDTO[]> {
     try {
       const interviews = await this.interviewRepo.find({
         where: { company: { id: dto.companyId } },
         relations: ['employee'],
         order: { scheduledAt: 'ASC' },
       });
-      return interviews.map((interview) => new InterviewResponseDTO(interview));
+      return interviews.map(
+        (interview) => new GetInterviewResponseDTO(interview),
+      );
     } catch (error: any) {
       this.logger.error(error?.message || error);
       throw new RpcException({
@@ -180,7 +185,7 @@ export class InterviewService implements IInterviewService {
 
   async updateInterviewStatus(
     updateInterview: UpdateInterviewStatusDTO,
-  ): Promise<InterviewResponseDTO> {
+  ): Promise<UpdateInterviewStatusResponseDTO> {
     try {
       const interview = await this.interviewRepo.findOne({
         where: { id: updateInterview.interviewId },
@@ -270,7 +275,7 @@ export class InterviewService implements IInterviewService {
         );
       });
 
-      return new InterviewResponseDTO(saved);
+      return new UpdateInterviewStatusResponseDTO(saved);
     } catch (error: any) {
       this.logger.error(error?.message || error);
       throw new RpcException({

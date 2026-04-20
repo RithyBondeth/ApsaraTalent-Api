@@ -9,17 +9,12 @@ import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { User } from '@app/common/database/entities/user.entity';
-import {
-  isUuid,
-  resolveUserId,
-  resolveUserIdSafe,
-  UUID_REGEX,
-} from '@app/common';
-
+import { isUuid, resolveUserId, resolveUserIdSafe } from '@app/common';
 import { IChatService } from '@app/contracts/interfaces/service/chat-service.interface';
 import {
   CreateMessageDTO,
   CreateMessageResponseDTO,
+  CreateOrGetChatDTO,
   GetChatHistoryResponseDTO,
   GetChatHistoryRpcDTO,
   GetRecentChatsResponseDTO,
@@ -91,13 +86,16 @@ export class ChatService implements IChatService {
     return result;
   }
 
-  async createOrGetChat(data: {
-    senderId: string;
-    receiverId: string;
-  }): Promise<InitiateChatResponseDTO> {
+  async createOrGetChat(
+    createOrGetChatDTO: CreateOrGetChatDTO,
+  ): Promise<InitiateChatResponseDTO> {
     try {
-      const senderUserId = await this.resolveUserId(data.senderId);
-      const receiverUserId = await this.resolveUserId(data.receiverId);
+      const senderUserId = await this.resolveUserId(
+        createOrGetChatDTO.senderId,
+      );
+      const receiverUserId = await this.resolveUserId(
+        createOrGetChatDTO.receiverId,
+      );
       const partner = await this.userRepository.findOne({
         where: { id: receiverUserId },
         relations: ['employee', 'company'],
@@ -160,11 +158,13 @@ export class ChatService implements IChatService {
   }
 
   async createMessage(
-    data: CreateMessageDTO & { senderId: string },
+    createMessageDTO: CreateMessageDTO & { senderId: string },
   ): Promise<CreateMessageResponseDTO> {
     try {
-      const senderUserId = await this.resolveUserId(data.senderId);
-      const receiverUserId = await this.resolveUserId(data.receiverId);
+      const senderUserId = await this.resolveUserId(createMessageDTO.senderId);
+      const receiverUserId = await this.resolveUserId(
+        createMessageDTO.receiverId,
+      );
       this.logger.info(
         `Creating message: ${senderUserId} -> ${receiverUserId}`,
       );
@@ -173,13 +173,14 @@ export class ChatService implements IChatService {
       const message = this.chatRepository.create({
         sender: { id: senderUserId },
         receiver: { id: receiverUserId },
-        content: data.content,
-        messageType: (data.type as EMessageType) || EMessageType.TEXT,
-        replyToId: data.replyToId ?? null,
-        attachment: data.attachment ?? null,
-        attachmentFilename: data.attachmentFilename ?? null,
-        attachmentDuration: data.attachmentDuration ?? null,
-        attachmentAmplitude: data.attachmentAmplitude ?? null,
+        content: createMessageDTO.content,
+        messageType:
+          (createMessageDTO.type as EMessageType) || EMessageType.TEXT,
+        replyToId: createMessageDTO.replyToId ?? null,
+        attachment: createMessageDTO.attachment ?? null,
+        attachmentFilename: createMessageDTO.attachmentFilename ?? null,
+        attachmentDuration: createMessageDTO.attachmentDuration ?? null,
+        attachmentAmplitude: createMessageDTO.attachmentAmplitude ?? null,
       });
       const savedMessage = await this.chatRepository.save(message);
       // Invalidate recent-chats and unread count for both participants
@@ -203,10 +204,10 @@ export class ChatService implements IChatService {
       const senderCo = chat.sender?.company;
       const receiverEmp = chat.receiver?.employee;
       const receiverCo = chat.receiver?.company;
-      return {
+      return new CreateMessageResponseDTO({
         id: chat.id,
-        senderId: chat.sender?.id || data.senderId,
-        receiverId: chat.receiver?.id || data.receiverId,
+        senderId: chat.sender?.id || createMessageDTO.senderId,
+        receiverId: chat.receiver?.id || createMessageDTO.receiverId,
         content: chat.content,
         messageType: chat.messageType,
         isRead: chat.isRead,
@@ -229,7 +230,7 @@ export class ChatService implements IChatService {
         attachmentDuration: chat.attachmentDuration ?? null,
         attachmentAmplitude: chat.attachmentAmplitude ?? null,
         sender: {
-          id: chat.sender?.id || data.senderId,
+          id: chat.sender?.id || createMessageDTO.senderId,
           name: senderEmp
             ? [senderEmp.firstname, senderEmp.lastname]
                 .filter(Boolean)
@@ -238,7 +239,7 @@ export class ChatService implements IChatService {
           email: chat.sender?.email || '',
         },
         receiver: {
-          id: chat.receiver?.id || data.receiverId,
+          id: chat.receiver?.id || createMessageDTO.receiverId,
           name: receiverEmp
             ? [receiverEmp.firstname, receiverEmp.lastname]
                 .filter(Boolean)
@@ -246,7 +247,7 @@ export class ChatService implements IChatService {
             : receiverCo?.name || 'Unknown',
           email: chat.receiver?.email || '',
         },
-      };
+      });
     } catch (error) {
       throw new RpcException({
         message: `Failed to create message: ${(error as Error).message}`,
@@ -268,12 +269,16 @@ export class ChatService implements IChatService {
    *  - We do NOT store an edit history in this version (single latest content only).
    *  - Only text content is editable; message type and attachments are immutable.
    */
-  async editMessage(data: EditMessageRpcDTO): Promise<EditMessageResponseDTO> {
+  async editMessage(
+    editMessageDTO: EditMessageRpcDTO,
+  ): Promise<EditMessageResponseDTO> {
     // Resolve canonical User PK (handles employee / company IDs)
-    const requesterUserId = await this.resolveUserId(data.requesterId);
+    const requesterUserId = await this.resolveUserId(
+      editMessageDTO.requesterId,
+    );
 
     // Validate new content: must be a non-empty string ≤ 5000 chars
-    const trimmed = data.newContent?.trim();
+    const trimmed = editMessageDTO.newContent?.trim();
     if (!trimmed || trimmed.length > CHAT.MAX_MESSAGE_LENGTH) {
       throw new RpcException({
         message: `Message content must be 1–${CHAT.MAX_MESSAGE_LENGTH} characters`,
@@ -283,7 +288,7 @@ export class ChatService implements IChatService {
 
     // Fetch message with both relations so we can check ownership and get receiverId
     const message = await this.chatRepository.findOne({
-      where: { id: data.messageId },
+      where: { id: editMessageDTO.messageId },
       relations: ['sender', 'receiver'],
     });
 
@@ -308,19 +313,19 @@ export class ChatService implements IChatService {
     }
 
     // Persist the edit: update content and set the isEdited flag
-    await this.chatRepository.update(data.messageId, {
+    await this.chatRepository.update(editMessageDTO.messageId, {
       content: trimmed,
       isEdited: true,
     });
 
     this.logger.info(
-      `[CHAT] Message ${data.messageId} edited by ${requesterUserId}`,
+      `[CHAT] Message ${editMessageDTO.messageId} edited by ${requesterUserId}`,
     );
 
     // Return the payload needed for the gateway to broadcast the change
     return new EditMessageResponseDTO({
       success: true,
-      messageId: data.messageId,
+      messageId: editMessageDTO.messageId,
       newContent: trimmed,
       senderId: message.sender.id,
       receiverId: message.receiver?.id ?? null,
@@ -334,11 +339,13 @@ export class ChatService implements IChatService {
    * with isDeleted=true so reply references and read receipts are preserved.
    */
   async deleteMessage(
-    data: DeleteMessageRpcDTO,
+    deleteMessageDTO: DeleteMessageRpcDTO,
   ): Promise<DeleteMessageResponseDTO> {
-    const requesterUserId = await this.resolveUserId(data.requesterId);
+    const requesterUserId = await this.resolveUserId(
+      deleteMessageDTO.requesterId,
+    );
     const message = await this.chatRepository.findOne({
-      where: { id: data.messageId },
+      where: { id: deleteMessageDTO.messageId },
       relations: ['sender', 'receiver'],
     });
     if (!message) {
@@ -350,21 +357,25 @@ export class ChatService implements IChatService {
         statusCode: 403,
       });
     }
-    await this.chatRepository.update(data.messageId, { isDeleted: true });
+    await this.chatRepository.update(deleteMessageDTO.messageId, {
+      isDeleted: true,
+    });
     this.logger.info(
-      `[CHAT] Message ${data.messageId} soft-deleted by ${requesterUserId}`,
+      `[CHAT] Message ${deleteMessageDTO.messageId} soft-deleted by ${requesterUserId}`,
     );
     return new DeleteMessageResponseDTO({
       success: true,
-      messageId: data.messageId,
+      messageId: deleteMessageDTO.messageId,
       senderId: message.sender.id,
       receiverId: message.receiver?.id ?? null,
     });
   }
 
-  async markAsRead(data: MarkAsReadRpcDTO): Promise<MarkAsReadResponseDTO> {
+  async markAsRead(
+    markAsReadDTO: MarkAsReadRpcDTO,
+  ): Promise<MarkAsReadResponseDTO> {
     const result = await this.chatRepository.update(
-      { id: data.messageId, receiver: { id: data.readerId } },
+      { id: markAsReadDTO.messageId, receiver: { id: markAsReadDTO.readerId } },
       { isRead: true },
     );
     if (result.affected === 0) {
@@ -372,7 +383,7 @@ export class ChatService implements IChatService {
     }
     // Invalidate unread count for the reader
     await this.redisService.del(
-      this.redisService.generateUnreadCountKey(data.readerId),
+      this.redisService.generateUnreadCountKey(markAsReadDTO.readerId),
     );
     return new MarkAsReadResponseDTO({ success: true });
   }
@@ -387,10 +398,14 @@ export class ChatService implements IChatService {
   }
 
   async validateChatUsers(
-    data: ValidateChatUsersDTO,
+    validateChatUsersDTO: ValidateChatUsersDTO,
   ): Promise<ValidateChatUsersResponseDTO> {
-    const senderUserId = await this.resolveUserId(data.senderId);
-    const receiverUserId = await this.resolveUserId(data.receiverId);
+    const senderUserId = await this.resolveUserId(
+      validateChatUsersDTO.senderId,
+    );
+    const receiverUserId = await this.resolveUserId(
+      validateChatUsersDTO.receiverId,
+    );
     const [sender, receiver] = await Promise.all([
       this.getUserByIdForChat(senderUserId),
       this.getUserByIdForChat(receiverUserId),
@@ -404,14 +419,14 @@ export class ChatService implements IChatService {
   }
 
   async getChatHistory(
-    data: GetChatHistoryRpcDTO,
+    getChatHistoryDTO: GetChatHistoryRpcDTO,
   ): Promise<GetChatHistoryResponseDTO> {
     let {
       userId1: u1,
       userId2: u2,
       limit = CHAT.DEFAULT_HISTORY_LIMIT,
       offset = 0,
-    } = data;
+    } = getChatHistoryDTO;
     limit = Math.min(Math.max(1, limit), CHAT.MAX_HISTORY_LIMIT);
     offset = Math.min(Math.max(0, offset), CHAT.MAX_HISTORY_OFFSET);
     const userId1 = await this.resolveUserId(u1);
@@ -508,19 +523,21 @@ export class ChatService implements IChatService {
   }
 
   async updateReaction(
-    data: UpdateReactionRpcDTO,
+    updateReactionDTO: UpdateReactionRpcDTO,
   ): Promise<UpdateReactionResponseDTO> {
     const chat = await this.chatRepository.findOne({
-      where: { id: data.messageId },
+      where: { id: updateReactionDTO.messageId },
     });
     if (!chat) throw new Error('Message not found');
     const reactions = chat.reactions || {};
-    if (data.emoji) {
-      reactions[data.userId] = data.emoji;
+    if (updateReactionDTO.emoji) {
+      reactions[updateReactionDTO.userId] = updateReactionDTO.emoji;
     } else {
-      delete reactions[data.userId];
+      delete reactions[updateReactionDTO.userId];
     }
-    await this.chatRepository.update(data.messageId, { reactions });
+    await this.chatRepository.update(updateReactionDTO.messageId, {
+      reactions,
+    });
     return new UpdateReactionResponseDTO({ success: true, reactions });
   }
 

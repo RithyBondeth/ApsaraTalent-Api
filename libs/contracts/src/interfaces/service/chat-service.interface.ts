@@ -30,19 +30,29 @@ import {
 export const I_CHAT_SERVICE = 'IChatService';
 
 export interface IChatService {
-  createOrGetChat(data: CreateOrGetChatDTO): Promise<InitiateChatResponseDTO>;
-  createMessage(payload: CreateMessageDTO): Promise<CreateMessageResponseDTO>;
-  editMessage(data: EditMessageRpcDTO): Promise<EditMessageResponseDTO>;
+  createOrGetChat(
+    createOrGetChatDTO: CreateOrGetChatDTO,
+  ): Promise<InitiateChatResponseDTO>;
+  createMessage(
+    createMessageDTO: CreateMessageDTO,
+  ): Promise<CreateMessageResponseDTO>;
+  editMessage(
+    editMessageDTO: EditMessageRpcDTO,
+  ): Promise<EditMessageResponseDTO>;
   updateReaction(
-    data: UpdateReactionRpcDTO,
+    updateReactionDTO: UpdateReactionRpcDTO,
   ): Promise<UpdateReactionResponseDTO>;
-  deleteMessage(data: DeleteMessageRpcDTO): Promise<DeleteMessageResponseDTO>;
-  markAsRead(data: MarkAsReadRpcDTO): Promise<MarkAsReadResponseDTO>;
+  deleteMessage(
+    deleteMessageDTO: DeleteMessageRpcDTO,
+  ): Promise<DeleteMessageResponseDTO>;
+  markAsRead(markAsReadDTO: MarkAsReadRpcDTO): Promise<MarkAsReadResponseDTO>;
   getUserByIdForChat(userId: string): Promise<UserResponseDTO>;
   validateChatUsers(
-    data: ValidateChatUsersDTO,
+    validateChatUsersDTO: ValidateChatUsersDTO,
   ): Promise<ValidateChatUsersResponseDTO>;
-  getChatHistory(data: GetChatHistoryRpcDTO): Promise<GetChatHistoryResponseDTO>;
+  getChatHistory(
+    getChatHistoryDTO: GetChatHistoryRpcDTO,
+  ): Promise<GetChatHistoryResponseDTO>;
   getUnreadCount(u: string): Promise<number>;
   getRecentChats(u: string): Promise<GetRecentChatsResponseDTO[]>;
 }

@@ -10,17 +10,24 @@ import {
   ForgotPasswordDTO,
   ResetPasswordDTO,
   RefreshTokenDTO,
-  VerifyEmailDTO,
   CompanyRegisterDTO,
   EmployeeRegisterDTO,
   VerifyOtpDTO,
   VerifyOtpResponseDTO,
   LoginOtpDTO,
   LoginOtpResponseDTO,
+  VerifyEmailDTO,
+  GoogleAuthDTO,
+  LinkedInAuthDTO,
+  GoogleLoginResponseDTO,
+  LinkedInLoginResponseDTO,
+  GithubAuthDTO,
+  GithubLoginResponseDTO,
 } from '@app/contracts/dtos/auth';
+import { Response } from 'express';
 
 export interface IBasicAuthLoginController {
-  login(loginDTO: LoginDTO, res: any): Promise<LoginResponseDTO>;
+  login(loginDTO: LoginDTO, res: Response): Promise<LoginResponseDTO>;
 }
 
 export interface IBasicAuthLoginRpcController {
@@ -55,7 +62,7 @@ export interface IBasicAuthResetPasswordRpcController {
 export interface IBasicAuthRefreshTokenController {
   refreshToken(
     refreshTokenDTO: RefreshTokenDTO,
-    res: any,
+    res: Response,
   ): Promise<RefreshTokenResponseDTO>;
 }
 
@@ -99,7 +106,7 @@ export interface IBasicAuthLoginOTPController {
   loginOtp(loginOtpDTO: LoginOtpDTO): Promise<LoginOtpResponseDTO>;
   verifyOtp(
     verifyOtpDTO: VerifyOtpDTO,
-    res: any,
+    res: Response,
   ): Promise<VerifyOtpResponseDTO>;
 }
 

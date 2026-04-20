@@ -59,14 +59,13 @@ export class CreateInterviewResponseDTO {
   createdAt: Date;
   updatedAt: Date;
 
-  constructor(partial: Partial<CreateInterviewResponseDTO>) {
+  constructor(partial: any) {
     Object.assign(this, partial);
-  }
-}
-
-/** Generic alias used by the job-service microservice controller. */
-export class InterviewResponseDTO extends CreateInterviewResponseDTO {
-  constructor(partial: Partial<InterviewResponseDTO>) {
-    super(partial);
+    if (this.employee && !(this.employee instanceof EmployeeResponseDTO)) {
+      this.employee = new EmployeeResponseDTO(this.employee);
+    }
+    if (this.company && !(this.company instanceof CompanyResponseDTO)) {
+      this.company = new CompanyResponseDTO(this.company);
+    }
   }
 }

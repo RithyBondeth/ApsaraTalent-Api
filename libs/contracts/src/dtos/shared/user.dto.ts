@@ -236,5 +236,11 @@ export class UserResponseDTO {
 
   constructor(partial: Partial<UserResponseDTO>) {
     Object.assign(this, partial);
+    if (this.employee && !(this.employee instanceof EmployeeResponseDTO)) {
+      this.employee = new EmployeeResponseDTO(this.employee);
+    }
+    if (this.company && !(this.company instanceof CompanyResponseDTO)) {
+      this.company = new CompanyResponseDTO(this.company);
+    }
   }
 }

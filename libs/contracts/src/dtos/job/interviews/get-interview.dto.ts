@@ -12,7 +12,7 @@ export class GetInterviewsByCompanyDTO {
 }
 
 export class GetInterviewResponseDTO extends CreateInterviewResponseDTO {
-  constructor(partial: Partial<GetInterviewResponseDTO>) {
+  constructor(partial: any) {
     super(partial);
   }
 }

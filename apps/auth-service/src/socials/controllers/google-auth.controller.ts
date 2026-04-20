@@ -17,8 +17,8 @@ export class GoogleAuthController implements IGoogleAuthMicroserviceController {
 
   @MessagePattern(AUTH_SERVICE.ACTIONS.GOOGLE_AUTH)
   async googleAuth(
-    @Payload() googleData: GoogleAuthDTO,
+    @Payload() googleDataDTO: GoogleAuthDTO,
   ): Promise<GoogleLoginResponseDTO> {
-    return this.googleAuthService.googleLogin(googleData);
+    return this.googleAuthService.googleLogin(googleDataDTO);
   }
 }

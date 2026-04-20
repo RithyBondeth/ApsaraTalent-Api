@@ -50,26 +50,26 @@ export class ChatController {
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.CREATE_OR_GET_CHAT)
   async createOrGetChat(
-    @Payload() data: CreateOrGetChatDTO,
+    @Payload() createOrGetChatDTO: CreateOrGetChatDTO,
   ): Promise<InitiateChatResponseDTO> {
-    return this.chatService.createOrGetChat(data);
+    return this.chatService.createOrGetChat(createOrGetChatDTO);
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.CREATE_MESSAGE)
   async createMessage(
-    @Payload() data: CreateMessageDTO,
+    @Payload() createMessageDTO: CreateMessageDTO,
   ): Promise<CreateMessageResponseDTO> {
-    return this.chatService.createMessage(data);
+    return this.chatService.createMessage(createMessageDTO);
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.MARK_MESSAGE_READ)
   async markAsRead(
-    @Payload() data: MarkAsReadRpcDTO,
+    @Payload() markAsReadRpcDTO: MarkAsReadRpcDTO,
   ): Promise<MarkAsReadResponseDTO> {
     this.logger.info(
-      `[CHAT] markAsRead: messageId=${data.messageId}, reader=${data.readerId}`,
+      `[CHAT] markAsRead: messageId=${markAsReadRpcDTO.messageId}, reader=${markAsReadRpcDTO.readerId}`,
     );
-    return this.chatService.markAsRead(data);
+    return this.chatService.markAsRead(markAsReadRpcDTO);
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.GET_USER_BY_ID_FOR_CHAT)
@@ -82,12 +82,13 @@ export class ChatController {
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.VALIDATE_CHAT_USERS)
   async validateChatUsers(
-    @Payload() data: ValidateChatUsersDTO,
+    @Payload() validateChatUsersDTO: ValidateChatUsersDTO,
   ): Promise<ValidateChatUsersResponseDTO> {
     this.logger.info(
-      `[CHAT] validateChatUsers: sender=${data.senderId}, receiver=${data.receiverId}`,
+      `[CHAT] validateChatUsers: sender=${validateChatUsersDTO.senderId}, receiver=${validateChatUsersDTO.receiverId}`,
     );
-    const result = await this.chatService.validateChatUsers(data);
+    const result =
+      await this.chatService.validateChatUsers(validateChatUsersDTO);
     this.logger.info(
       `[CHAT] ✅ validateChatUsers OK: sender=${result.sender?.email}, receiver=${result.receiver?.email}`,
     );
@@ -96,9 +97,9 @@ export class ChatController {
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.GET_CHAT_HISTORY)
   async getChatHistory(
-    @Payload() data: GetChatHistoryRpcDTO,
+    @Payload() getChatHistoryRpcDTO: GetChatHistoryRpcDTO,
   ): Promise<GetChatHistoryResponseDTO> {
-    return this.chatService.getChatHistory(data);
+    return this.chatService.getChatHistory(getChatHistoryRpcDTO);
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.GET_UNREAD_COUNT)
@@ -119,9 +120,9 @@ export class ChatController {
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.UPDATE_REACTION)
   async updateReaction(
-    @Payload() data: UpdateReactionRpcDTO,
+    @Payload() updateReactionRpcDTO: UpdateReactionRpcDTO,
   ): Promise<UpdateReactionResponseDTO> {
-    return this.chatService.updateReaction(data);
+    return this.chatService.updateReaction(updateReactionRpcDTO);
   }
 
   /**
@@ -131,9 +132,9 @@ export class ChatController {
    */
   @MessagePattern(CHAT_SERVICE.ACTIONS.EDIT_MESSAGE)
   async editMessage(
-    @Payload() data: EditMessageRpcDTO,
+    @Payload() editMessageRpcDTO: EditMessageRpcDTO,
   ): Promise<EditMessageResponseDTO> {
-    return this.chatService.editMessage(data);
+    return this.chatService.editMessage(editMessageRpcDTO);
   }
 
   /**
@@ -143,8 +144,8 @@ export class ChatController {
    */
   @MessagePattern(CHAT_SERVICE.ACTIONS.DELETE_MESSAGE)
   async deleteMessage(
-    @Payload() data: DeleteMessageRpcDTO,
+    @Payload() deleteMessageRpcDTO: DeleteMessageRpcDTO,
   ): Promise<DeleteMessageResponseDTO> {
-    return this.chatService.deleteMessage(data);
+    return this.chatService.deleteMessage(deleteMessageRpcDTO);
   }
 }

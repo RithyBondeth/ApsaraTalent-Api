@@ -17,8 +17,8 @@ export class LinkedInAuthController implements ILinkedInAuthMicroserviceControll
 
   @MessagePattern(AUTH_SERVICE.ACTIONS.LINKEDIN_AUTH)
   async linkedInAuth(
-    @Payload() linkedInData: LinkedInAuthDTO,
+    @Payload() linkedInDataDTO: LinkedInAuthDTO,
   ): Promise<LinkedInLoginResponseDTO> {
-    return this.linkedInService.linkedInLogin(linkedInData);
+    return this.linkedInService.linkedInLogin(linkedInDataDTO);
   }
 }

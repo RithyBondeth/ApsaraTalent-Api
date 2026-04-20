@@ -50,11 +50,10 @@ export class AuthController implements IBasicAuthController {
   async registerCompany(
     @Body() companyRegisterDTO: CompanyRegisterDTO,
   ): Promise<CompanyRegisterResponseDTO> {
-    const payload = { ...companyRegisterDTO };
     return await sendAuthServiceRequest<CompanyRegisterResponseDTO>(
       this.authClient,
       AUTH_SERVICE.ACTIONS.REGISTER_COMPANY,
-      payload,
+      companyRegisterDTO,
     );
   }
 
@@ -64,11 +63,10 @@ export class AuthController implements IBasicAuthController {
   async registerEmployee(
     @Body() employeeRegisterDTO: EmployeeRegisterDTO,
   ): Promise<EmployeeRegisterResponseDTO> {
-    const payload = { ...employeeRegisterDTO };
     return await sendAuthServiceRequest<EmployeeRegisterResponseDTO>(
       this.authClient,
       AUTH_SERVICE.ACTIONS.REGISTER_EMPLOYEE,
-      payload,
+      employeeRegisterDTO,
     );
   }
 
@@ -79,12 +77,11 @@ export class AuthController implements IBasicAuthController {
     @Body() loginDTO: LoginDTO,
     @Res({ passthrough: true }) res: Response,
   ): Promise<LoginResponseDTO> {
-    const payload = { ...loginDTO };
     const { accessToken, refreshToken, user, message } =
       await sendAuthServiceRequest<LoginResponseDTO>(
         this.authClient,
         AUTH_SERVICE.ACTIONS.LOGIN,
-        payload,
+        loginDTO,
       );
 
     setAuthTokenCookies(res, { accessToken, refreshToken });
@@ -141,11 +138,10 @@ export class AuthController implements IBasicAuthController {
   async forgotPassword(
     @Body() forgotPasswordDTO: ForgotPasswordDTO,
   ): Promise<ForgotPasswordResponseDTO> {
-    const payload = { ...forgotPasswordDTO };
     return await sendAuthServiceRequest<ForgotPasswordResponseDTO>(
       this.authClient,
       AUTH_SERVICE.ACTIONS.FORGOT_PASSWORD,
-      payload,
+      forgotPasswordDTO,
     );
   }
 
@@ -171,22 +167,21 @@ export class AuthController implements IBasicAuthController {
     @Body() refreshTokenDTO: RefreshTokenDTO,
     @Res({ passthrough: true }) res: Response,
   ): Promise<RefreshTokenResponseDTO> {
-    const payload = { ...refreshTokenDTO };
     const { accessToken, refreshToken, user, message } =
       await sendAuthServiceRequest<RefreshTokenResponseDTO>(
         this.authClient,
         AUTH_SERVICE.ACTIONS.REFRESH_TOKEN,
-        payload,
+        refreshTokenDTO,
       );
 
     setAuthTokenCookies(res, { accessToken, refreshToken });
 
-    return {
+    return new RefreshTokenResponseDTO({
       message,
       refreshToken,
       accessToken,
       user,
-    };
+    });
   }
 
   @Post('verify-email/:emailVerificationToken')
@@ -195,11 +190,10 @@ export class AuthController implements IBasicAuthController {
   async verifyEmail(
     @Param('emailVerificationToken') emailVerificationToken: VerifyEmailDTO,
   ): Promise<VerifyEmailResponseDTO> {
-    const payload = { emailVerificationToken };
     return await sendAuthServiceRequest<VerifyEmailResponseDTO>(
       this.authClient,
       AUTH_SERVICE.ACTIONS.VERIFY_EMAIL,
-      payload,
+      emailVerificationToken,
     );
   }
 

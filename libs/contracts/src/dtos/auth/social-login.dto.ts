@@ -99,9 +99,11 @@ export class LinkedInAuthDTO {
 }
 
 export class SocialLoginResponseDTO extends LoginResponseDTO {
+  email?: string;
   newUser?: boolean;
-  firstName?: string;
-  lastName?: string;
+  firstname?: string;
+  lastname?: string;
+  username?: string;
   picture?: string;
   provider?: string;
   lastLoginMethod?: ELoginMethod;

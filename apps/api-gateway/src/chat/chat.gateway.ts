@@ -165,10 +165,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.SEND_MESSAGE)
   async handleMessage(
     client: Socket,
-    payload: SendMessageDTO,
+    SendMessageDTO: SendMessageDTO,
   ): Promise<SendMessageResponseDTO | void> {
     this.logger.log(
-      `[WS] sendMessage received from userId=${client.data.userId}, receiverId=${payload?.receiverId}, content.length=${payload?.content?.length}`,
+      `[WS] sendMessage received from userId=${client.data.userId}, receiverId=${SendMessageDTO?.receiverId}, content.length=${SendMessageDTO?.content?.length}`,
     );
     try {
       if (!client.data.userId) {
@@ -181,15 +181,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return;
       }
 
-      if (!payload?.receiverId || typeof payload.receiverId !== 'string') {
+      if (
+        !SendMessageDTO?.receiverId ||
+        typeof SendMessageDTO.receiverId !== 'string'
+      ) {
         client.emit('error', {
           message: 'Invalid message payload: missing receiverId',
         });
         return;
       }
 
-      const trimmedContent = payload?.content?.trim() ?? '';
-      const hasAttachment = !!payload?.attachment;
+      const trimmedContent = SendMessageDTO?.content?.trim() ?? '';
+      const hasAttachment = !!SendMessageDTO?.attachment;
       if (trimmedContent.length > CHAT.MAX_MESSAGE_LENGTH) {
         client.emit('error', {
           message: `Message must be at most ${CHAT.MAX_MESSAGE_LENGTH} characters`,
@@ -201,7 +204,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return;
       }
 
-      const messageType = payload.type ?? 'text';
+      const messageType = SendMessageDTO.type ?? 'text';
       if (!this.VALID_MESSAGE_TYPES.includes(messageType as any)) {
         client.emit('error', { message: 'Invalid message type' });
         return;
@@ -210,7 +213,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const usersData = await firstValueFrom(
         this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.VALIDATE_CHAT_USERS, {
           senderId: client.data.userId,
-          receiverId: payload.receiverId,
+          receiverId: SendMessageDTO.receiverId,
         }),
       );
 
@@ -220,11 +223,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         content: trimmedContent,
         type: messageType,
         timestamp: new Date(),
-        replyToId: payload.replyToId ?? null,
-        attachment: payload.attachment ?? null,
-        attachmentFilename: payload.attachmentFilename ?? null,
-        attachmentDuration: payload.attachmentDuration ?? null,
-        attachmentAmplitude: payload.attachmentAmplitude ?? null,
+        replyToId: SendMessageDTO.replyToId ?? null,
+        attachment: SendMessageDTO.attachment ?? null,
+        attachmentFilename: SendMessageDTO.attachmentFilename ?? null,
+        attachmentDuration: SendMessageDTO.attachmentDuration ?? null,
+        attachmentAmplitude: SendMessageDTO.attachmentAmplitude ?? null,
       };
 
       const savedMessage = await firstValueFrom(
@@ -254,7 +257,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         messageType,
         content: trimmedContent,
         hasAttachment,
-        attachmentFilename: payload.attachmentFilename ?? null,
+        attachmentFilename: SendMessageDTO.attachmentFilename ?? null,
         messageId: savedMessage.id,
       });
 
@@ -290,7 +293,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           userId,
         ),
       );
-      return chats;
+      return chats.map(
+        (chat: GetRecentChatsResponseDTO) =>
+          new GetRecentChatsResponseDTO(chat),
+      );
     } catch (error: any) {
       this.logger.error(`getRecentChats error: ${error?.message || 'Unknown'}`);
       return [];
@@ -300,33 +306,33 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.GET_CHAT_HISTORY)
   async handleGetChatHistory(
     client: Socket,
-    payload: GetChatHistoryDTO,
+    getChatHistoryDTO: GetChatHistoryDTO,
   ): Promise<GetChatHistoryResponseDTO> {
     const userId1 = client.data.userId;
     try {
       this.logger.log(
-        `[WS] Fetching history: user1=${userId1}, user2=${payload.partnerId}`,
+        `[WS] Fetching history: user1=${userId1}, user2=${getChatHistoryDTO.partnerId}`,
       );
       const history = await firstValueFrom(
         this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.GET_CHAT_HISTORY, {
           userId1,
-          userId2: payload.partnerId,
+          userId2: getChatHistoryDTO.partnerId,
           limit: Math.min(
-            Math.max(1, payload.limit || CHAT.DEFAULT_HISTORY_LIMIT),
+            Math.max(1, getChatHistoryDTO.limit || CHAT.DEFAULT_HISTORY_LIMIT),
             CHAT.MAX_HISTORY_LIMIT,
           ),
           offset: Math.min(
-            Math.max(0, payload.offset || 0),
+            Math.max(0, getChatHistoryDTO.offset || 0),
             CHAT.MAX_HISTORY_OFFSET,
           ),
         }),
       );
-      return history;
+      return new GetChatHistoryResponseDTO(history);
     } catch (error: any) {
       this.logger.error(`getChatHistory error: ${error?.message || 'Unknown'}`);
       return new GetChatHistoryResponseDTO({
         messages: [],
-        partnerId: payload.partnerId,
+        partnerId: getChatHistoryDTO.partnerId,
         partnerProfile: null,
       });
     }
@@ -356,7 +362,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.MARK_AS_READ)
   async handleRead(
     client: Socket,
-    payload: MarkAsReadDTO,
+    markAsReadDTO: MarkAsReadDTO,
   ): Promise<MarkAsReadResponseDTO | void> {
     try {
       if (!client.data.userId) {
@@ -365,16 +371,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       const messageId =
-        typeof payload === 'string' ? payload : payload?.messageId;
+        typeof markAsReadDTO === 'string'
+          ? markAsReadDTO
+          : markAsReadDTO?.messageId;
       const senderId =
-        typeof payload === 'object' ? payload?.senderId : undefined;
+        typeof markAsReadDTO === 'object' ? markAsReadDTO?.senderId : undefined;
 
       if (!messageId || typeof messageId !== 'string') {
         client.emit('error', { message: 'Message ID required' });
         return;
       }
 
-      await firstValueFrom(
+      await firstValueFrom<MarkAsReadResponseDTO>(
         this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.MARK_MESSAGE_READ, {
           messageId,
           readerId: client.data.userId,
@@ -401,16 +409,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.TYPING)
-  async handleTyping(client: Socket, data: TypingDTO): Promise<void> {
-    if (!data?.receiverId || typeof data.isTyping !== 'boolean') {
+  async handleTyping(client: Socket, typingDTO: TypingDTO): Promise<void> {
+    if (!typingDTO?.receiverId || typeof typingDTO.isTyping !== 'boolean') {
       client.emit('error', { message: 'Invalid typing payload' });
       return;
     }
     try {
-      this.server.to(data.receiverId).emit(CHAT_WEBSOCKET_EVENTS.USER_TYPING, {
-        userId: client.data.userId,
-        isTyping: data.isTyping,
-      });
+      this.server
+        .to(typingDTO.receiverId)
+        .emit(CHAT_WEBSOCKET_EVENTS.USER_TYPING, {
+          userId: client.data.userId,
+          isTyping: typingDTO.isTyping,
+        });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -422,23 +432,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.REACT)
   async handleReaction(
     client: Socket,
-    data: UpdateReactionDTO,
+    updateReactionDTO: UpdateReactionDTO,
   ): Promise<UpdateReactionResponseDTO | void> {
     try {
       this.logger.log(
-        `[WS] Reaction received: messageId=${data.messageId}, userId=${client.data.userId}, emoji=${data.emoji}`,
+        `[WS] Reaction received: messageId=${updateReactionDTO.messageId}, userId=${client.data.userId}, emoji=${updateReactionDTO.emoji}`,
       );
 
-      const result = await firstValueFrom(
+      const result = await firstValueFrom<UpdateReactionResponseDTO>(
         this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.UPDATE_REACTION, {
-          messageId: data.messageId,
+          messageId: updateReactionDTO.messageId,
           userId: client.data.userId,
-          emoji: data.emoji,
+          emoji: updateReactionDTO.emoji,
         }),
       );
 
       const payload = {
-        messageId: data.messageId,
+        messageId: updateReactionDTO.messageId,
         reactions: result.reactions,
       };
 
@@ -446,11 +456,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         .to(client.data.userId)
         .emit(CHAT_WEBSOCKET_EVENTS.MESSAGE_REACTION, payload);
       this.server
-        .to(data.receiverId)
+        .to(updateReactionDTO.receiverId)
         .emit(CHAT_WEBSOCKET_EVENTS.MESSAGE_REACTION, payload);
 
       this.logger.log(
-        `[WS] Reaction broadcasted for message ${data.messageId}`,
+        `[WS] Reaction broadcasted for message ${updateReactionDTO.messageId}`,
       );
       return new UpdateReactionResponseDTO({
         success: true,
@@ -467,19 +477,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.EDIT_MESSAGE)
   async handleEditMessage(
     client: Socket,
-    data: EditMessageDTO,
+    editMessageDTO: EditMessageDTO,
   ): Promise<EditMessageResponseDTO | void> {
     if (!client.data.userId) {
       client.emit('error', { message: 'Unauthorized' });
       return;
     }
 
-    if (!data?.messageId || typeof data.messageId !== 'string') {
+    if (
+      !editMessageDTO?.messageId ||
+      typeof editMessageDTO.messageId !== 'string'
+    ) {
       client.emit('error', { message: 'messageId is required' });
       return;
     }
 
-    const trimmed = data.newContent?.trim();
+    const trimmed = editMessageDTO.newContent?.trim();
     if (!trimmed || trimmed.length > CHAT.MAX_MESSAGE_LENGTH) {
       client.emit('error', {
         message: `Message must be 1–${CHAT.MAX_MESSAGE_LENGTH} characters`,
@@ -488,16 +501,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     try {
-      const result = await firstValueFrom(
+      const result = await firstValueFrom<EditMessageResponseDTO>(
         this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.EDIT_MESSAGE, {
-          messageId: data.messageId,
+          messageId: editMessageDTO.messageId,
           requesterId: client.data.userId,
           newContent: trimmed,
         }),
       );
 
       const broadcastPayload = {
-        messageId: data.messageId,
+        messageId: editMessageDTO.messageId,
         newContent: trimmed,
         isEdited: true,
       };
@@ -506,13 +519,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         .to(client.data.userId)
         .emit(CHAT_WEBSOCKET_EVENTS.MESSAGE_EDITED, broadcastPayload);
 
-      if (data.receiverId) {
+      if (editMessageDTO.receiverId) {
         this.server
-          .to(data.receiverId)
+          .to(editMessageDTO.receiverId)
           .emit(CHAT_WEBSOCKET_EVENTS.MESSAGE_EDITED, broadcastPayload);
       }
 
-      return result;
+      return new EditMessageResponseDTO(result);
     } catch (error: any) {
       const errorMessage = error?.message || 'Unknown error';
       this.logger.error(`Edit message error: ${errorMessage}`);
@@ -523,14 +536,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.DELETE_MESSAGE)
   async handleDeleteMessage(
     client: Socket,
-    data: DeleteMessageDTO,
+    deleteMessageDTO: DeleteMessageDTO,
   ): Promise<DeleteMessageResponseDTO | void> {
     if (!client.data.userId) {
       client.emit('error', { message: 'Unauthorized' });
       return;
     }
 
-    if (!data?.messageId || typeof data.messageId !== 'string') {
+    if (
+      !deleteMessageDTO?.messageId ||
+      typeof deleteMessageDTO.messageId !== 'string'
+    ) {
       client.emit('error', { message: 'messageId is required' });
       return;
     }
@@ -538,24 +554,24 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const result = await firstValueFrom(
         this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.DELETE_MESSAGE, {
-          messageId: data.messageId,
+          messageId: deleteMessageDTO.messageId,
           requesterId: client.data.userId,
         }),
       );
 
-      const broadcastPayload = { messageId: data.messageId };
+      const broadcastPayload = { messageId: deleteMessageDTO.messageId };
 
       this.server
         .to(client.data.userId)
         .emit(CHAT_WEBSOCKET_EVENTS.MESSAGE_DELETED, broadcastPayload);
 
-      if (data.receiverId) {
+      if (deleteMessageDTO.receiverId) {
         this.server
-          .to(data.receiverId)
+          .to(deleteMessageDTO.receiverId)
           .emit(CHAT_WEBSOCKET_EVENTS.MESSAGE_DELETED, broadcastPayload);
       }
 
-      return result;
+      return new DeleteMessageResponseDTO(result);
     } catch (error: any) {
       const errorMessage = error?.message || 'Unknown error';
       this.logger.error(`Delete message error: ${errorMessage}`);

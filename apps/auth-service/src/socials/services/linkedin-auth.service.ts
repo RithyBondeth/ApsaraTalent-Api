@@ -20,21 +20,21 @@ export class LinkedInAuthService implements ILinkedInAuthService {
   ) {}
 
   async linkedInLogin(
-    linkedInData: LinkedInAuthDTO,
+    linkedInDataDTO: LinkedInAuthDTO,
   ): Promise<LinkedInLoginResponseDTO> {
     try {
       const user = await this.users.findOne({
-        where: { email: linkedInData.email },
+        where: { email: linkedInDataDTO.email },
       });
 
       if (!user) {
         return new LinkedInLoginResponseDTO({
           message: 'Successfully logged in with LinkedIn',
           newUser: true,
-          email: linkedInData.email,
-          firstName: linkedInData.firstName,
-          lastName: linkedInData.lastName,
-          picture: linkedInData.picture,
+          email: linkedInDataDTO.email,
+          firstname: linkedInDataDTO.firstName,
+          lastname: linkedInDataDTO.lastName,
+          picture: linkedInDataDTO.picture,
           accessToken: null,
           refreshToken: null,
           provider: 'linkedin',
@@ -42,8 +42,8 @@ export class LinkedInAuthService implements ILinkedInAuthService {
       }
 
       // Update user with linkedinId and login tracking
-      if (!user.linkedinId && linkedInData.id) {
-        user.linkedinId = linkedInData.id;
+      if (!user.linkedinId && linkedInDataDTO.id) {
+        user.linkedinId = linkedInDataDTO.id;
       }
       user.lastLoginMethod = ELoginMethod.LINKEDIN;
       user.lastLoginAt = new Date();
@@ -74,8 +74,8 @@ export class LinkedInAuthService implements ILinkedInAuthService {
       this.logger.error('LinkedIn login error:', {
         error: (error as Error).message,
         stack: (error as Error).stack,
-        linkedinId: linkedInData.id,
-        email: linkedInData.email,
+        linkedinId: linkedInDataDTO.id,
+        email: linkedInDataDTO.email,
       });
       throw new Error('Failed to login with LinkedIn');
     }

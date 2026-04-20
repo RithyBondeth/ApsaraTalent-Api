@@ -20,12 +20,12 @@ export class GoogleAuthService implements IGoogleAuthService {
   ) {}
 
   async googleLogin(
-    googleData: GoogleAuthDTO,
+    googleDataDTO: GoogleAuthDTO,
   ): Promise<GoogleLoginResponseDTO> {
     try {
       // Find a user by email
       const user = await this.userRepository.findOne({
-        where: { email: googleData.email },
+        where: { email: googleDataDTO.email },
       });
 
       if (!user) {
@@ -33,10 +33,10 @@ export class GoogleAuthService implements IGoogleAuthService {
         return new GoogleLoginResponseDTO({
           message: 'Successfully Logged in with Google',
           newUser: true,
-          email: googleData.email,
-          firstName: googleData.firstName,
-          lastName: googleData.lastName,
-          picture: googleData.picture,
+          email: googleDataDTO.email,
+          firstname: googleDataDTO.firstName,
+          lastname: googleDataDTO.lastName,
+          picture: googleDataDTO.picture,
           accessToken: null,
           refreshToken: null,
           provider: 'google',
@@ -44,8 +44,8 @@ export class GoogleAuthService implements IGoogleAuthService {
       }
 
       // Update user with googleId and login tracking if not already set
-      if (!user.googleId && googleData.id) {
-        user.googleId = googleData.id;
+      if (!user.googleId && googleDataDTO.id) {
+        user.googleId = googleDataDTO.id;
       }
       user.lastLoginMethod = ELoginMethod.GOOGLE;
       user.lastLoginAt = new Date();
@@ -83,8 +83,8 @@ export class GoogleAuthService implements IGoogleAuthService {
       this.logger.error('Google login error:', {
         error: (error as Error).message,
         stack: (error as Error).stack,
-        googleId: googleData.id,
-        email: googleData.email,
+        googleId: googleDataDTO.id,
+        email: googleDataDTO.email,
       });
       throw new UnauthorizedException('Failed to authenticate with Google');
     }

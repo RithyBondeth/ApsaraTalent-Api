@@ -17,8 +17,8 @@ export class VerifyEmailController implements IBasicAuthVerifyEmailRpcController
 
   @MessagePattern(AUTH_SERVICE.ACTIONS.VERIFY_EMAIL)
   async verifyEmail(
-    @Payload() payload: VerifyEmailDTO,
+    @Payload() verifyEmailDTO: VerifyEmailDTO,
   ): Promise<VerifyEmailResponseDTO> {
-    return this.verifyEmailService.verifyEmail(payload.emailVerificationToken);
+    return this.verifyEmailService.verifyEmail(verifyEmailDTO);
   }
 }

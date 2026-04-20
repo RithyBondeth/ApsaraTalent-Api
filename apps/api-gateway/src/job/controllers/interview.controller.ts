@@ -6,7 +6,7 @@ import {
   CreateInterviewDTO,
   CreateInterviewResponseDTO,
   GetInterviewResponseDTO,
-  UpdateInterviewResponseDTO,
+  UpdateInterviewStatusResponseDTO,
   UpdateInterviewStatusDTO,
 } from '@app/contracts/dtos/job';
 import {
@@ -41,17 +41,20 @@ export class InterviewController
 
   @Post()
   async createInterview(
-    @Body() dto: CreateInterviewDTO,
+    @Body() createInterviewDTO: CreateInterviewDTO,
     @Req() req?: any,
   ): Promise<CreateInterviewResponseDTO> {
-    await this.assertCompanyAccess(req?.user?.id, dto.companyId);
+    await this.assertCompanyAccess(req?.user?.id, createInterviewDTO.companyId);
+
+    const createInterviewPayload = {
+      ...createInterviewDTO,
+      createdBy: 'company',
+    };
+
     return rpcCall<CreateInterviewResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.CREATE_INTERVIEW,
-      {
-        ...dto,
-        createdBy: 'company',
-      },
+      createInterviewPayload,
     );
   }
 
@@ -83,24 +86,27 @@ export class InterviewController
 
   @Patch('status')
   async updateInterviewStatus(
-    @Body() dto: UpdateInterviewStatusDTO,
+    @Body() updateInterviewStatusDTO: UpdateInterviewStatusDTO,
     @Req() req?: any,
-  ): Promise<UpdateInterviewResponseDTO> {
-    if (!req?.user?.id) {
-      throw new ForbiddenException('Unauthorized request.');
-    }
+  ): Promise<UpdateInterviewStatusResponseDTO> {
+    if (!req?.user?.id) throw new ForbiddenException('Unauthorized request.');
 
     const profile = await this.getCurrentUserProfile(req.user.id);
     const role = profile?.role;
 
-    if (!role || !['employee', 'company'].includes(role)) {
+    if (!role || !['employee', 'company'].includes(role))
       throw new ForbiddenException('Invalid user role.');
-    }
 
-    return rpcCall<UpdateInterviewResponseDTO>(
+    const updateInterviewStatusPayload = {
+      ...updateInterviewStatusDTO,
+      requestUserId: req.user.id,
+      requestUserRole: role,
+    };
+
+    return rpcCall<UpdateInterviewStatusResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.UPDATE_INTERVIEW_STATUS,
-      { ...dto, requestUserId: req.user.id, requestUserRole: role },
+      updateInterviewStatusPayload,
     );
   }
 }

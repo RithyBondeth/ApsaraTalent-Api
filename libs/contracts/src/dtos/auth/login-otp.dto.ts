@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsString } from 'class-validator';
+import { ForgotPasswordResponseDTO } from './forgot-password.dto';
 
 export class LoginOtpDTO {
   @IsString()
@@ -6,10 +7,8 @@ export class LoginOtpDTO {
   phone: string;
 }
 
-export class LoginOtpResponseDTO {
-  message: string;
-
+export class LoginOtpResponseDTO extends ForgotPasswordResponseDTO {
   constructor(partial: Partial<LoginOtpResponseDTO>) {
-    Object.assign(this, partial);
+    super(partial);
   }
 }

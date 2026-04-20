@@ -33,20 +33,24 @@ export class ChatController implements IChatController {
   @Post('initiate')
   @UseGuards(AuthGuard)
   async initiateChat(
-    @Body() body: InitiateChatDTO,
+    @Body() initiateChatDTO: InitiateChatDTO,
     @Req() req: any,
   ): Promise<InitiateChatResponseDTO> {
-    return rpcCall(this.chatClient, CHAT_SERVICE.ACTIONS.CREATE_OR_GET_CHAT, {
-      senderId: req.user.id,
-      receiverId: body.receiverId,
-    });
+    return rpcCall<InitiateChatResponseDTO>(
+      this.chatClient,
+      CHAT_SERVICE.ACTIONS.CREATE_OR_GET_CHAT,
+      {
+        senderId: req.user.id,
+        receiverId: initiateChatDTO.receiverId,
+      },
+    );
   }
 
   @Get('recent')
   @UseGuards(AuthGuard)
   async getRecentChats(@Req() req: any): Promise<InitiateChatResponseDTO[]> {
     try {
-      return await rpcCall(
+      return await rpcCall<InitiateChatResponseDTO[]>(
         this.chatClient,
         CHAT_SERVICE.ACTIONS.GET_RECENT_CHATS,
         req.user.id,
@@ -64,7 +68,6 @@ export class ChatController implements IChatController {
   @UseInterceptors(FileInterceptor('file', chatUploadMulterOptions))
   async uploadAttachment(
     @UploadedFile() file: Express.Multer.File,
-    @Req() req: any,
   ): Promise<UploadAttachmentResponseDTO> {
     if (!file) throw new BadRequestException('No file provided');
 
@@ -79,11 +82,11 @@ export class ChatController implements IChatController {
         ? 'audio'
         : 'document';
 
-    return {
+    return new UploadAttachmentResponseDTO({
       url: publicUrl,
       type,
       filename: file.originalname,
       size: file.size,
-    };
+    });
   }
 }

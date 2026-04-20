@@ -78,9 +78,11 @@ export interface RtcIceCandidate {
 
 export interface IChatController {
   initiateChat(
-    body: InitiateChatDTO,
+    initiateChatDTO: InitiateChatDTO,
     req: any,
   ): Promise<InitiateChatResponseDTO>;
   getRecentChats(req: any): Promise<InitiateChatResponseDTO[]>;
-  uploadAttachment(file: any, req: any): Promise<UploadAttachmentResponseDTO>;
+  uploadAttachment(
+    file: Express.Multer.File,
+  ): Promise<UploadAttachmentResponseDTO>;
 }

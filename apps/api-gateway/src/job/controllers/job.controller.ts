@@ -20,33 +20,38 @@ export class JobController implements IJobController {
 
   @Get('all')
   async findAllJobs(
-    @Query() pagination: PaginationDTO,
+    @Query() paginationDTO: PaginationDTO,
   ): Promise<JobResponseDTO[]> {
+    const paginationPayload = {
+      skip: paginationDTO.skip ?? 0,
+      limit: paginationDTO.limit ?? 20,
+    };
+
     return rpcCall<JobResponseDTO[]>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.FIND_ALL_JOBS,
-      { skip: pagination.skip ?? 0, limit: pagination.limit ?? 20 },
+      paginationPayload,
     );
   }
 
   @Get('search')
   async searchJobs(
-    @Query() searchJobQuery: SearchJobDTO,
+    @Query() searchJobDTO: SearchJobDTO,
   ): Promise<SearchJobResponseDTO[]> {
-    const transformedQuery = {
-      ...searchJobQuery,
-      ...(searchJobQuery.companySizeMin && {
-        companySizeMin: Number(searchJobQuery.companySizeMin),
+    const searchJobPayload = {
+      ...searchJobDTO,
+      ...(searchJobDTO.companySizeMin && {
+        companySizeMin: Number(searchJobDTO.companySizeMin),
       }),
-      ...(searchJobQuery.companySizeMax && {
-        companySizeMax: Number(searchJobQuery.companySizeMax),
+      ...(searchJobDTO.companySizeMax && {
+        companySizeMax: Number(searchJobDTO.companySizeMax),
       }),
     };
 
     return rpcCall<SearchJobResponseDTO[]>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.SEARCH_JOBS,
-      transformedQuery,
+      searchJobPayload,
     );
   }
 }

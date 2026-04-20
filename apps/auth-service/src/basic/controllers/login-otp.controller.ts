@@ -22,9 +22,9 @@ export class LoginOTPController implements IBasicAuthLoginOTPRpcController {
 
   @MessagePattern(AUTH_SERVICE.ACTIONS.LOGIN_OTP)
   async loginOtp(
-    @Payload() loginOtpOTP: LoginOtpDTO,
+    @Payload() loginOtpDTO: LoginOtpDTO,
   ): Promise<LoginOtpResponseDTO> {
-    return this.loginOtpService.loginOtp(loginOtpOTP);
+    return this.loginOtpService.loginOtp(loginOtpDTO);
   }
 
   @MessagePattern(AUTH_SERVICE.ACTIONS.VERIFY_OTP)

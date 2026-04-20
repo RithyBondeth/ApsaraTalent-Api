@@ -17,8 +17,8 @@ export class GithubAuthController implements IGithubAuthMicroserviceController {
 
   @MessagePattern(AUTH_SERVICE.ACTIONS.GITHUB_AUTH)
   async githubAuth(
-    @Payload() githubData: GithubAuthDTO,
+    @Payload() githubDataDTO: GithubAuthDTO,
   ): Promise<GithubLoginResponseDTO> {
-    return this.githubAuthService.githubLogin(githubData);
+    return this.githubAuthService.githubLogin(githubDataDTO);
   }
 }

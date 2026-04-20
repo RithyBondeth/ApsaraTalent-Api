@@ -20,12 +20,12 @@ export class FacebookAuthService implements IFacebookAuthService {
   ) {}
 
   async facebookLogin(
-    facebookData: FacebookAuthDTO,
+    facebookDataDTO: FacebookAuthDTO,
   ): Promise<FacebookLoginResponseDTO> {
     try {
       // Find a user by email
       const user = await this.userRepository.findOne({
-        where: { email: facebookData.email },
+        where: { email: facebookDataDTO.email },
       });
 
       if (!user) {
@@ -33,10 +33,10 @@ export class FacebookAuthService implements IFacebookAuthService {
         return new FacebookLoginResponseDTO({
           message: 'Successfully Logged in with Facebook',
           newUser: true,
-          email: facebookData.email,
-          firstname: facebookData.firstname,
-          lastname: facebookData.lastname,
-          picture: facebookData.picture,
+          email: facebookDataDTO.email,
+          firstname: facebookDataDTO.firstname,
+          lastname: facebookDataDTO.lastname,
+          picture: facebookDataDTO.picture,
           accessToken: null,
           refreshToken: null,
           provider: 'facebook',
@@ -44,8 +44,8 @@ export class FacebookAuthService implements IFacebookAuthService {
       }
 
       // Update user with facebookId and login tracking
-      if (!user.facebookId && facebookData.id) {
-        user.facebookId = facebookData.id;
+      if (!user.facebookId && facebookDataDTO.id) {
+        user.facebookId = facebookDataDTO.id;
       }
       user.lastLoginMethod = ELoginMethod.FACEBOOK;
       user.lastLoginAt = new Date();
@@ -83,8 +83,8 @@ export class FacebookAuthService implements IFacebookAuthService {
       this.logger.error('Facebook login error:', {
         error: (error as Error).message,
         stack: (error as Error).stack,
-        facebookId: facebookData.id,
-        email: facebookData.email,
+        facebookId: facebookDataDTO.id,
+        email: facebookDataDTO.email,
       });
       throw new UnauthorizedException('Failed to authenticate with Facebook');
     }

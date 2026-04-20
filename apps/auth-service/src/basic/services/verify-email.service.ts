@@ -5,7 +5,7 @@ import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
-import { VerifyEmailResponseDTO } from '@app/contracts';
+import { VerifyEmailDTO, VerifyEmailResponseDTO } from '@app/contracts';
 
 import { IVerifyEmailService } from '@app/contracts/interfaces/service/auth-service.interface';
 
@@ -18,16 +18,16 @@ export class VerifyEmailService implements IVerifyEmailService {
   ) {}
 
   async verifyEmail(
-    emailVerificationToken: string,
+    verifyEmailDTO: VerifyEmailDTO,
   ): Promise<VerifyEmailResponseDTO> {
     try {
       //Find the user by email verification token
       const decoded = await this.jwtService.verifyEmailToken(
-        emailVerificationToken,
+        verifyEmailDTO.emailVerificationToken,
       );
       const user = await this.userRepository.findOne({
         where: {
-          emailVerificationToken: emailVerificationToken,
+          emailVerificationToken: verifyEmailDTO.emailVerificationToken,
           email: decoded.email,
         },
       });

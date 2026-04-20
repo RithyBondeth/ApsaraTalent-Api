@@ -20,12 +20,12 @@ export class GithubAuthService implements IGithubAuthService {
   ) {}
 
   async githubLogin(
-    githubData: GithubAuthDTO,
+    githubDataDTO: GithubAuthDTO,
   ): Promise<GithubLoginResponseDTO> {
     try {
       // Find a user by email
       const user = await this.userRepository.findOne({
-        where: { email: githubData.email },
+        where: { email: githubDataDTO.email },
       });
 
       if (!user) {
@@ -33,16 +33,16 @@ export class GithubAuthService implements IGithubAuthService {
         return new GithubLoginResponseDTO({
           message: 'Successfully Logged in with Github',
           newUser: true,
-          email: githubData.email,
-          username: githubData.username,
-          picture: githubData.picture,
-          provider: githubData.provider,
+          email: githubDataDTO.email,
+          username: githubDataDTO.username,
+          picture: githubDataDTO.picture,
+          provider: githubDataDTO.provider,
         });
       }
 
       // Update user with githubId and login tracking
-      if (!user.githubId && githubData.id) {
-        user.githubId = githubData.id;
+      if (!user.githubId && githubDataDTO.id) {
+        user.githubId = githubDataDTO.id;
       }
       user.lastLoginMethod = ELoginMethod.GITHUB;
       user.lastLoginAt = new Date();
@@ -79,8 +79,8 @@ export class GithubAuthService implements IGithubAuthService {
       this.logger.error('Google login error:', {
         error: (error as Error).message,
         stack: (error as Error).stack,
-        githubId: githubData.id,
-        email: githubData.email,
+        githubId: githubDataDTO.id,
+        email: githubDataDTO.email,
       });
       throw new UnauthorizedException('Failed to authenticate with Github');
     }

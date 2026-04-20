@@ -22,15 +22,15 @@ export class RegisterController implements IBasicAuthRegisterRpcController {
 
   @MessagePattern(AUTH_SERVICE.ACTIONS.REGISTER_COMPANY)
   async registerCompany(
-    @Payload() registerCompany: CompanyRegisterDTO,
+    @Payload() registerCompanyDTO: CompanyRegisterDTO,
   ): Promise<CompanyRegisterResponseDTO> {
-    return this.registerService.companyRegister(registerCompany);
+    return this.registerService.companyRegister(registerCompanyDTO);
   }
 
   @MessagePattern(AUTH_SERVICE.ACTIONS.REGISTER_EMPLOYEE)
   async registerEmployee(
-    @Payload() registerEmployeeDto: EmployeeRegisterDTO,
+    @Payload() registerEmployeeDTO: EmployeeRegisterDTO,
   ): Promise<EmployeeRegisterResponseDTO> {
-    return this.registerService.employeeRegister(registerEmployeeDto);
+    return this.registerService.employeeRegister(registerEmployeeDTO);
   }
 }

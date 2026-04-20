@@ -40,27 +40,27 @@ export class JobMatchingController
 
   @Post('employee/:eid/like/:cid')
   async employeeLikes(
-    @Param() matchDto: MatchDTO,
+    @Param() matchDTO: MatchDTO,
     @Req() req?: any,
   ): Promise<MatchResponseDTO> {
-    await this.assertEmployeeAccess(req?.user?.id, matchDto.eid);
+    await this.assertEmployeeAccess(req?.user?.id, matchDTO.eid);
     return rpcCall<MatchResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.EMPLOYEE_LIKES,
-      matchDto,
+      matchDTO,
     );
   }
 
   @Post('company/:cid/like/:eid')
   async companyLikes(
-    @Param() matchDto: MatchDTO,
+    @Param() matchDTO: MatchDTO,
     @Req() req?: any,
   ): Promise<MatchResponseDTO> {
-    await this.assertCompanyAccess(req?.user?.id, matchDto.cid);
+    await this.assertCompanyAccess(req?.user?.id, matchDTO.cid);
     return rpcCall<MatchResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.COMPANY_LIKES,
-      matchDto,
+      matchDTO,
     );
   }
 
@@ -147,13 +147,14 @@ export class JobMatchingController
     @Param('id') id: string,
     @Query('role') role: string,
   ): Promise<AnalyticsResponseDTO> {
+    const analyticsPayload = {
+      userId: id,
+      role,
+    };
     return rpcCall<AnalyticsResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.GET_ANALYTICS,
-      {
-        userId: id,
-        role,
-      },
+      analyticsPayload,
     );
   }
 }
