@@ -165,10 +165,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.SEND_MESSAGE)
   async handleMessage(
     client: Socket,
-    SendMessageDTO: SendMessageDTO,
+    sendMessageDTO: SendMessageDTO,
   ): Promise<SendMessageResponseDTO | void> {
     this.logger.log(
-      `[WS] sendMessage received from userId=${client.data.userId}, receiverId=${SendMessageDTO?.receiverId}, content.length=${SendMessageDTO?.content?.length}`,
+      `[WS] sendMessage received from userId=${client.data.userId}, receiverId=${sendMessageDTO?.receiverId}, content.length=${sendMessageDTO?.content?.length}`,
     );
     try {
       if (!client.data.userId) {
@@ -182,8 +182,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       if (
-        !SendMessageDTO?.receiverId ||
-        typeof SendMessageDTO.receiverId !== 'string'
+        !sendMessageDTO?.receiverId ||
+        typeof sendMessageDTO.receiverId !== 'string'
       ) {
         client.emit('error', {
           message: 'Invalid message payload: missing receiverId',
@@ -191,8 +191,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return;
       }
 
-      const trimmedContent = SendMessageDTO?.content?.trim() ?? '';
-      const hasAttachment = !!SendMessageDTO?.attachment;
+      const trimmedContent = sendMessageDTO?.content?.trim() ?? '';
+      const hasAttachment = !!sendMessageDTO?.attachment;
       if (trimmedContent.length > CHAT.MAX_MESSAGE_LENGTH) {
         client.emit('error', {
           message: `Message must be at most ${CHAT.MAX_MESSAGE_LENGTH} characters`,
@@ -204,7 +204,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return;
       }
 
-      const messageType = SendMessageDTO.type ?? 'text';
+      const messageType = sendMessageDTO.type ?? 'text';
       if (!this.VALID_MESSAGE_TYPES.includes(messageType as any)) {
         client.emit('error', { message: 'Invalid message type' });
         return;
@@ -213,7 +213,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const usersData = await firstValueFrom(
         this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.VALIDATE_CHAT_USERS, {
           senderId: client.data.userId,
-          receiverId: SendMessageDTO.receiverId,
+          receiverId: sendMessageDTO.receiverId,
         }),
       );
 
@@ -223,11 +223,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         content: trimmedContent,
         type: messageType,
         timestamp: new Date(),
-        replyToId: SendMessageDTO.replyToId ?? null,
-        attachment: SendMessageDTO.attachment ?? null,
-        attachmentFilename: SendMessageDTO.attachmentFilename ?? null,
-        attachmentDuration: SendMessageDTO.attachmentDuration ?? null,
-        attachmentAmplitude: SendMessageDTO.attachmentAmplitude ?? null,
+        replyToId: sendMessageDTO.replyToId ?? null,
+        attachment: sendMessageDTO.attachment ?? null,
+        attachmentFilename: sendMessageDTO.attachmentFilename ?? null,
+        attachmentDuration: sendMessageDTO.attachmentDuration ?? null,
+        attachmentAmplitude: sendMessageDTO.attachmentAmplitude ?? null,
       };
 
       const savedMessage = await firstValueFrom(
@@ -257,7 +257,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         messageType,
         content: trimmedContent,
         hasAttachment,
-        attachmentFilename: SendMessageDTO.attachmentFilename ?? null,
+        attachmentFilename: sendMessageDTO.attachmentFilename ?? null,
         messageId: savedMessage.id,
       });
 

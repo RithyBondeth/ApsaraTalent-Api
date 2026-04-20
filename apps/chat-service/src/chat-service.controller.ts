@@ -10,6 +10,8 @@ import {
 import {
   CreateOrGetChatDTO,
   GetRecentChatsResponseDTO,
+  IChatController,
+  IChatRpcController,
   InitiateChatResponseDTO,
   ValidateChatUsersDTO,
   ValidateChatUsersResponseDTO,
@@ -40,7 +42,7 @@ import {
 } from '@app/contracts/dtos/chat/chat-gateway/mark-as-read.dto';
 
 @Controller()
-export class ChatController {
+export class ChatController implements IChatRpcController {
   constructor(
     @Inject(I_CHAT_SERVICE) private readonly chatService: IChatService,
     private readonly logger: PinoLogger,
@@ -90,7 +92,7 @@ export class ChatController {
     const result =
       await this.chatService.validateChatUsers(validateChatUsersDTO);
     this.logger.info(
-      `[CHAT] ✅ validateChatUsers OK: sender=${result.sender?.email}, receiver=${result.receiver?.email}`,
+      `[CHAT] validateChatUsers OK: sender=${result.sender?.email}, receiver=${result.receiver?.email}`,
     );
     return result;
   }
@@ -104,8 +106,7 @@ export class ChatController {
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.GET_UNREAD_COUNT)
   async getUnreadCount(@Payload() userId: string): Promise<number> {
-    const count = await this.chatService.getUnreadCount(userId);
-    return count;
+    return await this.chatService.getUnreadCount(userId);
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.GET_RECENT_CHATS)

@@ -17,7 +17,7 @@ import {
   CompanyMatchLookupDTO,
   EmployeeMatchLookupDTO,
   MatchAnalyticsItemDTO,
-  MatchAnalyticsRequestDTO,
+  MatchAnalyticsDTO,
   MatchCountResponseDTO,
   MatchDTO,
   MatchResponseDTO,
@@ -47,15 +47,15 @@ export class MatchingService implements IMatchingService {
     private readonly notificationClient: ClientProxy,
   ) {}
 
-  async employeeLikes(matchDto: MatchDTO): Promise<MatchResponseDTO> {
+  async employeeLikes(matchDTO: MatchDTO): Promise<MatchResponseDTO> {
     try {
       const [employee, company] = await Promise.all([
         this.employeeRepo.findOne({
-          where: { id: matchDto.eid },
+          where: { id: matchDTO.eid },
           relations: ['user'],
         }),
         this.companyRepo.findOne({
-          where: { id: matchDto.cid },
+          where: { id: matchDTO.cid },
           relations: ['user'],
         }),
       ]);
@@ -69,8 +69,8 @@ export class MatchingService implements IMatchingService {
 
       let match = await this.jobMatchingRepo.findOne({
         where: {
-          employee: { id: matchDto.eid },
-          company: { id: matchDto.cid },
+          employee: { id: matchDTO.eid },
+          company: { id: matchDTO.cid },
         },
         relations: ['employee', 'company'],
       });
@@ -97,18 +97,18 @@ export class MatchingService implements IMatchingService {
 
       // Tinder-style: remove from employee's saved companies when liked
       await this.employeeFavoriteCompanyRepo.delete({
-        employee: { id: matchDto.eid },
-        company: { id: matchDto.cid },
+        employee: { id: matchDTO.eid },
+        company: { id: matchDTO.cid },
       });
 
       // Invalidate matching + favorites caches for both sides
       await Promise.all([
-        this.redisService.invalidateMatchingCaches(matchDto.eid, matchDto.cid),
+        this.redisService.invalidateMatchingCaches(matchDTO.eid, matchDTO.cid),
         this.redisService.del(
-          this.redisService.generateEmployeeFavoritesKey(matchDto.eid),
+          this.redisService.generateEmployeeFavoritesKey(matchDTO.eid),
         ),
         this.redisService.del(
-          this.redisService.generateEmployeeFavoriteCountKey(matchDto.eid),
+          this.redisService.generateEmployeeFavoriteCountKey(matchDTO.eid),
         ),
       ]);
 
@@ -121,7 +121,7 @@ export class MatchingService implements IMatchingService {
               title: "It's a Match!",
               message: `${employee.username || employee.firstname} and your company liked each other!`,
               type: 'match',
-              data: { employeeId: matchDto.eid, companyId: matchDto.cid },
+              data: { employeeId: matchDTO.eid, companyId: matchDTO.cid },
               sendPush: true,
               senderAvatar: employee.avatar || null,
             }
@@ -130,7 +130,7 @@ export class MatchingService implements IMatchingService {
               title: 'New Like',
               message: `${employee.username || employee.firstname} liked your company!`,
               type: 'like',
-              data: { employeeId: matchDto.eid, companyId: matchDto.cid },
+              data: { employeeId: matchDTO.eid, companyId: matchDTO.cid },
               sendPush: true,
               senderAvatar: employee.avatar || null,
             };
@@ -165,15 +165,15 @@ export class MatchingService implements IMatchingService {
     }
   }
 
-  async companyLikes(matchDto: MatchDTO): Promise<MatchResponseDTO> {
+  async companyLikes(matchDTO: MatchDTO): Promise<MatchResponseDTO> {
     try {
       const [employee, company] = await Promise.all([
         this.employeeRepo.findOne({
-          where: { id: matchDto.eid },
+          where: { id: matchDTO.eid },
           relations: ['user'],
         }),
         this.companyRepo.findOne({
-          where: { id: matchDto.cid },
+          where: { id: matchDTO.cid },
           relations: ['user'],
         }),
       ]);
@@ -187,8 +187,8 @@ export class MatchingService implements IMatchingService {
 
       let match = await this.jobMatchingRepo.findOne({
         where: {
-          employee: { id: matchDto.eid },
-          company: { id: matchDto.cid },
+          employee: { id: matchDTO.eid },
+          company: { id: matchDTO.cid },
         },
         relations: ['employee', 'company'],
       });
@@ -215,18 +215,18 @@ export class MatchingService implements IMatchingService {
 
       // Tinder-style: remove from company's saved employees when liked
       await this.companyFavoriteEmployeeRepo.delete({
-        company: { id: matchDto.cid },
-        employee: { id: matchDto.eid },
+        company: { id: matchDTO.cid },
+        employee: { id: matchDTO.eid },
       });
 
       // Invalidate matching + favorites caches for both sides
       await Promise.all([
-        this.redisService.invalidateMatchingCaches(matchDto.eid, matchDto.cid),
+        this.redisService.invalidateMatchingCaches(matchDTO.eid, matchDTO.cid),
         this.redisService.del(
-          this.redisService.generateCompanyFavoritesKey(matchDto.cid),
+          this.redisService.generateCompanyFavoritesKey(matchDTO.cid),
         ),
         this.redisService.del(
-          this.redisService.generateCompanyFavoriteCountKey(matchDto.cid),
+          this.redisService.generateCompanyFavoriteCountKey(matchDTO.cid),
         ),
       ]);
 
@@ -239,7 +239,7 @@ export class MatchingService implements IMatchingService {
               title: "It's a Match!",
               message: `${company.name} and you liked each other!`,
               type: 'match',
-              data: { employeeId: matchDto.eid, companyId: matchDto.cid },
+              data: { employeeId: matchDTO.eid, companyId: matchDTO.cid },
               sendPush: true,
               senderAvatar: company.avatar || null,
             }
@@ -248,7 +248,7 @@ export class MatchingService implements IMatchingService {
               title: 'New Like',
               message: `${company.name} liked your profile!`,
               type: 'like',
-              data: { employeeId: matchDto.eid, companyId: matchDto.cid },
+              data: { employeeId: matchDTO.eid, companyId: matchDTO.cid },
               sendPush: true,
               senderAvatar: company.avatar || null,
             };
@@ -284,18 +284,21 @@ export class MatchingService implements IMatchingService {
   }
 
   async findCurrentEmployeeLiked(
-    dto: EmployeeMatchLookupDTO,
+    employeeMatchLookupDTO: EmployeeMatchLookupDTO,
   ): Promise<UserResponseDTO[]> {
     const cacheKey = this.redisService.generateMatchingKey(
       'employee-liked',
-      dto.eid,
+      employeeMatchLookupDTO.eid,
     );
     const cached = await this.redisService.get<UserResponseDTO[]>(cacheKey);
     if (cached) return cached;
 
     try {
       const employeeLiked = await this.jobMatchingRepo.find({
-        where: { employee: { id: dto.eid }, employeeLiked: true },
+        where: {
+          employee: { id: employeeMatchLookupDTO.eid },
+          employeeLiked: true,
+        },
         relations: ['company', 'company.openPositions'],
       });
 
@@ -321,18 +324,21 @@ export class MatchingService implements IMatchingService {
   }
 
   async findCurrentCompanyLiked(
-    dto: CompanyMatchLookupDTO,
+    companyMatchLookupDTO: CompanyMatchLookupDTO,
   ): Promise<UserResponseDTO[]> {
     const cacheKey = this.redisService.generateMatchingKey(
       'company-liked',
-      dto.cid,
+      companyMatchLookupDTO.cid,
     );
     const cached = await this.redisService.get<UserResponseDTO[]>(cacheKey);
     if (cached) return cached;
 
     try {
       const companyLiked = await this.jobMatchingRepo.find({
-        where: { company: { id: dto.cid }, companyLiked: true },
+        where: {
+          company: { id: companyMatchLookupDTO.cid },
+          companyLiked: true,
+        },
         relations: ['employee', 'employee.skills'],
       });
 
@@ -358,18 +364,21 @@ export class MatchingService implements IMatchingService {
   }
 
   async findCurrentEmployeeMatching(
-    dto: EmployeeMatchLookupDTO,
+    employeeMatchLookupDTO: EmployeeMatchLookupDTO,
   ): Promise<UserResponseDTO[]> {
     const cacheKey = this.redisService.generateMatchingKey(
       'employee-matching',
-      dto.eid,
+      employeeMatchLookupDTO.eid,
     );
     const cached = await this.redisService.get<UserResponseDTO[]>(cacheKey);
     if (cached) return cached;
 
     try {
       const currentEmployeeMatching = await this.jobMatchingRepo.find({
-        where: { employee: { id: dto.eid }, isMatched: true },
+        where: {
+          employee: { id: employeeMatchLookupDTO.eid },
+          isMatched: true,
+        },
         relations: ['company.openPositions'],
       });
 
@@ -397,18 +406,21 @@ export class MatchingService implements IMatchingService {
   }
 
   async findCurrentCompanyMatching(
-    dto: CompanyMatchLookupDTO,
+    companyMatchLookupDTO: CompanyMatchLookupDTO,
   ): Promise<UserResponseDTO[]> {
     const cacheKey = this.redisService.generateMatchingKey(
       'company-matching',
-      dto.cid,
+      companyMatchLookupDTO.cid,
     );
     const cached = await this.redisService.get<UserResponseDTO[]>(cacheKey);
     if (cached) return cached;
 
     try {
       const currentCompanyMatching = await this.jobMatchingRepo.find({
-        where: { company: { id: dto.cid }, isMatched: true },
+        where: {
+          company: { id: companyMatchLookupDTO.cid },
+          isMatched: true,
+        },
         relations: ['employee.skills'],
       });
 
@@ -436,18 +448,21 @@ export class MatchingService implements IMatchingService {
   }
 
   async findCurrentEmployeeMatchingCount(
-    dto: EmployeeMatchLookupDTO,
+    employeeMatchLookupDTO: EmployeeMatchLookupDTO,
   ): Promise<MatchCountResponseDTO> {
     const cacheKey = this.redisService.generateMatchingKey(
       'employee-matching-count',
-      dto.eid,
+      employeeMatchLookupDTO.eid,
     );
     const cached = await this.redisService.get<MatchCountResponseDTO>(cacheKey);
     if (cached) return cached;
 
     try {
       const count = await this.jobMatchingRepo.count({
-        where: { employee: { id: dto.eid }, isMatched: true },
+        where: {
+          employee: { id: employeeMatchLookupDTO.eid },
+          isMatched: true,
+        },
       });
       const result = new MatchCountResponseDTO({ count });
       await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
@@ -465,11 +480,11 @@ export class MatchingService implements IMatchingService {
   }
 
   async getAnalytics(
-    dto: MatchAnalyticsRequestDTO,
+    matchAnalyticsDTO: MatchAnalyticsDTO,
   ): Promise<AnalyticsResponseDTO> {
     // No caching — dashboard should always show real-time data.
     try {
-      const isEmployee = dto.role === 'employee';
+      const isEmployee = matchAnalyticsDTO.role === 'employee';
       const entityField = isEmployee ? 'employee' : 'company';
       const likeGivenField = isEmployee ? 'employeeLiked' : 'companyLiked';
       const likeReceivedField = isEmployee ? 'companyLiked' : 'employeeLiked';
@@ -485,16 +500,25 @@ export class MatchingService implements IMatchingService {
         totalFavorites,
       ] = await Promise.all([
         this.jobMatchingRepo.count({
-          where: { [entityField]: { id: dto.userId }, [likeGivenField]: true },
+          where: {
+            [entityField]: { id: matchAnalyticsDTO.userId },
+            [likeGivenField]: true,
+          },
         }),
         this.jobMatchingRepo.count({
-          where: { [entityField]: { id: dto.userId }, [likeReceivedField]: true },
+          where: {
+            [entityField]: { id: matchAnalyticsDTO.userId },
+            [likeReceivedField]: true,
+          },
         }),
         this.jobMatchingRepo.count({
-          where: { [entityField]: { id: dto.userId }, isMatched: true },
+          where: {
+            [entityField]: { id: matchAnalyticsDTO.userId },
+            isMatched: true,
+          },
         }),
         favoriteRepo.count({
-          where: { [entityField]: { id: dto.userId } },
+          where: { [entityField]: { id: matchAnalyticsDTO.userId } },
         }),
       ]);
 
@@ -505,7 +529,7 @@ export class MatchingService implements IMatchingService {
 
       // ── Weekly activity (last 7 days) for bar chart ──
       const weeklyActivity = await this.getWeeklyActivity(
-        dto.userId,
+        matchAnalyticsDTO.userId,
         entityField,
         likeGivenField,
         likeReceivedField,
@@ -513,7 +537,7 @@ export class MatchingService implements IMatchingService {
 
       // ── Recent matches (last 5) for list ──
       const recentMatches = await this.getRecentMatches(
-        dto.userId,
+        matchAnalyticsDTO.userId,
         entityField,
         isEmployee,
       );
@@ -619,18 +643,21 @@ export class MatchingService implements IMatchingService {
   }
 
   async findCurrentCompanyMatchingCount(
-    dto: CompanyMatchLookupDTO,
+    companyMatchLookupDTO: CompanyMatchLookupDTO,
   ): Promise<MatchCountResponseDTO> {
     const cacheKey = this.redisService.generateMatchingKey(
       'company-matching-count',
-      dto.cid,
+      companyMatchLookupDTO.cid,
     );
     const cached = await this.redisService.get<MatchCountResponseDTO>(cacheKey);
     if (cached) return cached;
 
     try {
       const count = await this.jobMatchingRepo.count({
-        where: { company: { id: dto.cid }, isMatched: true },
+        where: {
+          company: { id: companyMatchLookupDTO.cid },
+          isMatched: true,
+        },
       });
       const result = new MatchCountResponseDTO({ count });
       await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);

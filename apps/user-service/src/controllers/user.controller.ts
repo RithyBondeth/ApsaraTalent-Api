@@ -25,7 +25,6 @@ import {
   EmployeeRecommendationsDTO,
   CompanyRecommendationsDTO,
 } from '@app/contracts/dtos/user';
-
 import {
   I_USER_SERVICE,
   IUserService,

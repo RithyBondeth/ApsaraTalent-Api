@@ -6,7 +6,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
-import { AuthController } from './auth.controller';
+import { AuthController } from './basic/controllers/auth.controller';
 import { FacebookController } from './socials/controllers/facebook.controller';
 import { GithubController } from './socials/controllers/github.controller';
 import { GoogleController } from './socials/controllers/google.controller';

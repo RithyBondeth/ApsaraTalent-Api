@@ -6,3 +6,7 @@ export interface IHealthController {
   checkReadiness(): Promise<HealthCheckResult>;
   checkLiveness(): LivenessResponseDTO;
 }
+
+export interface IHealthRpcController {
+  checkHealth(): Promise<HealthCheckResult>;
+}

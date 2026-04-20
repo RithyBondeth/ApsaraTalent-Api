@@ -325,7 +325,7 @@ export class UserService implements IUserService, OnModuleInit {
 
       await this.empFavoriteCmpRepository.save(favorite);
 
-      // ✅ Use helper methods for consistent cache invalidation
+      // Use helper methods for consistent cache invalidation
       await Promise.all([
         this.redisService.del(
           this.redisService.generateEmployeeFavoritesKey(eid),
@@ -341,7 +341,7 @@ export class UserService implements IUserService, OnModuleInit {
         ),
       ]);
 
-      // ✅ Emit events for other services if needed
+      // Emit events for other services if needed
       this.eventEmitter.emit('employee.favorites.updated', { employeeId: eid });
       this.eventEmitter.emit('company.favorites.updated', { companyId: cid });
 
@@ -393,7 +393,7 @@ export class UserService implements IUserService, OnModuleInit {
 
       await this.empFavoriteCmpRepository.remove(favoriteToRemove);
 
-      // ✅ Use helper methods for consistent cache invalidation
+      // Use helper methods for consistent cache invalidation
       await Promise.all([
         this.redisService.del(
           this.redisService.generateEmployeeFavoritesKey(eid),
@@ -409,7 +409,7 @@ export class UserService implements IUserService, OnModuleInit {
         ),
       ]);
 
-      // ✅ Emit events
+      // Emit events
       this.eventEmitter.emit('employee.favorites.updated', { employeeId: eid });
       this.eventEmitter.emit('company.favorites.updated', { companyId: cid });
 
@@ -458,7 +458,7 @@ export class UserService implements IUserService, OnModuleInit {
 
       await this.cmpFavoriteEmpRepository.save(favorite);
 
-      // ✅ Use helper methods for consistent cache invalidation
+      // Use helper methods for consistent cache invalidation
       await Promise.all([
         this.redisService.del(
           this.redisService.generateCompanyFavoritesKey(cid),
@@ -474,7 +474,7 @@ export class UserService implements IUserService, OnModuleInit {
         ),
       ]);
 
-      // ✅ Emit events
+      // Emit events
       this.eventEmitter.emit('company.favorites.updated', { companyId: cid });
       this.eventEmitter.emit('employee.favorites.updated', { employeeId: eid });
 
@@ -526,7 +526,7 @@ export class UserService implements IUserService, OnModuleInit {
 
       await this.cmpFavoriteEmpRepository.remove(favoriteToRemove);
 
-      // ✅ Use helper methods for consistent cache invalidation
+      // Use helper methods for consistent cache invalidation
       await Promise.all([
         this.redisService.del(
           this.redisService.generateCompanyFavoritesKey(cid),
@@ -542,7 +542,7 @@ export class UserService implements IUserService, OnModuleInit {
         ),
       ]);
 
-      // ✅ Emit events
+      // Emit events
       this.eventEmitter.emit('company.favorites.updated', { companyId: cid });
       this.eventEmitter.emit('employee.favorites.updated', { employeeId: eid });
 
@@ -570,7 +570,7 @@ export class UserService implements IUserService, OnModuleInit {
     employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
   ): Promise<CompanyResponseDTO[]> {
     const { eid } = employeeFavoriteLookupDTO;
-    // ✅ Use helper method
+    // Use helper method
     const cacheKey = this.redisService.generateEmployeeFavoritesKey(eid);
     const cached = await this.redisService.get<CompanyResponseDTO[]>(cacheKey);
 
@@ -626,7 +626,7 @@ export class UserService implements IUserService, OnModuleInit {
     companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
   ): Promise<EmployeeResponseDTO[]> {
     const { cid } = companyFavoriteLookupDTO;
-    // ✅ Use helper method
+    // Use helper method
     const cacheKey = this.redisService.generateCompanyFavoritesKey(cid);
     const cached = await this.redisService.get<EmployeeResponseDTO[]>(cacheKey);
 
@@ -676,7 +676,7 @@ export class UserService implements IUserService, OnModuleInit {
     companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
   ): Promise<FavoriteCountResponseDTO> {
     const { cid } = companyFavoriteLookupDTO;
-    // ✅ Use helper method
+    // Use helper method
     const cacheKey = this.redisService.generateCompanyFavoriteCountKey(cid);
     const cached =
       await this.redisService.get<FavoriteCountResponseDTO>(cacheKey);
@@ -717,7 +717,7 @@ export class UserService implements IUserService, OnModuleInit {
     employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
   ): Promise<FavoriteCountResponseDTO> {
     const { eid } = employeeFavoriteLookupDTO;
-    // ✅ Use helper method
+    // Use helper method
     const cacheKey = this.redisService.generateEmployeeFavoriteCountKey(eid);
     const cached =
       await this.redisService.get<FavoriteCountResponseDTO>(cacheKey);

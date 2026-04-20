@@ -35,8 +35,8 @@ import {
   VerifyOtpResponseDTO,
   VerifyEmailDTO,
 } from '@app/contracts/dtos/auth';
-import { setAuthTokenCookies } from './utils/auth-cookie.util';
-import { sendAuthServiceRequest } from './utils/auth-rpc.util';
+import { setAuthTokenCookies } from '../../utils/auth-cookie.util';
+import { sendAuthServiceRequest } from '../../utils/auth-rpc.util';
 
 @Controller('auth')
 export class AuthController implements IBasicAuthController {

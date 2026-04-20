@@ -140,11 +140,11 @@ export class InterviewService implements IInterviewService {
   }
 
   async getInterviewsByEmployee(
-    dto: GetInterviewsByEmployeeDTO,
+    getInterviewsByEmployeeDTO: GetInterviewsByEmployeeDTO,
   ): Promise<GetInterviewResponseDTO[]> {
     try {
       const interviews = await this.interviewRepo.find({
-        where: { employee: { id: dto.employeeId } },
+        where: { employee: { id: getInterviewsByEmployeeDTO.employeeId } },
         relations: ['company'],
         order: { scheduledAt: 'ASC' },
       });
@@ -162,11 +162,11 @@ export class InterviewService implements IInterviewService {
   }
 
   async getInterviewsByCompany(
-    dto: GetInterviewsByCompanyDTO,
+    getInterviewsByCompanyDTO: GetInterviewsByCompanyDTO,
   ): Promise<GetInterviewResponseDTO[]> {
     try {
       const interviews = await this.interviewRepo.find({
-        where: { company: { id: dto.companyId } },
+        where: { company: { id: getInterviewsByCompanyDTO.companyId } },
         relations: ['employee'],
         order: { scheduledAt: 'ASC' },
       });
@@ -184,11 +184,11 @@ export class InterviewService implements IInterviewService {
   }
 
   async updateInterviewStatus(
-    updateInterview: UpdateInterviewStatusDTO,
+    updateInterviewDTO: UpdateInterviewStatusDTO,
   ): Promise<UpdateInterviewStatusResponseDTO> {
     try {
       const interview = await this.interviewRepo.findOne({
-        where: { id: updateInterview.interviewId },
+        where: { id: updateInterviewDTO.interviewId },
         relations: ['employee', 'employee.user', 'company', 'company.user'],
       });
 
@@ -204,8 +204,8 @@ export class InterviewService implements IInterviewService {
       const companyUserId = interview.company?.user?.id;
 
       if (
-        updateInterview.requestUserId !== employeeUserId &&
-        updateInterview.requestUserId !== companyUserId
+        updateInterviewDTO.requestUserId !== employeeUserId &&
+        updateInterviewDTO.requestUserId !== companyUserId
       ) {
         throw new RpcException({
           message: 'You are not involved in this interview.',
@@ -214,14 +214,14 @@ export class InterviewService implements IInterviewService {
       }
 
       // ── Role-based action control ──
-      const isEmployee = updateInterview.requestUserId === employeeUserId;
-      const isCompany = updateInterview.requestUserId === companyUserId;
+      const isEmployee = updateInterviewDTO.requestUserId === employeeUserId;
+      const isCompany = updateInterviewDTO.requestUserId === companyUserId;
 
       // Employees can only accept or decline pending interviews
       if (
         isEmployee &&
         ![InterviewStatus.ACCEPTED, InterviewStatus.DECLINED].includes(
-          updateInterview.status,
+          updateInterviewDTO.status,
         )
       ) {
         throw new RpcException({
@@ -234,7 +234,7 @@ export class InterviewService implements IInterviewService {
       if (
         isCompany &&
         ![InterviewStatus.CANCELLED, InterviewStatus.COMPLETED].includes(
-          updateInterview.status,
+          updateInterviewDTO.status,
         )
       ) {
         throw new RpcException({
@@ -246,20 +246,20 @@ export class InterviewService implements IInterviewService {
       // ── Status transition validation ──
       const allowedTransitions =
         VALID_STATUS_TRANSITIONS[interview.status] || [];
-      if (!allowedTransitions.includes(updateInterview.status)) {
+      if (!allowedTransitions.includes(updateInterviewDTO.status)) {
         throw new RpcException({
-          message: `Cannot transition from "${interview.status}" to "${updateInterview.status}".`,
+          message: `Cannot transition from "${interview.status}" to "${updateInterviewDTO.status}".`,
           statusCode: 400,
         });
       }
 
-      interview.status = updateInterview.status;
+      interview.status = updateInterviewDTO.status;
       const saved = await this.interviewRepo.save(interview);
 
       // Notify both parties about the status change
       const statusLabel =
-        updateInterview.status.charAt(0).toUpperCase() +
-        updateInterview.status.slice(1);
+        updateInterviewDTO.status.charAt(0).toUpperCase() +
+        updateInterviewDTO.status.slice(1);
 
       [employeeUserId, companyUserId].filter(Boolean).forEach((userId) => {
         this.notificationClient.emit(
@@ -267,7 +267,7 @@ export class InterviewService implements IInterviewService {
           {
             userId,
             title: `Interview ${statusLabel}`,
-            message: `Interview "${interview.title}" has been ${updateInterview.status}.`,
+            message: `Interview "${interview.title}" has been ${updateInterviewDTO.status}.`,
             type: 'interview',
             data: { interviewId: interview.id },
             sendPush: true,

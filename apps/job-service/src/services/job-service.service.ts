@@ -11,13 +11,12 @@ import {
   SearchJobResponseDTO,
   SearchJobDTO,
 } from '@app/contracts/dtos/job';
-
-const JOB_LIST_TTL = 5 * 60 * 1000; // 5 min
-const JOB_SEARCH_TTL = 2 * 60 * 1000; // 2 min
-
 import { IJobServiceService } from '@app/contracts/interfaces/service/job-service.interface';
 import { JOB } from '@app/contracts/constants/domain/job.constant';
 import { PaginationDTO } from '@app/contracts';
+
+const JOB_LIST_TTL = 5 * 60 * 1000; // 5 min
+const JOB_SEARCH_TTL = 2 * 60 * 1000; // 2 min
 
 @Injectable()
 export class JobService implements IJobServiceService {
@@ -29,8 +28,8 @@ export class JobService implements IJobServiceService {
     this.logger.setContext(JobService.name);
   }
 
-  async findAllJobs(pagination: PaginationDTO): Promise<JobResponseDTO[]> {
-    const { skip = 0, limit = 20 } = pagination;
+  async findAllJobs(paginationDTO: PaginationDTO): Promise<JobResponseDTO[]> {
+    const { skip = 0, limit = 20 } = paginationDTO;
     const cacheKey = `${this.redisService.generateJobListKey()}:skip:${skip}:limit:${limit}`;
     const cached = await this.redisService.get<JobResponseDTO[]>(cacheKey);
     if (cached) {
@@ -61,9 +60,9 @@ export class JobService implements IJobServiceService {
   }
 
   async searchJobs(
-    searchParams: SearchJobDTO,
+    searchJobDTO: SearchJobDTO,
   ): Promise<SearchJobResponseDTO[]> {
-    const cacheKey = this.redisService.generateJobSearchKey(searchParams);
+    const cacheKey = this.redisService.generateJobSearchKey(searchJobDTO);
     const cached = await this.redisService.get<JobResponseDTO[]>(cacheKey);
     if (cached) {
       this.logger.info('Job search cache HIT');
@@ -87,7 +86,7 @@ export class JobService implements IJobServiceService {
         jobType,
         experienceLevel,
         educationRequired,
-      } = searchParams;
+      } = searchJobDTO;
 
       const query = this.jobRepo
         .createQueryBuilder('job')

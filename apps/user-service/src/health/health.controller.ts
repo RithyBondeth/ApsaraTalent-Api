@@ -2,13 +2,18 @@ import {
   HEALTH_DATABASE_TIMEOUT_MS,
   RedisCacheHealthIndicator,
 } from '@app/common';
+import { IHealthRpcController } from '@app/contracts';
 import { HEALTH_PATTERN } from '@app/contracts/constants';
 import { Controller } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
-import { HealthCheckService, TypeOrmHealthIndicator } from '@nestjs/terminus';
+import {
+  HealthCheckResult,
+  HealthCheckService,
+  TypeOrmHealthIndicator,
+} from '@nestjs/terminus';
 
 @Controller()
-export class UserHealthController {
+export class UserHealthController implements IHealthRpcController {
   constructor(
     private readonly health: HealthCheckService,
     private readonly database: TypeOrmHealthIndicator,
@@ -16,7 +21,7 @@ export class UserHealthController {
   ) {}
 
   @MessagePattern(HEALTH_PATTERN)
-  checkHealth() {
+  checkHealth(): Promise<HealthCheckResult> {
     return this.health.check([
       () =>
         this.database.pingCheck('database', {

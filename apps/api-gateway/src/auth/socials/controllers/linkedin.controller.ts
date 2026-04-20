@@ -16,6 +16,7 @@ import { Response } from 'express';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
 import { LinkedInAuthGuard } from '../guards/linkedin-auth.guard';
 import { handleSocialAuthCallback } from '../shared/social-auth-callback.helper';
+import { LinkedInAuthDTO } from '@app/contracts';
 
 @Controller('social/linkedin')
 export class LinkedInController implements ILinkedInAuthController {
@@ -33,7 +34,7 @@ export class LinkedInController implements ILinkedInAuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(LinkedInAuthGuard)
   async linkedInCallback(@Req() req: any, @Res() res: Response): Promise<void> {
-    const linkedDataDTO = {
+    const linkedInDataDTO: LinkedInAuthDTO = {
       id: req.user.id,
       email: req.user.emails?.[0]?.value ?? null,
       firstName: req.user.name?.givenName ?? null,
@@ -48,7 +49,7 @@ export class LinkedInController implements ILinkedInAuthController {
       req,
       res,
       action: AUTH_SERVICE.ACTIONS.LINKEDIN_AUTH,
-      payload: linkedDataDTO,
+      payload: linkedInDataDTO,
       providerLabel: 'LinkedIn',
       successType: 'LINKEDIN_AUTH_SUCCESS',
       errorType: 'LINKEDIN_AUTH_ERROR',

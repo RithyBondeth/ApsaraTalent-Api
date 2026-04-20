@@ -15,7 +15,7 @@ import {
   GetInterviewsByCompanyDTO,
   EmployeeMatchLookupDTO,
   CompanyMatchLookupDTO,
-  MatchAnalyticsRequestDTO,
+  MatchAnalyticsDTO,
 } from '@app/contracts/dtos/job';
 import { FindCurrentLikeResponseDTO } from '@app/contracts/dtos/job/matching/find-current-like.dto';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
@@ -116,6 +116,6 @@ export interface IMatchingRpcController {
     companyMatchLookupDTO: CompanyMatchLookupDTO,
   ): Promise<MatchCountResponseDTO>;
   getAnalytics(
-    matchAnalyticsRequestDTO: MatchAnalyticsRequestDTO,
+    matchAnalyticsDTO: MatchAnalyticsDTO,
   ): Promise<AnalyticsResponseDTO>;
 }

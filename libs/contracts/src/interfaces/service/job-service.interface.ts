@@ -17,7 +17,7 @@ import {
   AnalyticsResponseDTO,
   CompanyMatchLookupDTO,
   EmployeeMatchLookupDTO,
-  MatchAnalyticsRequestDTO,
+  MatchAnalyticsDTO,
 } from '@app/contracts/dtos/job';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
 
@@ -26,13 +26,13 @@ export const I_MATCHING_SERVICE = 'IMatchingService';
 export const I_INTERVIEW_SERVICE = 'IInterviewService';
 
 export interface IJobServiceService {
-  findAllJobs(data: PaginationDTO): Promise<JobResponseDTO[]>;
-  searchJobs(searchParams: SearchJobDTO): Promise<SearchJobResponseDTO[]>;
+  findAllJobs(paginationDTO: PaginationDTO): Promise<JobResponseDTO[]>;
+  searchJobs(searchJobDTO: SearchJobDTO): Promise<SearchJobResponseDTO[]>;
 }
 
 export interface IMatchingService {
-  employeeLikes(matchDto: MatchDTO): Promise<MatchResponseDTO>;
-  companyLikes(matchDto: MatchDTO): Promise<MatchResponseDTO>;
+  employeeLikes(matchDTO: MatchDTO): Promise<MatchResponseDTO>;
+  companyLikes(matchDTO: MatchDTO): Promise<MatchResponseDTO>;
   findCurrentEmployeeLiked(
     employeeMatchLookupDTO: EmployeeMatchLookupDTO,
   ): Promise<FindCurrentLikeResponseDTO[]>;
@@ -52,7 +52,7 @@ export interface IMatchingService {
     companyMatchLookupDTO: CompanyMatchLookupDTO,
   ): Promise<MatchCountResponseDTO>;
   getAnalytics(
-    matchAnalyticsRequestDTO: MatchAnalyticsRequestDTO,
+    matchAnalyticsDTO: MatchAnalyticsDTO,
   ): Promise<AnalyticsResponseDTO>;
 }
 

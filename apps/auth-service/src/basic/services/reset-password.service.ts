@@ -8,7 +8,6 @@ import { PinoLogger } from 'nestjs-pino';
 import { MoreThan, Repository } from 'typeorm';
 import { SALT_ROUNDS } from '@app/contracts/constants/domain/password.constant';
 import { ResetPasswordDTO, ResetPasswordResponseDTO } from '@app/contracts';
-
 import { IResetPasswordService } from '@app/contracts/interfaces/service/auth-service.interface';
 
 @Injectable()

@@ -34,7 +34,7 @@ import {
   UploadCompanyCoverResponseDTO,
   UploadCompanyImagesResponseDTO,
 } from '@app/contracts/dtos/user';
-import { rpcCall } from '../utils/rpc-call';
+import { rpcCall } from '../../utils/rpc-call';
 
 @Controller('user/company')
 @UseGuards(AuthGuard)

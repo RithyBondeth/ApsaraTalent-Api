@@ -29,7 +29,6 @@ import { MatchingController } from './controllers/matching.controller';
 import { InterviewService } from './services/interview.service';
 import { JobService } from './services/job-service.service';
 import { MatchingService } from './services/matching.service';
-
 import {
   I_INTERVIEW_SERVICE,
   I_JOB_SERVICE_SERVICE,

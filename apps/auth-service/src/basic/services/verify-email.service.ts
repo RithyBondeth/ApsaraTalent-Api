@@ -6,7 +6,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { VerifyEmailDTO, VerifyEmailResponseDTO } from '@app/contracts';
-
 import { IVerifyEmailService } from '@app/contracts/interfaces/service/auth-service.interface';
 
 @Injectable()

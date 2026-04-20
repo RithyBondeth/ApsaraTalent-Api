@@ -4,14 +4,16 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import {
   HealthCheckError,
+  HealthCheckResult,
   HealthCheckService,
   HealthIndicatorService,
   TypeOrmHealthIndicator,
 } from '@nestjs/terminus';
 import { PushNotificationService } from '../push-notification.service';
+import { IHealthRpcController } from '@app/contracts';
 
 @Controller()
-export class NotificationHealthController {
+export class NotificationHealthController implements IHealthRpcController {
   constructor(
     private readonly health: HealthCheckService,
     private readonly database: TypeOrmHealthIndicator,
@@ -20,7 +22,7 @@ export class NotificationHealthController {
   ) {}
 
   @MessagePattern(HEALTH_PATTERN)
-  checkHealth() {
+  checkHealth(): Promise<HealthCheckResult> {
     return this.health.check([
       () =>
         this.database.pingCheck('database', {

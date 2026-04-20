@@ -8,7 +8,7 @@ import {
   AnalyticsResponseDTO,
   CompanyMatchLookupDTO,
   EmployeeMatchLookupDTO,
-  MatchAnalyticsRequestDTO,
+  MatchAnalyticsDTO,
   FindCurrentMatchingResponseDTO,
   FindCurrentLikeResponseDTO,
 } from '@app/contracts/dtos/job';
@@ -91,8 +91,8 @@ export class MatchingController implements IMatchingRpcController {
 
   @MessagePattern(JOB_SERVICE.ACTIONS.GET_ANALYTICS)
   async getAnalytics(
-    @Payload() matchAnalyticsRequestDTO: MatchAnalyticsRequestDTO,
+    @Payload() matchAnalyticsDTO: MatchAnalyticsDTO,
   ): Promise<AnalyticsResponseDTO> {
-    return this.matchingService.getAnalytics(matchAnalyticsRequestDTO);
+    return this.matchingService.getAnalytics(matchAnalyticsDTO);
   }
 }

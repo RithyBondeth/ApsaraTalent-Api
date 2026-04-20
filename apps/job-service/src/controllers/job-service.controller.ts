@@ -10,7 +10,6 @@ import {
   SearchJobResponseDTO,
   SearchJobDTO,
 } from '@app/contracts/dtos/job';
-
 import {
   I_JOB_SERVICE_SERVICE,
   IJobServiceService,

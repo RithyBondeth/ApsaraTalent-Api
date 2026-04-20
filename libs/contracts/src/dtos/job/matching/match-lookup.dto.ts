@@ -10,7 +10,7 @@ export class CompanyMatchLookupDTO {
   cid: string;
 }
 
-export class MatchAnalyticsRequestDTO {
+export class MatchAnalyticsDTO {
   @IsUUID()
   userId: string;
 

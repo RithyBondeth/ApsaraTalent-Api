@@ -37,7 +37,9 @@ export interface IImageCompanyController {
     companyId: string,
     avatar: Express.Multer.File,
   ): Promise<UploadCompanyAvatarResponseDTO>;
-  removeCompanyAvatar(companyId: string): Promise<RemoveCompanyAvatarResponseDTO>;
+  removeCompanyAvatar(
+    companyId: string,
+  ): Promise<RemoveCompanyAvatarResponseDTO>;
   uploadCompanyCover(
     companyId: string,
     cover: Express.Multer.File,
@@ -57,11 +59,15 @@ export interface IImageCompanyRpcController {
   uploadCompanyAvatar(
     uploadCompanyAvatarDTO: UploadCompanyAvatarDTO,
   ): Promise<UploadCompanyAvatarResponseDTO>;
-  removeCompanyAvatar(companyIdDTO: CompanyIdDTO): Promise<RemoveCompanyAvatarResponseDTO>;
+  removeCompanyAvatar(
+    companyIdDTO: CompanyIdDTO,
+  ): Promise<RemoveCompanyAvatarResponseDTO>;
   uploadCompanyCover(
     uploadCompanyCoverDTO: UploadCompanyCoverDTO,
   ): Promise<UploadCompanyCoverResponseDTO>;
-  removeCompanyCover(companyIdDTO: CompanyIdDTO): Promise<RemoveCompanyCoverResponseDTO>;
+  removeCompanyCover(
+    companyIdDTO: CompanyIdDTO,
+  ): Promise<RemoveCompanyCoverResponseDTO>;
   uploadCompanyImages(
     uploadCompanyImagesDTO: UploadCompanyImagesDTO,
   ): Promise<UploadCompanyImagesResponseDTO>;
@@ -84,7 +90,10 @@ export interface IUpdateCompanyInfoRpcController {
 }
 
 export interface IOpenPositionController {
-  removeOpenPosition(companyId: string, opId: string): Promise<RemoveOpenPositionResponseDTO>;
+  removeOpenPosition(
+    companyId: string,
+    opId: string,
+  ): Promise<RemoveOpenPositionResponseDTO>;
 }
 
 export interface IOpenPositionRpcController {
