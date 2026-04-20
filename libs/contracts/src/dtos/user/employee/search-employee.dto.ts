@@ -1,6 +1,6 @@
 import { Transform } from 'class-transformer';
 import { IsArray, IsEnum, IsOptional, IsString } from 'class-validator';
-import { EmployeeResponseDTO } from '../shared/user.dto';
+import { EmployeeResponseDTO } from '../../shared/user.dto';
 
 export class SearchEmployeeDTO {
   @IsOptional() @IsString() keyword?: string;
