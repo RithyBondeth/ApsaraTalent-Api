@@ -7,7 +7,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import * as path from 'path';
 import { Repository } from 'typeorm';
-
 import { IUploadEmployeeReferenceService } from '@app/contracts/interfaces/service/user-service.interface';
 import {
   EmployeeIdDTO,
@@ -27,9 +26,9 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
   ) {}
 
   async uploadEmployeeResume(
-    dto: UploadEmployeeResumeDTO,
+    uploadEmployeeResumeDTO: UploadEmployeeResumeDTO,
   ): Promise<CoreResponseDTO> {
-    const { employeeId, resume } = dto;
+    const { employeeId, resume } = uploadEmployeeResumeDTO;
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
@@ -82,8 +81,10 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
     }
   }
 
-  async removeEmployeeResume(dto: EmployeeIdDTO): Promise<CoreResponseDTO> {
-    const { employeeId } = dto;
+  async removeEmployeeResume(
+    employeeIdDTO: EmployeeIdDTO,
+  ): Promise<CoreResponseDTO> {
+    const { employeeId } = employeeIdDTO;
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
@@ -130,9 +131,9 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
   }
 
   async uploadEmployeeCoverLetter(
-    dto: UploadEmployeeCoverLetterDTO,
+    uploadEmployeeCoverLetterDTO: UploadEmployeeCoverLetterDTO,
   ): Promise<CoreResponseDTO> {
-    const { employeeId, coverLetter } = dto;
+    const { employeeId, coverLetter } = uploadEmployeeCoverLetterDTO;
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
@@ -194,9 +195,9 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
   }
 
   async removeEmployeeCoverLetter(
-    dto: EmployeeIdDTO,
+    employeeIdDTO: EmployeeIdDTO,
   ): Promise<CoreResponseDTO> {
-    const { employeeId } = dto;
+    const { employeeId } = employeeIdDTO;
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },

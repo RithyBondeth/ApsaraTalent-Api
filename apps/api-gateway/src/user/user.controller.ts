@@ -29,6 +29,7 @@ import {
   CompanyEmployeeFavoriteWithFavoriteIdDTO,
   EmployeeFavoriteLookupDTO,
   CompanyFavoriteLookupDTO,
+  UpdatePushNotificationTokenBodyDTO,
 } from '@app/contracts/dtos/user';
 import { rpcCall } from '../utils/rpc-call';
 
@@ -85,12 +86,12 @@ export class UserController implements IUserController {
 
   @Get('all')
   async findAllUsers(
-    @Query() data: PaginationDTO,
+    @Query() paginationDTO: PaginationDTO,
   ): Promise<UserResponseDTO[]> {
     return rpcCall<UserResponseDTO[]>(
       this.userClient,
       USER_SERVICE.ACTIONS.FIND_ALL,
-      data,
+      paginationDTO,
     );
   }
 
@@ -107,129 +108,157 @@ export class UserController implements IUserController {
 
   @Get('current-user')
   async getCurrentUser(@User() user: AuthUser): Promise<UserResponseDTO> {
-    return rpcCall(this.userClient, USER_SERVICE.ACTIONS.GET_CURRENT_USER, {
-      userID: user.id,
-    });
+    return rpcCall<UserResponseDTO>(
+      this.userClient,
+      USER_SERVICE.ACTIONS.GET_CURRENT_USER,
+      {
+        userID: user.id,
+      },
+    );
   }
 
   @Post('push-token')
   async updatePushNotificationToken(
-    @Req() req,
-    @Body() body: { token: string | null },
+    @Req() req: any,
+    @Body() body: UpdatePushNotificationTokenBodyDTO,
   ): Promise<CoreResponseDTO> {
-    return rpcCall(this.userClient, USER_SERVICE.ACTIONS.UPDATE_PUSH_TOKEN, {
-      userId: req.user.id,
-      token: body?.token ?? null,
-    });
+    return rpcCall<CoreResponseDTO>(
+      this.userClient,
+      USER_SERVICE.ACTIONS.UPDATE_PUSH_TOKEN,
+      {
+        userId: req.user.id,
+        token: body?.token ?? null,
+      },
+    );
   }
 
   @Post('employee/:eid/favorite/company/:cid')
   async employeeFavoriteCompany(
-    @Param() dto: EmployeeCompanyFavoriteDTO,
+    @Param() employeeCompanyFavoriteDTO: EmployeeCompanyFavoriteDTO,
     @Req() req?: any,
   ): Promise<CoreResponseDTO> {
-    await this.assertEmployeeAccess(req?.user?.id, dto.eid);
+    await this.assertEmployeeAccess(
+      req?.user?.id,
+      employeeCompanyFavoriteDTO.eid,
+    );
     return rpcCall<CoreResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.ADD_COMPANY_TO_FAVORITE,
-      dto,
+      employeeCompanyFavoriteDTO,
     );
   }
 
   @Post('employee/:eid/unfavorite/:favoriteId/company/:cid')
   async employeeUnfavoriteCompany(
-    @Param() dto: EmployeeCompanyFavoriteWithFavoriteIdDTO,
+    @Param()
+    companyEmployeeFavoriteDTO: EmployeeCompanyFavoriteWithFavoriteIdDTO,
     @Req() req?: any,
   ): Promise<CoreResponseDTO> {
-    await this.assertEmployeeAccess(req?.user?.id, dto.eid);
+    await this.assertEmployeeAccess(
+      req?.user?.id,
+      companyEmployeeFavoriteDTO.eid,
+    );
     return rpcCall<CoreResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.REMOVE_COMPANY_FROM_FAVORITE,
-      dto,
+      companyEmployeeFavoriteDTO,
     );
   }
 
   @Post('company/:cid/favorite/employee/:eid')
   async companyFavoriteEmployee(
-    @Param() dto: CompanyEmployeeFavoriteDTO,
+    @Param() companyEmployeeFavoriteDTO: CompanyEmployeeFavoriteDTO,
     @Req() req?: any,
   ): Promise<CoreResponseDTO> {
-    await this.assertCompanyAccess(req?.user?.id, dto.cid);
+    await this.assertCompanyAccess(
+      req?.user?.id,
+      companyEmployeeFavoriteDTO.cid,
+    );
     return rpcCall<CoreResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.ADD_EMPLOYEE_TO_FAVORITE,
-      dto,
+      companyEmployeeFavoriteDTO,
     );
   }
 
   @Post('company/:cid/unfavorite/:favoriteId/employee/:eid')
   async companyUnfavoriteEmployee(
-    @Param() dto: CompanyEmployeeFavoriteWithFavoriteIdDTO,
+    @Param()
+    companyEmployeeFavoriteDTO: CompanyEmployeeFavoriteWithFavoriteIdDTO,
     @Req() req?: any,
   ): Promise<CoreResponseDTO> {
-    await this.assertCompanyAccess(req?.user?.id, dto.cid);
+    await this.assertCompanyAccess(
+      req?.user?.id,
+      companyEmployeeFavoriteDTO.cid,
+    );
     return rpcCall<CoreResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_FROM_FAVORITE,
-      dto,
+      companyEmployeeFavoriteDTO,
     );
   }
 
   @Get('employee/all-favorites/:eid')
   async findAllEmployeeFavorite(
-    @Param() dto: EmployeeFavoriteLookupDTO,
+    @Param() employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
     @Req() req?: any,
   ): Promise<CompanyResponseDTO[]> {
-    await this.assertEmployeeAccess(req?.user?.id, dto.eid);
-    return rpcCall(
+    await this.assertEmployeeAccess(
+      req?.user?.id,
+      employeeFavoriteLookupDTO.eid,
+    );
+    return rpcCall<CompanyResponseDTO[]>(
       this.userClient,
       USER_SERVICE.ACTIONS.FIND_ALL_EMPLOYEE_FAVORITE,
-      dto,
+      employeeFavoriteLookupDTO,
     );
   }
 
   @Get('company/all-favorites/:cid')
   async findAllCompanyFavorite(
-    @Param() dto: CompanyFavoriteLookupDTO,
+    @Param() companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
     @Req() req?: any,
   ): Promise<EmployeeResponseDTO[]> {
-    await this.assertCompanyAccess(req?.user?.id, dto.cid);
-    return rpcCall(
+    await this.assertCompanyAccess(req?.user?.id, companyFavoriteLookupDTO.cid);
+    return rpcCall<EmployeeResponseDTO[]>(
       this.userClient,
       USER_SERVICE.ACTIONS.FIND_ALL_COMPANY_FAVORITE,
-      dto,
+      companyFavoriteLookupDTO,
     );
   }
 
   @Get('employee/count-favorite/:eid')
   async countEmployeeFavorite(
-    @Param() dto: EmployeeFavoriteLookupDTO,
+    @Param() employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
     @Req() req?: any,
   ): Promise<FavoriteCountResponseDTO> {
-    await this.assertEmployeeAccess(req?.user?.id, dto.eid);
-    return rpcCall(
+    await this.assertEmployeeAccess(
+      req?.user?.id,
+      employeeFavoriteLookupDTO.eid,
+    );
+    return rpcCall<FavoriteCountResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.COUNT_EMPLOYEE_FAVORITE,
-      dto,
+      employeeFavoriteLookupDTO,
     );
   }
 
   @Get('company/count-favorite/:cid')
   async countCompanyFavorite(
-    @Param() dto: CompanyFavoriteLookupDTO,
+    @Param() companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
     @Req() req?: any,
   ): Promise<FavoriteCountResponseDTO> {
-    await this.assertCompanyAccess(req?.user?.id, dto.cid);
-    return rpcCall(
+    await this.assertCompanyAccess(req?.user?.id, companyFavoriteLookupDTO.cid);
+    return rpcCall<FavoriteCountResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.COUNT_COMPANY_FAVORITE,
-      dto,
+      companyFavoriteLookupDTO,
     );
   }
 
   @Get('find-all-career-scopes')
   async findAllCareerScopes(): Promise<CareerScopesResponseDTO[]> {
-    return rpcCall(
+    return rpcCall<CareerScopesResponseDTO[]>(
       this.userClient,
       USER_SERVICE.ACTIONS.FIND_ALL_CAREER_SCOPES,
       {},
@@ -243,7 +272,7 @@ export class UserController implements IUserController {
     @Req() req?: any,
   ): Promise<CompanyResponseDTO[]> {
     await this.assertEmployeeAccess(req?.user?.id, employeeId);
-    return rpcCall(
+    return rpcCall<CompanyResponseDTO[]>(
       this.userClient,
       USER_SERVICE.ACTIONS.GET_EMPLOYEE_RECOMMENDATIONS,
       { employeeId, limit: limit ? Number(limit) : 10 },
@@ -257,7 +286,7 @@ export class UserController implements IUserController {
     @Req() req?: any,
   ): Promise<EmployeeResponseDTO[]> {
     await this.assertCompanyAccess(req?.user?.id, companyId);
-    return rpcCall(
+    return rpcCall<EmployeeResponseDTO[]>(
       this.userClient,
       USER_SERVICE.ACTIONS.GET_COMPANY_RECOMMENDATIONS,
       { companyId, limit: limit ? Number(limit) : 10 },

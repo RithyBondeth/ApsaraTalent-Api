@@ -1,4 +1,3 @@
-import { CareerScope } from '@app/common/database/entities/career-scope.entity';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
 import {
   CompanyResponseDTO,
@@ -14,6 +13,7 @@ import {
   EmployeeIdDTO,
   EmployeeRecommendationsDTO,
   EmployeeResponseDTO,
+  CareerScopesResponseDTO,
   RemoveCompanyImageDTO,
   RemoveCompanyImageDTO as RemoveCompanyImagesDTO,
   RemoveEmployeeEducationDTO,
@@ -54,105 +54,121 @@ export const I_EXPERIENCE_AND_EDUCATION_SERVICE =
 
 export interface IUpdateEmployeeInfoService {
   updateEmployeeInfo(
-    dto: UpdateEmployeeInfoRequestDTO,
+    updateEmployeeInfoRequestDTO: UpdateEmployeeInfoRequestDTO,
   ): Promise<UpdateEmployeeInfoResponseDTO>;
 }
 
 export interface IImageEmployeeService {
-  uploadEmployeeAvatar(dto: UploadEmployeeAvatarDTO): Promise<CoreResponseDTO>;
-  removeEmployeeAvatar(dto: EmployeeIdDTO): Promise<CoreResponseDTO>;
+  uploadEmployeeAvatar(
+    uploadEmployeeAvatarDTO: UploadEmployeeAvatarDTO,
+  ): Promise<CoreResponseDTO>;
+  removeEmployeeAvatar(employeeIdDTO: EmployeeIdDTO): Promise<CoreResponseDTO>;
 }
 
 export interface IUpdateCompanyInfoService {
   updateCompanyInfo(
-    dto: UpdateCompanyInfoRequestDTO,
+    updateCompanyInfoRequestDTO: UpdateCompanyInfoRequestDTO,
   ): Promise<UpdateCompanyInfoResponseDTO>;
 }
 
 export interface IFindEmployeeService {
-  findAll(pagination: PaginationDTO): Promise<EmployeeResponseDTO[]>;
+  findAll(paginationDTO: PaginationDTO): Promise<EmployeeResponseDTO[]>;
   countAllEmployees(): Promise<CountAllUsersResponseDTO>;
-  findOneById(dto: EmployeeIdDTO): Promise<EmployeeResponseDTO>;
+  findOneById(employeeIdDTO: EmployeeIdDTO): Promise<EmployeeResponseDTO>;
 }
 
 export interface IFindCompanyService {
-  findAll(pagination: PaginationDTO): Promise<CompanyResponseDTO[]>;
+  findAll(paginationDTO: PaginationDTO): Promise<CompanyResponseDTO[]>;
   countAllCompanies(): Promise<CountAllUsersResponseDTO>;
-  findOneById(dto: CompanyIdDTO): Promise<CompanyResponseDTO>;
+  findOneById(companyIdDTO: CompanyIdDTO): Promise<CompanyResponseDTO>;
 }
 
 export interface IImageCompanyService {
-  uploadCompanyAvatar(dto: UploadCompanyAvatarDTO): Promise<CoreResponseDTO>;
-  removeCompanyAvatar(dto: CompanyIdDTO): Promise<CoreResponseDTO>;
-  uploadCompanyCover(dto: UploadCompanyCoverDTO): Promise<CoreResponseDTO>;
-  removeCompanyCover(dto: CompanyIdDTO): Promise<CoreResponseDTO>;
-  uploadCompanyImages(dto: UploadCompanyImagesDTO): Promise<CoreResponseDTO>;
-  removeCompanyImage(dto: RemoveCompanyImageDTO): Promise<CoreResponseDTO>;
+  uploadCompanyAvatar(
+    uploadCompanyAvatarDTO: UploadCompanyAvatarDTO,
+  ): Promise<CoreResponseDTO>;
+  removeCompanyAvatar(companyIdDTO: CompanyIdDTO): Promise<CoreResponseDTO>;
+  uploadCompanyCover(
+    uploadCompanyCoverDTO: UploadCompanyCoverDTO,
+  ): Promise<CoreResponseDTO>;
+  removeCompanyCover(companyIdDTO: CompanyIdDTO): Promise<CoreResponseDTO>;
+  uploadCompanyImages(
+    uploadCompanyImagesDTO: UploadCompanyImagesDTO,
+  ): Promise<CoreResponseDTO>;
+  removeCompanyImage(
+    removeCompanyImageDTO: RemoveCompanyImageDTO,
+  ): Promise<CoreResponseDTO>;
 }
 
 export interface IUploadEmployeeReferenceService {
-  uploadEmployeeResume(dto: UploadEmployeeResumeDTO): Promise<CoreResponseDTO>;
-  removeEmployeeResume(dto: EmployeeIdDTO): Promise<CoreResponseDTO>;
-  uploadEmployeeCoverLetter(
-    dto: UploadEmployeeCoverLetterDTO,
+  uploadEmployeeResume(
+    uploadEmployeeResumeDTO: UploadEmployeeResumeDTO,
   ): Promise<CoreResponseDTO>;
-  removeEmployeeCoverLetter(dto: EmployeeIdDTO): Promise<CoreResponseDTO>;
+  removeEmployeeResume(employeeIdDTO: EmployeeIdDTO): Promise<CoreResponseDTO>;
+  uploadEmployeeCoverLetter(
+    uploadEmployeeCoverLetterDTO: UploadEmployeeCoverLetterDTO,
+  ): Promise<CoreResponseDTO>;
+  removeEmployeeCoverLetter(
+    employeeIdDTO: EmployeeIdDTO,
+  ): Promise<CoreResponseDTO>;
 }
 
 export interface ISearchEmployeeService {
   searchEmployee(
-    query: SearchEmployeeDTO,
+    searchEmployeeDTO: SearchEmployeeDTO,
   ): Promise<SearchEmployeeResponseDTO[]>;
 }
 
 export interface IUserService {
-  findAllUsers(dto: PaginationDTO): Promise<UserResponseDTO[]>;
+  findAllUsers(paginationDTO: PaginationDTO): Promise<UserResponseDTO[]>;
   countAllUsers(): Promise<CountAllUsersResponseDTO>;
-  findOneUserByID(dto: UserIdDTO): Promise<UserResponseDTO>;
+  findOneUserByID(userIdDTO: UserIdDTO): Promise<UserResponseDTO>;
   updatePushNotificationToken(
-    dto: UpdatePushNotificationTokenDTO,
+    updatePushNotificationTokenDTO: UpdatePushNotificationTokenDTO,
   ): Promise<CoreResponseDTO>;
-  findAllCareerScopes(): Promise<CareerScope[]>;
+  findAllCareerScopes(): Promise<CareerScopesResponseDTO[]>;
   employeeFavoriteCompany(
-    dto: EmployeeCompanyFavoriteDTO,
+    employeeCompanyFavoriteDTO: EmployeeCompanyFavoriteDTO,
   ): Promise<CoreResponseDTO>;
   employeeUnfavoriteCompany(
-    dto: EmployeeCompanyFavoriteWithFavoriteIdDTO,
+    employeeCompanyFavoriteWithFavoriteIdDTO: EmployeeCompanyFavoriteWithFavoriteIdDTO,
   ): Promise<CoreResponseDTO>;
   companyUnfavoriteEmployee(
-    dto: CompanyEmployeeFavoriteWithFavoriteIdDTO,
+    companyEmployeeFavoriteWithFavoriteIdDTO: CompanyEmployeeFavoriteWithFavoriteIdDTO,
   ): Promise<CoreResponseDTO>;
   companyFavoriteEmployee(
-    dto: CompanyEmployeeFavoriteDTO,
+    companyEmployeeFavoriteDTO: CompanyEmployeeFavoriteDTO,
   ): Promise<CoreResponseDTO>;
   findAllEmployeeFavorites(
-    dto: EmployeeFavoriteLookupDTO,
+    employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
   ): Promise<CompanyResponseDTO[]>;
   findAllCompanyFavorites(
-    dto: CompanyFavoriteLookupDTO,
+    companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
   ): Promise<EmployeeResponseDTO[]>;
   countCompanyFavorite(
-    dto: CompanyFavoriteLookupDTO,
+    companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
   ): Promise<FavoriteCountResponseDTO>;
   countEmployeeFavorite(
-    dto: EmployeeFavoriteLookupDTO,
+    employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
   ): Promise<FavoriteCountResponseDTO>;
-  clearCurrentUserCache(dto: UserIdDTO): Promise<void>;
+  clearCurrentUserCache(userIdDTO: UserIdDTO): Promise<void>;
   getEmployeeRecommendations(
-    dto: EmployeeRecommendationsDTO,
+    employeeRecommendationsDTO: EmployeeRecommendationsDTO,
   ): Promise<CompanyResponseDTO[]>;
   getCompanyRecommendations(
-    dto: CompanyRecommendationsDTO,
+    companyRecommendationsDTO: CompanyRecommendationsDTO,
   ): Promise<EmployeeResponseDTO[]>;
 }
 
 export interface IOpenPositionService {
-  removeOpenPosition(dto: RemoveOpenPositionDTO): Promise<CoreResponseDTO>;
+  removeOpenPosition(
+    removeOpenPositionDTO: RemoveOpenPositionDTO,
+  ): Promise<CoreResponseDTO>;
 }
 
 export interface IExperienceAndEducationService {
   removeEmployeeExperience(
-    dto: RemoveEmployeeExperienceDTO,
+    removeEmployeeExperienceDTO: RemoveEmployeeExperienceDTO,
   ): Promise<CoreResponseDTO>;
   removeEmployeeEducation(
     dto: RemoveEmployeeEducationDTO,

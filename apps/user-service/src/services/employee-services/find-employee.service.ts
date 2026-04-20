@@ -12,7 +12,6 @@ import {
   EmployeeIdDTO,
 } from '@app/contracts/dtos/user';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
-
 import { IFindEmployeeService } from '@app/contracts/interfaces/service/user-service.interface';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
 
@@ -27,10 +26,8 @@ export class FindEmployeeService implements IFindEmployeeService {
     private readonly redisService: RedisService,
   ) {}
 
-  async findAll(
-    pagination: PaginationDTO,
-  ): Promise<EmployeeResponseDTO[]> {
-    const { skip = 0, limit = 10 } = pagination;
+  async findAll(paginationDTO: PaginationDTO): Promise<EmployeeResponseDTO[]> {
+    const { skip = 0, limit = 10 } = paginationDTO;
     const cacheKey = this.redisService.generateListKey('employee', {
       skip,
       limit,
@@ -81,41 +78,10 @@ export class FindEmployeeService implements IFindEmployeeService {
     }
   }
 
-  async countAllEmployees(): Promise<CountAllUsersResponseDTO> {
-    const cacheKey = 'apsaratalent:user-service:employee:count:all';
-    const cached =
-      await this.redisService.get<CountAllUsersResponseDTO>(cacheKey);
-
-    if (cached) {
-      this.logger.info('All employees count cache HIT');
-      return cached;
-    }
-
-    this.logger.info('All employees count cache MISS');
-
-    try {
-      const totalEmployees = await this.employeeRepository.count();
-      const result = { totalEmployees };
-
-      await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);
-
-      return new CountAllUsersResponseDTO(result);
-    } catch (error) {
-      this.logger.error(
-        (error as Error).message ||
-          'An error occurred while counting all employees',
-      );
-      throw new RpcException({
-        message:
-          (error as Error).message ||
-          'An error occurred while counting all employees',
-        statusCode: 500,
-      });
-    }
-  }
-
-  async findOneById(dto: EmployeeIdDTO): Promise<EmployeeResponseDTO> {
-    const { employeeId } = dto;
+  async findOneById(
+    employeeIdDTO: EmployeeIdDTO,
+  ): Promise<EmployeeResponseDTO> {
+    const { employeeId } = employeeIdDTO;
     const cacheKey = this.redisService.generateEmployeeKey(
       'detail',
       employeeId,
@@ -161,6 +127,39 @@ export class FindEmployeeService implements IFindEmployeeService {
         message:
           (error as Error).message ||
           'An error occurred while fetching an employee',
+        statusCode: 500,
+      });
+    }
+  }
+
+  async countAllEmployees(): Promise<CountAllUsersResponseDTO> {
+    const cacheKey = 'apsaratalent:user-service:employee:count:all';
+    const cached =
+      await this.redisService.get<CountAllUsersResponseDTO>(cacheKey);
+
+    if (cached) {
+      this.logger.info('All employees count cache HIT');
+      return cached;
+    }
+
+    this.logger.info('All employees count cache MISS');
+
+    try {
+      const totalEmployees = await this.employeeRepository.count();
+      const result = { totalEmployees };
+
+      await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);
+
+      return new CountAllUsersResponseDTO(result);
+    } catch (error) {
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while counting all employees',
+      );
+      throw new RpcException({
+        message:
+          (error as Error).message ||
+          'An error occurred while counting all employees',
         statusCode: 500,
       });
     }

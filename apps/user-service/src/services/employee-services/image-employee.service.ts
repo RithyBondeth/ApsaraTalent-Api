@@ -7,7 +7,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import * as path from 'path';
 import { Repository } from 'typeorm';
-
 import { IImageEmployeeService } from '@app/contracts/interfaces/service/user-service.interface';
 import {
   EmployeeIdDTO,
@@ -26,9 +25,9 @@ export class ImageEmployeeService implements IImageEmployeeService {
   ) {}
 
   async uploadEmployeeAvatar(
-    dto: UploadEmployeeAvatarDTO,
+    uploadEmployeeAvatarDTO: UploadEmployeeAvatarDTO,
   ): Promise<CoreResponseDTO> {
-    const { employeeId, avatar } = dto;
+    const { employeeId, avatar } = uploadEmployeeAvatarDTO;
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
@@ -87,8 +86,10 @@ export class ImageEmployeeService implements IImageEmployeeService {
     }
   }
 
-  async removeEmployeeAvatar(dto: EmployeeIdDTO): Promise<CoreResponseDTO> {
-    const { employeeId } = dto;
+  async removeEmployeeAvatar(
+    employeeIdDTO: EmployeeIdDTO,
+  ): Promise<CoreResponseDTO> {
+    const { employeeId } = employeeIdDTO;
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },

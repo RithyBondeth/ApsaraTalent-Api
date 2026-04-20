@@ -13,7 +13,6 @@ import {
   CompanyIdDTO,
 } from '@app/contracts/dtos/user';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
-
 import { IFindCompanyService } from '@app/contracts/interfaces/service/user-service.interface';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
 
@@ -28,10 +27,8 @@ export class FindCompanyService implements IFindCompanyService {
     private readonly redisService: RedisService,
   ) {}
 
-  async findAll(
-    pagination: PaginationDTO,
-  ): Promise<CompanyResponseDTO[]> {
-    const { skip = 0, limit = 10 } = pagination;
+  async findAll(paginationDTO: PaginationDTO): Promise<CompanyResponseDTO[]> {
+    const { skip = 0, limit = 10 } = paginationDTO;
     const cacheKey = this.redisService.generateListKey('company', {
       skip,
       limit,
@@ -125,8 +122,8 @@ export class FindCompanyService implements IFindCompanyService {
     }
   }
 
-  async findOneById(dto: CompanyIdDTO): Promise<CompanyResponseDTO> {
-    const { companyId } = dto;
+  async findOneById(companyIdDTO: CompanyIdDTO): Promise<CompanyResponseDTO> {
+    const { companyId } = companyIdDTO;
     const cacheKey = this.redisService.generateCompanyKey('detail', companyId);
     const cached = await this.redisService.get<CompanyResponseDTO>(cacheKey);
 

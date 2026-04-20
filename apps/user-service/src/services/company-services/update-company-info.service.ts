@@ -12,13 +12,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import {
-  UpdateCompanyInfoDTO,
   UpdateCompanyInfoRequestDTO,
   CompanyResponseDTO,
   UpdateCompanyInfoResponseDTO,
   JobPositionResponseDTO,
 } from '@app/contracts/dtos/user';
-
 import { IUpdateCompanyInfoService } from '@app/contracts/interfaces/service/user-service.interface';
 
 @Injectable()
@@ -39,10 +37,11 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
     private readonly logger: PinoLogger,
     private readonly redisService: RedisService,
   ) {}
+
   async updateCompanyInfo(
-    dto: UpdateCompanyInfoRequestDTO,
+    updateCompanyInfoRequestDTO: UpdateCompanyInfoRequestDTO,
   ): Promise<UpdateCompanyInfoResponseDTO> {
-    const { companyId, updateCompanyInfoDTO } = dto;
+    const { companyId, updateCompanyInfoDTO } = updateCompanyInfoRequestDTO;
     try {
       const company = await this.companyRepository.findOne({
         where: { id: companyId },

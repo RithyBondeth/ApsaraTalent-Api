@@ -1,7 +1,4 @@
-import {
-  IUserController,
-  IUserRpcController,
-} from '@app/contracts/interfaces/controller/user-controller.interface';
+import { IUserRpcController } from '@app/contracts/interfaces/controller/user-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
@@ -38,9 +35,9 @@ export class UserController implements IUserRpcController {
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL)
   async findAllUsers(
-    @Payload() payload: PaginationDTO,
+    @Payload() paginationDTO: PaginationDTO,
   ): Promise<UserResponseDTO[]> {
-    return this.userService.findAllUsers(payload);
+    return this.userService.findAllUsers(paginationDTO);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.COUNT_ALL_USERS)
@@ -50,79 +47,87 @@ export class UserController implements IUserRpcController {
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ONE_BY_ID)
   async findOneUserById(
-    @Payload() payload: UserIdDTO,
+    @Payload() userIdDTO: UserIdDTO,
   ): Promise<UserResponseDTO> {
-    return this.userService.findOneUserByID(payload);
+    return this.userService.findOneUserByID(userIdDTO);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.GET_CURRENT_USER)
   async getCurrentUser(
-    @Payload() payload: UserIdDTO,
+    @Payload() userIdDTO: UserIdDTO,
   ): Promise<UserResponseDTO> {
-    return this.userService.findOneUserByID(payload);
+    return this.userService.findOneUserByID(userIdDTO);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.UPDATE_PUSH_TOKEN)
   async updatePushNotificationToken(
-    @Payload() payload: UpdatePushNotificationTokenDTO,
+    @Payload() updatePushNotificationTokenDTO: UpdatePushNotificationTokenDTO,
   ): Promise<CoreResponseDTO> {
-    return this.userService.updatePushNotificationToken(payload);
+    return this.userService.updatePushNotificationToken(
+      updatePushNotificationTokenDTO,
+    );
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.ADD_COMPANY_TO_FAVORITE)
   async employeeFavoriteCompany(
-    @Payload() payload: EmployeeCompanyFavoriteDTO,
+    @Payload() employeeCompanyFavoriteDTO: EmployeeCompanyFavoriteDTO,
   ): Promise<CoreResponseDTO> {
-    return this.userService.employeeFavoriteCompany(payload);
+    return this.userService.employeeFavoriteCompany(employeeCompanyFavoriteDTO);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_COMPANY_FROM_FAVORITE)
   async employeeUnfavoriteCompany(
-    @Payload() payload: EmployeeCompanyFavoriteWithFavoriteIdDTO,
+    @Payload()
+    employeeCompanyFavoriteWithFavoriteIdDTO: EmployeeCompanyFavoriteWithFavoriteIdDTO,
   ): Promise<CoreResponseDTO> {
-    return this.userService.employeeUnfavoriteCompany(payload);
+    return this.userService.employeeUnfavoriteCompany(
+      employeeCompanyFavoriteWithFavoriteIdDTO,
+    );
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_FROM_FAVORITE)
   async companyUnfavoriteEmployee(
-    @Payload() payload: CompanyEmployeeFavoriteWithFavoriteIdDTO,
+    @Payload()
+    companyEmployeeFavoriteWithFavoriteIdDTO: CompanyEmployeeFavoriteWithFavoriteIdDTO,
   ): Promise<CoreResponseDTO> {
-    return this.userService.companyUnfavoriteEmployee(payload);
+    return this.userService.companyUnfavoriteEmployee(
+      companyEmployeeFavoriteWithFavoriteIdDTO,
+    );
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.ADD_EMPLOYEE_TO_FAVORITE)
   async companyFavoriteEmployee(
-    @Payload() payload: CompanyEmployeeFavoriteDTO,
+    @Payload() companyEmployeeFavoriteDTO: CompanyEmployeeFavoriteDTO,
   ): Promise<CoreResponseDTO> {
-    return this.userService.companyFavoriteEmployee(payload);
+    return this.userService.companyFavoriteEmployee(companyEmployeeFavoriteDTO);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_EMPLOYEE_FAVORITE)
   async findAllEmployeeFavorite(
-    @Payload() payload: EmployeeFavoriteLookupDTO,
+    @Payload() employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
   ): Promise<CompanyResponseDTO[]> {
-    return this.userService.findAllEmployeeFavorites(payload);
+    return this.userService.findAllEmployeeFavorites(employeeFavoriteLookupDTO);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_COMPANY_FAVORITE)
   async findAllCompanyFavorite(
-    @Payload() payload: CompanyFavoriteLookupDTO,
+    @Payload() companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
   ): Promise<EmployeeResponseDTO[]> {
-    return this.userService.findAllCompanyFavorites(payload);
+    return this.userService.findAllCompanyFavorites(companyFavoriteLookupDTO);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.COUNT_COMPANY_FAVORITE)
   async countCompanyFavorite(
-    @Payload() payload: CompanyFavoriteLookupDTO,
+    @Payload() companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
   ): Promise<FavoriteCountResponseDTO> {
-    return this.userService.countCompanyFavorite(payload);
+    return this.userService.countCompanyFavorite(companyFavoriteLookupDTO);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.COUNT_EMPLOYEE_FAVORITE)
   async countEmployeeFavorite(
-    @Payload() payload: EmployeeFavoriteLookupDTO,
+    @Payload() employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
   ): Promise<FavoriteCountResponseDTO> {
-    return this.userService.countEmployeeFavorite(payload);
+    return this.userService.countEmployeeFavorite(employeeFavoriteLookupDTO);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_CAREER_SCOPES)
@@ -131,21 +136,25 @@ export class UserController implements IUserRpcController {
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE)
-  async clearUserCache(@Payload() payload: UserIdDTO): Promise<void> {
-    return this.userService.clearCurrentUserCache(payload);
+  async clearUserCache(@Payload() userIdDTO: UserIdDTO): Promise<void> {
+    return this.userService.clearCurrentUserCache(userIdDTO);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.GET_EMPLOYEE_RECOMMENDATIONS)
   async getEmployeeRecommendations(
-    @Payload() payload: EmployeeRecommendationsDTO,
+    @Payload() employeeRecommendationsDTO: EmployeeRecommendationsDTO,
   ): Promise<CompanyResponseDTO[]> {
-    return this.userService.getEmployeeRecommendations(payload);
+    return this.userService.getEmployeeRecommendations(
+      employeeRecommendationsDTO,
+    );
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.GET_COMPANY_RECOMMENDATIONS)
   async getCompanyRecommendations(
-    @Payload() payload: CompanyRecommendationsDTO,
+    @Payload() companyRecommendationsDTO: CompanyRecommendationsDTO,
   ): Promise<EmployeeResponseDTO[]> {
-    return this.userService.getCompanyRecommendations(payload);
+    return this.userService.getCompanyRecommendations(
+      companyRecommendationsDTO,
+    );
   }
 }

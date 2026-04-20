@@ -14,26 +14,48 @@ import {
   UpdatePushNotificationTokenBodyDTO,
   UpdatePushNotificationTokenDTO,
   UserIdDTO,
+  CareerScopesResponseDTO,
 } from '@app/contracts/dtos/user';
 import { CoreResponseDTO, PaginationDTO } from '@app/contracts/dtos/shared';
+import { AuthUser } from '@app/common/decorators/user.decorator';
 
 export interface IUserController {
-  findAllUsers(data: PaginationDTO): Promise<UserResponseDTO[]>;
-  findOneUserById(data: string): Promise<UserResponseDTO>;
-  getCurrentUser(data?: any): Promise<UserResponseDTO>;
-  findAllCareerScopes(): Promise<any>;
-  employeeFavoriteCompany(dto: EmployeeCompanyFavoriteDTO): Promise<CoreResponseDTO>;
+  findAllUsers(paginationDTO: PaginationDTO): Promise<UserResponseDTO[]>;
+  findOneUserById(userIdDTO: string): Promise<UserResponseDTO>;
+  getCurrentUser(user: AuthUser): Promise<UserResponseDTO>;
+  findAllCareerScopes(): Promise<CareerScopesResponseDTO[]>;
+  employeeFavoriteCompany(
+    employeeCompanyFavoriteDTO: EmployeeCompanyFavoriteDTO,
+    req?: any,
+  ): Promise<CoreResponseDTO>;
   employeeUnfavoriteCompany(
-    dto: EmployeeCompanyFavoriteWithFavoriteIdDTO,
+    employeeCompanyFavoriteWithFavoriteIdDTO: EmployeeCompanyFavoriteWithFavoriteIdDTO,
+    req?: any,
   ): Promise<CoreResponseDTO>;
-  companyFavoriteEmployee(dto: CompanyEmployeeFavoriteDTO): Promise<CoreResponseDTO>;
+  companyFavoriteEmployee(
+    companyEmployeeFavoriteDTO: CompanyEmployeeFavoriteDTO,
+    req?: any,
+  ): Promise<CoreResponseDTO>;
   companyUnfavoriteEmployee(
-    dto: CompanyEmployeeFavoriteWithFavoriteIdDTO,
+    companyEmployeeFavoriteWithFavoriteIdDTO: CompanyEmployeeFavoriteWithFavoriteIdDTO,
+    req?: any,
   ): Promise<CoreResponseDTO>;
-  findAllEmployeeFavorite(dto: EmployeeFavoriteLookupDTO): Promise<CompanyResponseDTO[]>;
-  findAllCompanyFavorite(dto: CompanyFavoriteLookupDTO): Promise<EmployeeResponseDTO[]>;
-  countEmployeeFavorite(dto: EmployeeFavoriteLookupDTO): Promise<FavoriteCountResponseDTO>;
-  countCompanyFavorite(dto: CompanyFavoriteLookupDTO): Promise<FavoriteCountResponseDTO>;
+  findAllEmployeeFavorite(
+    employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
+    req?: any,
+  ): Promise<CompanyResponseDTO[]>;
+  findAllCompanyFavorite(
+    companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
+    req?: any,
+  ): Promise<EmployeeResponseDTO[]>;
+  countEmployeeFavorite(
+    employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
+    req?: any,
+  ): Promise<FavoriteCountResponseDTO>;
+  countCompanyFavorite(
+    companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
+    req?: any,
+  ): Promise<FavoriteCountResponseDTO>;
   updatePushNotificationToken?(
     req: any,
     body: UpdatePushNotificationTokenBodyDTO,
@@ -51,28 +73,42 @@ export interface IUserController {
 }
 
 export interface IUserRpcController {
-  findAllUsers(data: PaginationDTO): Promise<UserResponseDTO[]>;
-  findOneUserById(data: UserIdDTO): Promise<UserResponseDTO>;
-  getCurrentUser(data: UserIdDTO): Promise<UserResponseDTO>;
-  findAllCareerScopes(): Promise<any>;
-  employeeFavoriteCompany(dto: EmployeeCompanyFavoriteDTO): Promise<CoreResponseDTO>;
+  findAllUsers(paginationDTO: PaginationDTO): Promise<UserResponseDTO[]>;
+  findOneUserById(userIdDTO: UserIdDTO): Promise<UserResponseDTO>;
+  getCurrentUser(userIdDTO: UserIdDTO): Promise<UserResponseDTO>;
+  findAllCareerScopes(): Promise<CareerScopesResponseDTO[]>;
+  employeeFavoriteCompany(
+    employeeCompanyFavoriteDTO: EmployeeCompanyFavoriteDTO,
+  ): Promise<CoreResponseDTO>;
   employeeUnfavoriteCompany(
-    dto: EmployeeCompanyFavoriteWithFavoriteIdDTO,
+    employeeCompanyFavoriteWithFavoriteIdDTO: EmployeeCompanyFavoriteWithFavoriteIdDTO,
   ): Promise<CoreResponseDTO>;
-  companyFavoriteEmployee(dto: CompanyEmployeeFavoriteDTO): Promise<CoreResponseDTO>;
+  companyFavoriteEmployee(
+    companyEmployeeFavoriteDTO: CompanyEmployeeFavoriteDTO,
+  ): Promise<CoreResponseDTO>;
   companyUnfavoriteEmployee(
-    dto: CompanyEmployeeFavoriteWithFavoriteIdDTO,
+    companyEmployeeFavoriteWithFavoriteIdDTO: CompanyEmployeeFavoriteWithFavoriteIdDTO,
   ): Promise<CoreResponseDTO>;
-  findAllEmployeeFavorite(dto: EmployeeFavoriteLookupDTO): Promise<CompanyResponseDTO[]>;
-  findAllCompanyFavorite(dto: CompanyFavoriteLookupDTO): Promise<EmployeeResponseDTO[]>;
-  countEmployeeFavorite(dto: EmployeeFavoriteLookupDTO): Promise<FavoriteCountResponseDTO>;
-  countCompanyFavorite(dto: CompanyFavoriteLookupDTO): Promise<FavoriteCountResponseDTO>;
-  updatePushNotificationToken(dto: UpdatePushNotificationTokenDTO): Promise<CoreResponseDTO>;
-  clearUserCache(dto: UserIdDTO): Promise<void>;
+  findAllEmployeeFavorite(
+    employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
+  ): Promise<CompanyResponseDTO[]>;
+  findAllCompanyFavorite(
+    companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
+  ): Promise<EmployeeResponseDTO[]>;
+  countEmployeeFavorite(
+    employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
+  ): Promise<FavoriteCountResponseDTO>;
+  countCompanyFavorite(
+    companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
+  ): Promise<FavoriteCountResponseDTO>;
+  updatePushNotificationToken(
+    updatePushNotificationTokenDTO: UpdatePushNotificationTokenDTO,
+  ): Promise<CoreResponseDTO>;
+  clearUserCache(userIdDTO: UserIdDTO): Promise<void>;
   getEmployeeRecommendations(
-    dto: EmployeeRecommendationsDTO,
+    employeeRecommendationsDTO: EmployeeRecommendationsDTO,
   ): Promise<CompanyResponseDTO[]>;
   getCompanyRecommendations(
-    dto: CompanyRecommendationsDTO,
+    companyRecommendationsDTO: CompanyRecommendationsDTO,
   ): Promise<EmployeeResponseDTO[]>;
 }

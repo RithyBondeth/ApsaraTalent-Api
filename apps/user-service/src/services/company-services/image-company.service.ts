@@ -9,7 +9,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import * as path from 'path';
 import { Repository } from 'typeorm';
-
 import { IImageCompanyService } from '@app/contracts/interfaces/service/user-service.interface';
 import {
   CompanyIdDTO,
@@ -59,9 +58,9 @@ export class ImageCompanyService implements IImageCompanyService {
   }
 
   async uploadCompanyAvatar(
-    dto: UploadCompanyAvatarDTO,
+    uploadCompanyAvatarDTO: UploadCompanyAvatarDTO,
   ): Promise<CoreResponseDTO> {
-    const { companyId, avatar } = dto;
+    const { companyId, avatar } = uploadCompanyAvatarDTO;
     try {
       const company = await this.companyRepository.findOne({
         where: { id: companyId },
@@ -126,8 +125,10 @@ export class ImageCompanyService implements IImageCompanyService {
     }
   }
 
-  async removeCompanyAvatar(dto: CompanyIdDTO): Promise<CoreResponseDTO> {
-    const { companyId } = dto;
+  async removeCompanyAvatar(
+    companyIdDTO: CompanyIdDTO,
+  ): Promise<CoreResponseDTO> {
+    const { companyId } = companyIdDTO;
     try {
       const company = await this.companyRepository.findOne({
         where: { id: companyId },
@@ -178,9 +179,9 @@ export class ImageCompanyService implements IImageCompanyService {
   }
 
   async uploadCompanyCover(
-    dto: UploadCompanyCoverDTO,
+    uploadCompanyCoverDTO: UploadCompanyCoverDTO,
   ): Promise<CoreResponseDTO> {
-    const { companyId, cover } = dto;
+    const { companyId, cover } = uploadCompanyCoverDTO;
     try {
       const company = await this.companyRepository.findOne({
         where: { id: companyId },
@@ -242,8 +243,10 @@ export class ImageCompanyService implements IImageCompanyService {
     }
   }
 
-  async removeCompanyCover(dto: CompanyIdDTO): Promise<CoreResponseDTO> {
-    const { companyId } = dto;
+  async removeCompanyCover(
+    companyIdDTO: CompanyIdDTO,
+  ): Promise<CoreResponseDTO> {
+    const { companyId } = companyIdDTO;
     try {
       const company = await this.companyRepository.findOne({
         where: { id: companyId },
@@ -293,9 +296,9 @@ export class ImageCompanyService implements IImageCompanyService {
   }
 
   async uploadCompanyImages(
-    dto: UploadCompanyImagesDTO,
+    uploadCompanyImagesDTO: UploadCompanyImagesDTO,
   ): Promise<CoreResponseDTO> {
-    const { companyId, images } = dto;
+    const { companyId, images } = uploadCompanyImagesDTO;
     try {
       const company = await this.companyRepository.findOne({
         where: { id: companyId },
@@ -355,9 +358,9 @@ export class ImageCompanyService implements IImageCompanyService {
   }
 
   async removeCompanyImage(
-    dto: RemoveCompanyImageDTO,
+    removeCompanyImageDTO: RemoveCompanyImageDTO,
   ): Promise<CoreResponseDTO> {
-    const { companyId, imageId } = dto;
+    const { companyId, imageId } = removeCompanyImageDTO;
     try {
       const image = await this.imageRepository.findOne({
         where: { id: imageId, company: { id: companyId } },

@@ -1,7 +1,5 @@
 import { CareerScope } from '@app/common/database/entities/career-scope.entity';
-import { Company } from '@app/common/database/entities/company/company.entity';
 import { CompanyFavoriteEmployee } from '@app/common/database/entities/company/favorite-employee.entity';
-import { Employee } from '@app/common/database/entities/employee/employee.entity';
 import { EmployeeFavoriteCompany } from '@app/common/database/entities/employee/favorite-company.entity';
 import { JobMatching } from '@app/common/database/entities/job-matching.entity';
 import { User } from '@app/common/database/entities/user.entity';
@@ -29,6 +27,7 @@ import {
   CountAllUsersResponseDTO,
   EmployeeResponseDTO,
   JobPositionResponseDTO,
+  CareerScopesResponseDTO,
 } from '@app/contracts/dtos/user';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
 import { IUserService } from '@app/contracts/interfaces/service/user-service.interface';
@@ -70,8 +69,8 @@ export class UserService implements IUserService, OnModuleInit {
     }
   }
 
-  async findAllUsers(dto: PaginationDTO): Promise<UserResponseDTO[]> {
-    const { skip = 0, limit = 20 } = dto;
+  async findAllUsers(paginationDTO: PaginationDTO): Promise<UserResponseDTO[]> {
+    const { skip = 0, limit = 20 } = paginationDTO;
     const cacheKey = this.redisService.generateListKey('user', { skip, limit });
     const cached = await this.redisService.get<UserResponseDTO[]>(cacheKey);
 
@@ -83,7 +82,6 @@ export class UserService implements IUserService, OnModuleInit {
     this.logger.info('All users cache MISS');
 
     try {
-      // Use QueryBuilder: paginated, excludes sensitive fields, lighter relations for list
       const users = await this.userRepository
         .createQueryBuilder('user')
         .select([
@@ -116,7 +114,7 @@ export class UserService implements IUserService, OnModuleInit {
           message: 'There are no users available',
         });
 
-      const result = users.map(
+      const results = users.map(
         (user) =>
           new UserResponseDTO({
             ...user,
@@ -132,9 +130,9 @@ export class UserService implements IUserService, OnModuleInit {
           }),
       );
 
-      await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);
+      await this.redisService.set(cacheKey, results, CACHE_TTL.MEDIUM);
 
-      return result;
+      return results;
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
@@ -182,8 +180,8 @@ export class UserService implements IUserService, OnModuleInit {
     }
   }
 
-  async findOneUserByID(dto: UserIdDTO): Promise<UserResponseDTO> {
-    const { userId } = dto;
+  async findOneUserByID(userIdDTO: UserIdDTO): Promise<UserResponseDTO> {
+    const { userId } = userIdDTO;
     const cacheKey = this.redisService.generateUserKey('detail', userId);
     const cached = await this.redisService.get<UserResponseDTO>(cacheKey);
 
@@ -195,7 +193,6 @@ export class UserService implements IUserService, OnModuleInit {
     this.logger.info(`User ${userId} cache MISS`);
 
     try {
-      // Use QueryBuilder to exclude sensitive fields (password, tokens, OTP, etc.)
       const user = await this.userRepository
         .createQueryBuilder('user')
         .select([
@@ -262,9 +259,9 @@ export class UserService implements IUserService, OnModuleInit {
   }
 
   async updatePushNotificationToken(
-    dto: UpdatePushNotificationTokenDTO,
+    updatePushNotificationTokenDTO: UpdatePushNotificationTokenDTO,
   ): Promise<CoreResponseDTO> {
-    const { userId, token } = dto;
+    const { userId, token } = updatePushNotificationTokenDTO;
     const normalizedToken =
       typeof token === 'string' && token.trim().length > 0
         ? token.trim()
@@ -300,9 +297,9 @@ export class UserService implements IUserService, OnModuleInit {
   }
 
   async employeeFavoriteCompany(
-    dto: EmployeeCompanyFavoriteDTO,
+    employeeCompanyFavoriteDTO: EmployeeCompanyFavoriteDTO,
   ): Promise<CoreResponseDTO> {
-    const { eid, cid } = dto;
+    const { eid, cid } = employeeCompanyFavoriteDTO;
     try {
       const exists = await this.empFavoriteCmpRepository.findOne({
         where: {
@@ -371,9 +368,9 @@ export class UserService implements IUserService, OnModuleInit {
   }
 
   async employeeUnfavoriteCompany(
-    dto: EmployeeCompanyFavoriteWithFavoriteIdDTO,
+    employeeCompanyFavoriteWithFavoriteIdDTO: EmployeeCompanyFavoriteWithFavoriteIdDTO,
   ): Promise<CoreResponseDTO> {
-    const { eid, cid, favoriteId } = dto;
+    const { eid, cid, favoriteId } = employeeCompanyFavoriteWithFavoriteIdDTO;
     try {
       const favoriteToRemove = await this.empFavoriteCmpRepository.findOne({
         where: {
@@ -433,9 +430,9 @@ export class UserService implements IUserService, OnModuleInit {
   }
 
   async companyFavoriteEmployee(
-    dto: CompanyEmployeeFavoriteDTO,
+    companyEmployeeFavoriteDTO: CompanyEmployeeFavoriteDTO,
   ): Promise<CoreResponseDTO> {
-    const { cid, eid } = dto;
+    const { cid, eid } = companyEmployeeFavoriteDTO;
     try {
       const exists = await this.cmpFavoriteEmpRepository.findOne({
         where: {
@@ -504,9 +501,9 @@ export class UserService implements IUserService, OnModuleInit {
   }
 
   async companyUnfavoriteEmployee(
-    dto: CompanyEmployeeFavoriteWithFavoriteIdDTO,
+    companyEmployeeFavoriteWithFavoriteIdDTO: CompanyEmployeeFavoriteWithFavoriteIdDTO,
   ): Promise<CoreResponseDTO> {
-    const { cid, eid, favoriteId } = dto;
+    const { cid, eid, favoriteId } = companyEmployeeFavoriteWithFavoriteIdDTO;
     try {
       const favoriteToRemove = await this.cmpFavoriteEmpRepository.findOne({
         where: {
@@ -566,9 +563,9 @@ export class UserService implements IUserService, OnModuleInit {
   }
 
   async findAllEmployeeFavorites(
-    dto: EmployeeFavoriteLookupDTO,
+    employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
   ): Promise<CompanyResponseDTO[]> {
-    const { eid } = dto;
+    const { eid } = employeeFavoriteLookupDTO;
     // ✅ Use helper method
     const cacheKey = this.redisService.generateEmployeeFavoritesKey(eid);
     const cached = await this.redisService.get<CompanyResponseDTO[]>(cacheKey);
@@ -622,9 +619,9 @@ export class UserService implements IUserService, OnModuleInit {
   }
 
   async findAllCompanyFavorites(
-    dto: CompanyFavoriteLookupDTO,
+    companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
   ): Promise<EmployeeResponseDTO[]> {
-    const { cid } = dto;
+    const { cid } = companyFavoriteLookupDTO;
     // ✅ Use helper method
     const cacheKey = this.redisService.generateCompanyFavoritesKey(cid);
     const cached = await this.redisService.get<EmployeeResponseDTO[]>(cacheKey);
@@ -672,9 +669,9 @@ export class UserService implements IUserService, OnModuleInit {
   }
 
   async countCompanyFavorite(
-    dto: CompanyFavoriteLookupDTO,
+    companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
   ): Promise<FavoriteCountResponseDTO> {
-    const { cid } = dto;
+    const { cid } = companyFavoriteLookupDTO;
     // ✅ Use helper method
     const cacheKey = this.redisService.generateCompanyFavoriteCountKey(cid);
     const cached =
@@ -713,9 +710,9 @@ export class UserService implements IUserService, OnModuleInit {
   }
 
   async countEmployeeFavorite(
-    dto: EmployeeFavoriteLookupDTO,
+    employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
   ): Promise<FavoriteCountResponseDTO> {
-    const { eid } = dto;
+    const { eid } = employeeFavoriteLookupDTO;
     // ✅ Use helper method
     const cacheKey = this.redisService.generateEmployeeFavoriteCountKey(eid);
     const cached =
@@ -753,14 +750,14 @@ export class UserService implements IUserService, OnModuleInit {
     }
   }
 
-  async findAllCareerScopes(): Promise<any> {
+  async findAllCareerScopes(): Promise<CareerScopesResponseDTO[]> {
     const cacheKey = this.redisService.generateListKey('career-scopes', {});
     const cached =
       await this.redisService.get<Partial<CareerScope[]>>(cacheKey);
 
     if (cached) {
       this.logger.info('All career scopes cache HIT');
-      return cached;
+      return cached.map((cs) => new CareerScopesResponseDTO(cs));
     }
 
     this.logger.info('All career scopes cache MISS');
@@ -773,9 +770,11 @@ export class UserService implements IUserService, OnModuleInit {
           message: 'No career scopes available',
         });
 
-      await this.redisService.set(cacheKey, careerScopes, CACHE_TTL.STATIC);
+      const result = careerScopes.map((cs) => new CareerScopesResponseDTO(cs));
 
-      return careerScopes;
+      await this.redisService.set(cacheKey, result, CACHE_TTL.STATIC);
+
+      return result;
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
@@ -817,8 +816,8 @@ export class UserService implements IUserService, OnModuleInit {
     });
   }
 
-  async clearCurrentUserCache(dto: UserIdDTO) {
-    const { userId } = dto;
+  async clearCurrentUserCache(userIdDTO: UserIdDTO): Promise<void> {
+    const { userId } = userIdDTO;
     await Promise.all([
       this.redisService.del(
         this.redisService.generateUserKey('detail', userId),
@@ -833,9 +832,9 @@ export class UserService implements IUserService, OnModuleInit {
   }
 
   async getEmployeeRecommendations(
-    dto: EmployeeRecommendationsDTO,
+    employeeRecommendationsDTO: EmployeeRecommendationsDTO,
   ): Promise<CompanyResponseDTO[]> {
-    const { employeeId, limit = 10 } = dto;
+    const { employeeId, limit = 10 } = employeeRecommendationsDTO;
     const cacheKey = this.redisService.generateListKey(
       'employee-recommendations',
       { employeeId, limit },
@@ -928,9 +927,9 @@ export class UserService implements IUserService, OnModuleInit {
   }
 
   async getCompanyRecommendations(
-    dto: CompanyRecommendationsDTO,
+    companyRecommendationsDTO: CompanyRecommendationsDTO,
   ): Promise<EmployeeResponseDTO[]> {
-    const { companyId, limit = 10 } = dto;
+    const { companyId, limit = 10 } = companyRecommendationsDTO;
     const cacheKey = this.redisService.generateListKey(
       'company-recommendations',
       { companyId, limit },

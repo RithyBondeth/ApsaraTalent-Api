@@ -21,15 +21,17 @@ export class ImageEmployeeController implements IImageEmployeeRpcController {
 
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_AVATAR)
   async uploadEmployeeAvatar(
-    @Payload() payload: UploadEmployeeAvatarDTO,
+    @Payload() uploadEmployeeAvatarDTO: UploadEmployeeAvatarDTO,
   ): Promise<CoreResponseDTO> {
-    return this.imageEmployeeService.uploadEmployeeAvatar(payload);
+    return this.imageEmployeeService.uploadEmployeeAvatar(
+      uploadEmployeeAvatarDTO,
+    );
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_AVATAR)
   async removeEmployeeAvatar(
-    @Payload() payload: EmployeeIdDTO,
+    @Payload() employeeIdDTO: EmployeeIdDTO,
   ): Promise<CoreResponseDTO> {
-    return this.imageEmployeeService.removeEmployeeAvatar(payload);
+    return this.imageEmployeeService.removeEmployeeAvatar(employeeIdDTO);
   }
 }

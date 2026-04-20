@@ -6,8 +6,10 @@ import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Brackets, Repository } from 'typeorm';
-import { SearchEmployeeDTO, SearchEmployeeResponseDTO, EmployeeResponseDTO } from '@app/contracts/dtos/user';
-
+import {
+  SearchEmployeeDTO,
+  SearchEmployeeResponseDTO,
+} from '@app/contracts/dtos/user';
 import { ISearchEmployeeService } from '@app/contracts/interfaces/service/user-service.interface';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
 
@@ -22,10 +24,14 @@ export class SearchEmployeeService implements ISearchEmployeeService {
   ) {}
 
   async searchEmployee(
-    query: SearchEmployeeDTO,
+    searchEmployeeDTO: SearchEmployeeDTO,
   ): Promise<SearchEmployeeResponseDTO[]> {
-    const cacheKey = this.redisService.generateSearchKey('employee', query);
-    const cached = await this.redisService.get<EmployeeResponseDTO[]>(cacheKey);
+    const cacheKey = this.redisService.generateSearchKey(
+      'employee',
+      searchEmployeeDTO,
+    );
+    const cached =
+      await this.redisService.get<SearchEmployeeResponseDTO[]>(cacheKey);
 
     if (cached) {
       this.logger.info('Employee search cache HIT');
@@ -43,53 +49,53 @@ export class SearchEmployeeService implements ISearchEmployeeService {
         .leftJoinAndSelect('employee.educations', 'edu');
 
       // Keyword: job title, first name, last name
-      if (query.keyword) {
+      if (searchEmployeeDTO.keyword) {
         qb.andWhere(
           `(employee.job ILIKE :keyword OR employee.firstname ILIKE :keyword OR employee.lastname ILIKE :keyword)`,
-          { keyword: `%${query.keyword}%` },
+          { keyword: `%${searchEmployeeDTO.keyword}%` },
         );
       }
 
       // Location
-      if (query.location) {
+      if (searchEmployeeDTO.location) {
         qb.andWhere('employee.location ILIKE :location', {
-          location: `%${query.location}%`,
+          location: `%${searchEmployeeDTO.location}%`,
         });
       }
 
       // Career Scopes
-      if (query.careerScopes?.length > 0) {
+      if (searchEmployeeDTO.careerScopes?.length > 0) {
         qb.andWhere('careerScope.name IN (:...careerScopes)', {
-          careerScopes: query.careerScopes,
+          careerScopes: searchEmployeeDTO.careerScopes,
         });
       }
 
       // Job Type (availability)
-      if (query.jobType) {
+      if (searchEmployeeDTO.jobType) {
         qb.andWhere('employee.availability = :jobType', {
-          jobType: query.jobType,
+          jobType: searchEmployeeDTO.jobType,
         });
       }
 
       // Experience Level
       if (
-        query.experienceLevel &&
-        query.experienceLevel !== 'All' &&
-        query.experienceLevel !== ''
+        searchEmployeeDTO.experienceLevel &&
+        searchEmployeeDTO.experienceLevel !== 'All' &&
+        searchEmployeeDTO.experienceLevel !== ''
       ) {
-        const mappedExps = [query.experienceLevel];
+        const mappedExps = [searchEmployeeDTO.experienceLevel];
 
         // Map modern UI strings to legacy database strings to catch old records
-        if (query.experienceLevel === '1 - 2 years') {
+        if (searchEmployeeDTO.experienceLevel === '1 - 2 years') {
           mappedExps.push(
             '1 - 3 years',
             '1+ year',
             '2+ years',
             'More than 2 years',
           );
-        } else if (query.experienceLevel === '3 - 5 years') {
+        } else if (searchEmployeeDTO.experienceLevel === '3 - 5 years') {
           mappedExps.push('1 - 3 years');
-        } else if (query.experienceLevel === '6 - 10 years') {
+        } else if (searchEmployeeDTO.experienceLevel === '6 - 10 years') {
           mappedExps.push('5 - 10 years');
         }
 
@@ -99,10 +105,13 @@ export class SearchEmployeeService implements ISearchEmployeeService {
       }
 
       // Education
-      if (query.education && query.education.length > 0) {
+      if (
+        searchEmployeeDTO.education &&
+        searchEmployeeDTO.education.length > 0
+      ) {
         qb.andWhere(
           new Brackets((bracket) => {
-            query.education.forEach((edu, index) => {
+            searchEmployeeDTO.education.forEach((edu, index) => {
               const paramName = `degree_${index}`;
               if (index === 0) {
                 bracket.where(`edu.degree ILIKE :${paramName}`, {
@@ -125,14 +134,16 @@ export class SearchEmployeeService implements ISearchEmployeeService {
         'yearsOfExperience',
         'createdAt',
       ];
-      const sortField = validSortFields.includes(query.sortBy)
-        ? `employee.${query.sortBy}`
+      const sortField = validSortFields.includes(searchEmployeeDTO.sortBy)
+        ? `employee.${searchEmployeeDTO.sortBy}`
         : 'employee.createdAt';
-      const sortOrder = ['ASC', 'DESC'].includes(query.sortOrder?.toUpperCase())
-        ? query.sortOrder.toUpperCase()
+      const sortOrder = ['ASC', 'DESC'].includes(
+        searchEmployeeDTO.sortOrder?.toUpperCase(),
+      )
+        ? searchEmployeeDTO.sortOrder.toUpperCase()
         : 'DESC';
 
-      if (query.sortBy === 'yearsOfExperience') {
+      if (searchEmployeeDTO.sortBy === 'yearsOfExperience') {
         qb.orderBy(
           `CASE "employee"."yearsOfExperience"
             WHEN 'No Experience' THEN 0
@@ -178,7 +189,7 @@ export class SearchEmployeeService implements ISearchEmployeeService {
 
       const result = employeesWithUsers.map(
         ({ employee, userId }) =>
-          new EmployeeResponseDTO({
+          new SearchEmployeeResponseDTO({
             ...employee,
             userId: userId,
           }),

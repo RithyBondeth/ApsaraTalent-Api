@@ -1,5 +1,6 @@
 import { CoreResponseDTO, PaginationDTO } from '@app/contracts/dtos/shared';
 import {
+  CountAllUsersResponseDTO,
   EmployeeIdDTO,
   EmployeeResponseDTO,
   RemoveEmployeeEducationDTO,
@@ -15,65 +16,76 @@ import {
 } from '@app/contracts/dtos/user';
 
 export interface IFindEmployeeController {
-  findAll(data: PaginationDTO): Promise<EmployeeResponseDTO[]>;
-  findOneById(data: string): Promise<EmployeeResponseDTO>;
+  findAll(paginationDTO: PaginationDTO): Promise<EmployeeResponseDTO[]>;
+  findOneById(employeeId: string): Promise<EmployeeResponseDTO>;
 }
 
 export interface IFindEmployeeRpcController {
-  findAll(data: PaginationDTO): Promise<EmployeeResponseDTO[]>;
-  findOneById(data: EmployeeIdDTO): Promise<EmployeeResponseDTO>;
+  findAll(paginationDTO: PaginationDTO): Promise<EmployeeResponseDTO[]>;
+  findOneById(employeeIdDTO: EmployeeIdDTO): Promise<EmployeeResponseDTO>;
+  countAllEmployees(): Promise<CountAllUsersResponseDTO>;
 }
 
 export interface IImageEmployeeController {
   uploadEmployeeAvatar(
     employeeId: string,
-    file: Express.Multer.File,
+    avatar: Express.Multer.File,
   ): Promise<CoreResponseDTO>;
   removeEmployeeAvatar(employeeId: string): Promise<CoreResponseDTO>;
 }
 
 export interface IImageEmployeeRpcController {
-  uploadEmployeeAvatar(data: UploadEmployeeAvatarDTO): Promise<CoreResponseDTO>;
-  removeEmployeeAvatar(data: EmployeeIdDTO): Promise<CoreResponseDTO>;
+  uploadEmployeeAvatar(
+    uploadEmployeeAvatarDTO: UploadEmployeeAvatarDTO,
+  ): Promise<CoreResponseDTO>;
+  removeEmployeeAvatar(employeeIdDTO: EmployeeIdDTO): Promise<CoreResponseDTO>;
 }
 
 export interface ISearchEmployeeController {
-  searchEmployee(data: SearchEmployeeDTO): Promise<SearchEmployeeResponseDTO[]>;
+  searchEmployee(
+    searchEmployeeDTO: SearchEmployeeDTO,
+  ): Promise<SearchEmployeeResponseDTO[]>;
 }
+
+export interface ISearchEmployeeRpcController extends ISearchEmployeeController {}
 
 export interface IUpdateEmployeeController {
   updateEmployeeInfo(
     employeeId: string,
-    body: UpdateEmployeeInfoDTO,
+    updateEmployeeInfoDTO: UpdateEmployeeInfoDTO,
   ): Promise<UpdateEmployeeInfoResponseDTO>;
 }
 
 export interface IUpdateEmployeeRpcController {
   updateEmployeeInfo(
-    data: UpdateEmployeeInfoRequestDTO,
+    updateEmployeeInfoRequestDTO: UpdateEmployeeInfoRequestDTO,
   ): Promise<UpdateEmployeeInfoResponseDTO>;
 }
 
 export interface IUploadEmployeeController {
   uploadEmployeeResume(
     employeeId: string,
-    file: Express.Multer.File,
+    resume: Express.Multer.File,
   ): Promise<CoreResponseDTO>;
   removeEmployeeResume(employeeId: string): Promise<CoreResponseDTO>;
   uploadEmployeeCoverLetter(
     employeeId: string,
-    file: Express.Multer.File,
+    coverLetter: Express.Multer.File,
   ): Promise<CoreResponseDTO>;
   removeEmployeeCoverLetter(employeeId: string): Promise<CoreResponseDTO>;
 }
 
 export interface IUploadEmployeeRpcController {
-  uploadEmployeeResume(data: UploadEmployeeResumeDTO): Promise<CoreResponseDTO>;
-  removeEmployeeResume(data: EmployeeIdDTO): Promise<CoreResponseDTO>;
-  uploadEmployeeCoverLetter(
-    data: UploadEmployeeCoverLetterDTO,
+  uploadEmployeeResume(
+    uploadEmployeeResumeDTO: UploadEmployeeResumeDTO,
   ): Promise<CoreResponseDTO>;
-  removeEmployeeCoverLetter(data: EmployeeIdDTO): Promise<CoreResponseDTO>;
+  removeEmployeeResume(employeeIdDTO: EmployeeIdDTO): Promise<CoreResponseDTO>;
+  uploadEmployeeCoverLetter(
+    uploadEmployeeCoverLetterDTO: UploadEmployeeCoverLetterDTO,
+  ): Promise<CoreResponseDTO>;
+  removeEmployeeCoverLetter(
+    employeeIdDTO: EmployeeIdDTO,
+  ): Promise<CoreResponseDTO>;
 }
 
 export interface IRemoveEmployeeItemsController {
@@ -89,10 +101,10 @@ export interface IRemoveEmployeeItemsController {
 
 export interface IRemoveEmployeeItemsRpcController {
   removeEmployeeEducation(
-    data: RemoveEmployeeEducationDTO,
+    removeEmployeeEducationDTO: RemoveEmployeeEducationDTO,
   ): Promise<CoreResponseDTO>;
   removeEmployeeExperience(
-    data: RemoveEmployeeExperienceDTO,
+    removeEmployeeExperienceDTO: RemoveEmployeeExperienceDTO,
   ): Promise<CoreResponseDTO>;
 }
 

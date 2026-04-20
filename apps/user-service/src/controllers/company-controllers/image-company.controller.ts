@@ -24,43 +24,43 @@ export class ImageCompanyController implements IImageCompanyRpcController {
 
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_AVATAR)
   async uploadCompanyAvatar(
-    @Payload() payload: UploadCompanyAvatarDTO,
+    @Payload() uploadCompanyAvatarDTO: UploadCompanyAvatarDTO,
   ): Promise<CoreResponseDTO> {
-    return this.imageCompanyService.uploadCompanyAvatar(payload);
+    return this.imageCompanyService.uploadCompanyAvatar(uploadCompanyAvatarDTO);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_COMPANY_AVATAR)
   async removeCompanyAvatar(
-    @Payload() payload: CompanyIdDTO,
+    @Payload() companyIdDTO: CompanyIdDTO,
   ): Promise<CoreResponseDTO> {
-    return this.imageCompanyService.removeCompanyAvatar(payload);
+    return this.imageCompanyService.removeCompanyAvatar(companyIdDTO);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_COVER)
   async uploadCompanyCover(
-    @Payload() payload: UploadCompanyCoverDTO,
+    @Payload() uploadCompanyCoverDTO: UploadCompanyCoverDTO,
   ): Promise<CoreResponseDTO> {
-    return this.imageCompanyService.uploadCompanyCover(payload);
+    return this.imageCompanyService.uploadCompanyCover(uploadCompanyCoverDTO);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_COMPANY_COVER)
   async removeCompanyCover(
-    @Payload() payload: CompanyIdDTO,
+    @Payload() companyIdDTO: CompanyIdDTO,
   ): Promise<CoreResponseDTO> {
-    return this.imageCompanyService.removeCompanyCover(payload);
+    return this.imageCompanyService.removeCompanyCover(companyIdDTO);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_COMPANY_IMAGES)
   async uploadCompanyImages(
-    @Payload() payload: UploadCompanyImagesDTO,
+    @Payload() uploadCompanyImagesDTO: UploadCompanyImagesDTO,
   ): Promise<CoreResponseDTO> {
-    return this.imageCompanyService.uploadCompanyImages(payload);
+    return this.imageCompanyService.uploadCompanyImages(uploadCompanyImagesDTO);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_COMPANY_IMAGES)
   async removeCompanyImage(
-    @Payload() payload: RemoveCompanyImageDTO,
+    @Payload() removeCompanyImageDTO: RemoveCompanyImageDTO,
   ): Promise<CoreResponseDTO> {
-    return this.imageCompanyService.removeCompanyImage(payload);
+    return this.imageCompanyService.removeCompanyImage(removeCompanyImageDTO);
   }
 }

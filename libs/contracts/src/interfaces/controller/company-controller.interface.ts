@@ -14,31 +14,31 @@ import {
 } from '@app/contracts/dtos/user';
 
 export interface IFindCompanyController {
-  findAll(data: PaginationDTO): Promise<CompanyResponseDTO[]>;
-  findOneById(data: string): Promise<CompanyResponseDTO>;
+  findAll(paginationDTO: PaginationDTO): Promise<CompanyResponseDTO[]>;
+  findOneById(companyId: string): Promise<CompanyResponseDTO>;
   countAllCompanies(): Promise<CountAllUsersResponseDTO>;
 }
 
 export interface IFindCompanyRpcController {
-  findAll(data: PaginationDTO): Promise<CompanyResponseDTO[]>;
-  findOneById(data: CompanyIdDTO): Promise<CompanyResponseDTO>;
+  findAll(paginationDTO: PaginationDTO): Promise<CompanyResponseDTO[]>;
+  findOneById(companyIdDTO: CompanyIdDTO): Promise<CompanyResponseDTO>;
   countAllCompanies(): Promise<CountAllUsersResponseDTO>;
 }
 
 export interface IImageCompanyController {
   uploadCompanyAvatar(
     companyId: string,
-    file: Express.Multer.File,
+    avatar: Express.Multer.File,
   ): Promise<CoreResponseDTO>;
   removeCompanyAvatar(companyId: string): Promise<CoreResponseDTO>;
   uploadCompanyCover(
     companyId: string,
-    file: Express.Multer.File,
+    cover: Express.Multer.File,
   ): Promise<CoreResponseDTO>;
   removeCompanyCover(companyId: string): Promise<CoreResponseDTO>;
   uploadCompanyImages(
     companyId: string,
-    file: Express.Multer.File[],
+    images: Express.Multer.File[],
   ): Promise<CoreResponseDTO>;
   removeCompanyImage(
     companyId: string,
@@ -47,24 +47,32 @@ export interface IImageCompanyController {
 }
 
 export interface IImageCompanyRpcController {
-  uploadCompanyAvatar(data: UploadCompanyAvatarDTO): Promise<CoreResponseDTO>;
-  removeCompanyAvatar(data: CompanyIdDTO): Promise<CoreResponseDTO>;
-  uploadCompanyCover(data: UploadCompanyCoverDTO): Promise<CoreResponseDTO>;
-  removeCompanyCover(data: CompanyIdDTO): Promise<CoreResponseDTO>;
-  uploadCompanyImages(data: UploadCompanyImagesDTO): Promise<CoreResponseDTO>;
-  removeCompanyImage(data: RemoveCompanyImageDTO): Promise<CoreResponseDTO>;
+  uploadCompanyAvatar(
+    uploadCompanyAvatarDTO: UploadCompanyAvatarDTO,
+  ): Promise<CoreResponseDTO>;
+  removeCompanyAvatar(companyIdDTO: CompanyIdDTO): Promise<CoreResponseDTO>;
+  uploadCompanyCover(
+    uploadCompanyCoverDTO: UploadCompanyCoverDTO,
+  ): Promise<CoreResponseDTO>;
+  removeCompanyCover(companyIdDTO: CompanyIdDTO): Promise<CoreResponseDTO>;
+  uploadCompanyImages(
+    uploadCompanyImagesDTO: UploadCompanyImagesDTO,
+  ): Promise<CoreResponseDTO>;
+  removeCompanyImage(
+    removeCompanyImageDTO: RemoveCompanyImageDTO,
+  ): Promise<CoreResponseDTO>;
 }
 
 export interface IUpdateCompanyInfoController {
   updateCompanyInfo(
     companyId: string,
-    body: UpdateCompanyInfoDTO,
+    updateCompanyInfoDTO: UpdateCompanyInfoDTO,
   ): Promise<UpdateCompanyInfoResponseDTO>;
 }
 
 export interface IUpdateCompanyInfoRpcController {
   updateCompanyInfo(
-    data: UpdateCompanyInfoRequestDTO,
+    updateCompanyInfoRequestDTO: UpdateCompanyInfoRequestDTO,
   ): Promise<UpdateCompanyInfoResponseDTO>;
 }
 
@@ -73,7 +81,9 @@ export interface IOpenPositionController {
 }
 
 export interface IOpenPositionRpcController {
-  removeOpenPosition(data: RemoveOpenPositionDTO): Promise<CoreResponseDTO>;
+  removeOpenPosition(
+    removeOpenPositionDTO: RemoveOpenPositionDTO,
+  ): Promise<CoreResponseDTO>;
 }
 
 export interface ICompanyController

@@ -22,20 +22,20 @@ export class FindEmployeeController implements IFindEmployeeRpcController {
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_EMPLOYEE)
   async findAll(
-    @Payload() payload: PaginationDTO,
+    @Payload() paginationDTO: PaginationDTO,
   ): Promise<EmployeeResponseDTO[]> {
-    return this.findEmployeeService.findAll(payload);
+    return this.findEmployeeService.findAll(paginationDTO);
+  }
+
+  @MessagePattern(USER_SERVICE.ACTIONS.FIND_ONE_EMPLOYEE_BY_ID)
+  async findOneById(
+    @Payload() employeeIdDTO: EmployeeIdDTO,
+  ): Promise<EmployeeResponseDTO> {
+    return this.findEmployeeService.findOneById(employeeIdDTO);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.COUNT_ALL_EMPLOYEE)
   async countAllEmployees(): Promise<CountAllUsersResponseDTO> {
     return this.findEmployeeService.countAllEmployees();
-  }
-
-  @MessagePattern(USER_SERVICE.ACTIONS.FIND_ONE_EMPLOYEE_BY_ID)
-  async findOneById(
-    @Payload() payload: EmployeeIdDTO,
-  ): Promise<EmployeeResponseDTO> {
-    return this.findEmployeeService.findOneById(payload);
   }
 }

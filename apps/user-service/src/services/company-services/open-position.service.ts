@@ -7,7 +7,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { RemoveOpenPositionDTO } from '@app/contracts/dtos/user';
-
 import { IOpenPositionService } from '@app/contracts/interfaces/service/user-service.interface';
 import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 
@@ -20,7 +19,7 @@ export class OpenPositionService implements IOpenPositionService {
     private readonly redisService: RedisService,
   ) {}
 
-  private async invalidateCompanyCaches(companyId: string) {
+  private async invalidateCompanyCaches(companyId: string): Promise<void> {
     const users = await this.userRepository.find({
       where: { company: { id: companyId } },
       select: ['id'],
@@ -42,9 +41,9 @@ export class OpenPositionService implements IOpenPositionService {
   }
 
   async removeOpenPosition(
-    dto: RemoveOpenPositionDTO,
+    removeOpenPositionDTO: RemoveOpenPositionDTO,
   ): Promise<CoreResponseDTO> {
-    const { companyId, opId } = dto;
+    const { companyId, opId } = removeOpenPositionDTO;
     try {
       const removedJob = await this.jobRepository.findOne({
         where: { id: opId, company: { id: companyId } },

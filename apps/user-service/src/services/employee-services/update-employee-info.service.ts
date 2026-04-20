@@ -4,21 +4,17 @@ import { Employee } from '@app/common/database/entities/employee/employee.entity
 import { Experience } from '@app/common/database/entities/employee/experience.entity';
 import { Skill } from '@app/common/database/entities/employee/skill.entity';
 import { Social } from '@app/common/database/entities/social.entity';
-import { User } from '@app/common/database/entities/user.entity';
 import { CacheInvalidationService } from '@app/common/redis/cache-invalidation.service';
-import { RedisService } from '@app/common/redis/redis.service';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import {
-  UpdateEmployeeInfoDTO,
   UpdateEmployeeInfoRequestDTO,
   UpdateEmployeeInfoResponseDTO,
   EmployeeResponseDTO,
 } from '@app/contracts/dtos/user';
-
 import { IUpdateEmployeeInfoService } from '@app/contracts/interfaces/service/user-service.interface';
 
 @Injectable()
@@ -36,17 +32,14 @@ export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
     private readonly socialRepository: Repository<Social>,
     @InjectRepository(Education)
     private readonly educationRepository: Repository<Education>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
     private readonly logger: PinoLogger,
-    private readonly redisService: RedisService,
     private readonly cacheInvalidationService: CacheInvalidationService,
   ) {}
 
   async updateEmployeeInfo(
-    dto: UpdateEmployeeInfoRequestDTO,
+    updateEmployeeInfoRequestDTO: UpdateEmployeeInfoRequestDTO,
   ): Promise<UpdateEmployeeInfoResponseDTO> {
-    const { employeeId, updateEmployeeInfoDTO } = dto;
+    const { employeeId, updateEmployeeInfoDTO } = updateEmployeeInfoRequestDTO;
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },

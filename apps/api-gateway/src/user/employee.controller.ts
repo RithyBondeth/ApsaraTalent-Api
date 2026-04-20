@@ -38,12 +38,12 @@ export class EmployeeController implements IEmployeeController {
 
   @Get('all')
   async findAll(
-    @Query() pagination: PaginationDTO,
+    @Query() paginationDTO: PaginationDTO,
   ): Promise<EmployeeResponseDTO[]> {
     return rpcCall<EmployeeResponseDTO[]>(
       this.userClient,
       USER_SERVICE.ACTIONS.FIND_ALL_EMPLOYEE,
-      { pagination },
+      { paginationDTO },
     );
   }
 
@@ -63,10 +63,14 @@ export class EmployeeController implements IEmployeeController {
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @Body() updateEmployeeInfoDTO: UpdateEmployeeInfoDTO,
   ): Promise<UpdateEmployeeInfoResponseDTO> {
-    return rpcCall(this.userClient, USER_SERVICE.ACTIONS.UPDATE_EMPLOYEE_INFO, {
-      employeeId,
-      updateEmployeeInfoDTO,
-    });
+    return rpcCall<UpdateEmployeeInfoResponseDTO>(
+      this.userClient,
+      USER_SERVICE.ACTIONS.UPDATE_EMPLOYEE_INFO,
+      {
+        employeeId,
+        updateEmployeeInfoDTO,
+      },
+    );
   }
 
   @Post('upload-avatar/:employeeId')
@@ -147,7 +151,7 @@ export class EmployeeController implements IEmployeeController {
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @Param('educationId', ParseUUIDPipe) educationId: string,
   ): Promise<CoreResponseDTO> {
-    return rpcCall(
+    return rpcCall<CoreResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_EDUCATION,
       { employeeId, educationId },
@@ -159,7 +163,7 @@ export class EmployeeController implements IEmployeeController {
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @Param('experienceId', ParseUUIDPipe) experienceId: string,
   ): Promise<CoreResponseDTO> {
-    return rpcCall(
+    return rpcCall<CoreResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_EXPERIENCE,
       { employeeId, experienceId },
@@ -168,12 +172,12 @@ export class EmployeeController implements IEmployeeController {
 
   @Get('search-employee')
   async searchEmployee(
-    @Query() searchEmployeeQuery: SearchEmployeeDTO,
+    @Query() searchEmployeeDTO: SearchEmployeeDTO,
   ): Promise<SearchEmployeeResponseDTO[]> {
     return rpcCall<SearchEmployeeResponseDTO[]>(
       this.userClient,
       USER_SERVICE.ACTIONS.SEARCH_EMPLOYEES,
-      searchEmployeeQuery,
+      searchEmployeeDTO,
     );
   }
 }

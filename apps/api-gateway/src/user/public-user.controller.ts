@@ -31,10 +31,10 @@ export class PublicUserController implements IPublicUserController {
       ),
     ]);
 
-    return {
+    return new LandingStatsResponseDTO({
       users: users?.totalUsers ?? 0,
       companies: companies?.totalCompanies ?? 0,
       employees: employees?.totalEmployees ?? 0,
-    };
+    });
   }
 }

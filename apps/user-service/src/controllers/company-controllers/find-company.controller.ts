@@ -8,8 +8,6 @@ import {
   CompanyIdDTO,
 } from '@app/contracts/dtos/user';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
-import { FindCompanyService } from '../../services/company-services/find-company.service';
-
 import {
   I_FIND_COMPANY_SERVICE,
   IFindCompanyService,
@@ -24,9 +22,9 @@ export class FindCompanyController implements IFindCompanyRpcController {
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_COMPANY)
   async findAll(
-    @Payload() payload: PaginationDTO,
+    @Payload() paginationDTO: PaginationDTO,
   ): Promise<CompanyResponseDTO[]> {
-    return this.findCompanyService.findAll(payload);
+    return this.findCompanyService.findAll(paginationDTO);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.COUNT_ALL_COMPANY)
@@ -36,8 +34,8 @@ export class FindCompanyController implements IFindCompanyRpcController {
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ONE_COMPANY_BY_ID)
   async findOneById(
-    @Payload() payload: CompanyIdDTO,
+    @Payload() companyIdDTO: CompanyIdDTO,
   ): Promise<CompanyResponseDTO> {
-    return this.findCompanyService.findOneById(payload);
+    return this.findCompanyService.findOneById(companyIdDTO);
   }
 }

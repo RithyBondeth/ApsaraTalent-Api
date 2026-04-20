@@ -6,7 +6,6 @@ import {
   I_EXPERIENCE_AND_EDUCATION_SERVICE,
   IExperienceAndEducationService,
 } from '@app/contracts/interfaces/service/user-service.interface';
-
 import { IRemoveEmployeeItemsRpcController } from '@app/contracts/interfaces/controller/employee-controller.interface';
 import {
   RemoveEmployeeEducationDTO,
@@ -22,15 +21,19 @@ export class ExperienceAndEducationController implements IRemoveEmployeeItemsRpc
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_EXPERIENCE)
   async removeEmployeeExperience(
-    @Payload() payload: RemoveEmployeeExperienceDTO,
+    @Payload() removeEmployeeExperienceDTO: RemoveEmployeeExperienceDTO,
   ): Promise<CoreResponseDTO> {
-    return this.experienceAndEducationService.removeEmployeeExperience(payload);
+    return this.experienceAndEducationService.removeEmployeeExperience(
+      removeEmployeeExperienceDTO,
+    );
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_EDUCATION)
   async removeEmployeeEducation(
-    @Payload() payload: RemoveEmployeeEducationDTO,
+    @Payload() removeEmployeeEducationDTO: RemoveEmployeeEducationDTO,
   ): Promise<CoreResponseDTO> {
-    return this.experienceAndEducationService.removeEmployeeEducation(payload);
+    return this.experienceAndEducationService.removeEmployeeEducation(
+      removeEmployeeEducationDTO,
+    );
   }
 }

@@ -6,7 +6,6 @@ import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
-
 import {
   RemoveEmployeeEducationDTO,
   RemoveEmployeeExperienceDTO,
@@ -26,9 +25,9 @@ export class ExperienceAndEducationService implements IExperienceAndEducationSer
   ) {}
 
   async removeEmployeeExperience(
-    dto: RemoveEmployeeExperienceDTO,
+    removeEmployeeExperienceDTO: RemoveEmployeeExperienceDTO,
   ): Promise<CoreResponseDTO> {
-    const { employeeId, experienceId } = dto;
+    const { employeeId, experienceId } = removeEmployeeExperienceDTO;
     try {
       const removeExp = await this.expRepository.findOne({
         where: { id: experienceId, employee: { id: employeeId } },
@@ -63,9 +62,9 @@ export class ExperienceAndEducationService implements IExperienceAndEducationSer
   }
 
   async removeEmployeeEducation(
-    dto: RemoveEmployeeEducationDTO,
+    removeEmployeeEducationDTO: RemoveEmployeeEducationDTO,
   ): Promise<CoreResponseDTO> {
-    const { employeeId, educationId } = dto;
+    const { employeeId, educationId } = removeEmployeeEducationDTO;
     try {
       const removeEdu = await this.eduRepository.findOne({
         where: { id: educationId, employee: { id: employeeId } },

@@ -22,33 +22,37 @@ export class UploadEmployeeReferenceController implements IUploadEmployeeRpcCont
 
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_RESUME)
   async uploadEmployeeResume(
-    @Payload() payload: UploadEmployeeResumeDTO,
+    @Payload() uploadEmployeeResumeDTO: UploadEmployeeResumeDTO,
   ): Promise<CoreResponseDTO> {
-    return this.uploadEmployeeReferenceService.uploadEmployeeResume(payload);
+    return this.uploadEmployeeReferenceService.uploadEmployeeResume(
+      uploadEmployeeResumeDTO,
+    );
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_RESUME)
   async removeEmployeeResume(
-    @Payload() payload: EmployeeIdDTO,
+    @Payload() employeeIdDTO: EmployeeIdDTO,
   ): Promise<CoreResponseDTO> {
-    return this.uploadEmployeeReferenceService.removeEmployeeResume(payload);
+    return this.uploadEmployeeReferenceService.removeEmployeeResume(
+      employeeIdDTO,
+    );
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_COVER_LETTER)
   async uploadEmployeeCoverLetter(
-    @Payload() payload: UploadEmployeeCoverLetterDTO,
+    @Payload() uploadEmployeeCoverLetterDTO: UploadEmployeeCoverLetterDTO,
   ): Promise<CoreResponseDTO> {
     return this.uploadEmployeeReferenceService.uploadEmployeeCoverLetter(
-      payload,
+      uploadEmployeeCoverLetterDTO,
     );
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_COVER_LETTER)
   async removeEmployeeCoverLetter(
-    @Payload() payload: EmployeeIdDTO,
+    @Payload() employeeIdDTO: EmployeeIdDTO,
   ): Promise<CoreResponseDTO> {
     return this.uploadEmployeeReferenceService.removeEmployeeCoverLetter(
-      payload,
+      employeeIdDTO,
     );
   }
 }
