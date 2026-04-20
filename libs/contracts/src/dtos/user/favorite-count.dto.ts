@@ -1,4 +1,5 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsUUID } from 'class-validator';
+
 export class FavoriteCountResponseDTO {
   count: number;
 
@@ -8,6 +9,6 @@ export class FavoriteCountResponseDTO {
 }
 
 export class FavoriteCountDTO {
-  @IsString() @IsOptional() eid?: string;
-  @IsString() @IsOptional() cid?: string;
+  @IsUUID() @IsOptional() eid?: string;
+  @IsUUID() @IsOptional() cid?: string;
 }

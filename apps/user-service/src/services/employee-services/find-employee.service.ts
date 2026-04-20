@@ -9,9 +9,9 @@ import { Repository } from 'typeorm';
 import {
   CountAllUsersResponseDTO,
   EmployeeResponseDTO,
-  PaginationRequestDTO,
   EmployeeIdDTO,
 } from '@app/contracts/dtos/user';
+import { PaginationDTO } from '@app/contracts/dtos/shared';
 
 import { IFindEmployeeService } from '@app/contracts/interfaces/service/user-service.interface';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
@@ -28,7 +28,7 @@ export class FindEmployeeService implements IFindEmployeeService {
   ) {}
 
   async findAll(
-    pagination: PaginationRequestDTO,
+    pagination: PaginationDTO,
   ): Promise<EmployeeResponseDTO[]> {
     const { skip = 0, limit = 10 } = pagination;
     const cacheKey = this.redisService.generateListKey('employee', {

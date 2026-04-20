@@ -7,5 +7,3 @@ export class LandingStatsResponseDTO {
     Object.assign(this, partial);
   }
 }
-
-export class LandingStatsDTO {}

@@ -11,15 +11,14 @@ import {
   EmployeeFavoriteLookupDTO,
   EmployeeRecommendationsDTO,
   FavoriteCountResponseDTO,
-  PaginationRequestDTO,
   UpdatePushNotificationTokenBodyDTO,
   UpdatePushNotificationTokenDTO,
   UserIdDTO,
 } from '@app/contracts/dtos/user';
-import { CoreResponseDTO } from '@app/contracts/dtos/shared';
+import { CoreResponseDTO, PaginationDTO } from '@app/contracts/dtos/shared';
 
 export interface IUserController {
-  findAllUsers(data: PaginationRequestDTO): Promise<UserResponseDTO[]>;
+  findAllUsers(data: PaginationDTO): Promise<UserResponseDTO[]>;
   findOneUserById(data: string): Promise<UserResponseDTO>;
   getCurrentUser(data?: any): Promise<UserResponseDTO>;
   findAllCareerScopes(): Promise<any>;
@@ -52,7 +51,7 @@ export interface IUserController {
 }
 
 export interface IUserRpcController {
-  findAllUsers(data: PaginationRequestDTO): Promise<UserResponseDTO[]>;
+  findAllUsers(data: PaginationDTO): Promise<UserResponseDTO[]>;
   findOneUserById(data: UserIdDTO): Promise<UserResponseDTO>;
   getCurrentUser(data: UserIdDTO): Promise<UserResponseDTO>;
   findAllCareerScopes(): Promise<any>;

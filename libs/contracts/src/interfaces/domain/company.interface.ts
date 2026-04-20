@@ -2,7 +2,6 @@ import { CoreResponseDTO, PaginationDTO } from '../../dtos/shared';
 import {
   CompanyIdDTO,
   CompanyResponseDTO,
-  PaginationRequestDTO,
   RemoveCompanyImageDTO,
   RemoveOpenPositionDTO,
   UpdateCompanyInfoDTO,
@@ -21,7 +20,7 @@ export interface IFindCompanyController {
 }
 
 export interface IFindCompanyRpcController {
-  findAll(data: PaginationRequestDTO): Promise<CompanyResponseDTO[]>;
+  findAll(data: PaginationDTO): Promise<CompanyResponseDTO[]>;
   findOneById(data: CompanyIdDTO): Promise<CompanyResponseDTO>;
   countAllCompanies(): Promise<CountAllUsersResponseDTO>;
 }

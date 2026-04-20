@@ -10,8 +10,8 @@ import {
   UserResponseDTO,
   CompanyResponseDTO,
   EmployeeResponseDTO,
+  CareerScopesResponseDTO,
   FavoriteCountResponseDTO,
-  PaginationRequestDTO,
   UserIdDTO,
   UpdatePushNotificationTokenDTO,
   EmployeeCompanyFavoriteDTO,
@@ -28,7 +28,7 @@ import {
   I_USER_SERVICE,
   IUserService,
 } from '@app/contracts/interfaces/service/user-service.interface';
-import { CoreResponseDTO } from '@app/contracts/dtos/shared';
+import { CoreResponseDTO, PaginationDTO } from '@app/contracts/dtos/shared';
 
 @Controller()
 export class UserController implements IUserRpcController {
@@ -38,7 +38,7 @@ export class UserController implements IUserRpcController {
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL)
   async findAllUsers(
-    @Payload() payload: PaginationRequestDTO,
+    @Payload() payload: PaginationDTO,
   ): Promise<UserResponseDTO[]> {
     return this.userService.findAllUsers(payload);
   }
@@ -126,7 +126,7 @@ export class UserController implements IUserRpcController {
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_CAREER_SCOPES)
-  async findAllCareerScopes(): Promise<any[]> {
+  async findAllCareerScopes(): Promise<CareerScopesResponseDTO[]> {
     return this.userService.findAllCareerScopes();
   }
 

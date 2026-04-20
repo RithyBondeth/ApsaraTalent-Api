@@ -20,14 +20,13 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { CoreResponseDTO } from '@app/contracts/dtos/shared';
+import { CoreResponseDTO, PaginationDTO } from '@app/contracts/dtos/shared';
 import {
   CompanyResponseDTO,
   UpdateCompanyInfoResponseDTO,
   UpdateCompanyInfoDTO,
   CountAllUsersResponseDTO,
 } from '@app/contracts/dtos/user';
-import { PaginationDTO } from '@app/contracts/dtos/shared';
 import { rpcCall } from '../utils/rpc-call';
 
 @Controller('user/company')

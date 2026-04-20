@@ -1,4 +1,5 @@
 import { CareerScope } from '@app/common/database/entities/career-scope.entity';
+import { PaginationDTO } from '@app/contracts/dtos/shared';
 import {
   CompanyResponseDTO,
   CompanyEmployeeFavoriteDTO,
@@ -13,7 +14,6 @@ import {
   EmployeeIdDTO,
   EmployeeRecommendationsDTO,
   EmployeeResponseDTO,
-  PaginationRequestDTO,
   RemoveCompanyImageDTO,
   RemoveCompanyImageDTO as RemoveCompanyImagesDTO,
   RemoveEmployeeEducationDTO,
@@ -70,13 +70,13 @@ export interface IUpdateCompanyInfoService {
 }
 
 export interface IFindEmployeeService {
-  findAll(pagination: PaginationRequestDTO): Promise<EmployeeResponseDTO[]>;
+  findAll(pagination: PaginationDTO): Promise<EmployeeResponseDTO[]>;
   countAllEmployees(): Promise<CountAllUsersResponseDTO>;
   findOneById(dto: EmployeeIdDTO): Promise<EmployeeResponseDTO>;
 }
 
 export interface IFindCompanyService {
-  findAll(pagination: PaginationRequestDTO): Promise<CompanyResponseDTO[]>;
+  findAll(pagination: PaginationDTO): Promise<CompanyResponseDTO[]>;
   countAllCompanies(): Promise<CountAllUsersResponseDTO>;
   findOneById(dto: CompanyIdDTO): Promise<CompanyResponseDTO>;
 }
@@ -106,7 +106,7 @@ export interface ISearchEmployeeService {
 }
 
 export interface IUserService {
-  findAllUsers(dto: PaginationRequestDTO): Promise<UserResponseDTO[]>;
+  findAllUsers(dto: PaginationDTO): Promise<UserResponseDTO[]>;
   countAllUsers(): Promise<CountAllUsersResponseDTO>;
   findOneUserByID(dto: UserIdDTO): Promise<UserResponseDTO>;
   updatePushNotificationToken(

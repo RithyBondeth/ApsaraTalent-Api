@@ -17,10 +17,9 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { PaginationDTO } from '@app/contracts/dtos/shared';
+import { CoreResponseDTO, PaginationDTO } from '@app/contracts/dtos/shared';
 import { ClientProxy } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 import {
   EmployeeResponseDTO,
   SearchEmployeeResponseDTO,

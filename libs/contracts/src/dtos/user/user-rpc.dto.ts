@@ -7,7 +7,6 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { PaginationDTO } from '../shared';
 import { UpdateCompanyInfoDTO } from './update-company-info.dto';
 import { UpdateEmployeeInfoDTO } from './update-employee-info.dto';
 
@@ -146,4 +145,3 @@ export class RemoveOpenPositionDTO extends CompanyIdDTO {
   opId: string;
 }
 
-export class PaginationRequestDTO extends PaginationDTO {}

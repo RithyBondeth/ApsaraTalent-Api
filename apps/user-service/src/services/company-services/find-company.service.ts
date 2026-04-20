@@ -10,9 +10,9 @@ import {
   CompanyResponseDTO,
   CountAllUsersResponseDTO,
   JobPositionResponseDTO,
-  PaginationRequestDTO,
   CompanyIdDTO,
 } from '@app/contracts/dtos/user';
+import { PaginationDTO } from '@app/contracts/dtos/shared';
 
 import { IFindCompanyService } from '@app/contracts/interfaces/service/user-service.interface';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
@@ -29,7 +29,7 @@ export class FindCompanyService implements IFindCompanyService {
   ) {}
 
   async findAll(
-    pagination: PaginationRequestDTO,
+    pagination: PaginationDTO,
   ): Promise<CompanyResponseDTO[]> {
     const { skip = 0, limit = 10 } = pagination;
     const cacheKey = this.redisService.generateListKey('company', {

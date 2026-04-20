@@ -16,7 +16,6 @@ import {
   CompanyResponseDTO,
   UserResponseDTO,
   FavoriteCountResponseDTO,
-  PaginationRequestDTO,
   UserIdDTO,
   UpdatePushNotificationTokenDTO,
   EmployeeCompanyFavoriteDTO,
@@ -31,6 +30,7 @@ import {
   EmployeeResponseDTO,
   JobPositionResponseDTO,
 } from '@app/contracts/dtos/user';
+import { PaginationDTO } from '@app/contracts/dtos/shared';
 import { IUserService } from '@app/contracts/interfaces/service/user-service.interface';
 import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
@@ -70,7 +70,7 @@ export class UserService implements IUserService, OnModuleInit {
     }
   }
 
-  async findAllUsers(dto: PaginationRequestDTO): Promise<UserResponseDTO[]> {
+  async findAllUsers(dto: PaginationDTO): Promise<UserResponseDTO[]> {
     const { skip = 0, limit = 20 } = dto;
     const cacheKey = this.redisService.generateListKey('user', { skip, limit });
     const cached = await this.redisService.get<UserResponseDTO[]>(cacheKey);

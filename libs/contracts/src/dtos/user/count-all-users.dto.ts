@@ -1,4 +1,3 @@
-
 export class CountAllUsersResponseDTO {
   totalUsers?: number;
   totalEmployees?: number;
@@ -8,5 +7,3 @@ export class CountAllUsersResponseDTO {
     Object.assign(this, partial);
   }
 }
-
-export class CountAllUsersDTO {}

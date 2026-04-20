@@ -2,7 +2,6 @@ import { CoreResponseDTO, PaginationDTO } from '@app/contracts/dtos/shared';
 import {
   EmployeeIdDTO,
   EmployeeResponseDTO,
-  PaginationRequestDTO,
   RemoveEmployeeEducationDTO,
   RemoveEmployeeExperienceDTO,
   SearchEmployeeDTO,
@@ -21,7 +20,7 @@ export interface IFindEmployeeController {
 }
 
 export interface IFindEmployeeRpcController {
-  findAll(data: PaginationRequestDTO): Promise<EmployeeResponseDTO[]>;
+  findAll(data: PaginationDTO): Promise<EmployeeResponseDTO[]>;
   findOneById(data: EmployeeIdDTO): Promise<EmployeeResponseDTO>;
 }
 

@@ -16,14 +16,13 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { CoreResponseDTO } from '@app/contracts/dtos/shared';
+import { CoreResponseDTO, PaginationDTO } from '@app/contracts/dtos/shared';
 import {
   UserResponseDTO,
   CompanyResponseDTO,
   EmployeeResponseDTO,
   CareerScopesResponseDTO,
   FavoriteCountResponseDTO,
-  PaginationRequestDTO,
   EmployeeCompanyFavoriteDTO,
   EmployeeCompanyFavoriteWithFavoriteIdDTO,
   CompanyEmployeeFavoriteDTO,
@@ -86,7 +85,7 @@ export class UserController implements IUserController {
 
   @Get('all')
   async findAllUsers(
-    @Query() data: PaginationRequestDTO,
+    @Query() data: PaginationDTO,
   ): Promise<UserResponseDTO[]> {
     return rpcCall<UserResponseDTO[]>(
       this.userClient,

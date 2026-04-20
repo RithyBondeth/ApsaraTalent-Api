@@ -5,9 +5,9 @@ import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-serv
 import {
   CountAllUsersResponseDTO,
   EmployeeResponseDTO,
-  PaginationRequestDTO,
   EmployeeIdDTO,
 } from '@app/contracts/dtos/user';
+import { PaginationDTO } from '@app/contracts/dtos/shared';
 import {
   I_FIND_EMPLOYEE_SERVICE,
   IFindEmployeeService,
@@ -22,7 +22,7 @@ export class FindEmployeeController implements IFindEmployeeRpcController {
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_EMPLOYEE)
   async findAll(
-    @Payload() payload: PaginationRequestDTO,
+    @Payload() payload: PaginationDTO,
   ): Promise<EmployeeResponseDTO[]> {
     return this.findEmployeeService.findAll(payload);
   }
