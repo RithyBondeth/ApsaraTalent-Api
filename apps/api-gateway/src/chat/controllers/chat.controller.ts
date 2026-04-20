@@ -15,14 +15,14 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ClientProxy } from '@nestjs/microservices';
 import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-service.constant';
-import { chatUploadMulterOptions } from './config/chat-upload.config';
+import { chatUploadMulterOptions } from '../config/chat-upload.config';
 import { IChatController } from '@app/contracts/interfaces/controller/chat-controller.interface';
 import {
   InitiateChatResponseDTO,
   UploadAttachmentResponseDTO,
   InitiateChatDTO,
 } from '@app/contracts/dtos/chat';
-import { rpcCall } from '../utils/rpc-call';
+import { rpcCall } from '../../utils/rpc-call';
 
 @Controller('chat')
 export class ChatController implements IChatController {

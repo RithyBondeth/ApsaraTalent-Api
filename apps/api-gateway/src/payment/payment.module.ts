@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PAYMENT_SERVICE } from '@app/contracts/constants/service-actions/payment-service.constant';
-import { PaymentController } from './payment.controller';
+import { PaymentController } from './controllers/payment.controller';
 
 @Module({
   imports: [

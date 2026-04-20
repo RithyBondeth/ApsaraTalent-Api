@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
-import { NotificationController } from './notification.controller';
+import { NotificationController } from './controllers/notification.controller';
 
 @Module({
   imports: [

@@ -16,7 +16,7 @@ import {
   RESUME_BUILDER_SERVICE,
   USER_SERVICE,
 } from '@app/contracts/constants';
-import { HealthController } from './health.controller';
+import { HealthController } from './controllers/health.controller';
 import { InternalServiceHealthIndicator } from './indicators/internal-service.health';
 
 @Module({

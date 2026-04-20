@@ -4,7 +4,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { ChatGatewayService } from './chat-gateway.service';
+import { ChatGatewayService } from '../services/chat-gateway.service';
 import {
   CHAT_ALLOW_ALL_CORS,
   CHAT_ALLOWED_ORIGINS,
@@ -20,7 +20,7 @@ import {
   CallDeclinedResponseDTO,
   CallEndResponseDTO,
 } from '@app/contracts';
-import { isOriginAllowed } from '../utils/cors-origin.util';
+import { isOriginAllowed } from '../../utils/cors-origin.util';
 
 @WebSocketGateway({
   namespace: '/chat',

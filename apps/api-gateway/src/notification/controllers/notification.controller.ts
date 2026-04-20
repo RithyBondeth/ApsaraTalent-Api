@@ -26,7 +26,7 @@ import {
   CreateNotificationCurrentUserResponseDTO,
   CreateNotificationCurrentUserDTO,
 } from '@app/contracts/dtos/notification';
-import { rpcCall } from '../utils/rpc-call';
+import { rpcCall } from '../../utils/rpc-call';
 
 @Controller('notification')
 export class NotificationController implements INotificationController {

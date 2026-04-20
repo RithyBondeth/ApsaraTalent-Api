@@ -20,7 +20,7 @@ import {
   RedisCacheHealthIndicator,
 } from '@app/common';
 import { LivenessResponseDTO } from '@app/contracts/dtos/health';
-import { InternalServiceHealthIndicator } from './indicators/internal-service.health';
+import { InternalServiceHealthIndicator } from '../indicators/internal-service.health';
 
 const INTERNAL_SERVICES = [
   AUTH_SERVICE.NAME,

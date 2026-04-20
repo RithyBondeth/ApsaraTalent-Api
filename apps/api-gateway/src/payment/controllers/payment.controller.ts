@@ -35,7 +35,7 @@ import {
   KhqrInfoLookupDTO,
   GenerateMd5HashDTO,
 } from '@app/contracts/dtos/payment';
-import { rpcCall } from '../utils/rpc-call';
+import { rpcCall } from '../../utils/rpc-call';
 
 @Controller('bakong')
 export class PaymentController implements IPaymentController {

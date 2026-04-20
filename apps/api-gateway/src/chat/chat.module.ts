@@ -7,10 +7,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-service.constant';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { ChatController } from './chat.controller';
-import { ChatGateway } from './chat.gateway';
-import { CallGateway } from './call.gateway';
-import { ChatGatewayService } from './chat-gateway.service';
+import { ChatController } from './controllers/chat.controller';
+import { ChatGateway } from './gateways/chat.gateway';
+import { CallGateway } from './gateways/call.gateway';
+import { ChatGatewayService } from './services/chat-gateway.service';
 
 @Module({
   imports: [
