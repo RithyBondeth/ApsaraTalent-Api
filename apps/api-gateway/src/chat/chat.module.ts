@@ -8,7 +8,9 @@ import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-serv
 import { ChatController } from './controllers/chat.controller';
 import { ChatGateway } from './gateways/chat.gateway';
 import { CallGateway } from './gateways/call.gateway';
-import { ChatGatewayService } from './services/chat-gateway.service';
+import { SocketStateService } from './services/socket-state.service';
+import { ChatNotificationService } from './services/chat-notification.service';
+import { ChatRateLimiterService } from './services/chat-rate-limiter.service';
 
 @Module({
   imports: [
@@ -50,6 +52,12 @@ import { ChatGatewayService } from './services/chat-gateway.service';
     JwtModule,
   ],
   controllers: [ChatController],
-  providers: [ChatGateway, CallGateway, ChatGatewayService],
+  providers: [
+    ChatGateway,
+    CallGateway,
+    SocketStateService,
+    ChatRateLimiterService,
+    ChatNotificationService,
+  ],
 })
 export class ChatModule {}

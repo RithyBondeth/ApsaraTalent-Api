@@ -8,65 +8,19 @@ import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-serv
 import { CHAT, CHAT_WEBSOCKET_EVENTS } from '@app/contracts';
 import { UserResponseDTO } from '@app/contracts/dtos';
 import { buildChatNotificationPreview } from '../utils/chat-notification.util';
+import { SocketStateService } from './socket-state.service';
 
 @Injectable()
-export class ChatGatewayService {
-  private readonly logger = new Logger('ChatGatewayService');
-
-  private readonly rateLimitMap = new Map<string, number[]>();
-  private readonly MAX_MESSAGES_PER_WINDOW = 10;
-  private readonly RATE_LIMIT_WINDOW_MS = 5000;
-
-  private readonly connectedUsers = new Map<string, Set<string>>();
+export class ChatNotificationService {
+  private readonly logger = new Logger(ChatNotificationService.name);
 
   constructor(
     @Inject(CHAT_SERVICE.NAME) private readonly chatServiceClient: ClientProxy,
     @Inject(NOTIFICATION_SERVICE.NAME)
     private readonly notificationClient: ClientProxy,
     @Inject(USER_SERVICE.NAME) private readonly userServiceClient: ClientProxy,
+    private readonly socketStateService: SocketStateService,
   ) {}
-
-  getConnectedUsers(): Map<string, Set<string>> {
-    return this.connectedUsers;
-  }
-
-  isOnline(userId: string): boolean {
-    const sockets = this.connectedUsers.get(userId);
-    return sockets != null && sockets.size > 0;
-  }
-
-  addSocket(userId: string, socketId: string): boolean {
-    if (!this.connectedUsers.has(userId))
-      this.connectedUsers.set(userId, new Set());
-
-    const sockets = this.connectedUsers.get(userId)!;
-    const isNewOnline = sockets.size === 0;
-    sockets.add(socketId);
-    return isNewOnline;
-  }
-
-  removeSocket(userId: string, socketId: string): boolean {
-    const sockets = this.connectedUsers.get(userId);
-    if (!sockets) return false;
-
-    sockets.delete(socketId);
-    if (sockets.size === 0) {
-      this.connectedUsers.delete(userId);
-      return true;
-    }
-    return false;
-  }
-
-  isRateLimited(userId: string): boolean {
-    const now = Date.now();
-    const timestamps = (this.rateLimitMap.get(userId) || []).filter(
-      (ts) => now - ts < this.RATE_LIMIT_WINDOW_MS,
-    );
-    if (timestamps.length >= this.MAX_MESSAGES_PER_WINDOW) return true;
-    timestamps.push(now);
-    this.rateLimitMap.set(userId, timestamps);
-    return false;
-  }
 
   async getCallerProfile(userId: string): Promise<{
     name: string;
@@ -74,7 +28,10 @@ export class ChatGatewayService {
   }> {
     try {
       const user = await firstValueFrom<UserResponseDTO>(
-        this.userServiceClient.send(USER_SERVICE.ACTIONS.FIND_ONE_BY_ID, userId),
+        this.userServiceClient.send(
+          USER_SERVICE.ACTIONS.FIND_ONE_BY_ID,
+          userId,
+        ),
       );
       if (!user) return { name: 'Unknown', avatar: CHAT.DEFAULT_AVATAR_PATH };
 
@@ -107,7 +64,9 @@ export class ChatGatewayService {
   ): Promise<void> {
     try {
       const senderProfile = await this.getCallerProfile(params.senderId);
-      const receiverOnline = this.isOnline(params.receiverId);
+      const receiverOnline = this.socketStateService.isOnline(
+        params.receiverId,
+      );
 
       const preview = buildChatNotificationPreview({
         messageType: params.messageType,

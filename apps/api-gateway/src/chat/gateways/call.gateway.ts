@@ -4,7 +4,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { ChatGatewayService } from '../services/chat-gateway.service';
+import { ChatNotificationService } from '../services/chat-notification.service';
 import {
   CHAT_ALLOW_ALL_CORS,
   CHAT_ALLOWED_ORIGINS,
@@ -40,7 +40,9 @@ import { ICallGateway } from '@app/contracts/interfaces/gateway/call-gateway.int
 })
 export class CallGateway implements ICallGateway {
   @WebSocketServer() server: Server;
-  constructor(private readonly chatGatewayService: ChatGatewayService) {}
+  constructor(
+    private readonly chatNotificationService: ChatNotificationService,
+  ) {}
 
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.CALL_OFFER)
   async handleCallOffer(
@@ -61,7 +63,7 @@ export class CallGateway implements ICallGateway {
     }
 
     const callerId = client.data.userId as string;
-    const profile = await this.chatGatewayService.getCallerProfile(callerId);
+    const profile = await this.chatNotificationService.getCallerProfile(callerId);
 
     this.server
       .to(callOfferDTO.receiverId)
@@ -152,7 +154,7 @@ export class CallGateway implements ICallGateway {
         callId: callDeclineDTO.callId,
       });
 
-    await this.chatGatewayService.emitCallLogMessage(this.server, {
+    await this.chatNotificationService.emitCallLogMessage(this.server, {
       senderId: client.data.userId,
       receiverId: callDeclineDTO.callerId,
       content: 'Call declined',
@@ -192,7 +194,7 @@ export class CallGateway implements ICallGateway {
             ? 'Call failed'
             : 'Call ended';
 
-    await this.chatGatewayService.emitCallLogMessage(this.server, {
+    await this.chatNotificationService.emitCallLogMessage(this.server, {
       senderId: client.data.userId,
       receiverId: callEndDTO.targetUserId,
       content,

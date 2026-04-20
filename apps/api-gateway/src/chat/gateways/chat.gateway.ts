@@ -25,7 +25,9 @@ import {
   SendMessageDTO,
   SendMessageResponseDTO,
 } from '@app/contracts';
-import { ChatGatewayService } from '../services/chat-gateway.service';
+import { SocketStateService } from '../services/socket-state.service';
+import { ChatRateLimiterService } from '../services/chat-rate-limiter.service';
+import { ChatNotificationService } from '../services/chat-notification.service';
 import { extractChatToken } from '../utils/chat-token.util';
 import { isOriginAllowed } from '../../utils/cors-origin.util';
 import { IChatGateway } from '@app/contracts/interfaces/gateway/chat-gateway.interface';
@@ -63,7 +65,9 @@ import {
     credentials: true,
   },
 })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, IChatGateway {
+export class ChatGateway
+  implements OnGatewayConnection, OnGatewayDisconnect, IChatGateway
+{
   @WebSocketServer() server: Server;
   private logger = new Logger('ChatGateway');
 
@@ -71,7 +75,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, IC
 
   constructor(
     private readonly jwtService: JwtService,
-    private readonly chatGatewayService: ChatGatewayService,
+    private readonly socketStateService: SocketStateService,
+    private readonly chatRateLimiterService: ChatRateLimiterService,
+    private readonly chatNotificationService: ChatNotificationService,
     @Inject(CHAT_SERVICE.NAME) private readonly chatServiceClient: ClientProxy,
   ) {}
 
@@ -100,7 +106,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, IC
       client.data.userId = payload.id;
       client.join(payload.id);
 
-      const isNewOnline = this.chatGatewayService.addSocket(
+      const isNewOnline = this.socketStateService.addSocket(
         payload.id,
         client.id,
       );
@@ -126,7 +132,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, IC
     const userId = client.data.userId;
     if (!userId) return;
 
-    const isFullyOffline = this.chatGatewayService.removeSocket(
+    const isFullyOffline = this.socketStateService.removeSocket(
       userId,
       client.id,
     );
@@ -152,7 +158,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, IC
 
     const result: Record<string, boolean> = {};
     for (const id of userIds) {
-      result[id] = this.chatGatewayService.isOnline(id);
+      result[id] = this.socketStateService.isOnline(id);
     }
 
     this.logger.log(
@@ -177,7 +183,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, IC
         return;
       }
 
-      if (this.chatGatewayService.isRateLimited(client.data.userId)) {
+      if (this.chatRateLimiterService.isRateLimited(client.data.userId)) {
         client.emit('error', { message: 'Too many messages — slow down' });
         return;
       }
@@ -252,7 +258,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, IC
           isMe: true,
         });
 
-      void this.chatGatewayService.notifyChatMessage(this.server, {
+      void this.chatNotificationService.notifyChatMessage(this.server, {
         senderId: usersData.sender.id,
         receiverId: usersData.receiver.id,
         messageType,
