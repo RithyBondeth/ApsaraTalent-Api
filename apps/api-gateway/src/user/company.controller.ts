@@ -20,12 +20,19 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { CoreResponseDTO, PaginationDTO } from '@app/contracts/dtos/shared';
+import { PaginationDTO } from '@app/contracts/dtos/shared';
 import {
   CompanyResponseDTO,
-  UpdateCompanyInfoResponseDTO,
-  UpdateCompanyInfoDTO,
   CountAllUsersResponseDTO,
+  RemoveCompanyAvatarResponseDTO,
+  RemoveCompanyCoverResponseDTO,
+  RemoveCompanyImageResponseDTO,
+  RemoveOpenPositionResponseDTO,
+  UpdateCompanyInfoDTO,
+  UpdateCompanyInfoResponseDTO,
+  UploadCompanyAvatarResponseDTO,
+  UploadCompanyCoverResponseDTO,
+  UploadCompanyImagesResponseDTO,
 } from '@app/contracts/dtos/user';
 import { rpcCall } from '../utils/rpc-call';
 
@@ -78,8 +85,8 @@ export class CompanyController implements ICompanyController {
   async uploadCompanyAvatar(
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @UploadedFile() avatar: Express.Multer.File,
-  ): Promise<CoreResponseDTO> {
-    return rpcCall<CoreResponseDTO>(
+  ): Promise<UploadCompanyAvatarResponseDTO> {
+    return rpcCall<UploadCompanyAvatarResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.UPLOAD_COMPANY_AVATAR,
       { companyId, avatar },
@@ -89,8 +96,8 @@ export class CompanyController implements ICompanyController {
   @Post('remove-avatar/:companyId')
   async removeCompanyAvatar(
     @Param('companyId', ParseUUIDPipe) companyId: string,
-  ): Promise<CoreResponseDTO> {
-    return rpcCall<CoreResponseDTO>(
+  ): Promise<RemoveCompanyAvatarResponseDTO> {
+    return rpcCall<RemoveCompanyAvatarResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.REMOVE_COMPANY_AVATAR,
       { companyId },
@@ -102,8 +109,8 @@ export class CompanyController implements ICompanyController {
   async uploadCompanyCover(
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @UploadedFile() cover: Express.Multer.File,
-  ): Promise<CoreResponseDTO> {
-    return rpcCall<CoreResponseDTO>(
+  ): Promise<UploadCompanyCoverResponseDTO> {
+    return rpcCall<UploadCompanyCoverResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.UPLOAD_COMPANY_COVER,
       { cover, companyId },
@@ -113,8 +120,8 @@ export class CompanyController implements ICompanyController {
   @Post('remove-cover/:companyId')
   async removeCompanyCover(
     @Param('companyId', ParseUUIDPipe) companyId: string,
-  ): Promise<CoreResponseDTO> {
-    return rpcCall<CoreResponseDTO>(
+  ): Promise<RemoveCompanyCoverResponseDTO> {
+    return rpcCall<RemoveCompanyCoverResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.REMOVE_COMPANY_COVER,
       { companyId },
@@ -126,8 +133,8 @@ export class CompanyController implements ICompanyController {
   async uploadCompanyImages(
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @UploadedFiles() images: Express.Multer.File[],
-  ): Promise<CoreResponseDTO> {
-    return rpcCall<CoreResponseDTO>(
+  ): Promise<UploadCompanyImagesResponseDTO> {
+    return rpcCall<UploadCompanyImagesResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.UPLOAD_COMPANY_IMAGES,
       { images, companyId },
@@ -138,8 +145,8 @@ export class CompanyController implements ICompanyController {
   async removeCompanyImage(
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @Param('imageId', ParseUUIDPipe) imageId: string,
-  ): Promise<CoreResponseDTO> {
-    return rpcCall<CoreResponseDTO>(
+  ): Promise<RemoveCompanyImageResponseDTO> {
+    return rpcCall<RemoveCompanyImageResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.REMOVE_COMPANY_IMAGES,
       { companyId, imageId },
@@ -150,8 +157,8 @@ export class CompanyController implements ICompanyController {
   async removeOpenPosition(
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @Param('opId', ParseUUIDPipe) opId: string,
-  ): Promise<CoreResponseDTO> {
-    return rpcCall<CoreResponseDTO>(
+  ): Promise<RemoveOpenPositionResponseDTO> {
+    return rpcCall<RemoveOpenPositionResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.REMOVE_OPEN_POSITION,
       { companyId, opId },

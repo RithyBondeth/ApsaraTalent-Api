@@ -5,18 +5,23 @@ import {
   CompanyResponseDTO,
   CompanyFavoriteLookupDTO,
   CompanyRecommendationsDTO,
+  CompanyFavoriteEmployeeResponseDTO,
+  CompanyUnfavoriteEmployeeResponseDTO,
   EmployeeCompanyFavoriteDTO,
   EmployeeCompanyFavoriteWithFavoriteIdDTO,
+  EmployeeFavoriteCompanyResponseDTO,
   EmployeeResponseDTO,
   EmployeeFavoriteLookupDTO,
   EmployeeRecommendationsDTO,
+  EmployeeUnfavoriteCompanyResponseDTO,
   FavoriteCountResponseDTO,
   UpdatePushNotificationTokenBodyDTO,
   UpdatePushNotificationTokenDTO,
+  UpdatePushNotificationTokenResponseDTO,
   UserIdDTO,
   CareerScopesResponseDTO,
 } from '@app/contracts/dtos/user';
-import { CoreResponseDTO, PaginationDTO } from '@app/contracts/dtos/shared';
+import { PaginationDTO } from '@app/contracts/dtos/shared';
 import { AuthUser } from '@app/common/decorators/user.decorator';
 
 export interface IUserController {
@@ -27,19 +32,19 @@ export interface IUserController {
   employeeFavoriteCompany(
     employeeCompanyFavoriteDTO: EmployeeCompanyFavoriteDTO,
     req?: any,
-  ): Promise<CoreResponseDTO>;
+  ): Promise<EmployeeFavoriteCompanyResponseDTO>;
   employeeUnfavoriteCompany(
     employeeCompanyFavoriteWithFavoriteIdDTO: EmployeeCompanyFavoriteWithFavoriteIdDTO,
     req?: any,
-  ): Promise<CoreResponseDTO>;
+  ): Promise<EmployeeUnfavoriteCompanyResponseDTO>;
   companyFavoriteEmployee(
     companyEmployeeFavoriteDTO: CompanyEmployeeFavoriteDTO,
     req?: any,
-  ): Promise<CoreResponseDTO>;
+  ): Promise<CompanyFavoriteEmployeeResponseDTO>;
   companyUnfavoriteEmployee(
     companyEmployeeFavoriteWithFavoriteIdDTO: CompanyEmployeeFavoriteWithFavoriteIdDTO,
     req?: any,
-  ): Promise<CoreResponseDTO>;
+  ): Promise<CompanyUnfavoriteEmployeeResponseDTO>;
   findAllEmployeeFavorite(
     employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
     req?: any,
@@ -59,7 +64,7 @@ export interface IUserController {
   updatePushNotificationToken?(
     req: any,
     body: UpdatePushNotificationTokenBodyDTO,
-  ): Promise<CoreResponseDTO>;
+  ): Promise<UpdatePushNotificationTokenResponseDTO>;
   getEmployeeRecommendations(
     employeeId: string,
     limit?: number,
@@ -79,16 +84,16 @@ export interface IUserRpcController {
   findAllCareerScopes(): Promise<CareerScopesResponseDTO[]>;
   employeeFavoriteCompany(
     employeeCompanyFavoriteDTO: EmployeeCompanyFavoriteDTO,
-  ): Promise<CoreResponseDTO>;
+  ): Promise<EmployeeFavoriteCompanyResponseDTO>;
   employeeUnfavoriteCompany(
     employeeCompanyFavoriteWithFavoriteIdDTO: EmployeeCompanyFavoriteWithFavoriteIdDTO,
-  ): Promise<CoreResponseDTO>;
+  ): Promise<EmployeeUnfavoriteCompanyResponseDTO>;
   companyFavoriteEmployee(
     companyEmployeeFavoriteDTO: CompanyEmployeeFavoriteDTO,
-  ): Promise<CoreResponseDTO>;
+  ): Promise<CompanyFavoriteEmployeeResponseDTO>;
   companyUnfavoriteEmployee(
     companyEmployeeFavoriteWithFavoriteIdDTO: CompanyEmployeeFavoriteWithFavoriteIdDTO,
-  ): Promise<CoreResponseDTO>;
+  ): Promise<CompanyUnfavoriteEmployeeResponseDTO>;
   findAllEmployeeFavorite(
     employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
   ): Promise<CompanyResponseDTO[]>;
@@ -103,7 +108,7 @@ export interface IUserRpcController {
   ): Promise<FavoriteCountResponseDTO>;
   updatePushNotificationToken(
     updatePushNotificationTokenDTO: UpdatePushNotificationTokenDTO,
-  ): Promise<CoreResponseDTO>;
+  ): Promise<UpdatePushNotificationTokenResponseDTO>;
   clearUserCache(userIdDTO: UserIdDTO): Promise<void>;
   getEmployeeRecommendations(
     employeeRecommendationsDTO: EmployeeRecommendationsDTO,

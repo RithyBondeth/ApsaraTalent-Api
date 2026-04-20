@@ -8,10 +8,13 @@ import {
 } from '@app/contracts/interfaces/service/user-service.interface';
 import {
   EmployeeIdDTO,
+  RemoveEmployeeCoverLetterResponseDTO,
+  RemoveEmployeeResumeResponseDTO,
   UploadEmployeeCoverLetterDTO,
+  UploadEmployeeCoverLetterResponseDTO,
   UploadEmployeeResumeDTO,
+  UploadEmployeeResumeResponseDTO,
 } from '@app/contracts/dtos/user';
-import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 
 @Controller()
 export class UploadEmployeeReferenceController implements IUploadEmployeeRpcController {
@@ -23,7 +26,7 @@ export class UploadEmployeeReferenceController implements IUploadEmployeeRpcCont
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_RESUME)
   async uploadEmployeeResume(
     @Payload() uploadEmployeeResumeDTO: UploadEmployeeResumeDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<UploadEmployeeResumeResponseDTO> {
     return this.uploadEmployeeReferenceService.uploadEmployeeResume(
       uploadEmployeeResumeDTO,
     );
@@ -32,7 +35,7 @@ export class UploadEmployeeReferenceController implements IUploadEmployeeRpcCont
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_RESUME)
   async removeEmployeeResume(
     @Payload() employeeIdDTO: EmployeeIdDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<RemoveEmployeeResumeResponseDTO> {
     return this.uploadEmployeeReferenceService.removeEmployeeResume(
       employeeIdDTO,
     );
@@ -41,7 +44,7 @@ export class UploadEmployeeReferenceController implements IUploadEmployeeRpcCont
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_COVER_LETTER)
   async uploadEmployeeCoverLetter(
     @Payload() uploadEmployeeCoverLetterDTO: UploadEmployeeCoverLetterDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<UploadEmployeeCoverLetterResponseDTO> {
     return this.uploadEmployeeReferenceService.uploadEmployeeCoverLetter(
       uploadEmployeeCoverLetterDTO,
     );
@@ -50,7 +53,7 @@ export class UploadEmployeeReferenceController implements IUploadEmployeeRpcCont
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_COVER_LETTER)
   async removeEmployeeCoverLetter(
     @Payload() employeeIdDTO: EmployeeIdDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<RemoveEmployeeCoverLetterResponseDTO> {
     return this.uploadEmployeeReferenceService.removeEmployeeCoverLetter(
       employeeIdDTO,
     );

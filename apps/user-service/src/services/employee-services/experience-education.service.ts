@@ -8,9 +8,10 @@ import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import {
   RemoveEmployeeEducationDTO,
+  RemoveEmployeeEducationResponseDTO,
   RemoveEmployeeExperienceDTO,
+  RemoveEmployeeExperienceResponseDTO,
 } from '@app/contracts/dtos/user';
-import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 import { IExperienceAndEducationService } from '@app/contracts/interfaces/service/user-service.interface';
 
 @Injectable()
@@ -26,7 +27,7 @@ export class ExperienceAndEducationService implements IExperienceAndEducationSer
 
   async removeEmployeeExperience(
     removeEmployeeExperienceDTO: RemoveEmployeeExperienceDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<RemoveEmployeeExperienceResponseDTO> {
     const { employeeId, experienceId } = removeEmployeeExperienceDTO;
     try {
       const removeExp = await this.expRepository.findOne({
@@ -45,7 +46,7 @@ export class ExperienceAndEducationService implements IExperienceAndEducationSer
 
       await this.expRepository.delete(experienceId);
 
-      return new CoreResponseDTO({
+      return new RemoveEmployeeExperienceResponseDTO({
         message: `${removeExp.title} experience was removed successfully.`,
       });
     } catch (error) {
@@ -63,7 +64,7 @@ export class ExperienceAndEducationService implements IExperienceAndEducationSer
 
   async removeEmployeeEducation(
     removeEmployeeEducationDTO: RemoveEmployeeEducationDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<RemoveEmployeeEducationResponseDTO> {
     const { employeeId, educationId } = removeEmployeeEducationDTO;
     try {
       const removeEdu = await this.eduRepository.findOne({
@@ -82,7 +83,7 @@ export class ExperienceAndEducationService implements IExperienceAndEducationSer
 
       await this.eduRepository.delete(educationId);
 
-      return new CoreResponseDTO({
+      return new RemoveEmployeeEducationResponseDTO({
         message: `${removeEdu.school} education was removed successfully`,
       });
     } catch (error) {

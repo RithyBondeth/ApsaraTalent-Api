@@ -4,39 +4,58 @@ import {
   CompanyEmployeeFavoriteDTO,
   CompanyEmployeeFavoriteWithFavoriteIdDTO,
   CompanyFavoriteLookupDTO,
+  CompanyFavoriteEmployeeResponseDTO,
   CompanyIdDTO,
   CompanyRecommendationsDTO,
+  CompanyUnfavoriteEmployeeResponseDTO,
   CountAllUsersResponseDTO,
   EmployeeCompanyFavoriteDTO,
   EmployeeCompanyFavoriteWithFavoriteIdDTO,
   EmployeeFavoriteLookupDTO,
+  EmployeeFavoriteCompanyResponseDTO,
   EmployeeIdDTO,
   EmployeeRecommendationsDTO,
   EmployeeResponseDTO,
+  EmployeeUnfavoriteCompanyResponseDTO,
   CareerScopesResponseDTO,
   RemoveCompanyImageDTO,
   RemoveCompanyImageDTO as RemoveCompanyImagesDTO,
+  RemoveCompanyImageResponseDTO,
+  RemoveCompanyAvatarResponseDTO,
+  RemoveCompanyCoverResponseDTO,
   RemoveEmployeeEducationDTO,
+  RemoveEmployeeEducationResponseDTO,
   RemoveEmployeeExperienceDTO,
+  RemoveEmployeeExperienceResponseDTO,
   RemoveOpenPositionDTO,
+  RemoveOpenPositionResponseDTO,
+  RemoveEmployeeAvatarResponseDTO,
+  RemoveEmployeeCoverLetterResponseDTO,
+  RemoveEmployeeResumeResponseDTO,
   SearchEmployeeResponseDTO,
   UpdateCompanyInfoRequestDTO,
   UpdateCompanyInfoResponseDTO,
   UpdateEmployeeInfoRequestDTO,
   UpdateEmployeeInfoResponseDTO,
   UpdatePushNotificationTokenDTO,
+  UpdatePushNotificationTokenResponseDTO,
   UploadCompanyAvatarDTO,
+  UploadCompanyAvatarResponseDTO,
   UploadCompanyCoverDTO,
+  UploadCompanyCoverResponseDTO,
   UploadCompanyImagesDTO,
+  UploadCompanyImagesResponseDTO,
   UploadEmployeeAvatarDTO,
+  UploadEmployeeAvatarResponseDTO,
   UploadEmployeeCoverLetterDTO,
+  UploadEmployeeCoverLetterResponseDTO,
   UploadEmployeeResumeDTO,
+  UploadEmployeeResumeResponseDTO,
   UserResponseDTO,
   FavoriteCountResponseDTO,
   SearchEmployeeDTO,
   UserIdDTO,
 } from '../../dtos/user';
-import { CoreResponseDTO } from '../../dtos/shared';
 
 export const I_UPDATE_EMPLOYEE_INFO_SERVICE = 'IUpdateEmployeeInfoService';
 export const I_IMAGE_EMPLOYEE_SERVICE = 'IImageEmployeeService';
@@ -61,8 +80,10 @@ export interface IUpdateEmployeeInfoService {
 export interface IImageEmployeeService {
   uploadEmployeeAvatar(
     uploadEmployeeAvatarDTO: UploadEmployeeAvatarDTO,
-  ): Promise<CoreResponseDTO>;
-  removeEmployeeAvatar(employeeIdDTO: EmployeeIdDTO): Promise<CoreResponseDTO>;
+  ): Promise<UploadEmployeeAvatarResponseDTO>;
+  removeEmployeeAvatar(
+    employeeIdDTO: EmployeeIdDTO,
+  ): Promise<RemoveEmployeeAvatarResponseDTO>;
 }
 
 export interface IUpdateCompanyInfoService {
@@ -86,31 +107,37 @@ export interface IFindCompanyService {
 export interface IImageCompanyService {
   uploadCompanyAvatar(
     uploadCompanyAvatarDTO: UploadCompanyAvatarDTO,
-  ): Promise<CoreResponseDTO>;
-  removeCompanyAvatar(companyIdDTO: CompanyIdDTO): Promise<CoreResponseDTO>;
+  ): Promise<UploadCompanyAvatarResponseDTO>;
+  removeCompanyAvatar(
+    companyIdDTO: CompanyIdDTO,
+  ): Promise<RemoveCompanyAvatarResponseDTO>;
   uploadCompanyCover(
     uploadCompanyCoverDTO: UploadCompanyCoverDTO,
-  ): Promise<CoreResponseDTO>;
-  removeCompanyCover(companyIdDTO: CompanyIdDTO): Promise<CoreResponseDTO>;
+  ): Promise<UploadCompanyCoverResponseDTO>;
+  removeCompanyCover(
+    companyIdDTO: CompanyIdDTO,
+  ): Promise<RemoveCompanyCoverResponseDTO>;
   uploadCompanyImages(
     uploadCompanyImagesDTO: UploadCompanyImagesDTO,
-  ): Promise<CoreResponseDTO>;
+  ): Promise<UploadCompanyImagesResponseDTO>;
   removeCompanyImage(
     removeCompanyImageDTO: RemoveCompanyImageDTO,
-  ): Promise<CoreResponseDTO>;
+  ): Promise<RemoveCompanyImageResponseDTO>;
 }
 
 export interface IUploadEmployeeReferenceService {
   uploadEmployeeResume(
     uploadEmployeeResumeDTO: UploadEmployeeResumeDTO,
-  ): Promise<CoreResponseDTO>;
-  removeEmployeeResume(employeeIdDTO: EmployeeIdDTO): Promise<CoreResponseDTO>;
+  ): Promise<UploadEmployeeResumeResponseDTO>;
+  removeEmployeeResume(
+    employeeIdDTO: EmployeeIdDTO,
+  ): Promise<RemoveEmployeeResumeResponseDTO>;
   uploadEmployeeCoverLetter(
     uploadEmployeeCoverLetterDTO: UploadEmployeeCoverLetterDTO,
-  ): Promise<CoreResponseDTO>;
+  ): Promise<UploadEmployeeCoverLetterResponseDTO>;
   removeEmployeeCoverLetter(
     employeeIdDTO: EmployeeIdDTO,
-  ): Promise<CoreResponseDTO>;
+  ): Promise<RemoveEmployeeCoverLetterResponseDTO>;
 }
 
 export interface ISearchEmployeeService {
@@ -125,20 +152,20 @@ export interface IUserService {
   findOneUserByID(userIdDTO: UserIdDTO): Promise<UserResponseDTO>;
   updatePushNotificationToken(
     updatePushNotificationTokenDTO: UpdatePushNotificationTokenDTO,
-  ): Promise<CoreResponseDTO>;
+  ): Promise<UpdatePushNotificationTokenResponseDTO>;
   findAllCareerScopes(): Promise<CareerScopesResponseDTO[]>;
   employeeFavoriteCompany(
     employeeCompanyFavoriteDTO: EmployeeCompanyFavoriteDTO,
-  ): Promise<CoreResponseDTO>;
+  ): Promise<EmployeeFavoriteCompanyResponseDTO>;
   employeeUnfavoriteCompany(
     employeeCompanyFavoriteWithFavoriteIdDTO: EmployeeCompanyFavoriteWithFavoriteIdDTO,
-  ): Promise<CoreResponseDTO>;
+  ): Promise<EmployeeUnfavoriteCompanyResponseDTO>;
   companyUnfavoriteEmployee(
     companyEmployeeFavoriteWithFavoriteIdDTO: CompanyEmployeeFavoriteWithFavoriteIdDTO,
-  ): Promise<CoreResponseDTO>;
+  ): Promise<CompanyUnfavoriteEmployeeResponseDTO>;
   companyFavoriteEmployee(
     companyEmployeeFavoriteDTO: CompanyEmployeeFavoriteDTO,
-  ): Promise<CoreResponseDTO>;
+  ): Promise<CompanyFavoriteEmployeeResponseDTO>;
   findAllEmployeeFavorites(
     employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
   ): Promise<CompanyResponseDTO[]>;
@@ -163,14 +190,14 @@ export interface IUserService {
 export interface IOpenPositionService {
   removeOpenPosition(
     removeOpenPositionDTO: RemoveOpenPositionDTO,
-  ): Promise<CoreResponseDTO>;
+  ): Promise<RemoveOpenPositionResponseDTO>;
 }
 
 export interface IExperienceAndEducationService {
   removeEmployeeExperience(
     removeEmployeeExperienceDTO: RemoveEmployeeExperienceDTO,
-  ): Promise<CoreResponseDTO>;
+  ): Promise<RemoveEmployeeExperienceResponseDTO>;
   removeEmployeeEducation(
-    dto: RemoveEmployeeEducationDTO,
-  ): Promise<CoreResponseDTO>;
+    removeEmployeeEducationDTO: RemoveEmployeeEducationDTO,
+  ): Promise<RemoveEmployeeEducationResponseDTO>;
 }

@@ -12,12 +12,17 @@ import { Repository } from 'typeorm';
 import { IImageCompanyService } from '@app/contracts/interfaces/service/user-service.interface';
 import {
   CompanyIdDTO,
+  RemoveCompanyAvatarResponseDTO,
+  RemoveCompanyCoverResponseDTO,
   RemoveCompanyImageDTO,
+  RemoveCompanyImageResponseDTO,
   UploadCompanyAvatarDTO,
+  UploadCompanyAvatarResponseDTO,
   UploadCompanyCoverDTO,
+  UploadCompanyCoverResponseDTO,
   UploadCompanyImagesDTO,
+  UploadCompanyImagesResponseDTO,
 } from '@app/contracts/dtos/user';
-import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 
 @Injectable()
 export class ImageCompanyService implements IImageCompanyService {
@@ -59,7 +64,7 @@ export class ImageCompanyService implements IImageCompanyService {
 
   async uploadCompanyAvatar(
     uploadCompanyAvatarDTO: UploadCompanyAvatarDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<UploadCompanyAvatarResponseDTO> {
     const { companyId, avatar } = uploadCompanyAvatarDTO;
     try {
       const company = await this.companyRepository.findOne({
@@ -105,7 +110,7 @@ export class ImageCompanyService implements IImageCompanyService {
       // Invalidate user caches (fix for stale avatar in findOneUserByID)
       await this.invalidateCompanyCaches(companyId);
 
-      return new CoreResponseDTO({
+      return new UploadCompanyAvatarResponseDTO({
         message: "Company's avatar was successfully set.",
       });
     } catch (error) {
@@ -127,7 +132,7 @@ export class ImageCompanyService implements IImageCompanyService {
 
   async removeCompanyAvatar(
     companyIdDTO: CompanyIdDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<RemoveCompanyAvatarResponseDTO> {
     const { companyId } = companyIdDTO;
     try {
       const company = await this.companyRepository.findOne({
@@ -158,7 +163,7 @@ export class ImageCompanyService implements IImageCompanyService {
       // Invalidate caches
       await this.invalidateCompanyCaches(companyId);
 
-      return new CoreResponseDTO({
+      return new RemoveCompanyAvatarResponseDTO({
         message: "Company's avatar was successfully deleted.",
       });
     } catch (error) {
@@ -180,7 +185,7 @@ export class ImageCompanyService implements IImageCompanyService {
 
   async uploadCompanyCover(
     uploadCompanyCoverDTO: UploadCompanyCoverDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<UploadCompanyCoverResponseDTO> {
     const { companyId, cover } = uploadCompanyCoverDTO;
     try {
       const company = await this.companyRepository.findOne({
@@ -223,7 +228,7 @@ export class ImageCompanyService implements IImageCompanyService {
       // Invalidate caches (cover is also part of cached user detail)
       await this.invalidateCompanyCaches(companyId);
 
-      return new CoreResponseDTO({
+      return new UploadCompanyCoverResponseDTO({
         message: "Company's cover was successfully set.",
       });
     } catch (error) {
@@ -245,7 +250,7 @@ export class ImageCompanyService implements IImageCompanyService {
 
   async removeCompanyCover(
     companyIdDTO: CompanyIdDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<RemoveCompanyCoverResponseDTO> {
     const { companyId } = companyIdDTO;
     try {
       const company = await this.companyRepository.findOne({
@@ -275,7 +280,7 @@ export class ImageCompanyService implements IImageCompanyService {
       // Invalidate caches
       await this.invalidateCompanyCaches(companyId);
 
-      return new CoreResponseDTO({
+      return new RemoveCompanyCoverResponseDTO({
         message: "Company's cover was successfully deleted.",
       });
     } catch (error) {
@@ -297,7 +302,7 @@ export class ImageCompanyService implements IImageCompanyService {
 
   async uploadCompanyImages(
     uploadCompanyImagesDTO: UploadCompanyImagesDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<UploadCompanyImagesResponseDTO> {
     const { companyId, images } = uploadCompanyImagesDTO;
     try {
       const company = await this.companyRepository.findOne({
@@ -337,7 +342,7 @@ export class ImageCompanyService implements IImageCompanyService {
       // Invalidate caches (company.images is used in cached user response)
       await this.invalidateCompanyCaches(companyId);
 
-      return new CoreResponseDTO({
+      return new UploadCompanyImagesResponseDTO({
         message: "Company's images were successfully set.",
       });
     } catch (error) {
@@ -359,7 +364,7 @@ export class ImageCompanyService implements IImageCompanyService {
 
   async removeCompanyImage(
     removeCompanyImageDTO: RemoveCompanyImageDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<RemoveCompanyImageResponseDTO> {
     const { companyId, imageId } = removeCompanyImageDTO;
     try {
       const image = await this.imageRepository.findOne({
@@ -387,7 +392,7 @@ export class ImageCompanyService implements IImageCompanyService {
       // Invalidate caches
       await this.invalidateCompanyCaches(companyId);
 
-      return new CoreResponseDTO({
+      return new RemoveCompanyImageResponseDTO({
         message: "Company's image was successfully removed.",
       });
     } catch (error) {

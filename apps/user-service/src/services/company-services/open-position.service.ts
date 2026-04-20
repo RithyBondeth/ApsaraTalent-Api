@@ -6,9 +6,11 @@ import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
-import { RemoveOpenPositionDTO } from '@app/contracts/dtos/user';
+import {
+  RemoveOpenPositionDTO,
+  RemoveOpenPositionResponseDTO,
+} from '@app/contracts/dtos/user';
 import { IOpenPositionService } from '@app/contracts/interfaces/service/user-service.interface';
-import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 
 @Injectable()
 export class OpenPositionService implements IOpenPositionService {
@@ -42,7 +44,7 @@ export class OpenPositionService implements IOpenPositionService {
 
   async removeOpenPosition(
     removeOpenPositionDTO: RemoveOpenPositionDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<RemoveOpenPositionResponseDTO> {
     const { companyId, opId } = removeOpenPositionDTO;
     try {
       const removedJob = await this.jobRepository.findOne({
@@ -61,7 +63,7 @@ export class OpenPositionService implements IOpenPositionService {
       // Invalidate cache after deletion
       await this.invalidateCompanyCaches(companyId);
 
-      return new CoreResponseDTO({
+      return new RemoveOpenPositionResponseDTO({
         message: `${removedJob.title} position was removed successfully.`,
       });
     } catch (error) {

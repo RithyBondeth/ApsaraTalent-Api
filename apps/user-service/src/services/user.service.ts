@@ -16,10 +16,15 @@ import {
   FavoriteCountResponseDTO,
   UserIdDTO,
   UpdatePushNotificationTokenDTO,
+  UpdatePushNotificationTokenResponseDTO,
   EmployeeCompanyFavoriteDTO,
   EmployeeCompanyFavoriteWithFavoriteIdDTO,
+  EmployeeFavoriteCompanyResponseDTO,
+  EmployeeUnfavoriteCompanyResponseDTO,
   CompanyEmployeeFavoriteDTO,
   CompanyEmployeeFavoriteWithFavoriteIdDTO,
+  CompanyFavoriteEmployeeResponseDTO,
+  CompanyUnfavoriteEmployeeResponseDTO,
   EmployeeFavoriteLookupDTO,
   CompanyFavoriteLookupDTO,
   EmployeeRecommendationsDTO,
@@ -31,7 +36,6 @@ import {
 } from '@app/contracts/dtos/user';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
 import { IUserService } from '@app/contracts/interfaces/service/user-service.interface';
-import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
 
 @Injectable()
@@ -260,7 +264,7 @@ export class UserService implements IUserService, OnModuleInit {
 
   async updatePushNotificationToken(
     updatePushNotificationTokenDTO: UpdatePushNotificationTokenDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<UpdatePushNotificationTokenResponseDTO> {
     const { userId, token } = updatePushNotificationTokenDTO;
     const normalizedToken =
       typeof token === 'string' && token.trim().length > 0
@@ -282,7 +286,7 @@ export class UserService implements IUserService, OnModuleInit {
 
       await this.redisService.clearUserDetailCache(userId);
 
-      return new CoreResponseDTO({
+      return new UpdatePushNotificationTokenResponseDTO({
         message: 'Push notification token updated successfully',
       });
     } catch (error) {
@@ -298,7 +302,7 @@ export class UserService implements IUserService, OnModuleInit {
 
   async employeeFavoriteCompany(
     employeeCompanyFavoriteDTO: EmployeeCompanyFavoriteDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<EmployeeFavoriteCompanyResponseDTO> {
     const { eid, cid } = employeeCompanyFavoriteDTO;
     try {
       const exists = await this.empFavoriteCmpRepository.findOne({
@@ -343,7 +347,7 @@ export class UserService implements IUserService, OnModuleInit {
 
       this.logger.info(`Employee ${eid} favorited company ${cid}`);
 
-      return new CoreResponseDTO({
+      return new EmployeeFavoriteCompanyResponseDTO({
         message: 'Successfully added company to favorites',
       });
     } catch (error) {
@@ -369,7 +373,7 @@ export class UserService implements IUserService, OnModuleInit {
 
   async employeeUnfavoriteCompany(
     employeeCompanyFavoriteWithFavoriteIdDTO: EmployeeCompanyFavoriteWithFavoriteIdDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<EmployeeUnfavoriteCompanyResponseDTO> {
     const { eid, cid, favoriteId } = employeeCompanyFavoriteWithFavoriteIdDTO;
     try {
       const favoriteToRemove = await this.empFavoriteCmpRepository.findOne({
@@ -411,7 +415,7 @@ export class UserService implements IUserService, OnModuleInit {
 
       this.logger.info(`Employee ${eid} unfavorited company ${cid}`);
 
-      return new CoreResponseDTO({
+      return new EmployeeUnfavoriteCompanyResponseDTO({
         message: 'Successfully removed company from favorites',
       });
     } catch (error) {
@@ -431,7 +435,7 @@ export class UserService implements IUserService, OnModuleInit {
 
   async companyFavoriteEmployee(
     companyEmployeeFavoriteDTO: CompanyEmployeeFavoriteDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<CompanyFavoriteEmployeeResponseDTO> {
     const { cid, eid } = companyEmployeeFavoriteDTO;
     try {
       const exists = await this.cmpFavoriteEmpRepository.findOne({
@@ -476,7 +480,7 @@ export class UserService implements IUserService, OnModuleInit {
 
       this.logger.info(`Company ${cid} favorited employee ${eid}`);
 
-      return new CoreResponseDTO({
+      return new CompanyFavoriteEmployeeResponseDTO({
         message: 'Successfully added employee to favorites',
       });
     } catch (error) {
@@ -502,7 +506,7 @@ export class UserService implements IUserService, OnModuleInit {
 
   async companyUnfavoriteEmployee(
     companyEmployeeFavoriteWithFavoriteIdDTO: CompanyEmployeeFavoriteWithFavoriteIdDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<CompanyUnfavoriteEmployeeResponseDTO> {
     const { cid, eid, favoriteId } = companyEmployeeFavoriteWithFavoriteIdDTO;
     try {
       const favoriteToRemove = await this.cmpFavoriteEmpRepository.findOne({
@@ -544,7 +548,7 @@ export class UserService implements IUserService, OnModuleInit {
 
       this.logger.info(`Company ${cid} unfavorited employee ${eid}`);
 
-      return new CoreResponseDTO({
+      return new CompanyUnfavoriteEmployeeResponseDTO({
         message: 'Successfully removed employee from favorites',
       });
     } catch (error) {

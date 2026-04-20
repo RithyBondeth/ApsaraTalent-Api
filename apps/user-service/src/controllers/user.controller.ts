@@ -11,10 +11,15 @@ import {
   FavoriteCountResponseDTO,
   UserIdDTO,
   UpdatePushNotificationTokenDTO,
+  UpdatePushNotificationTokenResponseDTO,
   EmployeeCompanyFavoriteDTO,
   EmployeeCompanyFavoriteWithFavoriteIdDTO,
+  EmployeeFavoriteCompanyResponseDTO,
+  EmployeeUnfavoriteCompanyResponseDTO,
   CompanyEmployeeFavoriteDTO,
   CompanyEmployeeFavoriteWithFavoriteIdDTO,
+  CompanyFavoriteEmployeeResponseDTO,
+  CompanyUnfavoriteEmployeeResponseDTO,
   EmployeeFavoriteLookupDTO,
   CompanyFavoriteLookupDTO,
   EmployeeRecommendationsDTO,
@@ -25,7 +30,7 @@ import {
   I_USER_SERVICE,
   IUserService,
 } from '@app/contracts/interfaces/service/user-service.interface';
-import { CoreResponseDTO, PaginationDTO } from '@app/contracts/dtos/shared';
+import { PaginationDTO } from '@app/contracts/dtos/shared';
 
 @Controller()
 export class UserController implements IUserRpcController {
@@ -62,7 +67,7 @@ export class UserController implements IUserRpcController {
   @MessagePattern(USER_SERVICE.ACTIONS.UPDATE_PUSH_TOKEN)
   async updatePushNotificationToken(
     @Payload() updatePushNotificationTokenDTO: UpdatePushNotificationTokenDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<UpdatePushNotificationTokenResponseDTO> {
     return this.userService.updatePushNotificationToken(
       updatePushNotificationTokenDTO,
     );
@@ -71,7 +76,7 @@ export class UserController implements IUserRpcController {
   @MessagePattern(USER_SERVICE.ACTIONS.ADD_COMPANY_TO_FAVORITE)
   async employeeFavoriteCompany(
     @Payload() employeeCompanyFavoriteDTO: EmployeeCompanyFavoriteDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<EmployeeFavoriteCompanyResponseDTO> {
     return this.userService.employeeFavoriteCompany(employeeCompanyFavoriteDTO);
   }
 
@@ -79,7 +84,7 @@ export class UserController implements IUserRpcController {
   async employeeUnfavoriteCompany(
     @Payload()
     employeeCompanyFavoriteWithFavoriteIdDTO: EmployeeCompanyFavoriteWithFavoriteIdDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<EmployeeUnfavoriteCompanyResponseDTO> {
     return this.userService.employeeUnfavoriteCompany(
       employeeCompanyFavoriteWithFavoriteIdDTO,
     );
@@ -89,7 +94,7 @@ export class UserController implements IUserRpcController {
   async companyUnfavoriteEmployee(
     @Payload()
     companyEmployeeFavoriteWithFavoriteIdDTO: CompanyEmployeeFavoriteWithFavoriteIdDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<CompanyUnfavoriteEmployeeResponseDTO> {
     return this.userService.companyUnfavoriteEmployee(
       companyEmployeeFavoriteWithFavoriteIdDTO,
     );
@@ -98,7 +103,7 @@ export class UserController implements IUserRpcController {
   @MessagePattern(USER_SERVICE.ACTIONS.ADD_EMPLOYEE_TO_FAVORITE)
   async companyFavoriteEmployee(
     @Payload() companyEmployeeFavoriteDTO: CompanyEmployeeFavoriteDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<CompanyFavoriteEmployeeResponseDTO> {
     return this.userService.companyFavoriteEmployee(companyEmployeeFavoriteDTO);
   }
 

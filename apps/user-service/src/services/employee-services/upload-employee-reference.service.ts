@@ -10,10 +10,13 @@ import { Repository } from 'typeorm';
 import { IUploadEmployeeReferenceService } from '@app/contracts/interfaces/service/user-service.interface';
 import {
   EmployeeIdDTO,
+  RemoveEmployeeCoverLetterResponseDTO,
+  RemoveEmployeeResumeResponseDTO,
   UploadEmployeeCoverLetterDTO,
+  UploadEmployeeCoverLetterResponseDTO,
   UploadEmployeeResumeDTO,
+  UploadEmployeeResumeResponseDTO,
 } from '@app/contracts/dtos/user';
-import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 
 @Injectable()
 export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceService {
@@ -27,7 +30,7 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
 
   async uploadEmployeeResume(
     uploadEmployeeResumeDTO: UploadEmployeeResumeDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<UploadEmployeeResumeResponseDTO> {
     const { employeeId, resume } = uploadEmployeeResumeDTO;
     try {
       const employee = await this.employeeRepository.findOne({
@@ -65,7 +68,7 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
       // Cache Invalidation
       await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
 
-      return new CoreResponseDTO({
+      return new UploadEmployeeResumeResponseDTO({
         message: "Employee's resume was successfully set.",
       });
     } catch (error) {
@@ -83,7 +86,7 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
 
   async removeEmployeeResume(
     employeeIdDTO: EmployeeIdDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<RemoveEmployeeResumeResponseDTO> {
     const { employeeId } = employeeIdDTO;
     try {
       const employee = await this.employeeRepository.findOne({
@@ -112,7 +115,7 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
       // Cache Invalidation
       await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
 
-      return new CoreResponseDTO({
+      return new RemoveEmployeeResumeResponseDTO({
         message: "Employee's resume was successfully deleted.",
       });
     } catch (error) {
@@ -132,7 +135,7 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
 
   async uploadEmployeeCoverLetter(
     uploadEmployeeCoverLetterDTO: UploadEmployeeCoverLetterDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<UploadEmployeeCoverLetterResponseDTO> {
     const { employeeId, coverLetter } = uploadEmployeeCoverLetterDTO;
     try {
       const employee = await this.employeeRepository.findOne({
@@ -176,7 +179,7 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
       // Cache Invalidation
       await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
 
-      return new CoreResponseDTO({
+      return new UploadEmployeeCoverLetterResponseDTO({
         message: "Employee's cover letter was successfully set.",
       });
     } catch (error) {
@@ -196,7 +199,7 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
 
   async removeEmployeeCoverLetter(
     employeeIdDTO: EmployeeIdDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<RemoveEmployeeCoverLetterResponseDTO> {
     const { employeeId } = employeeIdDTO;
     try {
       const employee = await this.employeeRepository.findOne({
@@ -228,7 +231,7 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
       // Cache Invalidation
       await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
 
-      return new CoreResponseDTO({
+      return new RemoveEmployeeCoverLetterResponseDTO({
         message: "Employee's cover letter was successfully deleted.",
       });
     } catch (error) {

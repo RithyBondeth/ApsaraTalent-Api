@@ -16,7 +16,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { CoreResponseDTO, PaginationDTO } from '@app/contracts/dtos/shared';
+import { PaginationDTO } from '@app/contracts/dtos/shared';
 import {
   UserResponseDTO,
   CompanyResponseDTO,
@@ -30,6 +30,11 @@ import {
   EmployeeFavoriteLookupDTO,
   CompanyFavoriteLookupDTO,
   UpdatePushNotificationTokenBodyDTO,
+  UpdatePushNotificationTokenResponseDTO,
+  EmployeeFavoriteCompanyResponseDTO,
+  EmployeeUnfavoriteCompanyResponseDTO,
+  CompanyFavoriteEmployeeResponseDTO,
+  CompanyUnfavoriteEmployeeResponseDTO,
 } from '@app/contracts/dtos/user';
 import { rpcCall } from '../utils/rpc-call';
 
@@ -121,8 +126,8 @@ export class UserController implements IUserController {
   async updatePushNotificationToken(
     @Req() req: any,
     @Body() body: UpdatePushNotificationTokenBodyDTO,
-  ): Promise<CoreResponseDTO> {
-    return rpcCall<CoreResponseDTO>(
+  ): Promise<UpdatePushNotificationTokenResponseDTO> {
+    return rpcCall<UpdatePushNotificationTokenResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.UPDATE_PUSH_TOKEN,
       {
@@ -136,12 +141,12 @@ export class UserController implements IUserController {
   async employeeFavoriteCompany(
     @Param() employeeCompanyFavoriteDTO: EmployeeCompanyFavoriteDTO,
     @Req() req?: any,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<EmployeeFavoriteCompanyResponseDTO> {
     await this.assertEmployeeAccess(
       req?.user?.id,
       employeeCompanyFavoriteDTO.eid,
     );
-    return rpcCall<CoreResponseDTO>(
+    return rpcCall<EmployeeFavoriteCompanyResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.ADD_COMPANY_TO_FAVORITE,
       employeeCompanyFavoriteDTO,
@@ -153,12 +158,12 @@ export class UserController implements IUserController {
     @Param()
     companyEmployeeFavoriteDTO: EmployeeCompanyFavoriteWithFavoriteIdDTO,
     @Req() req?: any,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<EmployeeUnfavoriteCompanyResponseDTO> {
     await this.assertEmployeeAccess(
       req?.user?.id,
       companyEmployeeFavoriteDTO.eid,
     );
-    return rpcCall<CoreResponseDTO>(
+    return rpcCall<EmployeeUnfavoriteCompanyResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.REMOVE_COMPANY_FROM_FAVORITE,
       companyEmployeeFavoriteDTO,
@@ -169,12 +174,12 @@ export class UserController implements IUserController {
   async companyFavoriteEmployee(
     @Param() companyEmployeeFavoriteDTO: CompanyEmployeeFavoriteDTO,
     @Req() req?: any,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<CompanyFavoriteEmployeeResponseDTO> {
     await this.assertCompanyAccess(
       req?.user?.id,
       companyEmployeeFavoriteDTO.cid,
     );
-    return rpcCall<CoreResponseDTO>(
+    return rpcCall<CompanyFavoriteEmployeeResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.ADD_EMPLOYEE_TO_FAVORITE,
       companyEmployeeFavoriteDTO,
@@ -186,12 +191,12 @@ export class UserController implements IUserController {
     @Param()
     companyEmployeeFavoriteDTO: CompanyEmployeeFavoriteWithFavoriteIdDTO,
     @Req() req?: any,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<CompanyUnfavoriteEmployeeResponseDTO> {
     await this.assertCompanyAccess(
       req?.user?.id,
       companyEmployeeFavoriteDTO.cid,
     );
-    return rpcCall<CoreResponseDTO>(
+    return rpcCall<CompanyUnfavoriteEmployeeResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_FROM_FAVORITE,
       companyEmployeeFavoriteDTO,

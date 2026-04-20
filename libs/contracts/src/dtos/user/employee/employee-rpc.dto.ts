@@ -6,6 +6,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
+import { CoreResponseDTO } from '../../shared/core-response.dto';
 import { UpdateEmployeeInfoDTO } from './update-employee-info.dto';
 
 export class EmployeeIdDTO {
@@ -65,4 +66,52 @@ export class RemoveEmployeeEducationDTO extends EmployeeIdDTO {
 export class RemoveEmployeeExperienceDTO extends EmployeeIdDTO {
   @IsUUID()
   experienceId: string;
+}
+
+export class UploadEmployeeAvatarResponseDTO extends CoreResponseDTO {
+  constructor(partial: Partial<UploadEmployeeAvatarResponseDTO>) {
+    super(partial);
+  }
+}
+
+export class RemoveEmployeeAvatarResponseDTO extends CoreResponseDTO {
+  constructor(partial: Partial<RemoveEmployeeAvatarResponseDTO>) {
+    super(partial);
+  }
+}
+
+export class UploadEmployeeResumeResponseDTO extends CoreResponseDTO {
+  constructor(partial: Partial<UploadEmployeeResumeResponseDTO>) {
+    super(partial);
+  }
+}
+
+export class RemoveEmployeeResumeResponseDTO extends CoreResponseDTO {
+  constructor(partial: Partial<RemoveEmployeeResumeResponseDTO>) {
+    super(partial);
+  }
+}
+
+export class UploadEmployeeCoverLetterResponseDTO extends CoreResponseDTO {
+  constructor(partial: Partial<UploadEmployeeCoverLetterResponseDTO>) {
+    super(partial);
+  }
+}
+
+export class RemoveEmployeeCoverLetterResponseDTO extends CoreResponseDTO {
+  constructor(partial: Partial<RemoveEmployeeCoverLetterResponseDTO>) {
+    super(partial);
+  }
+}
+
+export class RemoveEmployeeEducationResponseDTO extends CoreResponseDTO {
+  constructor(partial: Partial<RemoveEmployeeEducationResponseDTO>) {
+    super(partial);
+  }
+}
+
+export class RemoveEmployeeExperienceResponseDTO extends CoreResponseDTO {
+  constructor(partial: Partial<RemoveEmployeeExperienceResponseDTO>) {
+    super(partial);
+  }
 }

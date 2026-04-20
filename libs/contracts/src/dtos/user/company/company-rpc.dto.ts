@@ -6,6 +6,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
+import { CoreResponseDTO } from '../../shared/core-response.dto';
 import { UpdateCompanyInfoDTO } from './update-company-info.dto';
 
 export class CompanyIdDTO {
@@ -65,4 +66,46 @@ export class RemoveCompanyImageDTO extends CompanyIdDTO {
 export class RemoveOpenPositionDTO extends CompanyIdDTO {
   @IsUUID()
   opId: string;
+}
+
+export class UploadCompanyAvatarResponseDTO extends CoreResponseDTO {
+  constructor(partial: Partial<UploadCompanyAvatarResponseDTO>) {
+    super(partial);
+  }
+}
+
+export class RemoveCompanyAvatarResponseDTO extends CoreResponseDTO {
+  constructor(partial: Partial<RemoveCompanyAvatarResponseDTO>) {
+    super(partial);
+  }
+}
+
+export class UploadCompanyCoverResponseDTO extends CoreResponseDTO {
+  constructor(partial: Partial<UploadCompanyCoverResponseDTO>) {
+    super(partial);
+  }
+}
+
+export class RemoveCompanyCoverResponseDTO extends CoreResponseDTO {
+  constructor(partial: Partial<RemoveCompanyCoverResponseDTO>) {
+    super(partial);
+  }
+}
+
+export class UploadCompanyImagesResponseDTO extends CoreResponseDTO {
+  constructor(partial: Partial<UploadCompanyImagesResponseDTO>) {
+    super(partial);
+  }
+}
+
+export class RemoveCompanyImageResponseDTO extends CoreResponseDTO {
+  constructor(partial: Partial<RemoveCompanyImageResponseDTO>) {
+    super(partial);
+  }
+}
+
+export class RemoveOpenPositionResponseDTO extends CoreResponseDTO {
+  constructor(partial: Partial<RemoveOpenPositionResponseDTO>) {
+    super(partial);
+  }
 }

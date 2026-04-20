@@ -8,9 +8,10 @@ import {
 } from '@app/contracts/interfaces/service/user-service.interface';
 import {
   EmployeeIdDTO,
+  RemoveEmployeeAvatarResponseDTO,
   UploadEmployeeAvatarDTO,
+  UploadEmployeeAvatarResponseDTO,
 } from '@app/contracts/dtos/user';
-import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 
 @Controller()
 export class ImageEmployeeController implements IImageEmployeeRpcController {
@@ -22,7 +23,7 @@ export class ImageEmployeeController implements IImageEmployeeRpcController {
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_AVATAR)
   async uploadEmployeeAvatar(
     @Payload() uploadEmployeeAvatarDTO: UploadEmployeeAvatarDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<UploadEmployeeAvatarResponseDTO> {
     return this.imageEmployeeService.uploadEmployeeAvatar(
       uploadEmployeeAvatarDTO,
     );
@@ -31,7 +32,7 @@ export class ImageEmployeeController implements IImageEmployeeRpcController {
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_AVATAR)
   async removeEmployeeAvatar(
     @Payload() employeeIdDTO: EmployeeIdDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<RemoveEmployeeAvatarResponseDTO> {
     return this.imageEmployeeService.removeEmployeeAvatar(employeeIdDTO);
   }
 }

@@ -10,9 +10,10 @@ import { Repository } from 'typeorm';
 import { IImageEmployeeService } from '@app/contracts/interfaces/service/user-service.interface';
 import {
   EmployeeIdDTO,
+  RemoveEmployeeAvatarResponseDTO,
   UploadEmployeeAvatarDTO,
+  UploadEmployeeAvatarResponseDTO,
 } from '@app/contracts/dtos/user';
-import { CoreResponseDTO } from '@app/contracts/dtos/shared';
 
 @Injectable()
 export class ImageEmployeeService implements IImageEmployeeService {
@@ -26,7 +27,7 @@ export class ImageEmployeeService implements IImageEmployeeService {
 
   async uploadEmployeeAvatar(
     uploadEmployeeAvatarDTO: UploadEmployeeAvatarDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<UploadEmployeeAvatarResponseDTO> {
     const { employeeId, avatar } = uploadEmployeeAvatarDTO;
     try {
       const employee = await this.employeeRepository.findOne({
@@ -68,7 +69,7 @@ export class ImageEmployeeService implements IImageEmployeeService {
       // Invalidate user caches (fix for stale avatar in findOneUserByID)
       await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
 
-      return new CoreResponseDTO({
+      return new UploadEmployeeAvatarResponseDTO({
         message: "Employee's avatar was successfully set.",
       });
     } catch (error) {
@@ -88,7 +89,7 @@ export class ImageEmployeeService implements IImageEmployeeService {
 
   async removeEmployeeAvatar(
     employeeIdDTO: EmployeeIdDTO,
-  ): Promise<CoreResponseDTO> {
+  ): Promise<RemoveEmployeeAvatarResponseDTO> {
     const { employeeId } = employeeIdDTO;
     try {
       const employee = await this.employeeRepository.findOne({
@@ -116,7 +117,7 @@ export class ImageEmployeeService implements IImageEmployeeService {
       // Invalidate user caches
       await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
 
-      return new CoreResponseDTO({
+      return new RemoveEmployeeAvatarResponseDTO({
         message: "Employee's avatar was successfully deleted.",
       });
     } catch (error) {
