@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsString } from 'class-validator';
+import { CoreResponseDTO } from '../shared/core-response.dto';
 
 export class ForgotPasswordDTO {
   @IsString()
@@ -6,10 +7,8 @@ export class ForgotPasswordDTO {
   identifier: string;
 }
 
-export class ForgotPasswordResponseDTO {
-  message: string;
-
+export class ForgotPasswordResponseDTO extends CoreResponseDTO {
   constructor(partial: Partial<ForgotPasswordResponseDTO>) {
-    Object.assign(this, partial);
+    super(partial);
   }
 }

@@ -1,3 +1,4 @@
+import { CoreResponseDTO } from '../shared/core-response.dto';
 import { CheckPaymentStatusPayerInfoDTO } from './check-payment-status.dto';
 import {
   ArrayMaxSize,
@@ -39,14 +40,13 @@ export class CheckPaymentBulkStatusSummaryDTO {
   failed: number;
 }
 
-export class CheckPaymentBulkStatusResponseDTO {
+export class CheckPaymentBulkStatusResponseDTO extends CoreResponseDTO {
   success: true;
   totalChecked: number;
   payments: CheckPaymentBulkStatusItemDTO[];
   summary: CheckPaymentBulkStatusSummaryDTO;
-  message: string;
 
   constructor(partial: Partial<CheckPaymentBulkStatusResponseDTO>) {
-    Object.assign(this, partial);
+    super(partial);
   }
 }

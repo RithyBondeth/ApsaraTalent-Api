@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsString } from 'class-validator';
+import { CoreResponseDTO } from '../shared/core-response.dto';
 
 export class VerifyKhqrDTO {
   @IsString()
@@ -6,25 +7,23 @@ export class VerifyKhqrDTO {
   qrString: string;
 }
 
-export class VerifyKhqrResponseValidDTO {
+export class VerifyKhqrResponseValidDTO extends CoreResponseDTO {
   success: true;
   isValid: true;
   /** Raw decoded QR data returned by the Bakong library. */
   qrData: Record<string, unknown>;
-  message: string;
 
   constructor(partial: Partial<VerifyKhqrResponseValidDTO>) {
-    Object.assign(this, partial);
+    super(partial);
   }
 }
 
-export class VerifyKhqrResponseInvalidDTO {
+export class VerifyKhqrResponseInvalidDTO extends CoreResponseDTO {
   success: false;
   isValid: false;
-  message: string;
 
   constructor(partial: Partial<VerifyKhqrResponseInvalidDTO>) {
-    Object.assign(this, partial);
+    super(partial);
   }
 }
 

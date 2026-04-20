@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsString, Length, Matches } from 'class-validator';
+import { CoreResponseDTO } from '../shared/core-response.dto';
 
 export class CheckPaymentStatusDTO {
   @IsString()
@@ -15,7 +16,7 @@ export class CheckPaymentStatusPayerInfoDTO {
   phone: string | null;
 }
 
-export class CheckPaymentStatusFoundResponseDTO {
+export class CheckPaymentStatusFoundResponseDTO extends CoreResponseDTO {
   success: true;
   paymentId: string;
   paymentStatus: string;
@@ -24,21 +25,19 @@ export class CheckPaymentStatusFoundResponseDTO {
   currency: string | null;
   paidAt: Date | string | null;
   payerInfo: CheckPaymentStatusPayerInfoDTO | null;
-  message: string;
 
   constructor(partial: Partial<CheckPaymentStatusFoundResponseDTO>) {
-    Object.assign(this, partial);
+    super(partial);
   }
 }
 
-export class CheckPaymentStatusNotFoundResponseDTO {
+export class CheckPaymentStatusNotFoundResponseDTO extends CoreResponseDTO {
   success: false;
   paymentId: string;
   paymentStatus: 'not_found';
-  message: string;
 
   constructor(partial: Partial<CheckPaymentStatusNotFoundResponseDTO>) {
-    Object.assign(this, partial);
+    super(partial);
   }
 }
 

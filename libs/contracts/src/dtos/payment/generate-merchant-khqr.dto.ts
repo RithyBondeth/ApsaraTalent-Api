@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsString, Length } from 'class-validator';
+import { CoreResponseDTO } from '../shared/core-response.dto';
 import { GenerateIndividualKhqrDTO } from './generate-individual-khqr.dto';
 
 export class GenerateMerchantKhqrDTO extends GenerateIndividualKhqrDTO {
@@ -15,15 +16,14 @@ export class GenerateMerchantKhqrDTO extends GenerateIndividualKhqrDTO {
   acquiringBank: string;
 }
 
-export class GenerateMerchantKhqrResponseDTO {
+export class GenerateMerchantKhqrResponseDTO extends CoreResponseDTO {
   success: true;
   paymentId: string;
   qrString: string;
   md5Hash: string;
   qrImage: string;
-  message: string;
 
   constructor(partial: Partial<GenerateMerchantKhqrResponseDTO>) {
-    Object.assign(this, partial);
+    super(partial);
   }
 }

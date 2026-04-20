@@ -1,5 +1,6 @@
 import { Transform } from 'class-transformer';
 import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { CoreResponseDTO } from '../shared/core-response.dto';
 
 export class DecodeKhqrDTO {
   @IsString()
@@ -24,12 +25,11 @@ export class DecodeKhqrDecodedDataDTO {
   terminalLabel: string | null;
 }
 
-export class DecodeKhqrResponseDTO {
+export class DecodeKhqrResponseDTO extends CoreResponseDTO {
   success: true;
   decodedData: DecodeKhqrDecodedDataDTO;
-  message: string;
 
   constructor(partial: Partial<DecodeKhqrResponseDTO>) {
-    Object.assign(this, partial);
+    super(partial);
   }
 }

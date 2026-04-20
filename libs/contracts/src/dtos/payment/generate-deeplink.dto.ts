@@ -5,6 +5,7 @@ import {
   IsUrl,
   Length,
 } from 'class-validator';
+import { CoreResponseDTO } from '../shared/core-response.dto';
 
 export class GenerateDeepLinkDTO {
   @IsString()
@@ -24,14 +25,13 @@ export class GenerateDeepLinkDTO {
   appName?: string;
 }
 
-export class GenerateDeepLinkResponseDTO {
+export class GenerateDeepLinkResponseDTO extends CoreResponseDTO {
   success: true;
   deepLink: string;
   shortUrl: string;
   qrString: string;
-  message: string;
 
   constructor(partial: Partial<GenerateDeepLinkResponseDTO>) {
-    Object.assign(this, partial);
+    super(partial);
   }
 }

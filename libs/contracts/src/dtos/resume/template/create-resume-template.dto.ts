@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+import { CoreResponseDTO } from '../../shared/core-response.dto';
 
 export class CreateResumeTemplateDTO {
   @IsString()
@@ -28,10 +29,8 @@ export class CreateResumeTemplateDTO {
   isPremium: boolean;
 }
 
-export class CreateResumeTemplateResponseDTO {
-  message: string;
-
+export class CreateResumeTemplateResponseDTO extends CoreResponseDTO {
   constructor(partial: Partial<CreateResumeTemplateResponseDTO>) {
-    Object.assign(this, partial);
+    super(partial);
   }
 }

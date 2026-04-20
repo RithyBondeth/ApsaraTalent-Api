@@ -1,4 +1,5 @@
 import { Transform } from 'class-transformer';
+import { CoreResponseDTO } from '../shared/core-response.dto';
 import {
   IsBoolean,
   IsEnum,
@@ -89,16 +90,15 @@ export class GenerateIndividualKhqrDTO {
   isStatic?: boolean;
 }
 
-export class GenerateIndividualKhqrResponseDTO {
+export class GenerateIndividualKhqrResponseDTO extends CoreResponseDTO {
   success: true;
   paymentId: string;
   qrString: string;
   md5Hash: string;
   qrImage: string;
   expiresAt: Date | null;
-  message: string;
 
   constructor(partial: Partial<GenerateIndividualKhqrResponseDTO>) {
-    Object.assign(this, partial);
+    super(partial);
   }
 }
