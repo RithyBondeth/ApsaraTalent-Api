@@ -16,7 +16,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ClientProxy } from '@nestjs/microservices';
 import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-service.constant';
 import { chatUploadMulterOptions } from './config/chat-upload.config';
-import { IChatController } from '@app/contracts/interfaces/domain/chat.interface';
+import { IChatController } from '@app/contracts/interfaces/controller/chat-controller.interface';
 import {
   InitiateChatResponseDTO,
   UploadAttachmentResponseDTO,

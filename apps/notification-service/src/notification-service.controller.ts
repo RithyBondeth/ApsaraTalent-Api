@@ -1,7 +1,7 @@
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
-import { INotificationRpcController } from '@app/contracts/interfaces/domain/notification.interface';
+import { INotificationRpcController } from '@app/contracts/interfaces/controller/notification-controller.interface';
 import {
   GetAllNotificationResponseDTO,
   ListNotificationsDTO,

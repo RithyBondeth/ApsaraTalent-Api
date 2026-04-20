@@ -3,8 +3,13 @@ import { IsArray, IsEnum, IsOptional, IsString } from 'class-validator';
 import { EmployeeResponseDTO } from '../../shared/user.dto';
 
 export class SearchEmployeeDTO {
-  @IsOptional() @IsString() keyword?: string;
-  @IsOptional() @IsString() location?: string;
+  @IsOptional()
+  @IsString()
+  keyword?: string;
+
+  @IsOptional()
+  @IsString()
+  location?: string;
 
   @IsOptional()
   @IsArray()
@@ -12,8 +17,13 @@ export class SearchEmployeeDTO {
   @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
   careerScopes?: string[];
 
-  @IsOptional() @IsString() jobType?: string;
-  @IsOptional() @IsString() experienceLevel?: string;
+  @IsOptional()
+  @IsString()
+  jobType?: string;
+
+  @IsOptional()
+  @IsString()
+  experienceLevel?: string;
 
   @IsOptional()
   @IsArray()
@@ -21,7 +31,9 @@ export class SearchEmployeeDTO {
   @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
   education?: string[];
 
-  @IsOptional() @IsString() sortBy?: string;
+  @IsOptional()
+  @IsString()
+  sortBy?: string;
 
   @IsOptional()
   @IsEnum(['ASC', 'DESC'], { message: "sortOrder must be 'ASC' or 'DESC'" })

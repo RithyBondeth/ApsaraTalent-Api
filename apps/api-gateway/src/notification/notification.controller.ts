@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
-import { INotificationController } from '@app/contracts/interfaces/domain/notification.interface';
+import { INotificationController } from '@app/contracts/interfaces/controller/notification-controller.interface';
 import {
   UnreadCountResponseDTO,
   GetAllNotificationResponseDTO,

@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PAYMENT_SERVICE } from '@app/contracts/constants/service-actions/payment-service.constant';
-import { IPaymentController } from '@app/contracts/interfaces/domain/payment.interface';
+import { IPaymentController } from '@app/contracts/interfaces/controller/payment-controller.interface';
 import {
   CheckPaymentBulkStatusResponseDTO,
   CheckPaymentStatusResponseDTO,

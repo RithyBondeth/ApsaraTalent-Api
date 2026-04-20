@@ -3,7 +3,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { OpenPositionService } from '../../services/company-services/open-position.service';
 
-import { IOpenPositionRpcController } from '@app/contracts/interfaces/domain/company.interface';
+import { IOpenPositionRpcController } from '@app/contracts/interfaces/controller/company-controller.interface';
 
 import {
   I_OPEN_POSITION_SERVICE,

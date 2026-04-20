@@ -11,7 +11,7 @@ import {
   GenerateMerchantKhqrDTO,
   VerifyKhqrDTO,
 } from '@app/contracts/dtos/payment';
-import { IPaymentRpcController } from '@app/contracts/interfaces/domain/payment.interface';
+import { IPaymentRpcController } from '@app/contracts/interfaces/controller/payment-controller.interface';
 import {
   I_PAYMENT_SERVICE,
   IPaymentService,

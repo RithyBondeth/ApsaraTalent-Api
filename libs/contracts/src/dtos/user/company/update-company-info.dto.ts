@@ -10,46 +10,117 @@ import {
 } from 'class-validator';
 
 class JobDTO {
-  @IsString() @IsOptional() id?: string;
-  @IsString() @IsOptional() title?: string;
-  @IsString() @IsOptional() description?: string;
-  @IsString() @IsOptional() type?: string;
-  @IsString() @IsOptional() experienceRequired?: string;
-  @IsString() @IsOptional() educationRequired?: string;
-  @IsString() @IsOptional() skillsRequired?: string;
+  @IsString()
+  @IsOptional()
+  id?: string;
+
+  @IsString()
+  @IsOptional()
+  title?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsString()
+  @IsOptional()
+  type?: string;
+
+  @IsString()
+  @IsOptional()
+  experienceRequired?: string;
+
+  @IsString()
+  @IsOptional()
+  educationRequired?: string;
+
+  @IsString()
+  @IsOptional()
+  skillsRequired?: string;
 }
 
 class BenefitDTO {
-  @IsNumber() @IsPositive() @IsOptional() id?: number;
-  @IsString() @IsOptional() label?: string;
+  @IsNumber()
+  @IsPositive()
+  @IsOptional()
+  id?: number;
+
+  @IsString()
+  @IsOptional()
+  label?: string;
 }
 
 class ValueDTO {
-  @IsNumber() @IsPositive() @IsOptional() id?: number;
-  @IsString() @IsOptional() label?: string;
+  @IsNumber()
+  @IsPositive()
+  @IsOptional()
+  id?: number;
+
+  @IsString()
+  @IsOptional()
+  label?: string;
 }
 
 class CareerScopeDTO {
-  @IsString() @IsOptional() id?: string;
-  @IsString() @IsOptional() name?: string;
-  @IsString() @IsOptional() description?: string;
+  @IsString()
+  @IsOptional()
+  id?: string;
+
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
 }
 
 class SocialDTO {
-  @IsString() @IsOptional() id?: string;
-  @IsString() @IsOptional() platform?: string;
-  @IsString() @IsOptional() url?: string;
+  @IsString()
+  @IsOptional()
+  id?: string;
+
+  @IsString()
+  @IsOptional()
+  platform?: string;
+
+  @IsString()
+  @IsOptional()
+  url?: string;
 }
 
 export class UpdateCompanyInfoDTO {
-  @IsString() @IsOptional() name?: string;
-  @IsString() @IsOptional() description?: string;
-  @IsOptional() avatar?: Express.Multer.File;
-  @IsOptional() cover?: Express.Multer.File;
-  @IsString() @IsOptional() industry?: string;
-  @IsString() @IsOptional() location?: string;
-  @IsNumber() @Type(() => Number) @IsOptional() companySize?: number;
-  @IsNumber() @Type(() => Number) @IsOptional() foundedYear?: number;
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsOptional()
+  avatar?: Express.Multer.File;
+
+  @IsOptional()
+  cover?: Express.Multer.File;
+
+  @IsString()
+  @IsOptional()
+  industry?: string;
+
+  @IsString()
+  @IsOptional()
+  location?: string;
+
+  @IsNumber()
+  @Type(() => Number)
+  @IsOptional()
+  companySize?: number;
+
+  @IsNumber()
+  @Type(() => Number)
+  @IsOptional()
+  foundedYear?: number;
 
   @IsArray()
   @ValidateNested({ each: true })
@@ -57,10 +128,21 @@ export class UpdateCompanyInfoDTO {
   @IsOptional()
   jobs?: JobDTO[];
 
-  @IsArray() @IsOptional() benefitIdsToDelete?: number[];
-  @IsArray() @IsOptional() valueIdsToDelete?: number[];
-  @IsArray() @IsOptional() careerScopeIdsToDelete?: string[];
-  @IsArray() @IsOptional() socialIdsToDelete?: string[];
+  @IsArray()
+  @IsOptional()
+  benefitIdsToDelete?: number[];
+
+  @IsArray()
+  @IsOptional()
+  valueIdsToDelete?: number[];
+
+  @IsArray()
+  @IsOptional()
+  careerScopeIdsToDelete?: string[];
+
+  @IsArray()
+  @IsOptional()
+  socialIdsToDelete?: string[];
 
   @IsArray()
   @ValidateNested({ each: true })

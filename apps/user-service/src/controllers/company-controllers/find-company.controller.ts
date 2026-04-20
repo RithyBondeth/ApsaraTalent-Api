@@ -1,4 +1,4 @@
-import { IFindCompanyRpcController } from '@app/contracts/interfaces/domain/company.interface';
+import { IFindCompanyRpcController } from '@app/contracts/interfaces/controller/company-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';

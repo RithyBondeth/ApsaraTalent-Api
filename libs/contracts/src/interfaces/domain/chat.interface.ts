@@ -1,9 +1,3 @@
-import {
-  InitiateChatDTO,
-  InitiateChatResponseDTO,
-  UploadAttachmentResponseDTO,
-} from '../../dtos/chat';
-
 export interface TChatPayload {
   receiverId: string;
   content: string;
@@ -74,15 +68,4 @@ export interface RtcIceCandidate {
   sdpMid?: string | null;
   sdpMLineIndex?: number | null;
   usernameFragment?: string | null;
-}
-
-export interface IChatController {
-  initiateChat(
-    initiateChatDTO: InitiateChatDTO,
-    req: any,
-  ): Promise<InitiateChatResponseDTO>;
-  getRecentChats(req: any): Promise<InitiateChatResponseDTO[]>;
-  uploadAttachment(
-    file: Express.Multer.File,
-  ): Promise<UploadAttachmentResponseDTO>;
 }

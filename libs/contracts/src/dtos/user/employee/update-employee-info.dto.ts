@@ -12,49 +12,130 @@ import {
 } from 'class-validator';
 
 class SkillDTO {
-  @IsString() @IsOptional() id?: string;
-  @IsString() @IsOptional() name?: string;
-  @IsString() @IsOptional() description?: string;
+  @IsString()
+  @IsOptional()
+  id?: string;
+
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
 }
 
 class ExperienceDTO {
-  @IsString() @IsOptional() id?: string;
-  @IsString() @IsOptional() title?: string;
-  @IsString() @IsOptional() description?: string;
-  @IsDate() @Type(() => Date) @IsOptional() startDate?: Date;
-  @IsDate() @Type(() => Date) @IsOptional() endDate?: Date;
+  @IsString()
+  @IsOptional()
+  id?: string;
+
+  @IsString()
+  @IsOptional()
+  title?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsDate()
+  @Type(() => Date)
+  @IsOptional()
+  startDate?: Date;
+
+  @IsDate()
+  @Type(() => Date)
+  @IsOptional()
+  endDate?: Date;
 }
 
 class CareerScopeDTO {
-  @IsString() @IsOptional() id?: string;
-  @IsString() @IsOptional() name?: string;
-  @IsString() @IsOptional() description?: string;
+  @IsString()
+  @IsOptional()
+  id?: string;
+
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
 }
 
 class SocialDTO {
-  @IsString() @IsOptional() id?: string;
-  @IsString() @IsOptional() platform?: string;
-  @IsUrl() @IsOptional() url?: string;
+  @IsString()
+  @IsOptional()
+  id?: string;
+
+  @IsString()
+  @IsOptional()
+  platform?: string;
+
+  @IsUrl()
+  @IsOptional()
+  url?: string;
 }
 
 class EducationDTO {
-  @IsString() @IsOptional() id?: string;
-  @IsString() @IsOptional() school?: string;
-  @IsString() @IsOptional() degree: string;
-  @IsString() @IsOptional() year: string;
+  @IsString()
+  @IsOptional()
+  id?: string;
+
+  @IsString()
+  @IsOptional()
+  school?: string;
+
+  @IsString()
+  @IsOptional()
+  degree: string;
+
+  @IsString()
+  @IsOptional()
+  year: string;
 }
 
 export class UpdateEmployeeInfoDTO {
-  @IsString() @IsOptional() firstname?: string;
-  @IsString() @IsOptional() lastname?: string;
-  @IsDate() @Type(() => Date) @IsOptional() dob?: Date;
-  @IsString() @IsOptional() username?: string;
-  @IsEnum(EGender) @IsOptional() gender?: EGender;
-  @IsString() @IsOptional() job?: string;
-  @IsString() @IsOptional() yearsOfExperience?: string;
-  @IsString() @IsOptional() availability?: string;
-  @IsString() @IsOptional() description?: string;
-  @IsString() @IsOptional() location?: string;
+  @IsString()
+  @IsOptional()
+  firstname?: string;
+
+  @IsString()
+  @IsOptional()
+  lastname?: string;
+
+  @IsDate()
+  @Type(() => Date)
+  @IsOptional()
+  dob?: Date;
+
+  @IsString()
+  @IsOptional()
+  username?: string;
+
+  @IsEnum(EGender)
+  @IsOptional()
+  gender?: EGender;
+
+  @IsString()
+  @IsOptional()
+  job?: string;
+
+  @IsString()
+  @IsOptional()
+  yearsOfExperience?: string;
+
+  @IsString()
+  @IsOptional()
+  availability?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsString()
+  @IsOptional()
+  location?: string;
   @IsString() @IsOptional() phone?: string;
 
   @IsArray()

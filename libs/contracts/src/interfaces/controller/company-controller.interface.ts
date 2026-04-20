@@ -1,7 +1,8 @@
-import { CoreResponseDTO, PaginationDTO } from '../../dtos/shared';
+import { CoreResponseDTO, PaginationDTO } from '@app/contracts/dtos/shared';
 import {
   CompanyIdDTO,
   CompanyResponseDTO,
+  CountAllUsersResponseDTO,
   RemoveCompanyImageDTO,
   RemoveOpenPositionDTO,
   UpdateCompanyInfoDTO,
@@ -10,8 +11,7 @@ import {
   UploadCompanyAvatarDTO,
   UploadCompanyCoverDTO,
   UploadCompanyImagesDTO,
-} from '../../dtos/user';
-import { CountAllUsersResponseDTO } from '../../dtos/user';
+} from '@app/contracts/dtos/user';
 
 export interface IFindCompanyController {
   findAll(data: PaginationDTO): Promise<CompanyResponseDTO[]>;
