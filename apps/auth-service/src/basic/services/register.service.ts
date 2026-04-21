@@ -37,7 +37,6 @@ import {
 export class RegisterService implements IRegisterService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
-    @InjectRepository(Employee)
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
@@ -219,6 +218,7 @@ export class RegisterService implements IRegisterService {
       company = queryRunner.manager.create(User, {
         role: EUserRole.COMPANY,
         email: companyRegisterDTO.email,
+        phone: companyRegisterDTO.phone,
         password: companyRegisterDTO.password,
         company: newCompany,
         isEmailVerified: false,
@@ -409,6 +409,7 @@ export class RegisterService implements IRegisterService {
       employee = queryRunner.manager.create(User, {
         role: EUserRole.EMPLOYEE,
         email: employeeRegisterDTO.email,
+        phone: employeeRegisterDTO.phone,
         password: employeeRegisterDTO.password,
         employee: newEmployee,
         isEmailVerified: employeeRegisterDTO.authEmail ? false : true,

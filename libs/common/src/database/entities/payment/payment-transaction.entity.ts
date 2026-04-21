@@ -11,10 +11,8 @@ import {
 import { User } from '../user.entity';
 import { Payment } from './payment.entity';
 
-export enum Currency {
-  KHR = 'KHR',
-  USD = 'USD',
-}
+export { Currency } from './payment-enums';
+import { Currency } from './payment-enums';
 
 export enum TransactionStatus {
   PENDING = 'pending',

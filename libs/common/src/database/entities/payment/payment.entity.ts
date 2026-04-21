@@ -11,7 +11,8 @@ import {
 } from 'typeorm';
 import { Company } from '../company/company.entity';
 import { User } from '../user.entity';
-import { Currency, PaymentTransaction } from './payment-transaction.entity';
+import { Currency } from './payment-enums';
+import { PaymentTransaction } from './payment-transaction.entity';
 
 export enum PaymentStatus {
   PENDING = 'pending',

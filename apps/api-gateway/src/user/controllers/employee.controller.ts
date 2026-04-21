@@ -51,7 +51,7 @@ export class EmployeeController implements IEmployeeController {
     return rpcCall<EmployeeResponseDTO[]>(
       this.userClient,
       USER_SERVICE.ACTIONS.FIND_ALL_EMPLOYEE,
-      { paginationDTO },
+      paginationDTO,
     );
   }
 
