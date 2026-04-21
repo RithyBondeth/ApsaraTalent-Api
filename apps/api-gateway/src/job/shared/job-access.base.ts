@@ -11,7 +11,7 @@ export abstract class JobAccessBase {
     userId: string,
   ): Promise<UserResponseDTO> {
     return rpcCall(this.userClient, USER_SERVICE.ACTIONS.GET_CURRENT_USER, {
-      userID: userId,
+      userId: userId,
     });
   }
 

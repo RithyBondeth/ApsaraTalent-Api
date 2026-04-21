@@ -50,7 +50,7 @@ export class CompanyController implements ICompanyController {
     return rpcCall<CompanyResponseDTO[]>(
       this.userClient,
       USER_SERVICE.ACTIONS.FIND_ALL_COMPANY,
-      { paginationDTO },
+      paginationDTO,
     );
   }
 

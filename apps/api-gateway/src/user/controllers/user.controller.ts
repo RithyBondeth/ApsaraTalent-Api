@@ -47,7 +47,7 @@ export class UserController implements IUserController {
 
   private async getCurrentUserProfile(userId: string): Promise<any> {
     return rpcCall(this.userClient, USER_SERVICE.ACTIONS.GET_CURRENT_USER, {
-      userID: userId,
+      userId: userId,
     });
   }
 
@@ -117,7 +117,7 @@ export class UserController implements IUserController {
       this.userClient,
       USER_SERVICE.ACTIONS.GET_CURRENT_USER,
       {
-        userID: user.id,
+        userId: user.id,
       },
     );
   }
