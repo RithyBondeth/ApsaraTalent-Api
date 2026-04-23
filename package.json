@@ -29,6 +29,7 @@
     "start:dev:job": "nest start job-service --watch",
     "start:dev:payment": "nest start payment-service --watch",
     "start:dev:notification": "nest start notification-service --watch",
+    "seed": "ts-node -r tsconfig-paths/register scripts/seed.ts",
     "start:api": "nest start api-gateway",
     "start:auth": "nest start auth-service",
     "start:users": "nest start user-service",
