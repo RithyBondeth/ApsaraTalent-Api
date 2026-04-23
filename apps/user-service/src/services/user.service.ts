@@ -891,8 +891,9 @@ export class UserService implements IUserService, OnModuleInit {
         });
       }
 
-      const openPositionCandidates =
-        await openPositionsQb.getRawMany<{ userId: string }>();
+      const openPositionCandidates = await openPositionsQb.getRawMany<{
+        userId: string;
+      }>();
       openPositionCandidates.forEach((c) => candidateIdSet.add(c.userId));
 
       // Source B: companies with career scope overlap (bonus — only when employee has scopes)
@@ -916,8 +917,7 @@ export class UserService implements IUserService, OnModuleInit {
           });
         }
 
-        const scopeCandidates =
-          await scopeQb.getRawMany<{ userId: string }>();
+        const scopeCandidates = await scopeQb.getRawMany<{ userId: string }>();
         scopeCandidates.forEach((c) => candidateIdSet.add(c.userId));
       }
 
@@ -1068,8 +1068,9 @@ export class UserService implements IUserService, OnModuleInit {
         });
       }
 
-      const allEmployeeCandidates =
-        await allEmployeesQb.getRawMany<{ userId: string }>();
+      const allEmployeeCandidates = await allEmployeesQb.getRawMany<{
+        userId: string;
+      }>();
       allEmployeeCandidates.forEach((c) => candidateIdSet.add(c.userId));
 
       // Source B: employees with career scope overlap (bonus — only when company has scopes)
@@ -1093,8 +1094,7 @@ export class UserService implements IUserService, OnModuleInit {
           });
         }
 
-        const scopeCandidates =
-          await scopeQb.getRawMany<{ userId: string }>();
+        const scopeCandidates = await scopeQb.getRawMany<{ userId: string }>();
         scopeCandidates.forEach((c) => candidateIdSet.add(c.userId));
       }
 
