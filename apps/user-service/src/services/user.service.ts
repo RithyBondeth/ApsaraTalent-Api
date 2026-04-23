@@ -861,15 +861,8 @@ export class UserService implements IUserService, OnModuleInit {
         .where('employee.id = :employeeId', { employeeId })
         .getOne();
 
-      if (
-        !employeeUser?.employee?.careerScopes ||
-        employeeUser.employee.careerScopes.length === 0
-      ) {
-        return [];
-      }
-
-      const employee = employeeUser.employee;
-      const careerScopeIds = employee.careerScopes.map((cs) => cs.id);
+      const employee = employeeUser?.employee ?? null;
+      const careerScopeIds = (employee?.careerScopes ?? []).map((cs) => cs.id);
 
       // 2. Get company IDs the employee has already liked
       const likedMatches = await this.jobMatchingRepository.find({
@@ -878,31 +871,58 @@ export class UserService implements IUserService, OnModuleInit {
       });
       const likedCompanyIds = likedMatches.map((m) => m.company.id);
 
-      // 3. Phase 1 — get candidate user IDs via career scope overlap (pool = 4× limit)
-      const candidateQb = this.userRepository
+      // 3. Build candidate pool: ALWAYS include companies with open positions,
+      //    PLUS companies with career scope overlap (for scoring bonus).
+      //    Both sources are merged and deduplicated so no company is missed.
+      const candidateIdSet = new Set<string>();
+
+      // Source A: companies with open positions (primary — always run)
+      const openPositionsQb = this.userRepository
         .createQueryBuilder('user')
         .select('user.id', 'userId')
         .innerJoin('user.company', 'company')
-        .innerJoin(
-          'company.careerScopes',
-          'cs',
-          'cs.id IN (:...careerScopeIds)',
-          { careerScopeIds },
-        )
+        .innerJoin('company.openPositions', 'openPositions')
         .groupBy('user.id')
-        .orderBy('COUNT(cs.id)', 'DESC')
         .limit(limit * 4);
 
       if (likedCompanyIds.length > 0) {
-        candidateQb.andWhere('company.id NOT IN (:...likedCompanyIds)', {
+        openPositionsQb.andWhere('company.id NOT IN (:...likedCompanyIds)', {
           likedCompanyIds,
         });
       }
 
-      const candidates = await candidateQb.getRawMany<{ userId: string }>();
-      if (!candidates.length) return [];
+      const openPositionCandidates =
+        await openPositionsQb.getRawMany<{ userId: string }>();
+      openPositionCandidates.forEach((c) => candidateIdSet.add(c.userId));
 
-      const userIds = candidates.map((c) => c.userId);
+      // Source B: companies with career scope overlap (bonus — only when employee has scopes)
+      if (careerScopeIds.length > 0) {
+        const scopeQb = this.userRepository
+          .createQueryBuilder('user')
+          .select('user.id', 'userId')
+          .innerJoin('user.company', 'company')
+          .innerJoin(
+            'company.careerScopes',
+            'cs',
+            'cs.id IN (:...careerScopeIds)',
+            { careerScopeIds },
+          )
+          .groupBy('user.id')
+          .limit(limit * 4);
+
+        if (likedCompanyIds.length > 0) {
+          scopeQb.andWhere('company.id NOT IN (:...likedCompanyIds)', {
+            likedCompanyIds,
+          });
+        }
+
+        const scopeCandidates =
+          await scopeQb.getRawMany<{ userId: string }>();
+        scopeCandidates.forEach((c) => candidateIdSet.add(c.userId));
+      }
+
+      const userIds = Array.from(candidateIdSet);
+      if (userIds.length === 0) return [];
 
       // 4. Phase 2 — load full company data needed for multi-factor scoring
       const users = await this.userRepository
@@ -924,11 +944,14 @@ export class UserService implements IUserService, OnModuleInit {
         const overlapCount = (company.careerScopes ?? []).filter((cs) =>
           careerScopeIds.includes(cs.id),
         ).length;
-        score += (overlapCount / careerScopeIds.length) * 40;
+        score +=
+          careerScopeIds.length > 0
+            ? (overlapCount / careerScopeIds.length) * 40
+            : 0;
 
         // Factor 2: Location match (0 or 25)
         if (
-          employee.location &&
+          employee?.location &&
           company.location &&
           employee.location.toLowerCase().trim() ===
             company.location.toLowerCase().trim()
@@ -1004,19 +1027,12 @@ export class UserService implements IUserService, OnModuleInit {
         .where('company.id = :companyId', { companyId })
         .getOne();
 
-      if (
-        !companyUser?.company?.careerScopes ||
-        companyUser.company.careerScopes.length === 0
-      ) {
-        return [];
-      }
-
-      const company = companyUser.company;
-      const careerScopeIds = company.careerScopes.map((cs) => cs.id);
+      const company = companyUser?.company ?? null;
+      const careerScopeIds = (company?.careerScopes ?? []).map((cs) => cs.id);
 
       // Build a lowercase skill set from all open positions for skills-match scoring
       const jobSkillSet = new Set<string>();
-      for (const job of company.openPositions ?? []) {
+      for (const job of company?.openPositions ?? []) {
         if (job.skillsRequired) {
           job.skillsRequired
             .split(',')
@@ -1033,31 +1049,57 @@ export class UserService implements IUserService, OnModuleInit {
       });
       const likedEmployeeIds = likedMatches.map((m) => m.employee.id);
 
-      // 3. Phase 1 — get candidate user IDs via career scope overlap (pool = 4× limit)
-      const candidateQb = this.userRepository
+      // 3. Build candidate pool: ALWAYS include all employees,
+      //    PLUS employees with career scope overlap for scoring bonus.
+      //    Both sources are merged and deduplicated so no employee is missed.
+      const candidateIdSet = new Set<string>();
+
+      // Source A: all employees (primary — always run)
+      const allEmployeesQb = this.userRepository
         .createQueryBuilder('user')
         .select('user.id', 'userId')
         .innerJoin('user.employee', 'employee')
-        .innerJoin(
-          'employee.careerScopes',
-          'cs',
-          'cs.id IN (:...careerScopeIds)',
-          { careerScopeIds },
-        )
         .groupBy('user.id')
-        .orderBy('COUNT(cs.id)', 'DESC')
         .limit(limit * 4);
 
       if (likedEmployeeIds.length > 0) {
-        candidateQb.andWhere('employee.id NOT IN (:...likedEmployeeIds)', {
+        allEmployeesQb.andWhere('employee.id NOT IN (:...likedEmployeeIds)', {
           likedEmployeeIds,
         });
       }
 
-      const candidates = await candidateQb.getRawMany<{ userId: string }>();
-      if (!candidates.length) return [];
+      const allEmployeeCandidates =
+        await allEmployeesQb.getRawMany<{ userId: string }>();
+      allEmployeeCandidates.forEach((c) => candidateIdSet.add(c.userId));
 
-      const userIds = candidates.map((c) => c.userId);
+      // Source B: employees with career scope overlap (bonus — only when company has scopes)
+      if (careerScopeIds.length > 0) {
+        const scopeQb = this.userRepository
+          .createQueryBuilder('user')
+          .select('user.id', 'userId')
+          .innerJoin('user.employee', 'employee')
+          .innerJoin(
+            'employee.careerScopes',
+            'cs',
+            'cs.id IN (:...careerScopeIds)',
+            { careerScopeIds },
+          )
+          .groupBy('user.id')
+          .limit(limit * 4);
+
+        if (likedEmployeeIds.length > 0) {
+          scopeQb.andWhere('employee.id NOT IN (:...likedEmployeeIds)', {
+            likedEmployeeIds,
+          });
+        }
+
+        const scopeCandidates =
+          await scopeQb.getRawMany<{ userId: string }>();
+        scopeCandidates.forEach((c) => candidateIdSet.add(c.userId));
+      }
+
+      const userIds = Array.from(candidateIdSet);
+      if (userIds.length === 0) return [];
 
       // 4. Phase 2 — load full employee data needed for multi-factor scoring
       const users = await this.userRepository
@@ -1079,7 +1121,10 @@ export class UserService implements IUserService, OnModuleInit {
         const overlapCount = (emp.careerScopes ?? []).filter((cs) =>
           careerScopeIds.includes(cs.id),
         ).length;
-        score += (overlapCount / careerScopeIds.length) * 40;
+        score +=
+          careerScopeIds.length > 0
+            ? (overlapCount / careerScopeIds.length) * 40
+            : 0;
 
         // Factor 2: Location match (0 or 25)
         if (
