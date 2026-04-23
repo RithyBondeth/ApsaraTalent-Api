@@ -853,8 +853,8 @@ export class UserService implements IUserService, OnModuleInit {
     this.logger.info(`Employee ${employeeId} recommendations cache MISS`);
 
     try {
-      // 1. Get the employee's career scope IDs
-      const employee = await this.userRepository
+      // 1. Load employee with career scopes and location for scoring
+      const employeeUser = await this.userRepository
         .createQueryBuilder('user')
         .leftJoinAndSelect('user.employee', 'employee')
         .leftJoinAndSelect('employee.careerScopes', 'empCareerScopes')
@@ -862,13 +862,14 @@ export class UserService implements IUserService, OnModuleInit {
         .getOne();
 
       if (
-        !employee?.employee?.careerScopes ||
-        employee.employee.careerScopes.length === 0
+        !employeeUser?.employee?.careerScopes ||
+        employeeUser.employee.careerScopes.length === 0
       ) {
         return [];
       }
 
-      const careerScopeIds = employee.employee.careerScopes.map((cs) => cs.id);
+      const employee = employeeUser.employee;
+      const careerScopeIds = employee.careerScopes.map((cs) => cs.id);
 
       // 2. Get company IDs the employee has already liked
       const likedMatches = await this.jobMatchingRepository.find({
@@ -877,44 +878,90 @@ export class UserService implements IUserService, OnModuleInit {
       });
       const likedCompanyIds = likedMatches.map((m) => m.company.id);
 
-      // 3. Query companies sharing career scopes, scored by overlap count
-      const qb = this.userRepository
+      // 3. Phase 1 — get candidate user IDs via career scope overlap (pool = 4× limit)
+      const candidateQb = this.userRepository
         .createQueryBuilder('user')
-        .innerJoinAndSelect('user.company', 'company')
+        .select('user.id', 'userId')
+        .innerJoin('user.company', 'company')
         .innerJoin(
           'company.careerScopes',
           'cs',
           'cs.id IN (:...careerScopeIds)',
           { careerScopeIds },
         )
-        .leftJoinAndSelect('company.openPositions', 'openPositions')
-        .addSelect('COUNT(cs.id)', 'overlap_count')
         .groupBy('user.id')
-        .addGroupBy('company.id')
-        .addGroupBy('openPositions.id')
-        .orderBy('overlap_count', 'DESC')
-        .take(limit);
+        .orderBy('COUNT(cs.id)', 'DESC')
+        .limit(limit * 4);
 
       if (likedCompanyIds.length > 0) {
-        qb.andWhere('company.id NOT IN (:...likedCompanyIds)', {
+        candidateQb.andWhere('company.id NOT IN (:...likedCompanyIds)', {
           likedCompanyIds,
         });
       }
 
-      const results = await qb.getMany();
+      const candidates = await candidateQb.getRawMany<{ userId: string }>();
+      if (!candidates.length) return [];
 
-      const recommendations = results.map(
-        (user) =>
+      const userIds = candidates.map((c) => c.userId);
+
+      // 4. Phase 2 — load full company data needed for multi-factor scoring
+      const users = await this.userRepository
+        .createQueryBuilder('user')
+        .innerJoinAndSelect('user.company', 'company')
+        .leftJoinAndSelect('company.careerScopes', 'careerScopes')
+        .leftJoinAndSelect('company.openPositions', 'openPositions')
+        .leftJoinAndSelect('company.benefits', 'benefits')
+        .leftJoinAndSelect('company.values', 'values')
+        .where('user.id IN (:...userIds)', { userIds })
+        .getMany();
+
+      // 5. Multi-factor weighted scoring (max 100 pts)
+      const scored = users.map((user) => {
+        const company = user.company;
+        let score = 0;
+
+        // Factor 1: Career scope overlap ratio (0–40)
+        const overlapCount = (company.careerScopes ?? []).filter((cs) =>
+          careerScopeIds.includes(cs.id),
+        ).length;
+        score += (overlapCount / careerScopeIds.length) * 40;
+
+        // Factor 2: Location match (0 or 25)
+        if (
+          employee.location &&
+          company.location &&
+          employee.location.toLowerCase().trim() ===
+            company.location.toLowerCase().trim()
+        ) {
+          score += 25;
+        }
+
+        // Factor 3: Has open positions (0 or 20)
+        if ((company.openPositions ?? []).length > 0) {
+          score += 20;
+        }
+
+        // Factor 4: Multiple open positions — more role choices (0 or 15)
+        if ((company.openPositions ?? []).length > 1) {
+          score += 15;
+        }
+
+        return { user, score };
+      });
+
+      scored.sort((a, b) => b.score - a.score);
+
+      const recommendations = scored.slice(0, limit).map(
+        ({ user }) =>
           new CompanyResponseDTO({
             ...user.company,
-            openPositions: user.company?.openPositions?.map(
+            openPositions: (user.company?.openPositions ?? []).map(
               (job) => new JobPositionResponseDTO(job),
             ),
           }),
       );
 
       await this.redisService.set(cacheKey, recommendations, CACHE_TTL.LONG);
-
       return recommendations;
     } catch (error) {
       this.logger.error(
@@ -948,22 +995,36 @@ export class UserService implements IUserService, OnModuleInit {
     this.logger.info(`Company ${companyId} recommendations cache MISS`);
 
     try {
-      // 1. Get the company's career scope IDs
-      const company = await this.userRepository
+      // 1. Load company with career scopes and open positions for scoring
+      const companyUser = await this.userRepository
         .createQueryBuilder('user')
         .leftJoinAndSelect('user.company', 'company')
         .leftJoinAndSelect('company.careerScopes', 'cmpCareerScopes')
+        .leftJoinAndSelect('company.openPositions', 'openPositions')
         .where('company.id = :companyId', { companyId })
         .getOne();
 
       if (
-        !company?.company?.careerScopes ||
-        company.company.careerScopes.length === 0
+        !companyUser?.company?.careerScopes ||
+        companyUser.company.careerScopes.length === 0
       ) {
         return [];
       }
 
-      const careerScopeIds = company.company.careerScopes.map((cs) => cs.id);
+      const company = companyUser.company;
+      const careerScopeIds = company.careerScopes.map((cs) => cs.id);
+
+      // Build a lowercase skill set from all open positions for skills-match scoring
+      const jobSkillSet = new Set<string>();
+      for (const job of company.openPositions ?? []) {
+        if (job.skillsRequired) {
+          job.skillsRequired
+            .split(',')
+            .map((s) => s.trim().toLowerCase())
+            .filter(Boolean)
+            .forEach((s) => jobSkillSet.add(s));
+        }
+      }
 
       // 2. Get employee IDs the company has already liked
       const likedMatches = await this.jobMatchingRepository.find({
@@ -972,38 +1033,90 @@ export class UserService implements IUserService, OnModuleInit {
       });
       const likedEmployeeIds = likedMatches.map((m) => m.employee.id);
 
-      // 3. Query employees sharing career scopes, scored by overlap count
-      const qb = this.userRepository
+      // 3. Phase 1 — get candidate user IDs via career scope overlap (pool = 4× limit)
+      const candidateQb = this.userRepository
         .createQueryBuilder('user')
-        .innerJoinAndSelect('user.employee', 'employee')
+        .select('user.id', 'userId')
+        .innerJoin('user.employee', 'employee')
         .innerJoin(
           'employee.careerScopes',
           'cs',
           'cs.id IN (:...careerScopeIds)',
           { careerScopeIds },
         )
-        .leftJoinAndSelect('employee.skills', 'skills')
-        .addSelect('COUNT(cs.id)', 'overlap_count')
         .groupBy('user.id')
-        .addGroupBy('employee.id')
-        .addGroupBy('skills.id')
-        .orderBy('overlap_count', 'DESC')
-        .take(limit);
+        .orderBy('COUNT(cs.id)', 'DESC')
+        .limit(limit * 4);
 
       if (likedEmployeeIds.length > 0) {
-        qb.andWhere('employee.id NOT IN (:...likedEmployeeIds)', {
+        candidateQb.andWhere('employee.id NOT IN (:...likedEmployeeIds)', {
           likedEmployeeIds,
         });
       }
 
-      const results = await qb.getMany();
+      const candidates = await candidateQb.getRawMany<{ userId: string }>();
+      if (!candidates.length) return [];
 
-      const recommendations = results.map(
-        (user) => new EmployeeResponseDTO(user.employee),
-      );
+      const userIds = candidates.map((c) => c.userId);
+
+      // 4. Phase 2 — load full employee data needed for multi-factor scoring
+      const users = await this.userRepository
+        .createQueryBuilder('user')
+        .innerJoinAndSelect('user.employee', 'employee')
+        .leftJoinAndSelect('employee.careerScopes', 'careerScopes')
+        .leftJoinAndSelect('employee.skills', 'skills')
+        .leftJoinAndSelect('employee.experiences', 'experiences')
+        .leftJoinAndSelect('employee.educations', 'educations')
+        .where('user.id IN (:...userIds)', { userIds })
+        .getMany();
+
+      // 5. Multi-factor weighted scoring (max 100 pts)
+      const scored = users.map((user) => {
+        const emp = user.employee;
+        let score = 0;
+
+        // Factor 1: Career scope overlap ratio (0–40)
+        const overlapCount = (emp.careerScopes ?? []).filter((cs) =>
+          careerScopeIds.includes(cs.id),
+        ).length;
+        score += (overlapCount / careerScopeIds.length) * 40;
+
+        // Factor 2: Location match (0 or 25)
+        if (
+          emp.location &&
+          company.location &&
+          emp.location.toLowerCase().trim() ===
+            company.location.toLowerCase().trim()
+        ) {
+          score += 25;
+        }
+
+        // Factor 3: Skills match with open position requirements (0 or 20)
+        if (jobSkillSet.size > 0 && (emp.skills ?? []).length > 0) {
+          const empSkillNames = emp.skills.map((s) => s.name.toLowerCase());
+          if (empSkillNames.some((s) => jobSkillSet.has(s))) {
+            score += 20;
+          }
+        }
+
+        // Factor 4: Availability — candidate open to work (0 or 15)
+        if (
+          emp.availability &&
+          emp.availability.toLowerCase() !== 'unavailable'
+        ) {
+          score += 15;
+        }
+
+        return { user, score };
+      });
+
+      scored.sort((a, b) => b.score - a.score);
+
+      const recommendations = scored
+        .slice(0, limit)
+        .map(({ user }) => new EmployeeResponseDTO(user.employee));
 
       await this.redisService.set(cacheKey, recommendations, CACHE_TTL.LONG);
-
       return recommendations;
     } catch (error) {
       this.logger.error(
