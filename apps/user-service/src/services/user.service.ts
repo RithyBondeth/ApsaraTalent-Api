@@ -838,10 +838,10 @@ export class UserService implements IUserService, OnModuleInit {
   async getEmployeeRecommendations(
     employeeRecommendationsDTO: EmployeeRecommendationsDTO,
   ): Promise<CompanyResponseDTO[]> {
-    const { employeeId, limit = 10 } = employeeRecommendationsDTO;
+    const { employeeId } = employeeRecommendationsDTO;
     const cacheKey = this.redisService.generateListKey(
       'employee-recommendations',
-      { employeeId, limit },
+      { employeeId },
     );
     const cached = await this.redisService.get<any[]>(cacheKey);
 
@@ -853,16 +853,29 @@ export class UserService implements IUserService, OnModuleInit {
     this.logger.info(`Employee ${employeeId} recommendations cache MISS`);
 
     try {
-      // 1. Load employee with career scopes and location for scoring
+      // 1. Load employee with full profile data needed for scoring
       const employeeUser = await this.userRepository
         .createQueryBuilder('user')
         .leftJoinAndSelect('user.employee', 'employee')
         .leftJoinAndSelect('employee.careerScopes', 'empCareerScopes')
+        .leftJoinAndSelect('employee.skills', 'empSkills')
+        .leftJoinAndSelect('employee.educations', 'empEducations')
         .where('employee.id = :employeeId', { employeeId })
         .getOne();
 
       const employee = employeeUser?.employee ?? null;
       const careerScopeIds = (employee?.careerScopes ?? []).map((cs) => cs.id);
+      const empSkillNames = (employee?.skills ?? []).map((s) =>
+        s.name.toLowerCase().trim(),
+      );
+      const empMaxDegreeRank = Math.max(
+        0,
+        ...(employee?.educations ?? []).map((e) =>
+          this.normalizeDegree(e.degree),
+        ),
+      );
+      const empYears = this.extractYears(employee?.yearsOfExperience ?? '');
+      const empJobTitle = (employee?.job ?? '').toLowerCase();
 
       // 2. Get company IDs the employee has already liked
       const likedMatches = await this.jobMatchingRepository.find({
@@ -871,19 +884,16 @@ export class UserService implements IUserService, OnModuleInit {
       });
       const likedCompanyIds = likedMatches.map((m) => m.company.id);
 
-      // 3. Build candidate pool: ALWAYS include companies with open positions,
-      //    PLUS companies with career scope overlap (for scoring bonus).
-      //    Both sources are merged and deduplicated so no company is missed.
-      const candidateIdSet = new Set<string>();
-
-      // Source A: companies with open positions (primary — always run)
+      // 3. Candidate pool: all companies with open positions.
+      //    The scoring (not the pool) determines relevance — a broad pool ensures no related
+      //    company is missed just because they haven't filled in career scopes or skill tags.
+      //    Scoring gives 0 to unrelated companies, which the MIN_SCORE filter removes.
       const openPositionsQb = this.userRepository
         .createQueryBuilder('user')
         .select('user.id', 'userId')
         .innerJoin('user.company', 'company')
         .innerJoin('company.openPositions', 'openPositions')
-        .groupBy('user.id')
-        .limit(limit * 4);
+        .groupBy('user.id');
 
       if (likedCompanyIds.length > 0) {
         openPositionsQb.andWhere('company.id NOT IN (:...likedCompanyIds)', {
@@ -891,40 +901,13 @@ export class UserService implements IUserService, OnModuleInit {
         });
       }
 
-      const openPositionCandidates = await openPositionsQb.getRawMany<{
+      const candidateRows = await openPositionsQb.getRawMany<{
         userId: string;
       }>();
-      openPositionCandidates.forEach((c) => candidateIdSet.add(c.userId));
-
-      // Source B: companies with career scope overlap (bonus — only when employee has scopes)
-      if (careerScopeIds.length > 0) {
-        const scopeQb = this.userRepository
-          .createQueryBuilder('user')
-          .select('user.id', 'userId')
-          .innerJoin('user.company', 'company')
-          .innerJoin(
-            'company.careerScopes',
-            'cs',
-            'cs.id IN (:...careerScopeIds)',
-            { careerScopeIds },
-          )
-          .groupBy('user.id')
-          .limit(limit * 4);
-
-        if (likedCompanyIds.length > 0) {
-          scopeQb.andWhere('company.id NOT IN (:...likedCompanyIds)', {
-            likedCompanyIds,
-          });
-        }
-
-        const scopeCandidates = await scopeQb.getRawMany<{ userId: string }>();
-        scopeCandidates.forEach((c) => candidateIdSet.add(c.userId));
-      }
-
-      const userIds = Array.from(candidateIdSet);
+      const userIds = candidateRows.map((r) => r.userId);
       if (userIds.length === 0) return [];
 
-      // 4. Phase 2 — load full company data needed for multi-factor scoring
+      // 4. Load full company + job data for scoring
       const users = await this.userRepository
         .createQueryBuilder('user')
         .innerJoinAndSelect('user.company', 'company')
@@ -935,38 +918,117 @@ export class UserService implements IUserService, OnModuleInit {
         .where('user.id IN (:...userIds)', { userIds })
         .getMany();
 
+      const empTitleWords = empJobTitle
+        .split(/\s+/)
+        .filter((w) => w.length > 3);
+      const empDescWords = this.extractKeywords(employee?.description ?? '');
+
       // 5. Multi-factor weighted scoring (max 100 pts)
+      //    Factor 1: Career scope overlap       0–35  (field match — highest weight)
+      //    Factor 2: Skill match ratio           0–30  (specific skill fit)
+      //    Factor 3: Job title keyword match     0–20  (role relevance)
+      //    Factor 4: Description content match   0–10  (context fit)
+      //    Factor 5: Location match               0–5  (minor bonus)
+      //    Education/Experience: only score when BOTH sides have data (no points for empty fields)
       const scored = users.map((user) => {
         const company = user.company;
+        const jobs = company.openPositions ?? [];
         let score = 0;
 
-        // Factor 1: Career scope overlap ratio (0–40)
-        const overlapCount = (company.careerScopes ?? []).filter((cs) =>
-          careerScopeIds.includes(cs.id),
-        ).length;
-        score +=
-          careerScopeIds.length > 0
-            ? (overlapCount / careerScopeIds.length) * 40
-            : 0;
+        // Factor 1: Career scope overlap ratio (0–35)
+        if (careerScopeIds.length > 0) {
+          const overlapCount = (company.careerScopes ?? []).filter((cs) =>
+            careerScopeIds.includes(cs.id),
+          ).length;
+          score += (overlapCount / careerScopeIds.length) * 35;
+        }
 
-        // Factor 2: Location match (0 or 25)
+        // Factor 2: Best skill match ratio across all open positions (0–30)
+        if (empSkillNames.length > 0 && jobs.length > 0) {
+          let bestRatio = 0;
+          for (const job of jobs) {
+            const required = (job.skillsRequired ?? '')
+              .split(',')
+              .map((s) => s.trim().toLowerCase())
+              .filter(Boolean);
+            if (required.length === 0) continue;
+            const matched = required.filter((r) =>
+              empSkillNames.includes(r),
+            ).length;
+            bestRatio = Math.max(bestRatio, matched / required.length);
+          }
+          score += bestRatio * 30;
+        }
+
+        // Factor 3: Job title keyword match — employee's title words appear in any job title or description (0–20)
+        if (empTitleWords.length > 0 && jobs.length > 0) {
+          let bestTitleScore = 0;
+          for (const job of jobs) {
+            const jobText =
+              `${job.title ?? ''} ${job.description ?? ''}`.toLowerCase();
+            const matched = empTitleWords.filter((w) =>
+              jobText.includes(w),
+            ).length;
+            bestTitleScore = Math.max(
+              bestTitleScore,
+              matched / empTitleWords.length,
+            );
+          }
+          score += bestTitleScore * 20;
+        }
+
+        // Factor 4: Description keyword match (0–10)
+        if (empDescWords.length > 0 && jobs.length > 0) {
+          let bestDescScore = 0;
+          for (const job of jobs) {
+            const jobText =
+              `${job.title ?? ''} ${job.description ?? ''} ${job.skillsRequired ?? ''}`.toLowerCase();
+            const matched = empDescWords.filter((w) =>
+              jobText.includes(w),
+            ).length;
+            bestDescScore = Math.max(
+              bestDescScore,
+              matched / empDescWords.length,
+            );
+          }
+          score += bestDescScore * 10;
+        }
+
+        // Factor 5: Location match (0–5)
         if (
           employee?.location &&
           company.location &&
           employee.location.toLowerCase().trim() ===
             company.location.toLowerCase().trim()
         ) {
-          score += 25;
+          score += 5;
         }
 
-        // Factor 3: Has open positions (0 or 20)
-        if ((company.openPositions ?? []).length > 0) {
-          score += 20;
+        // Education bonus: only when BOTH employee has education AND job specifies a requirement
+        if (empMaxDegreeRank > 0 && jobs.length > 0) {
+          let bestEduScore = 0;
+          for (const job of jobs) {
+            const required = this.normalizeDegree(job.educationRequired ?? '');
+            if (required === 0) continue; // skip jobs with no stated requirement
+            if (empMaxDegreeRank >= required)
+              bestEduScore = Math.max(bestEduScore, 5);
+            else if (empMaxDegreeRank === required - 1)
+              bestEduScore = Math.max(bestEduScore, 2);
+          }
+          score += bestEduScore;
         }
 
-        // Factor 4: Multiple open positions — more role choices (0 or 15)
-        if ((company.openPositions ?? []).length > 1) {
-          score += 15;
+        // Experience bonus: only when BOTH employee has years stated AND job specifies a requirement
+        if (empYears > 0 && jobs.length > 0) {
+          let bestExpScore = 0;
+          for (const job of jobs) {
+            const required = this.extractYears(job.experienceRequired ?? '');
+            if (required === 0) continue; // skip jobs with no stated requirement
+            if (empYears >= required) bestExpScore = Math.max(bestExpScore, 5);
+            else if (empYears >= required - 1)
+              bestExpScore = Math.max(bestExpScore, 2);
+          }
+          score += bestExpScore;
         }
 
         return { user, score };
@@ -974,15 +1036,20 @@ export class UserService implements IUserService, OnModuleInit {
 
       scored.sort((a, b) => b.score - a.score);
 
-      const recommendations = scored.slice(0, limit).map(
-        ({ user }) =>
-          new CompanyResponseDTO({
-            ...user.company,
-            openPositions: (user.company?.openPositions ?? []).map(
-              (job) => new JobPositionResponseDTO(job),
-            ),
-          }),
-      );
+      // MIN_SCORE filters out companies that are truly unrelated (e.g. healthcare for a developer)
+      // while keeping companies that haven't fully filled their profile but are still relevant.
+      const MIN_SCORE = 10;
+      const recommendations = scored
+        .filter(({ score }) => score >= MIN_SCORE)
+        .map(
+          ({ user }) =>
+            new CompanyResponseDTO({
+              ...user.company,
+              openPositions: (user.company?.openPositions ?? []).map(
+                (job) => new JobPositionResponseDTO(job),
+              ),
+            }),
+        );
 
       await this.redisService.set(cacheKey, recommendations, CACHE_TTL.LONG);
       return recommendations;
@@ -1003,10 +1070,10 @@ export class UserService implements IUserService, OnModuleInit {
   async getCompanyRecommendations(
     companyRecommendationsDTO: CompanyRecommendationsDTO,
   ): Promise<EmployeeResponseDTO[]> {
-    const { companyId, limit = 10 } = companyRecommendationsDTO;
+    const { companyId } = companyRecommendationsDTO;
     const cacheKey = this.redisService.generateListKey(
       'company-recommendations',
-      { companyId, limit },
+      { companyId },
     );
     const cached = await this.redisService.get<any[]>(cacheKey);
 
@@ -1018,7 +1085,7 @@ export class UserService implements IUserService, OnModuleInit {
     this.logger.info(`Company ${companyId} recommendations cache MISS`);
 
     try {
-      // 1. Load company with career scopes and open positions for scoring
+      // 1. Load company with career scopes and full open position requirements
       const companyUser = await this.userRepository
         .createQueryBuilder('user')
         .leftJoinAndSelect('user.company', 'company')
@@ -1029,18 +1096,31 @@ export class UserService implements IUserService, OnModuleInit {
 
       const company = companyUser?.company ?? null;
       const careerScopeIds = (company?.careerScopes ?? []).map((cs) => cs.id);
+      const jobs = company?.openPositions ?? [];
 
-      // Build a lowercase skill set from all open positions for skills-match scoring
-      const jobSkillSet = new Set<string>();
-      for (const job of company?.openPositions ?? []) {
-        if (job.skillsRequired) {
-          job.skillsRequired
-            .split(',')
-            .map((s) => s.trim().toLowerCase())
-            .filter(Boolean)
-            .forEach((s) => jobSkillSet.add(s));
-        }
+      // Aggregate required skills across all open positions
+      const allRequiredSkills = new Set<string>();
+      for (const job of jobs) {
+        (job.skillsRequired ?? '')
+          .split(',')
+          .map((s) => s.trim().toLowerCase())
+          .filter(Boolean)
+          .forEach((s) => allRequiredSkills.add(s));
       }
+
+      // Highest education required across all jobs
+      const maxRequiredDegree = Math.max(
+        0,
+        ...jobs.map((j) => this.normalizeDegree(j.educationRequired ?? '')),
+      );
+
+      // Minimum years required across all jobs (take lowest so more candidates qualify)
+      const minRequiredYears = Math.min(
+        ...jobs
+          .map((j) => this.extractYears(j.experienceRequired ?? ''))
+          .filter((y) => y > 0),
+        999,
+      );
 
       // 2. Get employee IDs the company has already liked
       const likedMatches = await this.jobMatchingRepository.find({
@@ -1049,18 +1129,14 @@ export class UserService implements IUserService, OnModuleInit {
       });
       const likedEmployeeIds = likedMatches.map((m) => m.employee.id);
 
-      // 3. Build candidate pool: ALWAYS include all employees,
-      //    PLUS employees with career scope overlap for scoring bonus.
-      //    Both sources are merged and deduplicated so no employee is missed.
-      const candidateIdSet = new Set<string>();
-
-      // Source A: all employees (primary — always run)
+      // 3. Candidate pool: all employees with a profile.
+      //    Scoring determines relevance — a broad pool ensures no relevant candidate is missed
+      //    just because their career scopes aren't tagged. MIN_SCORE filters the truly unrelated.
       const allEmployeesQb = this.userRepository
         .createQueryBuilder('user')
         .select('user.id', 'userId')
         .innerJoin('user.employee', 'employee')
-        .groupBy('user.id')
-        .limit(limit * 4);
+        .groupBy('user.id');
 
       if (likedEmployeeIds.length > 0) {
         allEmployeesQb.andWhere('employee.id NOT IN (:...likedEmployeeIds)', {
@@ -1068,40 +1144,13 @@ export class UserService implements IUserService, OnModuleInit {
         });
       }
 
-      const allEmployeeCandidates = await allEmployeesQb.getRawMany<{
+      const candidateRows = await allEmployeesQb.getRawMany<{
         userId: string;
       }>();
-      allEmployeeCandidates.forEach((c) => candidateIdSet.add(c.userId));
-
-      // Source B: employees with career scope overlap (bonus — only when company has scopes)
-      if (careerScopeIds.length > 0) {
-        const scopeQb = this.userRepository
-          .createQueryBuilder('user')
-          .select('user.id', 'userId')
-          .innerJoin('user.employee', 'employee')
-          .innerJoin(
-            'employee.careerScopes',
-            'cs',
-            'cs.id IN (:...careerScopeIds)',
-            { careerScopeIds },
-          )
-          .groupBy('user.id')
-          .limit(limit * 4);
-
-        if (likedEmployeeIds.length > 0) {
-          scopeQb.andWhere('employee.id NOT IN (:...likedEmployeeIds)', {
-            likedEmployeeIds,
-          });
-        }
-
-        const scopeCandidates = await scopeQb.getRawMany<{ userId: string }>();
-        scopeCandidates.forEach((c) => candidateIdSet.add(c.userId));
-      }
-
-      const userIds = Array.from(candidateIdSet);
+      const userIds = candidateRows.map((r) => r.userId);
       if (userIds.length === 0) return [];
 
-      // 4. Phase 2 — load full employee data needed for multi-factor scoring
+      // 4. Load full employee profile data for scoring
       const users = await this.userRepository
         .createQueryBuilder('user')
         .innerJoinAndSelect('user.employee', 'employee')
@@ -1112,44 +1161,112 @@ export class UserService implements IUserService, OnModuleInit {
         .where('user.id IN (:...userIds)', { userIds })
         .getMany();
 
+      // Build text corpus from all job titles + descriptions + skills for content matching
+      const jobTextCorpus = jobs
+        .map(
+          (j) =>
+            `${j.title ?? ''} ${j.description ?? ''} ${j.skillsRequired ?? ''}`,
+        )
+        .join(' ')
+        .toLowerCase();
+      const jobTitleWords = jobs.flatMap((j) =>
+        (j.title ?? '')
+          .toLowerCase()
+          .split(/\s+/)
+          .filter((w) => w.length > 3),
+      );
+
       // 5. Multi-factor weighted scoring (max 100 pts)
+      //    Factor 1: Career scope overlap        0–35  (field match)
+      //    Factor 2: Skill match ratio            0–30  (specific skill fit)
+      //    Factor 3: Job title/experience match   0–20  (role relevance)
+      //    Factor 4: Description content match   0–10  (context fit)
+      //    Factor 5: Location match               0–5
+      //    Education/Experience: bonus only when BOTH sides have data
       const scored = users.map((user) => {
         const emp = user.employee;
         let score = 0;
 
-        // Factor 1: Career scope overlap ratio (0–40)
-        const overlapCount = (emp.careerScopes ?? []).filter((cs) =>
-          careerScopeIds.includes(cs.id),
-        ).length;
-        score +=
-          careerScopeIds.length > 0
-            ? (overlapCount / careerScopeIds.length) * 40
-            : 0;
+        // Factor 1: Career scope overlap ratio (0–35)
+        if (careerScopeIds.length > 0) {
+          const overlapCount = (emp.careerScopes ?? []).filter((cs) =>
+            careerScopeIds.includes(cs.id),
+          ).length;
+          score += (overlapCount / careerScopeIds.length) * 35;
+        }
 
-        // Factor 2: Location match (0 or 25)
+        // Factor 2: Skill match ratio — how many required skills the employee has (0–30)
+        const empSkillNames = (emp.skills ?? []).map((s) =>
+          s.name.toLowerCase().trim(),
+        );
+        if (allRequiredSkills.size > 0 && empSkillNames.length > 0) {
+          const matched = [...allRequiredSkills].filter((s) =>
+            empSkillNames.includes(s),
+          ).length;
+          score += (matched / allRequiredSkills.size) * 30;
+        }
+
+        // Factor 3: Job title match — employee's current job + experience titles vs open position titles (0–20)
+        const allEmpTitles = [
+          (emp.job ?? '').toLowerCase(),
+          ...(emp.experiences ?? []).map((e) => (e.title ?? '').toLowerCase()),
+        ].filter(Boolean);
+        if (allEmpTitles.length > 0 && jobTitleWords.length > 0) {
+          const empTitleAllWords = allEmpTitles.flatMap((t) =>
+            t.split(/\s+/).filter((w) => w.length > 3),
+          );
+          const matched = empTitleAllWords.filter((w) =>
+            jobTitleWords.includes(w),
+          ).length;
+          const ratio = Math.min(
+            1,
+            matched / Math.max(jobTitleWords.length, empTitleAllWords.length),
+          );
+          score += ratio * 20;
+        }
+
+        // Factor 4: Description / profile content match (0–10)
+        const empDescWords = this.extractKeywords(emp.description ?? '');
+        if (empDescWords.length > 0 && jobTextCorpus) {
+          const matched = empDescWords.filter((w) =>
+            jobTextCorpus.includes(w),
+          ).length;
+          score += (matched / empDescWords.length) * 10;
+        }
+
+        // Factor 5: Location match (0–5)
         if (
           emp.location &&
-          company.location &&
+          company?.location &&
           emp.location.toLowerCase().trim() ===
             company.location.toLowerCase().trim()
         ) {
-          score += 25;
+          score += 5;
         }
 
-        // Factor 3: Skills match with open position requirements (0 or 20)
-        if (jobSkillSet.size > 0 && (emp.skills ?? []).length > 0) {
-          const empSkillNames = emp.skills.map((s) => s.name.toLowerCase());
-          if (empSkillNames.some((s) => jobSkillSet.has(s))) {
-            score += 20;
-          }
+        // Education bonus: only when BOTH employee has education AND job specifies a requirement
+        const empMaxDegree = Math.max(
+          0,
+          ...(emp.educations ?? []).map((e) => this.normalizeDegree(e.degree)),
+        );
+        if (empMaxDegree > 0 && maxRequiredDegree > 0) {
+          if (empMaxDegree >= maxRequiredDegree) score += 5;
+          else if (empMaxDegree === maxRequiredDegree - 1) score += 2;
         }
 
-        // Factor 4: Availability — candidate open to work (0 or 15)
+        // Experience bonus: only when BOTH employee has years stated AND job specifies a requirement
+        const empYears = this.extractYears(emp.yearsOfExperience ?? '');
+        if (empYears > 0 && minRequiredYears > 0 && minRequiredYears !== 999) {
+          if (empYears >= minRequiredYears) score += 5;
+          else if (empYears >= minRequiredYears - 1) score += 2;
+        }
+
+        // Availability bonus (0–5)
         if (
           emp.availability &&
           emp.availability.toLowerCase() !== 'unavailable'
         ) {
-          score += 15;
+          score += 5;
         }
 
         return { user, score };
@@ -1157,8 +1274,9 @@ export class UserService implements IUserService, OnModuleInit {
 
       scored.sort((a, b) => b.score - a.score);
 
+      const MIN_SCORE = 10;
       const recommendations = scored
-        .slice(0, limit)
+        .filter(({ score }) => score >= MIN_SCORE)
         .map(({ user }) => new EmployeeResponseDTO(user.employee));
 
       await this.redisService.set(cacheKey, recommendations, CACHE_TTL.LONG);
@@ -1175,5 +1293,89 @@ export class UserService implements IUserService, OnModuleInit {
           'An error occurred while getting company recommendations.',
       });
     }
+  }
+
+  /**
+   * Maps a degree string to a numeric rank for comparison.
+   * Higher rank = higher education level.
+   */
+  private normalizeDegree(degree: string): number {
+    const d = (degree ?? '').toLowerCase();
+    if (d.includes('phd') || d.includes('doctor')) return 5;
+    if (d.includes('master')) return 4;
+    if (
+      d.includes('bachelor') ||
+      d.includes('b.sc') ||
+      d.includes('b.a') ||
+      d.includes('undergraduate') ||
+      d.includes('degree')
+    )
+      return 3;
+    if (d.includes('associate') || d.includes('diploma')) return 2;
+    if (d.includes('high school') || d.includes('secondary')) return 1;
+    return 0;
+  }
+
+  /**
+   * Extracts the first integer from an experience string like "3 years", "3-5 years", "5+ years".
+   */
+  private extractYears(text: string): number {
+    if (!text) return 0;
+    const match = text.match(/(\d+)/);
+    return match ? parseInt(match[1], 10) : 0;
+  }
+
+  private static readonly STOP_WORDS = new Set([
+    'the',
+    'and',
+    'for',
+    'with',
+    'that',
+    'have',
+    'this',
+    'from',
+    'they',
+    'will',
+    'been',
+    'more',
+    'when',
+    'also',
+    'into',
+    'than',
+    'then',
+    'some',
+    'what',
+    'which',
+    'there',
+    'their',
+    'about',
+    'would',
+    'other',
+    'after',
+    'first',
+    'well',
+    'very',
+    'even',
+    'such',
+    'most',
+    'over',
+    'your',
+    'our',
+  ]);
+
+  /**
+   * Extracts meaningful keywords from a text — words longer than 3 chars, not stop words.
+   */
+  private extractKeywords(text: string): string[] {
+    if (!text) return [];
+    return [
+      ...new Set(
+        text
+          .toLowerCase()
+          .replace(/[^a-z0-9\s]/g, ' ')
+          .split(/\s+/)
+          .filter((w) => w.length > 3 && !UserService.STOP_WORDS.has(w)),
+      ),
+    ];
   }
 }
