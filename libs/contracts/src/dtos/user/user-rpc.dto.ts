@@ -1,5 +1,6 @@
 import { IsOptional, IsString, IsUUID } from 'class-validator';
 import { CoreResponseDTO } from '../shared/core-response.dto';
+import { CompanyResponseDTO, EmployeeResponseDTO } from '../shared/user.dto';
 
 export class UserIdDTO {
   @IsUUID()
@@ -45,5 +46,27 @@ export class CompanyFavoriteEmployeeResponseDTO extends CoreResponseDTO {
 export class CompanyUnfavoriteEmployeeResponseDTO extends CoreResponseDTO {
   constructor(partial: Partial<CompanyUnfavoriteEmployeeResponseDTO>) {
     super(partial);
+  }
+}
+
+export class EmployeeFavoritesListItemDTO {
+  id: string;
+  createdAt: string;
+  userId: string;
+  company: CompanyResponseDTO;
+
+  constructor(partial: Partial<EmployeeFavoritesListItemDTO>) {
+    Object.assign(this, partial);
+  }
+}
+
+export class CompanyFavoritesListItemDTO {
+  id: string;
+  createdAt: string;
+  userId: string;
+  employee: EmployeeResponseDTO;
+
+  constructor(partial: Partial<CompanyFavoritesListItemDTO>) {
+    Object.assign(this, partial);
   }
 }

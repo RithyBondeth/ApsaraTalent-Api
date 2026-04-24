@@ -18,6 +18,8 @@ import {
   EmployeeResponseDTO,
   EmployeeUnfavoriteCompanyResponseDTO,
   CareerScopesResponseDTO,
+  EmployeeFavoritesListItemDTO,
+  CompanyFavoritesListItemDTO,
   RemoveCompanyImageDTO,
   RemoveCompanyImageDTO as RemoveCompanyImagesDTO,
   RemoveCompanyImageResponseDTO,
@@ -168,10 +170,10 @@ export interface IUserService {
   ): Promise<CompanyFavoriteEmployeeResponseDTO>;
   findAllEmployeeFavorites(
     employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
-  ): Promise<CompanyResponseDTO[]>;
+  ): Promise<EmployeeFavoritesListItemDTO[]>;
   findAllCompanyFavorites(
     companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
-  ): Promise<EmployeeResponseDTO[]>;
+  ): Promise<CompanyFavoritesListItemDTO[]>;
   countCompanyFavorite(
     companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
   ): Promise<FavoriteCountResponseDTO>;

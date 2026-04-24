@@ -25,6 +25,8 @@ import {
   CompanyEmployeeFavoriteWithFavoriteIdDTO,
   CompanyFavoriteEmployeeResponseDTO,
   CompanyUnfavoriteEmployeeResponseDTO,
+  EmployeeFavoritesListItemDTO,
+  CompanyFavoritesListItemDTO,
   EmployeeFavoriteLookupDTO,
   CompanyFavoriteLookupDTO,
   EmployeeRecommendationsDTO,
@@ -568,11 +570,11 @@ export class UserService implements IUserService, OnModuleInit {
 
   async findAllEmployeeFavorites(
     employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
-  ): Promise<CompanyResponseDTO[]> {
+  ): Promise<EmployeeFavoritesListItemDTO[]> {
     const { eid } = employeeFavoriteLookupDTO;
-    // Use helper method
     const cacheKey = this.redisService.generateEmployeeFavoritesKey(eid);
-    const cached = await this.redisService.get<CompanyResponseDTO[]>(cacheKey);
+    const cached =
+      await this.redisService.get<EmployeeFavoritesListItemDTO[]>(cacheKey);
 
     if (cached) {
       this.logger.info(`All employee ${eid} favorites cache HIT`);
@@ -582,26 +584,29 @@ export class UserService implements IUserService, OnModuleInit {
     this.logger.info(`All employee ${eid} favorites cache MISS`);
 
     try {
-      // Single query with JOIN — no N+1 loop for userId
       const allFavorites = await this.empFavoriteCmpRepository.find({
         where: { employee: { id: eid } },
         relations: ['company', 'company.openPositions', 'company.user'],
       });
 
       if (!allFavorites || allFavorites.length === 0) {
-        const result: any[] = [];
+        const result: EmployeeFavoritesListItemDTO[] = [];
         await this.redisService.set(cacheKey, result, CACHE_TTL.SHORT);
         return result;
       }
 
-      // userId is now available via the JOIN — no extra queries
       const result = allFavorites.map(
         (favorite) =>
-          new CompanyResponseDTO({
-            ...favorite.company,
-            openPositions: favorite.company?.openPositions?.map(
-              (job) => new JobPositionResponseDTO(job),
-            ),
+          new EmployeeFavoritesListItemDTO({
+            id: favorite.id,
+            createdAt: favorite.createdAt.toISOString(),
+            userId: favorite.company?.user?.id ?? '',
+            company: new CompanyResponseDTO({
+              ...favorite.company,
+              openPositions: favorite.company?.openPositions?.map(
+                (job) => new JobPositionResponseDTO(job),
+              ),
+            }),
           }),
       );
 
@@ -624,11 +629,11 @@ export class UserService implements IUserService, OnModuleInit {
 
   async findAllCompanyFavorites(
     companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
-  ): Promise<EmployeeResponseDTO[]> {
+  ): Promise<CompanyFavoritesListItemDTO[]> {
     const { cid } = companyFavoriteLookupDTO;
-    // Use helper method
     const cacheKey = this.redisService.generateCompanyFavoritesKey(cid);
-    const cached = await this.redisService.get<EmployeeResponseDTO[]>(cacheKey);
+    const cached =
+      await this.redisService.get<CompanyFavoritesListItemDTO[]>(cacheKey);
 
     if (cached) {
       this.logger.info(`All company ${cid} favorites cache HIT`);
@@ -638,21 +643,25 @@ export class UserService implements IUserService, OnModuleInit {
     this.logger.info(`All company ${cid} favorites cache MISS`);
 
     try {
-      // Single query with JOIN — no N+1 loop for userId
       const allFavorites = await this.cmpFavoriteEmpRepository.find({
         where: { company: { id: cid } },
         relations: ['employee', 'employee.skills', 'employee.user'],
       });
 
       if (!allFavorites || allFavorites.length === 0) {
-        const result: any[] = [];
+        const result: CompanyFavoritesListItemDTO[] = [];
         await this.redisService.set(cacheKey, result, CACHE_TTL.SHORT);
         return result;
       }
 
-      // userId is now available via the JOIN — no extra queries
       const result = allFavorites.map(
-        (favorite) => new EmployeeResponseDTO(favorite.employee),
+        (favorite) =>
+          new CompanyFavoritesListItemDTO({
+            id: favorite.id,
+            createdAt: favorite.createdAt.toISOString(),
+            userId: favorite.employee?.user?.id ?? '',
+            employee: new EmployeeResponseDTO(favorite.employee),
+          }),
       );
 
       await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);

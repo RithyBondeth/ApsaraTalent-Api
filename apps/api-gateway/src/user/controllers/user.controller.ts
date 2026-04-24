@@ -35,6 +35,8 @@ import {
   EmployeeUnfavoriteCompanyResponseDTO,
   CompanyFavoriteEmployeeResponseDTO,
   CompanyUnfavoriteEmployeeResponseDTO,
+  EmployeeFavoritesListItemDTO,
+  CompanyFavoritesListItemDTO,
 } from '@app/contracts/dtos/user';
 import { rpcCall } from '../../utils/rpc-call';
 
@@ -207,12 +209,12 @@ export class UserController implements IUserController {
   async findAllEmployeeFavorite(
     @Param() employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
     @Req() req?: any,
-  ): Promise<CompanyResponseDTO[]> {
+  ): Promise<EmployeeFavoritesListItemDTO[]> {
     await this.assertEmployeeAccess(
       req?.user?.id,
       employeeFavoriteLookupDTO.eid,
     );
-    return rpcCall<CompanyResponseDTO[]>(
+    return rpcCall<EmployeeFavoritesListItemDTO[]>(
       this.userClient,
       USER_SERVICE.ACTIONS.FIND_ALL_EMPLOYEE_FAVORITE,
       employeeFavoriteLookupDTO,
@@ -223,9 +225,9 @@ export class UserController implements IUserController {
   async findAllCompanyFavorite(
     @Param() companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
     @Req() req?: any,
-  ): Promise<EmployeeResponseDTO[]> {
+  ): Promise<CompanyFavoritesListItemDTO[]> {
     await this.assertCompanyAccess(req?.user?.id, companyFavoriteLookupDTO.cid);
-    return rpcCall<EmployeeResponseDTO[]>(
+    return rpcCall<CompanyFavoritesListItemDTO[]>(
       this.userClient,
       USER_SERVICE.ACTIONS.FIND_ALL_COMPANY_FAVORITE,
       companyFavoriteLookupDTO,

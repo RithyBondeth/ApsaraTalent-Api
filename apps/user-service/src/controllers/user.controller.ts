@@ -24,6 +24,8 @@ import {
   CompanyFavoriteLookupDTO,
   EmployeeRecommendationsDTO,
   CompanyRecommendationsDTO,
+  EmployeeFavoritesListItemDTO,
+  CompanyFavoritesListItemDTO,
 } from '@app/contracts/dtos/user';
 import {
   I_USER_SERVICE,
@@ -109,14 +111,14 @@ export class UserController implements IUserRpcController {
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_EMPLOYEE_FAVORITE)
   async findAllEmployeeFavorite(
     @Payload() employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
-  ): Promise<CompanyResponseDTO[]> {
+  ): Promise<EmployeeFavoritesListItemDTO[]> {
     return this.userService.findAllEmployeeFavorites(employeeFavoriteLookupDTO);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_COMPANY_FAVORITE)
   async findAllCompanyFavorite(
     @Payload() companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
-  ): Promise<EmployeeResponseDTO[]> {
+  ): Promise<CompanyFavoritesListItemDTO[]> {
     return this.userService.findAllCompanyFavorites(companyFavoriteLookupDTO);
   }
 

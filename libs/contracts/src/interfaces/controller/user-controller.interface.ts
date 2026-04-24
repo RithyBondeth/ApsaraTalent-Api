@@ -20,6 +20,8 @@ import {
   UpdatePushNotificationTokenResponseDTO,
   UserIdDTO,
   CareerScopesResponseDTO,
+  EmployeeFavoritesListItemDTO,
+  CompanyFavoritesListItemDTO,
 } from '@app/contracts/dtos/user';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
 import { AuthUser } from '@app/common/decorators/user.decorator';
@@ -48,11 +50,11 @@ export interface IUserController {
   findAllEmployeeFavorite(
     employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
     req?: any,
-  ): Promise<CompanyResponseDTO[]>;
+  ): Promise<EmployeeFavoritesListItemDTO[]>;
   findAllCompanyFavorite(
     companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
     req?: any,
-  ): Promise<EmployeeResponseDTO[]>;
+  ): Promise<CompanyFavoritesListItemDTO[]>;
   countEmployeeFavorite(
     employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
     req?: any,
@@ -96,10 +98,10 @@ export interface IUserRpcController {
   ): Promise<CompanyUnfavoriteEmployeeResponseDTO>;
   findAllEmployeeFavorite(
     employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
-  ): Promise<CompanyResponseDTO[]>;
+  ): Promise<EmployeeFavoritesListItemDTO[]>;
   findAllCompanyFavorite(
     companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
-  ): Promise<EmployeeResponseDTO[]>;
+  ): Promise<CompanyFavoritesListItemDTO[]>;
   countEmployeeFavorite(
     employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
   ): Promise<FavoriteCountResponseDTO>;
