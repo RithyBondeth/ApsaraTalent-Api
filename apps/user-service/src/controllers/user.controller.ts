@@ -8,7 +8,6 @@ import {
   CompanyResponseDTO,
   EmployeeResponseDTO,
   CareerScopesResponseDTO,
-  FavoriteCountResponseDTO,
   UserIdDTO,
   UpdatePushNotificationTokenDTO,
   UpdatePushNotificationTokenResponseDTO,
@@ -26,6 +25,7 @@ import {
   CompanyRecommendationsDTO,
   EmployeeFavoritesListItemDTO,
   CompanyFavoritesListItemDTO,
+  FavoriteCountResponseDTO,
 } from '@app/contracts/dtos/user';
 import {
   I_USER_SERVICE,

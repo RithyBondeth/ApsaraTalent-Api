@@ -13,7 +13,6 @@ import { Repository } from 'typeorm';
 import {
   CompanyResponseDTO,
   UserResponseDTO,
-  FavoriteCountResponseDTO,
   UserIdDTO,
   UpdatePushNotificationTokenDTO,
   UpdatePushNotificationTokenResponseDTO,
@@ -35,6 +34,7 @@ import {
   EmployeeResponseDTO,
   JobPositionResponseDTO,
   CareerScopesResponseDTO,
+  FavoriteCountResponseDTO,
 } from '@app/contracts/dtos/user';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
 import { IUserService } from '@app/contracts/interfaces/service/user-service.interface';
@@ -681,11 +681,50 @@ export class UserService implements IUserService, OnModuleInit {
     }
   }
 
+  async findAllCareerScopes(): Promise<CareerScopesResponseDTO[]> {
+    const cacheKey = this.redisService.generateListKey('career-scopes', {});
+    const cached =
+      await this.redisService.get<Partial<CareerScope[]>>(cacheKey);
+
+    if (cached) {
+      this.logger.info('All career scopes cache HIT');
+      return cached.map((cs) => new CareerScopesResponseDTO(cs));
+    }
+
+    this.logger.info('All career scopes cache MISS');
+
+    try {
+      const careerScopes = await this.careerScopeRepository.find();
+      if (!careerScopes || careerScopes.length === 0)
+        throw new RpcException({
+          statusCode: 404,
+          message: 'No career scopes available',
+        });
+
+      const result = careerScopes.map((cs) => new CareerScopesResponseDTO(cs));
+
+      await this.redisService.set(cacheKey, result, CACHE_TTL.STATIC);
+
+      return result;
+    } catch (error) {
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while finding career scopes.',
+      );
+      if (error instanceof RpcException) throw error;
+      throw new RpcException({
+        message:
+          (error as Error).message ||
+          'An error occurred while finding career scopes.',
+        statusCode: 500,
+      });
+    }
+  }
+
   async countCompanyFavorite(
     companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
   ): Promise<FavoriteCountResponseDTO> {
     const { cid } = companyFavoriteLookupDTO;
-    // Use helper method
     const cacheKey = this.redisService.generateCompanyFavoriteCountKey(cid);
     const cached =
       await this.redisService.get<FavoriteCountResponseDTO>(cacheKey);
@@ -726,7 +765,6 @@ export class UserService implements IUserService, OnModuleInit {
     employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
   ): Promise<FavoriteCountResponseDTO> {
     const { eid } = employeeFavoriteLookupDTO;
-    // Use helper method
     const cacheKey = this.redisService.generateEmployeeFavoriteCountKey(eid);
     const cached =
       await this.redisService.get<FavoriteCountResponseDTO>(cacheKey);
@@ -759,46 +797,6 @@ export class UserService implements IUserService, OnModuleInit {
         message:
           (error as Error).message ||
           'An error occurred while counting employee favorites.',
-      });
-    }
-  }
-
-  async findAllCareerScopes(): Promise<CareerScopesResponseDTO[]> {
-    const cacheKey = this.redisService.generateListKey('career-scopes', {});
-    const cached =
-      await this.redisService.get<Partial<CareerScope[]>>(cacheKey);
-
-    if (cached) {
-      this.logger.info('All career scopes cache HIT');
-      return cached.map((cs) => new CareerScopesResponseDTO(cs));
-    }
-
-    this.logger.info('All career scopes cache MISS');
-
-    try {
-      const careerScopes = await this.careerScopeRepository.find();
-      if (!careerScopes || careerScopes.length === 0)
-        throw new RpcException({
-          statusCode: 404,
-          message: 'No career scopes available',
-        });
-
-      const result = careerScopes.map((cs) => new CareerScopesResponseDTO(cs));
-
-      await this.redisService.set(cacheKey, result, CACHE_TTL.STATIC);
-
-      return result;
-    } catch (error) {
-      this.logger.error(
-        (error as Error).message ||
-          'An error occurred while finding career scopes.',
-      );
-      if (error instanceof RpcException) throw error;
-      throw new RpcException({
-        message:
-          (error as Error).message ||
-          'An error occurred while finding career scopes.',
-        statusCode: 500,
       });
     }
   }

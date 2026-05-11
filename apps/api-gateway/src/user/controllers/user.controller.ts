@@ -22,7 +22,6 @@ import {
   CompanyResponseDTO,
   EmployeeResponseDTO,
   CareerScopesResponseDTO,
-  FavoriteCountResponseDTO,
   EmployeeCompanyFavoriteDTO,
   EmployeeCompanyFavoriteWithFavoriteIdDTO,
   CompanyEmployeeFavoriteDTO,
@@ -37,6 +36,7 @@ import {
   CompanyUnfavoriteEmployeeResponseDTO,
   EmployeeFavoritesListItemDTO,
   CompanyFavoritesListItemDTO,
+  FavoriteCountResponseDTO,
 } from '@app/contracts/dtos/user';
 import { rpcCall } from '../../utils/rpc-call';
 
