@@ -145,7 +145,7 @@ export class InterviewService implements IInterviewService {
     try {
       const interviews = await this.interviewRepo.find({
         where: { employee: { id: getInterviewsByEmployeeDTO.employeeId } },
-        relations: ['company'],
+        relations: ['employee', 'company'],
         order: { scheduledAt: 'ASC' },
       });
       return interviews.map(
@@ -167,7 +167,7 @@ export class InterviewService implements IInterviewService {
     try {
       const interviews = await this.interviewRepo.find({
         where: { company: { id: getInterviewsByCompanyDTO.companyId } },
-        relations: ['employee'],
+        relations: ['employee', 'company'],
         order: { scheduledAt: 'ASC' },
       });
       return interviews.map(

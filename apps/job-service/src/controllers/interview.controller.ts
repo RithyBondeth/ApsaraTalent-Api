@@ -25,9 +25,9 @@ export class InterviewController implements IInterviewRpcController {
 
   @MessagePattern(JOB_SERVICE.ACTIONS.CREATE_INTERVIEW)
   async createInterview(
-    @Payload() creteInterviewDTO: CreateInterviewDTO,
+    @Payload() createInterviewDTO: CreateInterviewDTO,
   ): Promise<CreateInterviewResponseDTO> {
-    return this.interviewService.createInterview(creteInterviewDTO);
+    return this.interviewService.createInterview(createInterviewDTO);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.GET_INTERVIEWS_BY_EMPLOYEE)
