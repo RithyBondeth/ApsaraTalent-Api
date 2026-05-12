@@ -83,6 +83,7 @@ export class NotificationService implements INotificationService {
             data: {
               ...(createNotificationCurrentUserDTO.data ?? {}),
               targetUserId: createNotificationCurrentUserDTO.userId,
+              type: createNotificationCurrentUserDTO.type ?? '',
             },
             senderAvatar: createNotificationCurrentUserDTO.senderAvatar ?? null,
           });

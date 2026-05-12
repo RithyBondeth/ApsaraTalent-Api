@@ -25,6 +25,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { JobAccessBase } from '../shared/job-access.base';
 import { rpcCall } from '../../utils/rpc-call';
+import { SocketBroadcastService } from '../../socket/socket-broadcast.service';
 
 @Controller('match/interview')
 @UseGuards(AuthGuard)
@@ -35,6 +36,7 @@ export class InterviewController
   constructor(
     @Inject(JOB_SERVICE.NAME) private readonly jobClient: ClientProxy,
     @Inject(USER_SERVICE.NAME) userClient: ClientProxy,
+    private readonly socketBroadcastService: SocketBroadcastService,
   ) {
     super(userClient);
   }
@@ -51,11 +53,16 @@ export class InterviewController
       createdBy: 'company',
     };
 
-    return rpcCall<CreateInterviewResponseDTO>(
+    const result = await rpcCall<CreateInterviewResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.CREATE_INTERVIEW,
       createInterviewPayload,
     );
+    if (result.notifyUserId) {
+      this.socketBroadcastService.emitToUser(result.notifyUserId, 'interviewUpdate');
+      this.socketBroadcastService.emitToUser(result.notifyUserId, 'badgeIncrement');
+    }
+    return result;
   }
 
   @Get('employee/:employeeId')
@@ -103,10 +110,15 @@ export class InterviewController
       requestUserRole: role,
     };
 
-    return rpcCall<UpdateInterviewStatusResponseDTO>(
+    const result = await rpcCall<UpdateInterviewStatusResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.UPDATE_INTERVIEW_STATUS,
       updateInterviewStatusPayload,
     );
+    if (result.notifyUserId) {
+      this.socketBroadcastService.emitToUser(result.notifyUserId, 'interviewUpdate');
+      this.socketBroadcastService.emitToUser(result.notifyUserId, 'badgeIncrement');
+    }
+    return result;
   }
 }

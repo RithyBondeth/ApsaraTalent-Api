@@ -58,6 +58,8 @@ export class CreateInterviewResponseDTO {
   company: CompanyResponseDTO;
   createdAt: Date;
   updatedAt: Date;
+  /** Auth user ID to notify via socket — populated by the service, not persisted. */
+  notifyUserId?: string | null;
 
   constructor(partial: any) {
     Object.assign(this, partial);

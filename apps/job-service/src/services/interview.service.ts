@@ -128,7 +128,9 @@ export class InterviewService implements IInterviewService {
         );
       }
 
-      return new CreateInterviewResponseDTO(saved);
+      const response = new CreateInterviewResponseDTO(saved);
+      response.notifyUserId = employee.user?.id ?? null;
+      return response;
     } catch (error: any) {
       this.logger.error(error?.message || error);
       throw new RpcException({
@@ -276,7 +278,9 @@ export class InterviewService implements IInterviewService {
         );
       }
 
-      return new UpdateInterviewStatusResponseDTO(saved);
+      const response = new UpdateInterviewStatusResponseDTO(saved);
+      response.notifyUserId = notifyUserId ?? null;
+      return response;
     } catch (error: any) {
       this.logger.error(error?.message || error);
       throw new RpcException({
