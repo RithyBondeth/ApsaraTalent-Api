@@ -256,16 +256,17 @@ export class InterviewService implements IInterviewService {
       interview.status = updateInterviewDTO.status;
       const saved = await this.interviewRepo.save(interview);
 
-      // Notify both parties about the status change
+      // Notify only the OTHER party — the actor already knows what they did.
+      const notifyUserId = isEmployee ? companyUserId : employeeUserId;
       const statusLabel =
         updateInterviewDTO.status.charAt(0).toUpperCase() +
         updateInterviewDTO.status.slice(1);
 
-      [employeeUserId, companyUserId].filter(Boolean).forEach((userId) => {
+      if (notifyUserId) {
         this.notificationClient.emit(
           NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION,
           {
-            userId,
+            userId: notifyUserId,
             title: `Interview ${statusLabel}`,
             message: `Interview "${interview.title}" has been ${updateInterviewDTO.status}.`,
             type: 'interview',
@@ -273,7 +274,7 @@ export class InterviewService implements IInterviewService {
             sendPush: true,
           },
         );
-      });
+      }
 
       return new UpdateInterviewStatusResponseDTO(saved);
     } catch (error: any) {

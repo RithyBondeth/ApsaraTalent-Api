@@ -11,6 +11,7 @@ import { HealthModule } from './health/health.module';
 import { JobModule } from './job/job.module';
 import { NotificationModule } from './notification/notification.module';
 import { ResumeBuilderModule } from './resume-builder/resume-builder.module';
+import { SocketModule } from './socket/socket.module';
 import { UserModule } from './user/user.module';
 
 @Module({
@@ -27,6 +28,7 @@ import { UserModule } from './user/user.module';
     }),
     UserModule,
     JwtModule,
+    SocketModule,
     ChatModule,
     JobModule,
     NotificationModule,

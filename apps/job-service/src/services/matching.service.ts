@@ -112,32 +112,48 @@ export class MatchingService implements IMatchingService {
         ),
       ]);
 
-      // Notify the company about the like/match
+      // Notify about the like/match
       const companyUserId = company.user?.id;
-      if (companyUserId) {
-        const notificationPayload = becameMatched
-          ? {
-              userId: companyUserId,
-              title: "It's a Match!",
-              message: `${employee.username || employee.firstname} and your company liked each other!`,
-              type: 'match',
-              data: { employeeId: matchDTO.eid, companyId: matchDTO.cid },
-              sendPush: true,
-              senderAvatar: employee.avatar || null,
-            }
-          : {
-              userId: companyUserId,
-              title: 'New Like',
-              message: `${employee.username || employee.firstname} liked your company!`,
-              type: 'like',
-              data: { employeeId: matchDTO.eid, companyId: matchDTO.cid },
-              sendPush: true,
-              senderAvatar: employee.avatar || null,
-            };
-        this.notificationClient.emit(
-          NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION,
-          notificationPayload,
-        );
+      const employeeUserId = employee.user?.id;
+      const notificationTargets: string[] = [];
+
+      if (becameMatched) {
+        const matchData = { employeeId: matchDTO.eid, companyId: matchDTO.cid };
+        if (companyUserId) {
+          this.notificationClient.emit(NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION, {
+            userId: companyUserId,
+            title: "It's a Match!",
+            message: `${employee.username || employee.firstname} and your company liked each other!`,
+            type: 'match',
+            data: matchData,
+            sendPush: true,
+            senderAvatar: employee.avatar || null,
+          });
+          notificationTargets.push(companyUserId);
+        }
+        if (employeeUserId) {
+          this.notificationClient.emit(NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION, {
+            userId: employeeUserId,
+            title: "It's a Match!",
+            message: `You and ${company.name} liked each other!`,
+            type: 'match',
+            data: matchData,
+            sendPush: true,
+            senderAvatar: company.avatar || null,
+          });
+          notificationTargets.push(employeeUserId);
+        }
+      } else if (companyUserId) {
+        this.notificationClient.emit(NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION, {
+          userId: companyUserId,
+          title: 'New Like',
+          message: `${employee.username || employee.firstname} liked your company!`,
+          type: 'like',
+          data: { employeeId: matchDTO.eid, companyId: matchDTO.cid },
+          sendPush: true,
+          senderAvatar: employee.avatar || null,
+        });
+        notificationTargets.push(companyUserId);
       }
 
       if (becameMatched) {
@@ -155,7 +171,7 @@ export class MatchingService implements IMatchingService {
           );
       }
 
-      return new MatchResponseDTO(saved);
+      return new MatchResponseDTO({ ...saved, notificationTargets });
     } catch (error: any) {
       this.logger.error(error?.message || error);
       throw new RpcException({
@@ -230,32 +246,48 @@ export class MatchingService implements IMatchingService {
         ),
       ]);
 
-      // Notify the employee about the like/match
+      // Notify about the like/match
       const employeeUserId = employee.user?.id;
-      if (employeeUserId) {
-        const notificationPayload = becameMatched
-          ? {
-              userId: employeeUserId,
-              title: "It's a Match!",
-              message: `${company.name} and you liked each other!`,
-              type: 'match',
-              data: { employeeId: matchDTO.eid, companyId: matchDTO.cid },
-              sendPush: true,
-              senderAvatar: company.avatar || null,
-            }
-          : {
-              userId: employeeUserId,
-              title: 'New Like',
-              message: `${company.name} liked your profile!`,
-              type: 'like',
-              data: { employeeId: matchDTO.eid, companyId: matchDTO.cid },
-              sendPush: true,
-              senderAvatar: company.avatar || null,
-            };
-        this.notificationClient.emit(
-          NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION,
-          notificationPayload,
-        );
+      const companyUserId = company.user?.id;
+      const notificationTargets: string[] = [];
+
+      if (becameMatched) {
+        const matchData = { employeeId: matchDTO.eid, companyId: matchDTO.cid };
+        if (employeeUserId) {
+          this.notificationClient.emit(NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION, {
+            userId: employeeUserId,
+            title: "It's a Match!",
+            message: `${company.name} and you liked each other!`,
+            type: 'match',
+            data: matchData,
+            sendPush: true,
+            senderAvatar: company.avatar || null,
+          });
+          notificationTargets.push(employeeUserId);
+        }
+        if (companyUserId) {
+          this.notificationClient.emit(NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION, {
+            userId: companyUserId,
+            title: "It's a Match!",
+            message: `You and ${employee.username || employee.firstname} liked each other!`,
+            type: 'match',
+            data: matchData,
+            sendPush: true,
+            senderAvatar: employee.avatar || null,
+          });
+          notificationTargets.push(companyUserId);
+        }
+      } else if (employeeUserId) {
+        this.notificationClient.emit(NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION, {
+          userId: employeeUserId,
+          title: 'New Like',
+          message: `${company.name} liked your profile!`,
+          type: 'like',
+          data: { employeeId: matchDTO.eid, companyId: matchDTO.cid },
+          sendPush: true,
+          senderAvatar: company.avatar || null,
+        });
+        notificationTargets.push(employeeUserId);
       }
 
       if (becameMatched) {
@@ -273,7 +305,7 @@ export class MatchingService implements IMatchingService {
           );
       }
 
-      return new MatchResponseDTO(saved);
+      return new MatchResponseDTO({ ...saved, notificationTargets });
     } catch (error: any) {
       this.logger.error(error?.message || error);
       throw new RpcException({

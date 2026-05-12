@@ -80,7 +80,10 @@ export class NotificationService implements INotificationService {
           const result = await this.pushNotificationService.sendToToken(token, {
             title: createNotificationCurrentUserDTO.title,
             body: createNotificationCurrentUserDTO.message,
-            data: createNotificationCurrentUserDTO.data ?? undefined,
+            data: {
+              ...(createNotificationCurrentUserDTO.data ?? {}),
+              targetUserId: createNotificationCurrentUserDTO.userId,
+            },
             senderAvatar: createNotificationCurrentUserDTO.senderAvatar ?? null,
           });
           if (result?.success) {

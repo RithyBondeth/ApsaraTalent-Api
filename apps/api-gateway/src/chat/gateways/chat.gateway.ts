@@ -2,6 +2,7 @@ import { Inject, Logger } from '@nestjs/common';
 import {
   OnGatewayConnection,
   OnGatewayDisconnect,
+  OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -28,6 +29,7 @@ import {
 import { SocketStateService } from '../services/socket-state.service';
 import { ChatRateLimiterService } from '../services/chat-rate-limiter.service';
 import { ChatNotificationService } from '../services/chat-notification.service';
+import { SocketBroadcastService } from '../../socket/socket-broadcast.service';
 import { extractChatToken } from '../utils/chat-token.util';
 import { isOriginAllowed } from '../../utils/cors-origin.util';
 import { IChatGateway } from '@app/contracts/interfaces/gateway/chat-gateway.interface';
@@ -66,7 +68,7 @@ import {
   },
 })
 export class ChatGateway
-  implements OnGatewayConnection, OnGatewayDisconnect, IChatGateway
+  implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, IChatGateway
 {
   @WebSocketServer() server: Server;
   private logger = new Logger('ChatGateway');
@@ -78,8 +80,13 @@ export class ChatGateway
     private readonly socketStateService: SocketStateService,
     private readonly chatRateLimiterService: ChatRateLimiterService,
     private readonly chatNotificationService: ChatNotificationService,
+    private readonly socketBroadcastService: SocketBroadcastService,
     @Inject(CHAT_SERVICE.NAME) private readonly chatServiceClient: ClientProxy,
   ) {}
+
+  afterInit(server: Server): void {
+    this.socketBroadcastService.setServer(server);
+  }
 
   async handleConnection(client: Socket): Promise<void> {
     this.logger.log(`[WS] New connection attempt: socketId=${client.id}`);

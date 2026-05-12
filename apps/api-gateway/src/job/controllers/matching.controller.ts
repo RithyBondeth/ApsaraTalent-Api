@@ -24,6 +24,7 @@ import {
 } from '@app/contracts/dtos/job';
 import { JobAccessBase } from '../shared/job-access.base';
 import { rpcCall } from '../../utils/rpc-call';
+import { SocketBroadcastService } from '../../socket/socket-broadcast.service';
 
 @Controller('match')
 @UseGuards(AuthGuard)
@@ -34,6 +35,7 @@ export class JobMatchingController
   constructor(
     @Inject(JOB_SERVICE.NAME) private readonly jobClient: ClientProxy,
     @Inject(USER_SERVICE.NAME) userClient: ClientProxy,
+    private readonly socketBroadcastService: SocketBroadcastService,
   ) {
     super(userClient);
   }
@@ -44,11 +46,15 @@ export class JobMatchingController
     @Req() req?: any,
   ): Promise<MatchResponseDTO> {
     await this.assertEmployeeAccess(req?.user?.id, matchDTO.eid);
-    return rpcCall<MatchResponseDTO>(
+    const result = await rpcCall<MatchResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.EMPLOYEE_LIKES,
       matchDTO,
     );
+    result.notificationTargets?.forEach((userId) => {
+      this.socketBroadcastService.emitToUser(userId, 'badgeIncrement');
+    });
+    return result;
   }
 
   @Post('company/:cid/like/:eid')
@@ -57,11 +63,15 @@ export class JobMatchingController
     @Req() req?: any,
   ): Promise<MatchResponseDTO> {
     await this.assertCompanyAccess(req?.user?.id, matchDTO.cid);
-    return rpcCall<MatchResponseDTO>(
+    const result = await rpcCall<MatchResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.COMPANY_LIKES,
       matchDTO,
     );
+    result.notificationTargets?.forEach((userId) => {
+      this.socketBroadcastService.emitToUser(userId, 'badgeIncrement');
+    });
+    return result;
   }
 
   @Get('current-employee-liked/:eid')

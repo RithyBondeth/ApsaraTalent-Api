@@ -16,6 +16,8 @@ export class MatchResponseDTO {
   companyLiked: boolean;
   isMatched: boolean;
   createdAt: Date;
+  /** User IDs who received a notification from this action — used by api-gateway to emit socket badge increments */
+  notificationTargets?: string[];
 
   constructor(partial: Partial<MatchResponseDTO>) {
     Object.assign(this, partial);
