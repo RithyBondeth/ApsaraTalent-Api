@@ -21,6 +21,7 @@ import {
   MatchCountResponseDTO,
   MatchDTO,
   MatchResponseDTO,
+  MonthlyActivityItemDTO,
   WeeklyActivityItemDTO,
 } from '@app/contracts/dtos/job';
 
@@ -52,11 +53,11 @@ export class MatchingService implements IMatchingService {
       const [employee, company] = await Promise.all([
         this.employeeRepo.findOne({
           where: { id: matchDTO.eid },
-          relations: ['user'],
+          relations: ['user', 'skills'],
         }),
         this.companyRepo.findOne({
           where: { id: matchDTO.cid },
-          relations: ['user'],
+          relations: ['user', 'openPositions'],
         }),
       ]);
 
@@ -75,6 +76,8 @@ export class MatchingService implements IMatchingService {
         relations: ['employee', 'company'],
       });
 
+      const skillScore = this.computeSkillScore(employee, company);
+
       if (!match) {
         match = this.jobMatchingRepo.create({
           employee,
@@ -82,9 +85,11 @@ export class MatchingService implements IMatchingService {
           employeeLiked: true,
           companyLiked: false,
           isMatched: false,
+          skillScore,
         });
       } else {
         match.employeeLiked = true;
+        match.skillScore = skillScore;
       }
 
       const becameMatched =
@@ -213,11 +218,11 @@ export class MatchingService implements IMatchingService {
       const [employee, company] = await Promise.all([
         this.employeeRepo.findOne({
           where: { id: matchDTO.eid },
-          relations: ['user'],
+          relations: ['user', 'skills'],
         }),
         this.companyRepo.findOne({
           where: { id: matchDTO.cid },
-          relations: ['user'],
+          relations: ['user', 'openPositions'],
         }),
       ]);
 
@@ -236,6 +241,8 @@ export class MatchingService implements IMatchingService {
         relations: ['employee', 'company'],
       });
 
+      const skillScore = this.computeSkillScore(employee, company);
+
       if (!match) {
         match = this.jobMatchingRepo.create({
           employee,
@@ -243,9 +250,11 @@ export class MatchingService implements IMatchingService {
           employeeLiked: false,
           companyLiked: true,
           isMatched: false,
+          skillScore,
         });
       } else {
         match.companyLiked = true;
+        match.skillScore = skillScore;
       }
 
       const becameMatched =
@@ -612,13 +621,21 @@ export class MatchingService implements IMatchingService {
           ? Math.round((totalMatches / totalLikesGiven) * 100)
           : 0;
 
-      // ── Weekly activity (last 7 days) for bar chart ──
-      const weeklyActivity = await this.getWeeklyActivity(
-        matchAnalyticsDTO.userId,
-        entityField,
-        likeGivenField,
-        likeReceivedField,
-      );
+      // ── Weekly activity (last 7 days) and monthly activity (last 12 months) ──
+      const [weeklyActivity, monthlyActivity] = await Promise.all([
+        this.getWeeklyActivity(
+          matchAnalyticsDTO.userId,
+          entityField,
+          likeGivenField,
+          likeReceivedField,
+        ),
+        this.getMonthlyActivity(
+          matchAnalyticsDTO.userId,
+          entityField,
+          likeGivenField,
+          likeReceivedField,
+        ),
+      ]);
 
       // ── Recent matches (last 5) for list ──
       const recentMatches = await this.getRecentMatches(
@@ -634,6 +651,7 @@ export class MatchingService implements IMatchingService {
         matchRate,
         totalFavorites,
         weeklyActivity,
+        monthlyActivity,
         recentMatches,
       });
     } catch (error) {
@@ -694,6 +712,53 @@ export class MatchingService implements IMatchingService {
     return result.map((r) => new WeeklyActivityItemDTO(r));
   }
 
+  private async getMonthlyActivity(
+    userId: string,
+    entityField: string,
+    likeGivenField: string,
+    likeReceivedField: string,
+  ): Promise<MonthlyActivityItemDTO[]> {
+    const now = new Date();
+    const startOfWindow = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 11, 1),
+    );
+
+    const rows: { month: string; likes: string; received: string; matches: string }[] =
+      await this.jobMatchingRepo
+        .createQueryBuilder('jm')
+        .select([
+          `TO_CHAR(DATE_TRUNC('month', jm."createdAt"), 'YYYY-MM') as month`,
+          `SUM(CASE WHEN jm."${likeGivenField}" = true THEN 1 ELSE 0 END) as likes`,
+          `SUM(CASE WHEN jm."${likeReceivedField}" = true THEN 1 ELSE 0 END) as received`,
+          `SUM(CASE WHEN jm."isMatched" = true THEN 1 ELSE 0 END) as matches`,
+        ])
+        .where(`jm."${entityField}Id" = :userId`, { userId })
+        .andWhere('jm."createdAt" >= :startOfWindow', { startOfWindow })
+        .groupBy(`DATE_TRUNC('month', jm."createdAt")`)
+        .orderBy(`DATE_TRUNC('month', jm."createdAt")`, 'ASC')
+        .getRawMany();
+
+    // Build a full 12-month map so months with zero activity are included
+    const dataMap = new Map(rows.map((r) => [r.month, r]));
+    const result: MonthlyActivityItemDTO[] = [];
+
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+      const label = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+      const row = dataMap.get(label);
+      result.push(
+        new MonthlyActivityItemDTO({
+          month: label,
+          likes: parseInt(row?.likes ?? '0', 10),
+          received: parseInt(row?.received ?? '0', 10),
+          matches: parseInt(row?.matches ?? '0', 10),
+        }),
+      );
+    }
+
+    return result;
+  }
+
   private async getRecentMatches(
     userId: string,
     entityField: string,
@@ -725,6 +790,31 @@ export class MatchingService implements IMatchingService {
         });
       }
     });
+  }
+
+  private computeSkillScore(employee: Employee, company: Company): number | null {
+    const employeeSkills = (employee.skills ?? []).map((s) =>
+      s.name.toLowerCase().trim(),
+    );
+    if (!employeeSkills.length) return null;
+
+    const jobs = company.openPositions ?? [];
+    if (!jobs.length) return null;
+
+    let bestScore = 0;
+    for (const job of jobs) {
+      if (!job.skillsRequired) continue;
+      const required = job.skillsRequired
+        .split(',')
+        .map((s) => s.toLowerCase().trim())
+        .filter(Boolean);
+      if (!required.length) continue;
+      const matched = required.filter((r) => employeeSkills.includes(r)).length;
+      const score = matched / required.length;
+      if (score > bestScore) bestScore = score;
+    }
+
+    return Math.round(bestScore * 100);
   }
 
   async findCurrentCompanyMatchingCount(

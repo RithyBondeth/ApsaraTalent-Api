@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, MoreThan, Repository } from 'typeorm';
 import { extractSalaryRange } from '@app/utils/functions/extract-salary-range';
 import {
   JobResponseDTO,
@@ -39,8 +39,13 @@ export class JobService implements IJobServiceService {
     this.logger.info('All jobs cache MISS');
 
     try {
+      const now = new Date();
       const jobs = await this.jobRepo.find({
         relations: ['company', 'company.user'],
+        where: [
+          { expireDate: null },
+          { expireDate: MoreThan(now) },
+        ],
         skip,
         take: limit,
         order: { createdAt: 'DESC' },
@@ -88,15 +93,17 @@ export class JobService implements IJobServiceService {
         educationRequired,
       } = searchJobDTO;
 
+      const now = new Date();
       const query = this.jobRepo
         .createQueryBuilder('job')
         .leftJoinAndSelect('job.company', 'company')
         .leftJoinAndSelect('company.careerScopes', 'careerScope')
-        .leftJoinAndSelect('company.user', 'user');
+        .leftJoinAndSelect('company.user', 'user')
+        .where('(job.expireDate IS NULL OR job.expireDate > :now)', { now });
 
       // Keyword
       if (keyword) {
-        query.where(
+        query.andWhere(
           '(job.title ILIKE :keyword OR job.description ILIKE :keyword)',
           {
             keyword: `%${keyword}%`,

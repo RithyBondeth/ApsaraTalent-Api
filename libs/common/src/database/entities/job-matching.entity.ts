@@ -30,6 +30,9 @@ export class JobMatching {
   @Column({ default: false })
   isMatched: boolean;
 
+  @Column({ type: 'smallint', nullable: true })
+  skillScore: number | null;
+
   @CreateDateColumn()
   createdAt: Date;
 }

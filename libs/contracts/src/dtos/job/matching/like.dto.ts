@@ -15,6 +15,7 @@ export class MatchResponseDTO {
   employeeLiked: boolean;
   companyLiked: boolean;
   isMatched: boolean;
+  skillScore: number | null;
   createdAt: Date;
   /** User IDs who received a notification from this action — used by api-gateway to emit socket badge increments */
   notificationTargets?: string[];

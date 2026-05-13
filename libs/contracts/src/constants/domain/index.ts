@@ -5,3 +5,4 @@ export * from './job.constant';
 export * from './notification.constant';
 export * from './password.constant';
 export * from './resume.constant';
+export * from './upload.constant';

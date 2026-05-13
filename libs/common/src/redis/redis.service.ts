@@ -138,6 +138,17 @@ export class RedisService {
     await this.del(this.generateUserKey('detail', userId));
   }
 
+  // ===== AUTH SESSION KEYS =====
+  private readonly AUTH_PREFIX = 'apsaratalent:auth';
+
+  generateAuthSessionKey(userId: string): string {
+    return `${this.AUTH_PREFIX}:session:${userId}`;
+  }
+
+  async invalidateAuthSession(userId: string): Promise<void> {
+    await this.del(this.generateAuthSessionKey(userId));
+  }
+
   // ===== JOB SERVICE KEYS =====
   private readonly JOB_PREFIX = 'apsaratalent:job-service';
 

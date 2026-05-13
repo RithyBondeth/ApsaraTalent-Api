@@ -3,6 +3,7 @@ import {
   ExecutionContext,
   Injectable,
   InternalServerErrorException,
+  Optional,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -11,12 +12,17 @@ import { Repository } from 'typeorm';
 import { User } from '../database/entities/user.entity';
 import { IPayload } from '../jwt/interfaces/payload.interface';
 import { JwtService } from '../jwt/jwt.service';
+import { RedisService } from '../redis/redis.service';
+
+// Short TTL: users banned/deleted stop working within 2 minutes without DB hit on every request
+const AUTH_CACHE_TTL_MS = 2 * 60 * 1000;
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @Optional() private readonly redisService?: RedisService,
   ) {}
 
   async canActivate(context: ExecutionContext) {
@@ -42,6 +48,16 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('Token verification failed');
     }
 
+    const cacheKey = `apsaratalent:auth:session:${payload.id}`;
+
+    if (this.redisService) {
+      const cached = await this.redisService.get<User>(cacheKey);
+      if (cached) {
+        request.user = cached;
+        return true;
+      }
+    }
+
     let user: User | null;
     try {
       user = await this.userRepository.findOne({ where: { id: payload.id } });
@@ -53,6 +69,10 @@ export class AuthGuard implements CanActivate {
 
     if (!user) {
       throw new UnauthorizedException('User not found');
+    }
+
+    if (this.redisService) {
+      await this.redisService.set(cacheKey, user, AUTH_CACHE_TTL_MS);
     }
 
     request.user = user;

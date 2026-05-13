@@ -46,7 +46,8 @@ export class SearchEmployeeService implements ISearchEmployeeService {
         .leftJoinAndSelect('employee.skills', 'skill')
         .leftJoinAndSelect('employee.careerScopes', 'careerScope')
         .leftJoinAndSelect('employee.experiences', 'experience')
-        .leftJoinAndSelect('employee.educations', 'edu');
+        .leftJoinAndSelect('employee.educations', 'edu')
+        .where('employee.isHide = :isHide', { isHide: false });
 
       // Keyword: job title, first name, last name
       if (searchEmployeeDTO.keyword) {

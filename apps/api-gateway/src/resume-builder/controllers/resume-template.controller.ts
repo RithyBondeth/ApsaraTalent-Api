@@ -2,6 +2,10 @@ import { AuthGuard } from '@app/common/guards/auth.guard';
 import { IResumeTemplateController } from '@app/contracts/interfaces/controller/resume-controller.interface';
 import { UploadFileInterceptor } from '@app/common/uploadfile/uploadfile.interceptor';
 import {
+  ALLOWED_IMAGE_MIME_TYPES,
+  MAX_IMAGE_SIZE_BYTES,
+} from '@app/contracts/constants/domain/upload.constant';
+import {
   Body,
   Controller,
   Get,
@@ -54,7 +58,7 @@ export class ResumeTemplateController implements IResumeTemplateController {
   }
 
   @Post('create')
-  @UseInterceptors(new UploadFileInterceptor('image', 'template-images'))
+  @UseInterceptors(new UploadFileInterceptor('image', 'template-images', ALLOWED_IMAGE_MIME_TYPES, MAX_IMAGE_SIZE_BYTES))
   async createResumeTemplate(
     @Body() createResumeTemplateDTO: CreateResumeTemplateDTO,
     @UploadedFile() image: Express.Multer.File,

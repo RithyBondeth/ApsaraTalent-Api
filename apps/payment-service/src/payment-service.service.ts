@@ -13,7 +13,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import axios, { AxiosInstance } from 'axios';
-import CryptoJS from 'crypto-js';
+import { createHash } from 'crypto';
 import { PinoLogger } from 'nestjs-pino';
 import * as QRCode from 'qrcode';
 import { Repository } from 'typeorm';
@@ -119,6 +119,7 @@ export class PaymentService implements IPaymentService {
       if (response.data?.response_code === '00') {
         const qrString = response.data.qr_string;
         const md5Hash = this.generateMD5Hash(qrString);
+        const sha256Hash = this.generateSHA256Hash(qrString);
         const qrImage = await this.generateQRImage(qrString);
         const expiresAt = generateIndividualKhqrDTO.expirationMinutes
           ? new Date(
@@ -129,6 +130,7 @@ export class PaymentService implements IPaymentService {
         // Save payment to database
         const payment = this.paymentRepository.create({
           md5Hash,
+          sha256Hash,
           qrString,
           qrImage,
           paymentType: PaymentType.INDIVIDUAL,
@@ -212,11 +214,13 @@ export class PaymentService implements IPaymentService {
       if (response.data?.response_code === '00') {
         const qrString = response.data.qr_string;
         const md5Hash = this.generateMD5Hash(qrString);
+        const sha256Hash = this.generateSHA256Hash(qrString);
         const qrImage = await this.generateQRImage(qrString);
 
         // Save merchant payment to database
         const payment = this.paymentRepository.create({
           md5Hash,
+          sha256Hash,
           qrString,
           qrImage,
           paymentType: PaymentType.MERCHANT,
@@ -522,8 +526,13 @@ export class PaymentService implements IPaymentService {
     }
   }
 
+  /** MD5 is required by the Bakong KHQR standard for payment status lookups */
   private generateMD5Hash(qrString: string): string {
-    return CryptoJS.MD5(qrString).toString();
+    return createHash('md5').update(qrString).digest('hex');
+  }
+
+  private generateSHA256Hash(qrString: string): string {
+    return createHash('sha256').update(qrString).digest('hex');
   }
 
   private async updatePaymentStatus(

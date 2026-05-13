@@ -20,12 +20,25 @@ export class WeeklyActivityItemDTO {
   }
 }
 
+export class MonthlyActivityItemDTO {
+  /** ISO year-month label, e.g. "2025-01" */
+  month: string;
+  likes: number;
+  received: number;
+  matches: number;
+
+  constructor(partial: Partial<MonthlyActivityItemDTO>) {
+    Object.assign(this, partial);
+  }
+}
+
 export class AnalyticsResponseDTO {
   totalLikesGiven: number;
   totalLikesReceived: number;
   totalMatches: number;
   matchRate: number;
   weeklyActivity: WeeklyActivityItemDTO[];
+  monthlyActivity: MonthlyActivityItemDTO[];
   totalFavorites: number;
   recentMatches: MatchAnalyticsItemDTO[];
 

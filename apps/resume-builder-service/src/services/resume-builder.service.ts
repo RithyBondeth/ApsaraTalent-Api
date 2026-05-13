@@ -79,7 +79,7 @@ export class ResumeBuilderService implements IResumeBuilderService {
         : buildResumeDTO;
 
       const completion = await this.openAI.chat.completions.create({
-        model: 'gpt-4o',
+        model: this.configService.get<string>('openai.model') ?? 'gpt-4o',
         temperature: 0.3,
         max_tokens: 4096,
         messages: [
