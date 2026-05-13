@@ -122,6 +122,9 @@ export class InterviewService implements IInterviewService {
               interviewId: saved.id,
               employeeId: createInterview.employeeId,
               companyId: createInterview.companyId,
+              senderName,
+              interviewTitle: createInterview.title,
+              eventType: 'interview_scheduled',
             },
             sendPush: true,
           },
@@ -272,7 +275,15 @@ export class InterviewService implements IInterviewService {
             title: `Interview ${statusLabel}`,
             message: `Interview "${interview.title}" has been ${updateInterviewDTO.status}.`,
             type: 'interview',
-            data: { interviewId: interview.id },
+            data: {
+              interviewId: interview.id,
+              senderName: isEmployee
+                ? (interview.employee.username || interview.employee.firstname)
+                : interview.company.name,
+              interviewTitle: interview.title,
+              status: updateInterviewDTO.status,
+              eventType: `interview_${updateInterviewDTO.status}`,
+            },
             sendPush: true,
           },
         );
