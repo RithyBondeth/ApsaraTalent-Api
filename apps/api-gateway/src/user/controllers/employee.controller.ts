@@ -88,7 +88,14 @@ export class EmployeeController implements IEmployeeController {
   }
 
   @Post('upload-avatar/:employeeId')
-  @UseInterceptors(new UploadFileInterceptor('avatar', 'employee-avatars', ALLOWED_IMAGE_MIME_TYPES, MAX_IMAGE_SIZE_BYTES))
+  @UseInterceptors(
+    new UploadFileInterceptor(
+      'avatar',
+      'employee-avatars',
+      ALLOWED_IMAGE_MIME_TYPES,
+      MAX_IMAGE_SIZE_BYTES,
+    ),
+  )
   async uploadEmployeeAvatar(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @UploadedFile() avatar: Express.Multer.File,
@@ -113,7 +120,14 @@ export class EmployeeController implements IEmployeeController {
   }
 
   @Post('upload-resume/:employeeId')
-  @UseInterceptors(new UploadFileInterceptor('resume', 'resumes', ALLOWED_DOCUMENT_MIME_TYPES, MAX_DOCUMENT_SIZE_BYTES))
+  @UseInterceptors(
+    new UploadFileInterceptor(
+      'resume',
+      'resumes',
+      ALLOWED_DOCUMENT_MIME_TYPES,
+      MAX_DOCUMENT_SIZE_BYTES,
+    ),
+  )
   async uploadEmployeeResume(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @UploadedFile() resume: Express.Multer.File,
@@ -137,7 +151,14 @@ export class EmployeeController implements IEmployeeController {
   }
 
   @Post('upload-cover-letter/:employeeId')
-  @UseInterceptors(new UploadFileInterceptor('coverLetter', 'cover-letters', ALLOWED_DOCUMENT_MIME_TYPES, MAX_DOCUMENT_SIZE_BYTES))
+  @UseInterceptors(
+    new UploadFileInterceptor(
+      'coverLetter',
+      'cover-letters',
+      ALLOWED_DOCUMENT_MIME_TYPES,
+      MAX_DOCUMENT_SIZE_BYTES,
+    ),
+  )
   async uploadEmployeeCoverLetter(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @UploadedFile() coverLetter: Express.Multer.File,

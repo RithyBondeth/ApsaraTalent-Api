@@ -59,8 +59,14 @@ export class InterviewController
       createInterviewPayload,
     );
     if (result.notifyUserId) {
-      this.socketBroadcastService.emitToUser(result.notifyUserId, 'interviewUpdate');
-      this.socketBroadcastService.emitToUser(result.notifyUserId, 'badgeIncrement');
+      this.socketBroadcastService.emitToUser(
+        result.notifyUserId,
+        'interviewUpdate',
+      );
+      this.socketBroadcastService.emitToUser(
+        result.notifyUserId,
+        'badgeIncrement',
+      );
     }
     return result;
   }
@@ -116,8 +122,14 @@ export class InterviewController
       updateInterviewStatusPayload,
     );
     if (result.notifyUserId) {
-      this.socketBroadcastService.emitToUser(result.notifyUserId, 'interviewUpdate');
-      this.socketBroadcastService.emitToUser(result.notifyUserId, 'badgeIncrement');
+      this.socketBroadcastService.emitToUser(
+        result.notifyUserId,
+        'interviewUpdate',
+      );
+      this.socketBroadcastService.emitToUser(
+        result.notifyUserId,
+        'badgeIncrement',
+      );
     }
     return result;
   }

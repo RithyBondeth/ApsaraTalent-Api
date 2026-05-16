@@ -68,7 +68,11 @@ import {
   },
 })
 export class ChatGateway
-  implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, IChatGateway
+  implements
+    OnGatewayConnection,
+    OnGatewayDisconnect,
+    OnGatewayInit,
+    IChatGateway
 {
   @WebSocketServer() server: Server;
   private logger = new Logger('ChatGateway');

@@ -58,7 +58,14 @@ export class ResumeTemplateController implements IResumeTemplateController {
   }
 
   @Post('create')
-  @UseInterceptors(new UploadFileInterceptor('image', 'template-images', ALLOWED_IMAGE_MIME_TYPES, MAX_IMAGE_SIZE_BYTES))
+  @UseInterceptors(
+    new UploadFileInterceptor(
+      'image',
+      'template-images',
+      ALLOWED_IMAGE_MIME_TYPES,
+      MAX_IMAGE_SIZE_BYTES,
+    ),
+  )
   async createResumeTemplate(
     @Body() createResumeTemplateDTO: CreateResumeTemplateDTO,
     @UploadedFile() image: Express.Multer.File,

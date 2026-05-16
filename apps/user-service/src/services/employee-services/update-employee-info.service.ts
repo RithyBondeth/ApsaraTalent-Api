@@ -4,6 +4,7 @@ import { Employee } from '@app/common/database/entities/employee/employee.entity
 import { Experience } from '@app/common/database/entities/employee/experience.entity';
 import { Skill } from '@app/common/database/entities/employee/skill.entity';
 import { Social } from '@app/common/database/entities/social.entity';
+import { EmbeddingService } from '@app/common/embedding/embedding.service';
 import { CacheInvalidationService } from '@app/common/redis/cache-invalidation.service';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
@@ -34,6 +35,7 @@ export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
     private readonly educationRepository: Repository<Education>,
     private readonly logger: PinoLogger,
     private readonly cacheInvalidationService: CacheInvalidationService,
+    private readonly embeddingService: EmbeddingService,
   ) {}
 
   async updateEmployeeInfo(
@@ -77,8 +79,31 @@ export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
       /* =======================================================
          1️⃣ UPDATE SCALAR FIELDS
       ======================================================= */
+      const previousJob = employee.job;
       Object.assign(employee, scalarFields);
       await this.employeeRepository.save(employee);
+
+      // When the job/position title changes, re-embed it asynchronously.
+      // Fire-and-forget: don't block the profile update response.
+      if (
+        scalarFields.job !== undefined &&
+        scalarFields.job !== previousJob &&
+        scalarFields.job
+      ) {
+        this.embeddingService
+          .embedAsVector(scalarFields.job as string)
+          .then((vector) =>
+            this.employeeRepository.query(
+              `UPDATE employee SET "jobEmbedding" = $1::vector WHERE id = $2`,
+              [vector, employeeId],
+            ),
+          )
+          .catch((err: Error) =>
+            this.logger.warn(
+              `Failed to embed employee job title "${scalarFields.job as string}": ${err.message}`,
+            ),
+          );
+      }
 
       /* =======================================================
          2️⃣ SKILLS (M2M SAFE) by name
@@ -160,6 +185,22 @@ export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
               }),
             );
             finalIds.push(created.id);
+
+            // Generate and persist the semantic embedding asynchronously.
+            // Fire-and-forget: don't block the profile update response.
+            this.embeddingService
+              .embedAsVector(name)
+              .then((vector) =>
+                this.careerScopeRepository.query(
+                  `UPDATE career_scope SET embedding = $1::vector WHERE id = $2`,
+                  [vector, created.id],
+                ),
+              )
+              .catch((err: Error) =>
+                this.logger.warn(
+                  `Failed to embed career scope "${name}": ${err.message}`,
+                ),
+              );
           }
         }
 

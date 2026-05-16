@@ -39,14 +39,18 @@ export interface IImageEmployeeController {
     employeeId: string,
     avatar: Express.Multer.File,
   ): Promise<UploadEmployeeAvatarResponseDTO>;
-  removeEmployeeAvatar(employeeId: string): Promise<RemoveEmployeeAvatarResponseDTO>;
+  removeEmployeeAvatar(
+    employeeId: string,
+  ): Promise<RemoveEmployeeAvatarResponseDTO>;
 }
 
 export interface IImageEmployeeRpcController {
   uploadEmployeeAvatar(
     uploadEmployeeAvatarDTO: UploadEmployeeAvatarDTO,
   ): Promise<UploadEmployeeAvatarResponseDTO>;
-  removeEmployeeAvatar(employeeIdDTO: EmployeeIdDTO): Promise<RemoveEmployeeAvatarResponseDTO>;
+  removeEmployeeAvatar(
+    employeeIdDTO: EmployeeIdDTO,
+  ): Promise<RemoveEmployeeAvatarResponseDTO>;
 }
 
 export interface ISearchEmployeeController {
@@ -75,19 +79,25 @@ export interface IUploadEmployeeController {
     employeeId: string,
     resume: Express.Multer.File,
   ): Promise<UploadEmployeeResumeResponseDTO>;
-  removeEmployeeResume(employeeId: string): Promise<RemoveEmployeeResumeResponseDTO>;
+  removeEmployeeResume(
+    employeeId: string,
+  ): Promise<RemoveEmployeeResumeResponseDTO>;
   uploadEmployeeCoverLetter(
     employeeId: string,
     coverLetter: Express.Multer.File,
   ): Promise<UploadEmployeeCoverLetterResponseDTO>;
-  removeEmployeeCoverLetter(employeeId: string): Promise<RemoveEmployeeCoverLetterResponseDTO>;
+  removeEmployeeCoverLetter(
+    employeeId: string,
+  ): Promise<RemoveEmployeeCoverLetterResponseDTO>;
 }
 
 export interface IUploadEmployeeRpcController {
   uploadEmployeeResume(
     uploadEmployeeResumeDTO: UploadEmployeeResumeDTO,
   ): Promise<UploadEmployeeResumeResponseDTO>;
-  removeEmployeeResume(employeeIdDTO: EmployeeIdDTO): Promise<RemoveEmployeeResumeResponseDTO>;
+  removeEmployeeResume(
+    employeeIdDTO: EmployeeIdDTO,
+  ): Promise<RemoveEmployeeResumeResponseDTO>;
   uploadEmployeeCoverLetter(
     uploadEmployeeCoverLetterDTO: UploadEmployeeCoverLetterDTO,
   ): Promise<UploadEmployeeCoverLetterResponseDTO>;

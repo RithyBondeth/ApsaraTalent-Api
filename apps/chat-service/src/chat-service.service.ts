@@ -583,6 +583,7 @@ export class ChatService implements IChatService {
       .where('sender.id IN (:...userIds)', { userIds })
       .orWhere('receiver.id IN (:...userIds)', { userIds })
       .orderBy('chat.sentAt', 'DESC')
+      .addOrderBy('chat.id', 'ASC')
       .take(CHAT.MAX_RECENT_CHATS)
       .getMany();
 

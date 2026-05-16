@@ -1,9 +1,11 @@
 import {
   DatabaseModule,
+  EmbeddingModule,
   JwtModule,
   LoggerModule,
   RedisCacheHealthIndicator,
   UploadfileModule,
+  VectorColumnsModule,
 } from '@app/common';
 import { ConfigModule } from '@app/common/config';
 import { CareerScope } from '@app/common/database/entities/career-scope.entity';
@@ -89,6 +91,8 @@ import {
     LoggerModule,
     UploadfileModule,
     JwtModule,
+    EmbeddingModule,
+    VectorColumnsModule,
     RedisModule,
     TerminusModule,
     EventEmitterModule.forRoot({

@@ -41,6 +41,14 @@ export class Job {
   @Column({ nullable: true })
   expireDate: Date;
 
+  @Column({
+    type: 'text',
+    nullable: true,
+    select: false,
+    synchronize: false,
+  } as any)
+  titleEmbedding: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 }

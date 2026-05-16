@@ -3,6 +3,7 @@ import {
   EmailModule,
   LoggerModule,
   RedisCacheHealthIndicator,
+  VectorColumnsModule,
 } from '@app/common';
 import { RedisModule } from '@app/common/redis/redis.module';
 import { ConfigModule } from '@app/common/config';
@@ -42,6 +43,7 @@ import {
     LoggerModule,
     MessageModule,
     EmailModule,
+    VectorColumnsModule,
     RedisModule,
     TerminusModule,
     ClientsModule.registerAsync([

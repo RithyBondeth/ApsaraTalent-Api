@@ -1,4 +1,9 @@
 import { CareerScope } from '@app/common/database/entities/career-scope.entity';
+import {
+  scopeSetSimilarityScore,
+  jobTitleSimilarityScore,
+  parseEmbedding,
+} from '@app/common/embedding/embedding.util';
 import { CompanyFavoriteEmployee } from '@app/common/database/entities/company/favorite-employee.entity';
 import { EmployeeFavoriteCompany } from '@app/common/database/entities/employee/favorite-company.entity';
 import { JobMatching } from '@app/common/database/entities/job-matching.entity';
@@ -110,6 +115,7 @@ export class UserService implements IUserService, OnModuleInit {
         .leftJoinAndSelect('company.openPositions', 'openPositions')
         .leftJoinAndSelect('company.careerScopes', 'cmpCareerScopes')
         .orderBy('user.createdAt', 'DESC')
+        .addOrderBy('user.id', 'ASC')
         .skip(skip)
         .take(limit)
         .getMany();
@@ -860,18 +866,20 @@ export class UserService implements IUserService, OnModuleInit {
     this.logger.info(`Employee ${employeeId} recommendations cache MISS`);
 
     try {
-      // 1. Load employee with full profile data needed for scoring
+      // 1. Load employee with full profile data needed for scoring.
+      //    `addSelect(...)` overrides select:false to load embedding vectors.
       const employeeUser = await this.userRepository
         .createQueryBuilder('user')
         .leftJoinAndSelect('user.employee', 'employee')
+        .addSelect('employee.jobEmbedding')
         .leftJoinAndSelect('employee.careerScopes', 'empCareerScopes')
+        .addSelect('empCareerScopes.embedding')
         .leftJoinAndSelect('employee.skills', 'empSkills')
         .leftJoinAndSelect('employee.educations', 'empEducations')
         .where('employee.id = :employeeId', { employeeId })
         .getOne();
 
       const employee = employeeUser?.employee ?? null;
-      const careerScopeIds = (employee?.careerScopes ?? []).map((cs) => cs.id);
       const empSkillNames = (employee?.skills ?? []).map((s) =>
         s.name.toLowerCase().trim(),
       );
@@ -883,6 +891,7 @@ export class UserService implements IUserService, OnModuleInit {
       );
       const empYears = this.extractYears(employee?.yearsOfExperience ?? '');
       const empJobTitle = (employee?.job ?? '').toLowerCase();
+      const empJobEmbedding = parseEmbedding((employee as any)?.jobEmbedding);
 
       // 2. Get company IDs the employee has already liked
       const likedMatches = await this.jobMatchingRepository.find({
@@ -914,26 +923,27 @@ export class UserService implements IUserService, OnModuleInit {
       const userIds = candidateRows.map((r) => r.userId);
       if (userIds.length === 0) return [];
 
-      // 4. Load full company + job data for scoring
+      // 4. Load full company + job data for scoring.
+      //    Include embeddings on candidate career scopes (Factor 1) and
+      //    job title embeddings (Factor 3 semantic match).
       const users = await this.userRepository
         .createQueryBuilder('user')
         .innerJoinAndSelect('user.company', 'company')
         .leftJoinAndSelect('company.careerScopes', 'careerScopes')
+        .addSelect('careerScopes.embedding')
         .leftJoinAndSelect('company.openPositions', 'openPositions')
+        .addSelect('openPositions.titleEmbedding')
         .leftJoinAndSelect('company.benefits', 'benefits')
         .leftJoinAndSelect('company.values', 'values')
         .where('user.id IN (:...userIds)', { userIds })
         .getMany();
 
-      const empTitleWords = empJobTitle
-        .split(/\s+/)
-        .filter((w) => w.length > 3);
       const empDescWords = this.extractKeywords(employee?.description ?? '');
 
       // 5. Multi-factor weighted scoring (max 100 pts)
       //    Factor 1: Career scope overlap       0–35  (field match — highest weight)
       //    Factor 2: Skill match ratio           0–30  (specific skill fit)
-      //    Factor 3: Job title keyword match     0–20  (role relevance)
+      //    Factor 3: Job title semantic match    0–20  (role relevance via pgvector)
       //    Factor 4: Description content match   0–10  (context fit)
       //    Factor 5: Location match               0–5  (minor bonus)
       //    Education/Experience: only score when BOTH sides have data (no points for empty fields)
@@ -942,13 +952,15 @@ export class UserService implements IUserService, OnModuleInit {
         const jobs = company.openPositions ?? [];
         let score = 0;
 
-        // Factor 1: Career scope overlap ratio (0–35)
-        if (careerScopeIds.length > 0) {
-          const overlapCount = (company.careerScopes ?? []).filter((cs) =>
-            careerScopeIds.includes(cs.id),
-          ).length;
-          score += (overlapCount / careerScopeIds.length) * 35;
-        }
+        // Factor 1: Career scope semantic similarity (0–35)
+        // Uses pgvector cosine similarity so "Full Stack Development" ↔
+        // "Backend Developer" ↔ "Software Engineer" all score correctly.
+        // Falls back to exact ID overlap when embeddings are unavailable.
+        score += scopeSetSimilarityScore(
+          employee?.careerScopes ?? [],
+          company.careerScopes ?? [],
+          35,
+        );
 
         // Factor 2: Best skill match ratio across all open positions (0–30)
         if (empSkillNames.length > 0 && jobs.length > 0) {
@@ -967,21 +979,32 @@ export class UserService implements IUserService, OnModuleInit {
           score += bestRatio * 30;
         }
 
-        // Factor 3: Job title keyword match — employee's title words appear in any job title or description (0–20)
-        if (empTitleWords.length > 0 && jobs.length > 0) {
-          let bestTitleScore = 0;
-          for (const job of jobs) {
-            const jobText =
-              `${job.title ?? ''} ${job.description ?? ''}`.toLowerCase();
-            const matched = empTitleWords.filter((w) =>
-              jobText.includes(w),
-            ).length;
-            bestTitleScore = Math.max(
-              bestTitleScore,
-              matched / empTitleWords.length,
-            );
+        // Factor 3: Job title semantic similarity (0–20)
+        // Uses pgvector cosine similarity between employee's current job/position
+        // and each company's open position title. Falls back to keyword overlap
+        // when embeddings are missing (e.g. before backfill completes).
+        if (empJobEmbedding) {
+          score += jobTitleSimilarityScore(empJobEmbedding, jobs as any[], 20);
+        } else if (empJobTitle) {
+          // Keyword fallback
+          const empTitleWords = empJobTitle
+            .split(/\s+/)
+            .filter((w) => w.length > 3);
+          if (empTitleWords.length > 0 && jobs.length > 0) {
+            let bestTitleScore = 0;
+            for (const job of jobs) {
+              const jobText =
+                `${job.title ?? ''} ${job.description ?? ''}`.toLowerCase();
+              const matched = empTitleWords.filter((w) =>
+                jobText.includes(w),
+              ).length;
+              bestTitleScore = Math.max(
+                bestTitleScore,
+                matched / empTitleWords.length,
+              );
+            }
+            score += bestTitleScore * 20;
           }
-          score += bestTitleScore * 20;
         }
 
         // Factor 4: Description keyword match (0–10)
@@ -1061,16 +1084,10 @@ export class UserService implements IUserService, OnModuleInit {
       await this.redisService.set(cacheKey, recommendations, CACHE_TTL.LONG);
       return recommendations;
     } catch (error) {
-      this.logger.error(
-        (error as Error).message ||
-          'An error occurred while getting employee recommendations.',
+      this.logger.warn(
+        `Employee recommendations unavailable for ${employeeId}: ${(error as Error).message}`,
       );
-      throw new RpcException({
-        statusCode: 500,
-        message:
-          (error as Error).message ||
-          'An error occurred while getting employee recommendations.',
-      });
+      return [];
     }
   }
 
@@ -1092,17 +1109,20 @@ export class UserService implements IUserService, OnModuleInit {
     this.logger.info(`Company ${companyId} recommendations cache MISS`);
 
     try {
-      // 1. Load company with career scopes and full open position requirements
+      // 1. Load company with career scopes and full open position requirements.
+      //    Include embeddings for semantic Factor 1 (career scopes) and
+      //    Factor 3 (job title embeddings for open positions).
       const companyUser = await this.userRepository
         .createQueryBuilder('user')
         .leftJoinAndSelect('user.company', 'company')
         .leftJoinAndSelect('company.careerScopes', 'cmpCareerScopes')
+        .addSelect('cmpCareerScopes.embedding')
         .leftJoinAndSelect('company.openPositions', 'openPositions')
+        .addSelect('openPositions.titleEmbedding')
         .where('company.id = :companyId', { companyId })
         .getOne();
 
       const company = companyUser?.company ?? null;
-      const careerScopeIds = (company?.careerScopes ?? []).map((cs) => cs.id);
       const jobs = company?.openPositions ?? [];
 
       // Aggregate required skills across all open positions
@@ -1157,11 +1177,14 @@ export class UserService implements IUserService, OnModuleInit {
       const userIds = candidateRows.map((r) => r.userId);
       if (userIds.length === 0) return [];
 
-      // 4. Load full employee profile data for scoring
+      // 4. Load full employee profile data for scoring.
+      //    Include career scope embeddings (Factor 1) and job title embedding (Factor 3).
       const users = await this.userRepository
         .createQueryBuilder('user')
         .innerJoinAndSelect('user.employee', 'employee')
+        .addSelect('employee.jobEmbedding')
         .leftJoinAndSelect('employee.careerScopes', 'careerScopes')
+        .addSelect('careerScopes.embedding')
         .leftJoinAndSelect('employee.skills', 'skills')
         .leftJoinAndSelect('employee.experiences', 'experiences')
         .leftJoinAndSelect('employee.educations', 'educations')
@@ -1194,13 +1217,15 @@ export class UserService implements IUserService, OnModuleInit {
         const emp = user.employee;
         let score = 0;
 
-        // Factor 1: Career scope overlap ratio (0–35)
-        if (careerScopeIds.length > 0) {
-          const overlapCount = (emp.careerScopes ?? []).filter((cs) =>
-            careerScopeIds.includes(cs.id),
-          ).length;
-          score += (overlapCount / careerScopeIds.length) * 35;
-        }
+        // Factor 1: Career scope semantic similarity (0–35)
+        // Uses pgvector cosine similarity so "Full Stack Development" ↔
+        // "Backend Developer" ↔ "Software Engineer" all score correctly.
+        // Falls back to exact ID overlap when embeddings are unavailable.
+        score += scopeSetSimilarityScore(
+          company?.careerScopes ?? [],
+          emp.careerScopes ?? [],
+          35,
+        );
 
         // Factor 2: Skill match ratio — how many required skills the employee has (0–30)
         const empSkillNames = (emp.skills ?? []).map((s) =>
@@ -1213,23 +1238,40 @@ export class UserService implements IUserService, OnModuleInit {
           score += (matched / allRequiredSkills.size) * 30;
         }
 
-        // Factor 3: Job title match — employee's current job + experience titles vs open position titles (0–20)
-        const allEmpTitles = [
-          (emp.job ?? '').toLowerCase(),
-          ...(emp.experiences ?? []).map((e) => (e.title ?? '').toLowerCase()),
-        ].filter(Boolean);
-        if (allEmpTitles.length > 0 && jobTitleWords.length > 0) {
-          const empTitleAllWords = allEmpTitles.flatMap((t) =>
-            t.split(/\s+/).filter((w) => w.length > 3),
+        // Factor 3: Job title semantic match (0–20)
+        // Uses pgvector cosine similarity between employee's job title/position
+        // and the company's open position titles.
+        // Falls back to keyword overlap when embeddings are missing.
+        const empJobEmbeddingCandidate = parseEmbedding(
+          (emp as any)?.jobEmbedding,
+        );
+        if (empJobEmbeddingCandidate) {
+          score += jobTitleSimilarityScore(
+            empJobEmbeddingCandidate,
+            jobs as any[],
+            20,
           );
-          const matched = empTitleAllWords.filter((w) =>
-            jobTitleWords.includes(w),
-          ).length;
-          const ratio = Math.min(
-            1,
-            matched / Math.max(jobTitleWords.length, empTitleAllWords.length),
-          );
-          score += ratio * 20;
+        } else {
+          // Keyword fallback
+          const allEmpTitles = [
+            (emp.job ?? '').toLowerCase(),
+            ...(emp.experiences ?? []).map((e) =>
+              (e.title ?? '').toLowerCase(),
+            ),
+          ].filter(Boolean);
+          if (allEmpTitles.length > 0 && jobTitleWords.length > 0) {
+            const empTitleAllWords = allEmpTitles.flatMap((t) =>
+              t.split(/\s+/).filter((w) => w.length > 3),
+            );
+            const matched = empTitleAllWords.filter((w) =>
+              jobTitleWords.includes(w),
+            ).length;
+            const ratio = Math.min(
+              1,
+              matched / Math.max(jobTitleWords.length, empTitleAllWords.length),
+            );
+            score += ratio * 20;
+          }
         }
 
         // Factor 4: Description / profile content match (0–10)
@@ -1289,16 +1331,10 @@ export class UserService implements IUserService, OnModuleInit {
       await this.redisService.set(cacheKey, recommendations, CACHE_TTL.LONG);
       return recommendations;
     } catch (error) {
-      this.logger.error(
-        (error as Error).message ||
-          'An error occurred while getting company recommendations.',
+      this.logger.warn(
+        `Company recommendations unavailable for ${companyId}: ${(error as Error).message}`,
       );
-      throw new RpcException({
-        statusCode: 500,
-        message:
-          (error as Error).message ||
-          'An error occurred while getting company recommendations.',
-      });
+      return [];
     }
   }
 

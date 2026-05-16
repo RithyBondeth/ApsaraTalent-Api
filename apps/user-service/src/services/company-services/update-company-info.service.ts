@@ -5,6 +5,7 @@ import { Job } from '@app/common/database/entities/company/job.entity';
 import { Value } from '@app/common/database/entities/company/value.entity';
 import { Social } from '@app/common/database/entities/social.entity';
 import { User } from '@app/common/database/entities/user.entity';
+import { EmbeddingService } from '@app/common/embedding/embedding.service';
 import { RedisService } from '@app/common/redis/redis.service';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
@@ -36,6 +37,7 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly logger: PinoLogger,
     private readonly redisService: RedisService,
+    private readonly embeddingService: EmbeddingService,
   ) {}
 
   async updateCompanyInfo(
@@ -198,17 +200,52 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
             });
 
             if (existing) {
+              const previousTitle = existing.title;
               const { id: _, ...updateData } = jobDto;
               Object.assign(existing, updateData);
               await this.jobRepository.save(existing);
+
+              // Re-embed when title changes.
+              if (updateData.title && updateData.title !== previousTitle) {
+                this.embeddingService
+                  .embedAsVector(updateData.title as string)
+                  .then((vector) =>
+                    this.jobRepository.query(
+                      `UPDATE job SET "titleEmbedding" = $1::vector WHERE id = $2`,
+                      [vector, jobId],
+                    ),
+                  )
+                  .catch((err: Error) =>
+                    this.logger.warn(
+                      `Failed to embed job title "${updateData.title as string}": ${err.message}`,
+                    ),
+                  );
+              }
             }
           } else {
-            await this.jobRepository.save(
+            const created = (await this.jobRepository.save(
               this.jobRepository.create({
                 ...jobDto,
                 company,
               }),
-            );
+            )) as unknown as Job;
+
+            // Fire-and-forget: embed the new job title for semantic recommendation matching.
+            if (created.title) {
+              this.embeddingService
+                .embedAsVector(created.title)
+                .then((vector) =>
+                  this.jobRepository.query(
+                    `UPDATE job SET "titleEmbedding" = $1::vector WHERE id = $2`,
+                    [vector, created.id],
+                  ),
+                )
+                .catch((err: Error) =>
+                  this.logger.warn(
+                    `Failed to embed job title "${created.title}": ${err.message}`,
+                  ),
+                );
+            }
           }
         }
       }
@@ -239,6 +276,22 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
               }),
             );
             finalIds.push(created.id);
+
+            // Generate and persist the semantic embedding asynchronously.
+            // Fire-and-forget: don't block the profile update response.
+            this.embeddingService
+              .embedAsVector(cs.name)
+              .then((vector) =>
+                this.careerScopeRepository.query(
+                  `UPDATE career_scope SET embedding = $1::vector WHERE id = $2`,
+                  [vector, created.id],
+                ),
+              )
+              .catch((err: Error) =>
+                this.logger.warn(
+                  `Failed to embed career scope "${cs.name}": ${err.message}`,
+                ),
+              );
           }
         }
 

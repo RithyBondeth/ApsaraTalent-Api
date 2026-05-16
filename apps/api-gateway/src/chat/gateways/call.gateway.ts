@@ -63,7 +63,8 @@ export class CallGateway implements ICallGateway {
     }
 
     const callerId = client.data.userId as string;
-    const profile = await this.chatNotificationService.getCallerProfile(callerId);
+    const profile =
+      await this.chatNotificationService.getCallerProfile(callerId);
 
     this.server
       .to(callOfferDTO.receiverId)

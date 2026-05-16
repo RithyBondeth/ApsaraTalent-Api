@@ -1,4 +1,3 @@
-
 export class LivenessResponseDTO {
   status: string;
   service: string;

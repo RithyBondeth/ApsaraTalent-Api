@@ -5,6 +5,7 @@ import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Brackets, MoreThan, Repository } from 'typeorm';
+import { SCOPE_SIMILARITY_THRESHOLD } from '@app/common/embedding/embedding.service';
 import { extractSalaryRange } from '@app/utils/functions/extract-salary-range';
 import {
   JobResponseDTO,
@@ -42,10 +43,7 @@ export class JobService implements IJobServiceService {
       const now = new Date();
       const jobs = await this.jobRepo.find({
         relations: ['company', 'company.user'],
-        where: [
-          { expireDate: null },
-          { expireDate: MoreThan(now) },
-        ],
+        where: [{ expireDate: null }, { expireDate: MoreThan(now) }],
         skip,
         take: limit,
         order: { createdAt: 'DESC' },
@@ -210,11 +208,46 @@ export class JobService implements IJobServiceService {
         );
       }
 
-      // Career scopes
+      // Career scopes — semantic similarity via pgvector cosine distance.
+      // A job is included when at least one of its company's career scopes
+      // has a stored embedding semantically close to any of the search scopes.
+      // Jobs from companies whose scopes have no embedding yet are excluded
+      // when a scope filter is active; run the backfill script to cover them.
+      // Career scopes — semantic similarity via pgvector.
+      // Bypasses the TypeORM alias entirely: joins the junction table and
+      // career_scope independently inside a correlated EXISTS so PostgreSQL
+      // never needs to resolve the unmapped `embedding` column via the ORM alias.
       if (careerScopes && careerScopes.length > 0) {
-        query.andWhere('careerScope.name IN (:...careerScopes)', {
-          careerScopes,
-        });
+        query.andWhere(
+          `EXISTS (
+             SELECT 1
+             FROM company_career_scopes_career_scope ccs
+             INNER JOIN career_scope cs_candidate
+               ON cs_candidate.id = ccs."careerScopeId"
+             WHERE ccs."companyId" = company.id
+               AND (
+                 -- Branch A: semantic match via pgvector (when both sides have embeddings)
+                 (
+                   cs_candidate.embedding IS NOT NULL
+                   AND EXISTS (
+                     SELECT 1 FROM career_scope cs_ref
+                     WHERE cs_ref.name IN (:...searchScopes)
+                       AND cs_ref.embedding IS NOT NULL
+                       AND (1 - (cs_candidate.embedding <=> cs_ref.embedding)) > :simThreshold
+                   )
+                 )
+                 OR
+                 -- Branch B: exact name fallback (used while embeddings are being built,
+                 --           or when a scope has no embedding yet). Ensures results are
+                 --           always consistent regardless of embedding availability.
+                 cs_candidate.name IN (:...searchScopes)
+               )
+           )`,
+          {
+            searchScopes: careerScopes,
+            simThreshold: SCOPE_SIMILARITY_THRESHOLD,
+          },
+        );
       }
 
       // Sorting
@@ -222,9 +255,13 @@ export class JobService implements IJobServiceService {
       const sortField = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
 
       if (sortField === 'companySize') {
-        query.orderBy(`company.${sortField}`, sortOrder as 'ASC' | 'DESC');
+        query
+          .orderBy(`company.${sortField}`, sortOrder as 'ASC' | 'DESC')
+          .addOrderBy('job.id', 'ASC');
       } else {
-        query.orderBy(`job.${sortField}`, sortOrder as 'ASC' | 'DESC');
+        query
+          .orderBy(`job.${sortField}`, sortOrder as 'ASC' | 'DESC')
+          .addOrderBy('job.id', 'ASC');
       }
 
       let jobs = await query.getMany();

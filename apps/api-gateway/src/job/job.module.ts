@@ -36,7 +36,6 @@ import { JobMatchingController } from './controllers/matching.controller';
     ]),
     ThrottlerModule,
     JwtModule,
-
   ],
   controllers: [JobController, JobMatchingController, InterviewController],
 })

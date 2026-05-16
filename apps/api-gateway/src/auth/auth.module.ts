@@ -32,7 +32,6 @@ import { LinkedInStrategy } from './socials/strategies/linkedin.strategy';
     ThrottlerModule,
     PassportModule,
     JwtModule,
-
   ],
   controllers: [
     AuthController,

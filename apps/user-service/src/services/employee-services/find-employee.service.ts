@@ -146,7 +146,9 @@ export class FindEmployeeService implements IFindEmployeeService {
     this.logger.info('All employees count cache MISS');
 
     try {
-      const totalEmployees = await this.employeeRepository.count({ where: { isHide: false } });
+      const totalEmployees = await this.employeeRepository.count({
+        where: { isHide: false },
+      });
       const result = { totalEmployees };
 
       await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);

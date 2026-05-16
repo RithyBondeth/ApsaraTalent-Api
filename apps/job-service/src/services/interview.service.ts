@@ -278,7 +278,7 @@ export class InterviewService implements IInterviewService {
             data: {
               interviewId: interview.id,
               senderName: isEmployee
-                ? (interview.employee.username || interview.employee.firstname)
+                ? interview.employee.username || interview.employee.firstname
                 : interview.company.name,
               interviewTitle: interview.title,
               status: updateInterviewDTO.status,

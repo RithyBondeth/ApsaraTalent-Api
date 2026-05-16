@@ -12,6 +12,14 @@ export class CareerScope {
   @Column({ nullable: true })
   description: string;
 
+  @Column({
+    type: 'text',
+    nullable: true,
+    select: false,
+    synchronize: false,
+  } as any)
+  embedding: string | null;
+
   @ManyToMany(() => Employee, (employee) => employee.careerScopes)
   employees: Employee[];
 

@@ -23,7 +23,6 @@ import { ResumeTemplateController } from './controllers/resume-template.controll
     ]),
     UploadfileModule,
     JwtModule,
-
   ],
   controllers: [ResumeBuilderController, ResumeTemplateController],
 })

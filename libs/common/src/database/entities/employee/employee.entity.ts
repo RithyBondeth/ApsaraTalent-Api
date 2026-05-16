@@ -69,6 +69,14 @@ export class Employee {
   @Column({ nullable: true })
   coverLetter: string;
 
+  @Column({
+    type: 'text',
+    nullable: true,
+    select: false,
+    synchronize: false,
+  } as any)
+  jobEmbedding: string | null;
+
   @ManyToMany(() => Skill, (skill) => skill.employees)
   @JoinTable()
   skills: Skill[];

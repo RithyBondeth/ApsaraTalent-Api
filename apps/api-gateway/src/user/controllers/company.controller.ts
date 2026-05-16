@@ -85,7 +85,14 @@ export class CompanyController implements ICompanyController {
   }
 
   @Post('upload-avatar/:companyId')
-  @UseInterceptors(new UploadFileInterceptor('avatar', 'company-avatars', ALLOWED_IMAGE_MIME_TYPES, MAX_IMAGE_SIZE_BYTES))
+  @UseInterceptors(
+    new UploadFileInterceptor(
+      'avatar',
+      'company-avatars',
+      ALLOWED_IMAGE_MIME_TYPES,
+      MAX_IMAGE_SIZE_BYTES,
+    ),
+  )
   async uploadCompanyAvatar(
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @UploadedFile() avatar: Express.Multer.File,
@@ -109,7 +116,14 @@ export class CompanyController implements ICompanyController {
   }
 
   @Post('upload-cover/:companyId')
-  @UseInterceptors(new UploadFileInterceptor('cover', 'company-covers', ALLOWED_IMAGE_MIME_TYPES, MAX_IMAGE_SIZE_BYTES))
+  @UseInterceptors(
+    new UploadFileInterceptor(
+      'cover',
+      'company-covers',
+      ALLOWED_IMAGE_MIME_TYPES,
+      MAX_IMAGE_SIZE_BYTES,
+    ),
+  )
   async uploadCompanyCover(
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @UploadedFile() cover: Express.Multer.File,
@@ -133,7 +147,15 @@ export class CompanyController implements ICompanyController {
   }
 
   @Post('upload-images/:companyId')
-  @UseInterceptors(UploadFilesInterceptor('images', 'company-images', 5, ALLOWED_IMAGE_MIME_TYPES, MAX_IMAGE_SIZE_BYTES))
+  @UseInterceptors(
+    UploadFilesInterceptor(
+      'images',
+      'company-images',
+      5,
+      ALLOWED_IMAGE_MIME_TYPES,
+      MAX_IMAGE_SIZE_BYTES,
+    ),
+  )
   async uploadCompanyImages(
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @UploadedFiles() images: Express.Multer.File[],

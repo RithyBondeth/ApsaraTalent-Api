@@ -723,27 +723,33 @@ export class MatchingService implements IMatchingService {
       Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 11, 1),
     );
 
-    const rows: { month: string; likes: string; received: string; matches: string }[] =
-      await this.jobMatchingRepo
-        .createQueryBuilder('jm')
-        .select([
-          `TO_CHAR(DATE_TRUNC('month', jm."createdAt"), 'YYYY-MM') as month`,
-          `SUM(CASE WHEN jm."${likeGivenField}" = true THEN 1 ELSE 0 END) as likes`,
-          `SUM(CASE WHEN jm."${likeReceivedField}" = true THEN 1 ELSE 0 END) as received`,
-          `SUM(CASE WHEN jm."isMatched" = true THEN 1 ELSE 0 END) as matches`,
-        ])
-        .where(`jm."${entityField}Id" = :userId`, { userId })
-        .andWhere('jm."createdAt" >= :startOfWindow', { startOfWindow })
-        .groupBy(`DATE_TRUNC('month', jm."createdAt")`)
-        .orderBy(`DATE_TRUNC('month', jm."createdAt")`, 'ASC')
-        .getRawMany();
+    const rows: {
+      month: string;
+      likes: string;
+      received: string;
+      matches: string;
+    }[] = await this.jobMatchingRepo
+      .createQueryBuilder('jm')
+      .select([
+        `TO_CHAR(DATE_TRUNC('month', jm."createdAt"), 'YYYY-MM') as month`,
+        `SUM(CASE WHEN jm."${likeGivenField}" = true THEN 1 ELSE 0 END) as likes`,
+        `SUM(CASE WHEN jm."${likeReceivedField}" = true THEN 1 ELSE 0 END) as received`,
+        `SUM(CASE WHEN jm."isMatched" = true THEN 1 ELSE 0 END) as matches`,
+      ])
+      .where(`jm."${entityField}Id" = :userId`, { userId })
+      .andWhere('jm."createdAt" >= :startOfWindow', { startOfWindow })
+      .groupBy(`DATE_TRUNC('month', jm."createdAt")`)
+      .orderBy(`DATE_TRUNC('month', jm."createdAt")`, 'ASC')
+      .getRawMany();
 
     // Build a full 12-month map so months with zero activity are included
     const dataMap = new Map(rows.map((r) => [r.month, r]));
     const result: MonthlyActivityItemDTO[] = [];
 
     for (let i = 11; i >= 0; i--) {
-      const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+      const d = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1),
+      );
       const label = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
       const row = dataMap.get(label);
       result.push(
@@ -792,7 +798,10 @@ export class MatchingService implements IMatchingService {
     });
   }
 
-  private computeSkillScore(employee: Employee, company: Company): number | null {
+  private computeSkillScore(
+    employee: Employee,
+    company: Company,
+  ): number | null {
     const employeeSkills = (employee.skills ?? []).map((s) =>
       s.name.toLowerCase().trim(),
     );
