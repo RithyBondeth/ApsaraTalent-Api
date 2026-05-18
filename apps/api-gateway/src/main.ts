@@ -99,6 +99,14 @@ async function bootstrap() {
   // Enable Socket.IO WS adapter — required for ChatGateway realtime sync
   app.useWebSocketAdapter(new IoAdapter(app));
 
+  // Allow cross-origin loading of stored assets (avatars, covers, resumes, etc.)
+  // Helmet's default Cross-Origin-Resource-Policy: same-origin would block <img>
+  // tags and fetch() from the frontend (different port/origin) from loading files.
+  app.use('/storage', (_req: any, res: any, next: any) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+  });
+
   // Serve uploaded chat attachments publicly via /storage path
   app.useStaticAssets(join(process.cwd(), 'storage'), { prefix: '/storage' });
 

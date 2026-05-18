@@ -1,5 +1,6 @@
 import { IBasicAuthController } from '@app/contracts/interfaces/controller/auth-controller.interface';
 import { ThrottlerGuard } from '@app/common/throttler/guards/throttler.guard';
+import { AuthGuard } from '@app/common/guards/auth.guard';
 import {
   Body,
   Controller,
@@ -9,11 +10,12 @@ import {
   Inject,
   Param,
   Post,
+  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
 import {
   CompanyRegisterDTO,
@@ -34,9 +36,17 @@ import {
   EmployeeRegisterResponseDTO,
   VerifyOtpResponseDTO,
   VerifyEmailDTO,
+  TwoFactorSetupResponseDTO,
+  TwoFactorEnableDTO,
+  TwoFactorEnableResponseDTO,
+  TwoFactorDisableDTO,
+  TwoFactorDisableResponseDTO,
+  TwoFactorVerifyLoginDTO,
+  TwoFactorVerifyLoginResponseDTO,
 } from '@app/contracts/dtos/auth';
 import { setAuthTokenCookies } from '../../utils/auth-cookie.util';
 import { sendAuthServiceRequest } from '../../utils/auth-rpc.util';
+import { User } from '@app/common/database/entities/user.entity';
 
 @Controller('auth')
 export class AuthController implements IBasicAuthController {
@@ -77,20 +87,31 @@ export class AuthController implements IBasicAuthController {
     @Body() loginDTO: LoginDTO,
     @Res({ passthrough: true }) res: Response,
   ): Promise<LoginResponseDTO> {
-    const { accessToken, refreshToken, user, message } =
-      await sendAuthServiceRequest<LoginResponseDTO>(
-        this.authClient,
-        AUTH_SERVICE.ACTIONS.LOGIN,
-        loginDTO,
-      );
+    const response = await sendAuthServiceRequest<LoginResponseDTO>(
+      this.authClient,
+      AUTH_SERVICE.ACTIONS.LOGIN,
+      loginDTO,
+    );
 
-    setAuthTokenCookies(res, { accessToken, refreshToken });
+    // 2FA gate — do not issue cookies; return challenge to frontend
+    if (response.requiresTwoFactor) {
+      return new LoginResponseDTO({
+        message: response.message,
+        requiresTwoFactor: true,
+        userId: response.userId,
+      });
+    }
+
+    setAuthTokenCookies(res, {
+      accessToken: response.accessToken!,
+      refreshToken: response.refreshToken,
+    });
 
     return new LoginResponseDTO({
-      message,
-      refreshToken,
-      accessToken,
-      user,
+      message: response.message,
+      refreshToken: response.refreshToken,
+      accessToken: response.accessToken,
+      user: response.user,
     });
   }
 
@@ -195,6 +216,74 @@ export class AuthController implements IBasicAuthController {
       AUTH_SERVICE.ACTIONS.VERIFY_EMAIL,
       emailVerificationToken,
     );
+  }
+
+  /** Initiate 2FA setup — generates TOTP secret and QR code URI. Requires auth. */
+  @Post('2fa/setup')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard)
+  async twoFactorSetup(
+    @Req() req: Request,
+  ): Promise<TwoFactorSetupResponseDTO> {
+    const user = req.user as User;
+    return await sendAuthServiceRequest<TwoFactorSetupResponseDTO>(
+      this.authClient,
+      AUTH_SERVICE.ACTIONS.TWO_FACTOR_SETUP,
+      { userId: user.id },
+    );
+  }
+
+  /** Confirm TOTP code and activate 2FA on the account. Requires auth. */
+  @Post('2fa/enable')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard)
+  async twoFactorEnable(
+    @Req() req: Request,
+    @Body() twoFactorEnableDTO: Pick<TwoFactorEnableDTO, 'otp'>,
+  ): Promise<TwoFactorEnableResponseDTO> {
+    const user = req.user as User;
+    return await sendAuthServiceRequest<TwoFactorEnableResponseDTO>(
+      this.authClient,
+      AUTH_SERVICE.ACTIONS.TWO_FACTOR_ENABLE,
+      { userId: user.id, otp: twoFactorEnableDTO.otp },
+    );
+  }
+
+  /** Verify TOTP code and disable 2FA on the account. Requires auth. */
+  @Post('2fa/disable')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard)
+  async twoFactorDisable(
+    @Req() req: Request,
+    @Body() twoFactorDisableDTO: Pick<TwoFactorDisableDTO, 'otp'>,
+  ): Promise<TwoFactorDisableResponseDTO> {
+    const user = req.user as User;
+    return await sendAuthServiceRequest<TwoFactorDisableResponseDTO>(
+      this.authClient,
+      AUTH_SERVICE.ACTIONS.TWO_FACTOR_DISABLE,
+      { userId: user.id, otp: twoFactorDisableDTO.otp },
+    );
+  }
+
+  /** Verify TOTP code after password login when 2FA is required. Public route. */
+  @Post('2fa/verify-login')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(ThrottlerGuard)
+  async twoFactorVerifyLogin(
+    @Body() twoFactorVerifyLoginDTO: TwoFactorVerifyLoginDTO,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<TwoFactorVerifyLoginResponseDTO> {
+    const response =
+      await sendAuthServiceRequest<TwoFactorVerifyLoginResponseDTO>(
+        this.authClient,
+        AUTH_SERVICE.ACTIONS.TWO_FACTOR_VERIFY_LOGIN,
+        twoFactorVerifyLoginDTO,
+      );
+    setAuthTokenCookies(res, {
+      accessToken: response.accessToken,
+      refreshToken: response.refreshToken,
+    });
+    return response;
   }
 
   /** Returns Twilio TURN credentials for WebRTC peer connections. */

@@ -29,6 +29,7 @@ import { LoginController } from './basic/controllers/login.controller';
 import { RefreshTokenController } from './basic/controllers/refresh-token.controller';
 import { RegisterController } from './basic/controllers/register.controller';
 import { ResetPasswordController } from './basic/controllers/reset-password.controller';
+import { TwoFactorController } from './basic/controllers/two-factor.controller';
 import { VerifyEmailController } from './basic/controllers/verify-email.controller';
 import { ForgotPasswordService } from './basic/services/forgot-password.service';
 import { LoginOTPService } from './basic/services/login-otp.service';
@@ -36,6 +37,7 @@ import { LoginService } from './basic/services/login.service';
 import { RefreshTokenService } from './basic/services/refresh-token.service';
 import { RegisterService } from './basic/services/register.service';
 import { ResetPasswordService } from './basic/services/reset-password.service';
+import { TwoFactorService } from './basic/services/two-factor.service';
 import { VerifyEmailService } from './basic/services/verify-email.service';
 import { AuthHealthController } from './health/health.controller';
 import { FacebookAuthController } from './socials/controllers/facebook-auth.controller';
@@ -58,6 +60,7 @@ import {
   I_REFRESH_TOKEN_SERVICE,
   I_REGISTER_SERVICE,
   I_RESET_PASSWORD_SERVICE,
+  I_TWO_FACTOR_SERVICE,
   I_VERIFY_EMAIL_SERVICE,
 } from '@app/contracts/interfaces/service/auth-service.interface';
 
@@ -105,6 +108,7 @@ import {
     ResetPasswordController,
     RefreshTokenController,
     VerifyEmailController,
+    TwoFactorController,
     AuthHealthController,
     GoogleAuthController,
     LinkedInAuthController,
@@ -119,6 +123,7 @@ import {
     { provide: I_RESET_PASSWORD_SERVICE, useClass: ResetPasswordService },
     { provide: I_REFRESH_TOKEN_SERVICE, useClass: RefreshTokenService },
     { provide: I_VERIFY_EMAIL_SERVICE, useClass: VerifyEmailService },
+    { provide: I_TWO_FACTOR_SERVICE, useClass: TwoFactorService },
     { provide: I_GOOGLE_AUTH_SERVICE, useClass: GoogleAuthService },
     { provide: I_LINKEDIN_AUTH_SERVICE, useClass: LinkedInAuthService },
     { provide: I_GITHUB_AUTH_SERVICE, useClass: GithubAuthService },

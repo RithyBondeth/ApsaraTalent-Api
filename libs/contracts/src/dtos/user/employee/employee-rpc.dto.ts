@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  Allow,
   IsNumber,
   IsOptional,
   IsUUID,
@@ -47,14 +48,17 @@ export class UpdateEmployeeInfoRequestDTO extends EmployeeIdDTO {
 }
 
 export class UploadEmployeeAvatarDTO extends EmployeeIdDTO {
+  @Allow()
   avatar: Express.Multer.File;
 }
 
 export class UploadEmployeeResumeDTO extends EmployeeIdDTO {
+  @Allow()
   resume: Express.Multer.File;
 }
 
 export class UploadEmployeeCoverLetterDTO extends EmployeeIdDTO {
+  @Allow()
   coverLetter: Express.Multer.File;
 }
 

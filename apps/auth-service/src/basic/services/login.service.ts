@@ -58,6 +58,15 @@ export class LoginService implements ILoginService {
           statusCode: 403,
         });
 
+      // If 2FA is enabled, return a challenge instead of issuing tokens
+      if (user.isTwoFactorEnabled) {
+        return new LoginResponseDTO({
+          message: 'Two-factor authentication required',
+          requiresTwoFactor: true,
+          userId: user.id,
+        });
+      }
+
       //Generate tokens
       const payload: IPayload = {
         id: user.id,

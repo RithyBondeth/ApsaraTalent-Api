@@ -17,14 +17,16 @@ import {
   LoginOtpDTO,
   LoginOtpResponseDTO,
   VerifyEmailDTO,
-  GoogleAuthDTO,
-  LinkedInAuthDTO,
-  GoogleLoginResponseDTO,
-  LinkedInLoginResponseDTO,
-  GithubAuthDTO,
-  GithubLoginResponseDTO,
+  TwoFactorSetupResponseDTO,
+  TwoFactorEnableDTO,
+  TwoFactorEnableResponseDTO,
+  TwoFactorDisableDTO,
+  TwoFactorDisableResponseDTO,
+  TwoFactorVerifyLoginDTO,
+  TwoFactorVerifyLoginResponseDTO,
+  TwoFactorSetupDTO,
 } from '@app/contracts/dtos/auth';
-import { Response } from 'express';
+import { Response, Request } from 'express';
 
 export interface IBasicAuthLoginController {
   login(loginDTO: LoginDTO, res: Response): Promise<LoginResponseDTO>;
@@ -115,6 +117,37 @@ export interface IBasicAuthLoginOTPRpcController {
   verifyOtp(verifyOtpDTO: VerifyOtpDTO): Promise<VerifyOtpResponseDTO>;
 }
 
+export interface IBasicAuthTwoFactorController {
+  twoFactorSetup(req: Request): Promise<TwoFactorSetupResponseDTO>;
+  twoFactorEnable(
+    req: Request,
+    twoFactorEnableDTO: Pick<TwoFactorEnableDTO, 'otp'>,
+  ): Promise<TwoFactorEnableResponseDTO>;
+  twoFactorDisable(
+    req: Request,
+    twoFactorDisableDTO: Pick<TwoFactorDisableDTO, 'otp'>,
+  ): Promise<TwoFactorDisableResponseDTO>;
+  twoFactorVerifyLogin(
+    twoFactorVerifyLoginDTO: TwoFactorVerifyLoginDTO,
+    res: Response,
+  ): Promise<TwoFactorVerifyLoginResponseDTO>;
+}
+
+export interface IBasicAuthTwoFactorRpcController {
+  twoFactorSetup(
+    twoFactorSetupDTO: TwoFactorSetupDTO,
+  ): Promise<TwoFactorSetupResponseDTO>;
+  twoFactorEnable(
+    twoFactorEnableDTO: Pick<TwoFactorEnableDTO, 'otp'>,
+  ): Promise<TwoFactorEnableResponseDTO>;
+  twoFactorDisable(
+    twoFactorDisableDTO: Pick<TwoFactorDisableDTO, 'otp'>,
+  ): Promise<TwoFactorDisableResponseDTO>;
+  twoFactorVerifyLogin(
+    twoFactorVerifyLoginDTO: TwoFactorVerifyLoginDTO,
+  ): Promise<TwoFactorVerifyLoginResponseDTO>;
+}
+
 export interface IBasicAuthIceServersController {
   getIceServers(): Promise<{ iceServers: object[] }>;
 }
@@ -128,7 +161,8 @@ export interface IBasicAuthController
     IBasicAuthRefreshTokenController,
     IBasicAuthVerifyEmailController,
     IBasicAuthIceServersController,
-    IBasicAuthLoginOTPController {}
+    IBasicAuthLoginOTPController,
+    IBasicAuthTwoFactorController {}
 
 export interface IGoogleAuthMicroserviceController {
   googleAuth(params?: any): Promise<any>;

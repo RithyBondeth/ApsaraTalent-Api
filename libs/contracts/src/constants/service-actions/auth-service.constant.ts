@@ -14,5 +14,9 @@ export const AUTH_SERVICE = {
     LINKEDIN_AUTH: { cmd: 'linkedin-auth' },
     GITHUB_AUTH: { cmd: 'github-auth' },
     FACEBOOK_AUTH: { cmd: 'facebook-auth' },
+    TWO_FACTOR_SETUP: { cmd: '2fa-setup' },
+    TWO_FACTOR_ENABLE: { cmd: '2fa-enable' },
+    TWO_FACTOR_DISABLE: { cmd: '2fa-disable' },
+    TWO_FACTOR_VERIFY_LOGIN: { cmd: '2fa-verify-login' },
   },
 };

@@ -13,9 +13,11 @@ export class LoginDTO {
 }
 
 export class LoginResponseDTO extends CoreResponseDTO {
-  accessToken: string;
-  refreshToken: string;
-  user: UserResponseDTO;
+  accessToken?: string;
+  refreshToken?: string;
+  user?: UserResponseDTO;
+  requiresTwoFactor?: boolean;
+  userId?: string;
 
   constructor(partial: Partial<LoginResponseDTO>) {
     super(partial);

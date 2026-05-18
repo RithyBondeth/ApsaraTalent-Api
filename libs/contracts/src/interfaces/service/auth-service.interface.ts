@@ -25,6 +25,14 @@ import {
   GoogleLoginResponseDTO,
   LinkedInLoginResponseDTO,
   VerifyEmailDTO,
+  TwoFactorSetupDTO,
+  TwoFactorSetupResponseDTO,
+  TwoFactorEnableDTO,
+  TwoFactorEnableResponseDTO,
+  TwoFactorDisableDTO,
+  TwoFactorDisableResponseDTO,
+  TwoFactorVerifyLoginDTO,
+  TwoFactorVerifyLoginResponseDTO,
 } from '@app/contracts/dtos/auth';
 
 export const I_LOGIN_SERVICE = 'ILoginService';
@@ -39,6 +47,8 @@ export const I_GOOGLE_AUTH_SERVICE = 'IGoogleAuthService';
 export const I_LINKEDIN_AUTH_SERVICE = 'ILinkedInAuthService';
 export const I_GITHUB_AUTH_SERVICE = 'IGithubAuthService';
 export const I_FACEBOOK_AUTH_SERVICE = 'IFacebookAuthService';
+
+export const I_TWO_FACTOR_SERVICE = 'ITwoFactorService';
 
 export interface ILoginService {
   login(loginDTO: LoginDTO): Promise<LoginResponseDTO>;
@@ -98,4 +108,19 @@ export interface IFacebookAuthService {
   facebookLogin(
     facebookDataDTO: FacebookAuthDTO,
   ): Promise<FacebookLoginResponseDTO>;
+}
+
+export interface ITwoFactorService {
+  twoFactorSetup(
+    twoFactorSetupDTO: TwoFactorSetupDTO,
+  ): Promise<TwoFactorSetupResponseDTO>;
+  twoFactorEnable(
+    twoFactorEnableDTO: TwoFactorEnableDTO,
+  ): Promise<TwoFactorEnableResponseDTO>;
+  twoFactorDisable(
+    twoFactorDisableDTO: TwoFactorDisableDTO,
+  ): Promise<TwoFactorDisableResponseDTO>;
+  twoFactorVerifyLogin(
+    twoFactorVerifyLoginDTO: TwoFactorVerifyLoginDTO,
+  ): Promise<TwoFactorVerifyLoginResponseDTO>;
 }
