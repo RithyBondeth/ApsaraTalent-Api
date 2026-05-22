@@ -5,6 +5,16 @@ import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/service-actions
 import {
   BuildResumeDTO,
   BuildResumeResponseDTO,
+  GenerateCoverLetterDTO,
+  GenerateCoverLetterResponseDTO,
+  PolishCoverLetterDTO,
+  PolishCoverLetterResponseDTO,
+  GenerateCoverLetterPdfDTO,
+  GenerateCoverLetterPdfResponseDTO,
+  GenerateInterviewPrepPdfDTO,
+  GenerateInterviewPrepPdfResponseDTO,
+  OptimizeResumeDTO,
+  OptimizeResumeResponseDTO,
 } from '@app/contracts/dtos/resume';
 import {
   I_RESUME_BUILDER_SERVICE,
@@ -23,5 +33,48 @@ export class ResumeBuilderController implements IResumeBuilderRpcController {
     @Payload() buildResumeDTO: BuildResumeDTO,
   ): Promise<BuildResumeResponseDTO> {
     return await this.resumeBuilderService.buildResume(buildResumeDTO);
+  }
+
+  @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.OPTIMIZE_RESUME)
+  async optimizeResume(
+    @Payload() optimizeResumeDTO: OptimizeResumeDTO,
+  ): Promise<OptimizeResumeResponseDTO> {
+    return await this.resumeBuilderService.optimizeResume(optimizeResumeDTO);
+  }
+
+  @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.GENERATE_COVER_LETTER)
+  async generateCoverLetter(
+    @Payload() generateCoverLetterDTO: GenerateCoverLetterDTO,
+  ): Promise<GenerateCoverLetterResponseDTO> {
+    return await this.resumeBuilderService.generateCoverLetter(
+      generateCoverLetterDTO,
+    );
+  }
+
+  @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.POLISH_COVER_LETTER)
+  async polishCoverLetter(
+    @Payload() polishCoverLetterDTO: PolishCoverLetterDTO,
+  ): Promise<PolishCoverLetterResponseDTO> {
+    return await this.resumeBuilderService.polishCoverLetter(
+      polishCoverLetterDTO,
+    );
+  }
+
+  @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.GENERATE_COVER_LETTER_PDF)
+  async generateCoverLetterPdf(
+    @Payload() generateCoverLetterPdfDTO: GenerateCoverLetterPdfDTO,
+  ): Promise<GenerateCoverLetterPdfResponseDTO> {
+    return await this.resumeBuilderService.generateCoverLetterPdf(
+      generateCoverLetterPdfDTO,
+    );
+  }
+
+  @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.GENERATE_INTERVIEW_PREP_PDF)
+  async generateInterviewPrepPdf(
+    @Payload() generateInterviewPrepPdfDTO: GenerateInterviewPrepPdfDTO,
+  ): Promise<GenerateInterviewPrepPdfResponseDTO> {
+    return await this.resumeBuilderService.generateInterviewPrepPdf(
+      generateInterviewPrepPdfDTO,
+    );
   }
 }

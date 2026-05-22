@@ -1,4 +1,17 @@
-import { BuildResumeDTO, BuildResumeResponseDTO } from '@app/contracts/dtos';
+import {
+  BuildResumeDTO,
+  BuildResumeResponseDTO,
+  OptimizeResumeDTO,
+  OptimizeResumeResponseDTO,
+  GenerateCoverLetterDTO,
+  GenerateCoverLetterResponseDTO,
+  PolishCoverLetterDTO,
+  PolishCoverLetterResponseDTO,
+  GenerateCoverLetterPdfDTO,
+  GenerateCoverLetterPdfResponseDTO,
+  GenerateInterviewPrepPdfDTO,
+  GenerateInterviewPrepPdfResponseDTO,
+} from '@app/contracts/dtos';
 import {
   CreateResumeTemplateDTO,
   CreateResumeTemplateResponseDTO,
@@ -25,6 +38,21 @@ export interface IResumeTemplateRpcController extends IResumeTemplateController 
 
 export interface IResumeBuilderController {
   buildResume(buildResumeDTO: BuildResumeDTO): Promise<BuildResumeResponseDTO>;
+  optimizeResume(
+    optimizeResumeDTO: OptimizeResumeDTO,
+  ): Promise<OptimizeResumeResponseDTO>;
+  generateCoverLetter(
+    generateCoverLetterDTO: GenerateCoverLetterDTO,
+  ): Promise<GenerateCoverLetterResponseDTO>;
+  polishCoverLetter(
+    polishCoverLetterDTO: PolishCoverLetterDTO,
+  ): Promise<PolishCoverLetterResponseDTO>;
+  generateCoverLetterPdf(
+    generateCoverLetterPdfDTO: GenerateCoverLetterPdfDTO,
+  ): Promise<GenerateCoverLetterPdfResponseDTO>;
+  generateInterviewPrepPdf(
+    generateInterviewPrepPdfDTO: GenerateInterviewPrepPdfDTO,
+  ): Promise<GenerateInterviewPrepPdfResponseDTO>;
 }
 
 export interface IResumeBuilderRpcController extends IResumeBuilderController {}

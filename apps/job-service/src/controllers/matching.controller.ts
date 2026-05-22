@@ -11,6 +11,10 @@ import {
   MatchAnalyticsDTO,
   FindCurrentMatchingResponseDTO,
   FindCurrentLikeResponseDTO,
+  AiMatchExplanationDTO,
+  AiMatchExplanationResponseDTO,
+  AiInterviewPrepDTO,
+  AiInterviewPrepResponseDTO,
 } from '@app/contracts/dtos/job';
 import {
   I_MATCHING_SERVICE,
@@ -94,5 +98,19 @@ export class MatchingController implements IMatchingRpcController {
     @Payload() matchAnalyticsDTO: MatchAnalyticsDTO,
   ): Promise<AnalyticsResponseDTO> {
     return this.matchingService.getAnalytics(matchAnalyticsDTO);
+  }
+
+  @MessagePattern(JOB_SERVICE.ACTIONS.AI_MATCH_EXPLANATION)
+  async getAiMatchExplanation(
+    @Payload() aiMatchExplanationDTO: AiMatchExplanationDTO,
+  ): Promise<AiMatchExplanationResponseDTO> {
+    return this.matchingService.getAiMatchExplanation(aiMatchExplanationDTO);
+  }
+
+  @MessagePattern(JOB_SERVICE.ACTIONS.AI_INTERVIEW_PREP)
+  async getAiInterviewPrep(
+    @Payload() aiInterviewPrepDTO: AiInterviewPrepDTO,
+  ): Promise<AiInterviewPrepResponseDTO> {
+    return this.matchingService.getAiInterviewPrep(aiInterviewPrepDTO);
   }
 }

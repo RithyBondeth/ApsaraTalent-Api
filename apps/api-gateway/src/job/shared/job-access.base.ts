@@ -54,4 +54,23 @@ export abstract class JobAccessBase {
       );
     }
   }
+
+  protected async assertMatchParticipantAccess(
+    requestUserId: string,
+    eid: string,
+    cid: string,
+  ): Promise<void> {
+    if (!requestUserId) {
+      throw new ForbiddenException('Unauthorized request.');
+    }
+
+    const profile = await this.getCurrentUserProfile(requestUserId);
+
+    if (profile?.role === 'employee' && profile?.employee?.id === eid) return;
+    if (profile?.role === 'company' && profile?.company?.id === cid) return;
+
+    throw new ForbiddenException(
+      'You do not have permission to access this resource.',
+    );
+  }
 }

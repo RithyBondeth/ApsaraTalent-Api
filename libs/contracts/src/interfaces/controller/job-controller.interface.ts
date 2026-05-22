@@ -16,6 +16,10 @@ import {
   EmployeeMatchLookupDTO,
   CompanyMatchLookupDTO,
   MatchAnalyticsDTO,
+  AiMatchExplanationDTO,
+  AiMatchExplanationResponseDTO,
+  AiInterviewPrepDTO,
+  AiInterviewPrepResponseDTO,
 } from '@app/contracts/dtos/job';
 import { FindCurrentLikeResponseDTO } from '@app/contracts/dtos/job/matching/find-current-like.dto';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
@@ -92,6 +96,16 @@ export interface IMatchingController {
     req?: any,
   ): Promise<MatchCountResponseDTO>;
   getAnalytics(id: string, role: string): Promise<AnalyticsResponseDTO>;
+  getAiMatchExplanation(
+    eid: string,
+    cid: string,
+    req?: any,
+  ): Promise<AiMatchExplanationResponseDTO>;
+  getAiInterviewPrep(
+    eid: string,
+    cid: string,
+    req?: any,
+  ): Promise<AiInterviewPrepResponseDTO>;
 }
 
 export interface IMatchingRpcController {
@@ -118,4 +132,10 @@ export interface IMatchingRpcController {
   getAnalytics(
     matchAnalyticsDTO: MatchAnalyticsDTO,
   ): Promise<AnalyticsResponseDTO>;
+  getAiMatchExplanation(
+    aiMatchExplanationDTO: AiMatchExplanationDTO,
+  ): Promise<AiMatchExplanationResponseDTO>;
+  getAiInterviewPrep(
+    aiInterviewPrepDTO: AiInterviewPrepDTO,
+  ): Promise<AiInterviewPrepResponseDTO>;
 }

@@ -18,6 +18,10 @@ import {
   CompanyMatchLookupDTO,
   EmployeeMatchLookupDTO,
   MatchAnalyticsDTO,
+  AiMatchExplanationDTO,
+  AiMatchExplanationResponseDTO,
+  AiInterviewPrepDTO,
+  AiInterviewPrepResponseDTO,
 } from '@app/contracts/dtos/job';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
 
@@ -54,6 +58,12 @@ export interface IMatchingService {
   getAnalytics(
     matchAnalyticsDTO: MatchAnalyticsDTO,
   ): Promise<AnalyticsResponseDTO>;
+  getAiMatchExplanation(
+    aiMatchExplanationDTO: AiMatchExplanationDTO,
+  ): Promise<AiMatchExplanationResponseDTO>;
+  getAiInterviewPrep(
+    aiInterviewPrepDTO: AiInterviewPrepDTO,
+  ): Promise<AiInterviewPrepResponseDTO>;
 }
 
 export interface IInterviewService {

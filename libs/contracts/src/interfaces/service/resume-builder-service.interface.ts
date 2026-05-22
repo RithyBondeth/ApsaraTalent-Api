@@ -3,6 +3,16 @@ import {
   BuildResumeResponseDTO,
   SearchResumeTemplateDTO,
   SearchResumeTemplateResponseDTO,
+  OptimizeResumeDTO,
+  OptimizeResumeResponseDTO,
+  GenerateCoverLetterDTO,
+  GenerateCoverLetterResponseDTO,
+  PolishCoverLetterDTO,
+  PolishCoverLetterResponseDTO,
+  GenerateCoverLetterPdfDTO,
+  GenerateCoverLetterPdfResponseDTO,
+  GenerateInterviewPrepPdfDTO,
+  GenerateInterviewPrepPdfResponseDTO,
 } from '@app/contracts/dtos';
 import {
   CreateResumeTemplateDTO,
@@ -15,6 +25,21 @@ export const I_RESUME_TEMPLATE_SERVICE = 'IResumeTemplateService';
 
 export interface IResumeBuilderService {
   buildResume(buildResumeDTO: BuildResumeDTO): Promise<BuildResumeResponseDTO>;
+  optimizeResume(
+    optimizeResumeDTO: OptimizeResumeDTO,
+  ): Promise<OptimizeResumeResponseDTO>;
+  generateCoverLetter(
+    generateCoverLetterDTO: GenerateCoverLetterDTO,
+  ): Promise<GenerateCoverLetterResponseDTO>;
+  polishCoverLetter(
+    polishCoverLetterDTO: PolishCoverLetterDTO,
+  ): Promise<PolishCoverLetterResponseDTO>;
+  generateCoverLetterPdf(
+    generateCoverLetterPdfDTO: GenerateCoverLetterPdfDTO,
+  ): Promise<GenerateCoverLetterPdfResponseDTO>;
+  generateInterviewPrepPdf(
+    generateInterviewPrepPdfDTO: GenerateInterviewPrepPdfDTO,
+  ): Promise<GenerateInterviewPrepPdfResponseDTO>;
 }
 
 export interface IResumeTemplateService {

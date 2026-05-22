@@ -4,12 +4,15 @@ import {
   Controller,
   Get,
   Inject,
+  Optional,
   Param,
   ParseUUIDPipe,
   Post,
   Query,
   Req,
   UseGuards,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
@@ -21,6 +24,8 @@ import {
   FindCurrentMatchingResponseDTO,
   FindCurrentLikeResponseDTO,
   MatchDTO,
+  AiMatchExplanationResponseDTO,
+  AiInterviewPrepResponseDTO,
 } from '@app/contracts/dtos/job';
 import { JobAccessBase } from '../shared/job-access.base';
 import { rpcCall } from '../../utils/rpc-call';
@@ -165,6 +170,37 @@ export class JobMatchingController
       this.jobClient,
       JOB_SERVICE.ACTIONS.GET_ANALYTICS,
       analyticsPayload,
+    );
+  }
+
+  @Get('ai-explanation/:eid/:cid')
+  @HttpCode(HttpStatus.OK)
+  async getAiMatchExplanation(
+    @Param('eid', ParseUUIDPipe) eid: string,
+    @Param('cid', ParseUUIDPipe) cid: string,
+    @Req() req?: any,
+  ): Promise<AiMatchExplanationResponseDTO> {
+    await this.assertMatchParticipantAccess(req?.user?.id, eid, cid);
+    return rpcCall<AiMatchExplanationResponseDTO>(
+      this.jobClient,
+      JOB_SERVICE.ACTIONS.AI_MATCH_EXPLANATION,
+      { eid, cid },
+    );
+  }
+
+  @Get('ai-interview-prep/:eid/:cid')
+  @HttpCode(HttpStatus.OK)
+  async getAiInterviewPrep(
+    @Param('eid', ParseUUIDPipe) eid: string,
+    @Param('cid', ParseUUIDPipe) cid: string,
+    @Query('interviewTitle') interviewTitle?: string,
+    @Req() req?: any,
+  ): Promise<AiInterviewPrepResponseDTO> {
+    await this.assertMatchParticipantAccess(req?.user?.id, eid, cid);
+    return rpcCall<AiInterviewPrepResponseDTO>(
+      this.jobClient,
+      JOB_SERVICE.ACTIONS.AI_INTERVIEW_PREP,
+      { eid, cid, interviewTitle },
     );
   }
 }
