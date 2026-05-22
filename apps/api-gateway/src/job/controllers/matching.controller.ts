@@ -4,7 +4,6 @@ import {
   Controller,
   Get,
   Inject,
-  Optional,
   Param,
   ParseUUIDPipe,
   Post,
@@ -16,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
+import { JOB } from '@app/contracts/constants/domain/job.constant';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import {
   MatchResponseDTO,
@@ -185,6 +185,7 @@ export class JobMatchingController
       this.jobClient,
       JOB_SERVICE.ACTIONS.AI_MATCH_EXPLANATION,
       { eid, cid },
+      JOB.AI_CONTROLLER_TIMEOUT,
     );
   }
 
@@ -201,6 +202,7 @@ export class JobMatchingController
       this.jobClient,
       JOB_SERVICE.ACTIONS.AI_INTERVIEW_PREP,
       { eid, cid, interviewTitle },
+      JOB.AI_CONTROLLER_TIMEOUT,
     );
   }
 }
