@@ -5,6 +5,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/service-actions/resume-builder-service.constant';
 import { ResumeBuilderController } from './controllers/resume-builder.controller';
 import { ResumeTemplateController } from './controllers/resume-template.controller';
+import { AiProfileBioService } from './services/ai-profile-bio.service';
 
 @Module({
   imports: [
@@ -25,5 +26,6 @@ import { ResumeTemplateController } from './controllers/resume-template.controll
     JwtModule,
   ],
   controllers: [ResumeBuilderController, ResumeTemplateController],
+  providers: [AiProfileBioService],
 })
 export class ResumeBuilderModule {}

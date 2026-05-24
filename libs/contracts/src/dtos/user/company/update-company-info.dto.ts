@@ -1,11 +1,17 @@
 import { CompanyResponseDTO } from '../../shared/user.dto';
+import { EWorkMode } from '@app/common/database/enums/work-mode.enum';
+import { ECompanyType } from '@app/common/database/enums/company-type.enum';
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsDate,
+  IsEnum,
+  IsInt,
   IsNumber,
   IsOptional,
   IsPositive,
   IsString,
+  IsUrl,
   ValidateNested,
 } from 'class-validator';
 
@@ -37,6 +43,38 @@ class JobDTO {
   @IsString()
   @IsOptional()
   skillsRequired?: string;
+
+  @IsNumber()
+  @IsPositive()
+  @IsOptional()
+  salaryMin?: number;
+
+  @IsNumber()
+  @IsPositive()
+  @IsOptional()
+  salaryMax?: number;
+
+  @IsString()
+  @IsOptional()
+  salaryCurrency?: string;
+
+  @IsEnum(EWorkMode)
+  @IsOptional()
+  workMode?: EWorkMode;
+
+  @IsString()
+  @IsOptional()
+  location?: string;
+
+  @IsInt()
+  @IsPositive()
+  @IsOptional()
+  openingsCount?: number;
+
+  @IsDate()
+  @Type(() => Date)
+  @IsOptional()
+  expireDate?: Date;
 }
 
 class BenefitDTO {
@@ -167,6 +205,14 @@ export class UpdateCompanyInfoDTO {
   @Type(() => SocialDTO)
   @IsOptional()
   socials?: SocialDTO[];
+
+  @IsUrl()
+  @IsOptional()
+  websiteUrl?: string;
+
+  @IsEnum(ECompanyType)
+  @IsOptional()
+  companyType?: ECompanyType;
 }
 
 export class UpdateCompanyInfoResponseDTO {

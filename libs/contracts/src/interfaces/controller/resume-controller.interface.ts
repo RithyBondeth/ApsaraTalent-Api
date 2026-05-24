@@ -11,6 +11,7 @@ import {
   GenerateCoverLetterPdfResponseDTO,
   GenerateInterviewPrepPdfDTO,
   GenerateInterviewPrepPdfResponseDTO,
+  RefineProfileBioDTO,
 } from '@app/contracts/dtos';
 import {
   CreateResumeTemplateDTO,
@@ -19,6 +20,7 @@ import {
   SearchResumeTemplateDTO,
   SearchResumeTemplateResponseDTO,
 } from '@app/contracts/dtos/resume/template';
+import { Response } from 'express';
 
 export interface IResumeTemplateController {
   findAllResumeTemplate(): Promise<ResumeTemplateResponseDTO[]>;
@@ -44,9 +46,25 @@ export interface IResumeBuilderController {
   generateCoverLetter(
     generateCoverLetterDTO: GenerateCoverLetterDTO,
   ): Promise<GenerateCoverLetterResponseDTO>;
+  streamCoverLetter(
+    generateCoverLetterDTO: GenerateCoverLetterDTO,
+    res: Response,
+  ): Promise<void>;
   polishCoverLetter(
     polishCoverLetterDTO: PolishCoverLetterDTO,
   ): Promise<PolishCoverLetterResponseDTO>;
+  streamPolishCoverLetter(
+    polishCoverLetterDTO: PolishCoverLetterDTO,
+    res: Response,
+  ): Promise<void>;
+  streamOptimizeResume(
+    optimizeResumeDTO: OptimizeResumeDTO,
+    res: Response,
+  ): Promise<void>;
+  streamRefineBio(
+    refineProfileBioDTO: RefineProfileBioDTO,
+    res: Response,
+  ): Promise<void>;
   generateCoverLetterPdf(
     generateCoverLetterPdfDTO: GenerateCoverLetterPdfDTO,
   ): Promise<GenerateCoverLetterPdfResponseDTO>;

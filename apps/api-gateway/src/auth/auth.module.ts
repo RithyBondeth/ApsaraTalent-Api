@@ -13,6 +13,7 @@ import { FacebookStrategy } from './socials/strategies/facebook.strategy';
 import { GitHubStrategy } from './socials/strategies/github.strategy';
 import { GoogleStrategy } from './socials/strategies/google.strategy';
 import { LinkedInStrategy } from './socials/strategies/linkedin.strategy';
+import { ResumeParseService } from './services/resume-parse.service';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { LinkedInStrategy } from './socials/strategies/linkedin.strategy';
     LinkedInStrategy,
     GitHubStrategy,
     FacebookStrategy,
+    ResumeParseService,
   ],
 })
 export class AuthModule {}

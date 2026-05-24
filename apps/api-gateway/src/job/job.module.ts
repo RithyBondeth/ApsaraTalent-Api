@@ -4,9 +4,11 @@ import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
+import { ApplicationController } from './controllers/application.controller';
 import { InterviewController } from './controllers/interview.controller';
 import { JobController } from './controllers/job.controller';
 import { JobMatchingController } from './controllers/matching.controller';
+import { AiMatchingService } from './services/ai-matching.service';
 
 @Module({
   imports: [
@@ -37,6 +39,12 @@ import { JobMatchingController } from './controllers/matching.controller';
     ThrottlerModule,
     JwtModule,
   ],
-  controllers: [JobController, JobMatchingController, InterviewController],
+  controllers: [
+    JobController,
+    JobMatchingController,
+    InterviewController,
+    ApplicationController,
+  ],
+  providers: [AiMatchingService],
 })
 export class JobModule {}

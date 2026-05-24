@@ -1,6 +1,9 @@
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
 import { EGender } from '@app/common/database/enums/gender.enum';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
+import { EWorkMode } from '@app/common/database/enums/work-mode.enum';
+import { ENoticePeriod } from '@app/common/database/enums/notice-period.enum';
+import { ECompanyType } from '@app/common/database/enums/company-type.enum';
 import { Exclude, Expose, Type } from 'class-transformer';
 import { formatDateToDDMMYYYY } from '@app/utils/functions/date-formatter';
 
@@ -68,6 +71,13 @@ export class EmployeeResponseDTO {
   location: string;
   resume?: string;
   coverLetter?: string;
+  workMode?: EWorkMode;
+  noticePeriod?: ENoticePeriod;
+  portfolioUrl?: string;
+  linkedinUrl?: string;
+  languages?: string[];
+  expectedSalaryMin?: number;
+  expectedSalaryMax?: number;
   @Type(() => SkillResponseDTO)
   skills?: SkillResponseDTO[];
   @Type(() => ExperienceResponseDTO)
@@ -104,6 +114,12 @@ export class JobPositionResponseDTO {
   title: string;
   description: string;
   salary: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  salaryCurrency?: string;
+  workMode?: EWorkMode;
+  location?: string;
+  openingsCount?: number;
   type: string;
   @Exclude()
   experienceRequired: string;
@@ -177,6 +193,8 @@ export class CompanyResponseDTO {
   location: string;
   phone?: string;
   email?: string;
+  websiteUrl?: string;
+  companyType?: ECompanyType;
   @Type(() => ImageResponseDTO)
   images?: ImageResponseDTO[];
   @Type(() => JobPositionResponseDTO)

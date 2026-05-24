@@ -21,6 +21,10 @@ import {
   AiInterviewPrepDTO,
   AiInterviewPrepResponseDTO,
 } from '@app/contracts/dtos/job';
+import {
+  AiMatchProfilesDTO,
+  AiMatchProfilesResponseDTO,
+} from '@app/contracts/dtos/job/matching/ai-match-profiles.dto';
 import { FindCurrentLikeResponseDTO } from '@app/contracts/dtos/job/matching/find-current-like.dto';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
 
@@ -106,6 +110,25 @@ export interface IMatchingController {
     cid: string,
     req?: any,
   ): Promise<AiInterviewPrepResponseDTO>;
+  streamAiMatchExplanation(
+    eid: string,
+    cid: string,
+    res: Response,
+    req?: any,
+  ): Promise<void>;
+  streamAiInterviewPrep(
+    eid: string,
+    cid: string,
+    interviewTitle: string | undefined,
+    res: Response,
+    req?: any,
+  ): Promise<void>;
+  streamAiSkillGap(
+    eid: string,
+    cid: string,
+    res: Response,
+    req?: any,
+  ): Promise<void>;
 }
 
 export interface IMatchingRpcController {
@@ -138,4 +161,7 @@ export interface IMatchingRpcController {
   getAiInterviewPrep(
     aiInterviewPrepDTO: AiInterviewPrepDTO,
   ): Promise<AiInterviewPrepResponseDTO>;
+  getAiMatchProfiles(
+    aiMatchProfilesDTO: AiMatchProfilesDTO,
+  ): Promise<AiMatchProfilesResponseDTO>;
 }

@@ -10,6 +10,8 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { EGender } from '../../enums/gender.enum';
+import { EWorkMode } from '../../enums/work-mode.enum';
+import { ENoticePeriod } from '../../enums/notice-period.enum';
 import { CareerScope } from '../career-scope.entity';
 import { Social } from '../social.entity';
 import { User } from '../user.entity';
@@ -68,6 +70,35 @@ export class Employee {
 
   @Column({ nullable: true })
   coverLetter: string;
+
+  @Column({
+    type: 'enum',
+    enum: EWorkMode,
+    nullable: true,
+  })
+  workMode: EWorkMode | null;
+
+  @Column({
+    type: 'enum',
+    enum: ENoticePeriod,
+    nullable: true,
+  })
+  noticePeriod: ENoticePeriod | null;
+
+  @Column({ nullable: true })
+  portfolioUrl: string | null;
+
+  @Column({ nullable: true })
+  linkedinUrl: string | null;
+
+  @Column({ type: 'simple-array', nullable: true })
+  languages: string[] | null;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  expectedSalaryMin: number | null;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  expectedSalaryMax: number | null;
 
   @Column({
     type: 'text',

@@ -1,9 +1,11 @@
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
+import { EWorkMode } from '@app/common/database/enums/work-mode.enum';
 import { formatDateToDDMMYYYY } from '@app/utils/functions/date-formatter';
 import {
   IsArray,
   IsDateString,
+  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
@@ -70,6 +72,10 @@ export class SearchJobDTO {
   @IsOptional()
   @IsString()
   sortOrder?: string;
+
+  @IsOptional()
+  @IsEnum(EWorkMode)
+  workMode?: EWorkMode;
 }
 
 export class UserInJobResponseDTO {
@@ -157,6 +163,12 @@ export class JobResponseDTO {
   @Exclude()
   skillsRequired: string;
   salary: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  salaryCurrency?: string;
+  workMode?: EWorkMode;
+  location?: string;
+  openingsCount?: number;
   @Exclude()
   @Transform(({ value }) => (value ? value.toISOString() : null))
   expireDate: Date;

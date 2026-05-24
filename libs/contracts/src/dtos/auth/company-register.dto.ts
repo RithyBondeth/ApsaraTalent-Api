@@ -1,14 +1,20 @@
+import { EWorkMode } from '@app/common/database/enums/work-mode.enum';
+import { ECompanyType } from '@app/common/database/enums/company-type.enum';
 import { Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
   IsDate,
   IsEmail,
+  IsEnum,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
+  IsPositive,
   IsString,
   IsStrongPassword,
+  IsUrl,
   ValidateNested,
 } from 'class-validator';
 import { LoginResponseDTO } from './login.dto';
@@ -94,6 +100,14 @@ export class CompanyRegisterDTO {
   @Type(() => SocialDTO)
   @IsOptional()
   socials?: SocialDTO[];
+
+  @IsUrl()
+  @IsOptional()
+  websiteUrl?: string;
+
+  @IsEnum(ECompanyType)
+  @IsOptional()
+  companyType?: ECompanyType;
 }
 
 class JobDTO {
@@ -122,8 +136,35 @@ class JobDTO {
   skillsRequired: string;
 
   @IsString()
-  @IsNotEmpty()
-  salary: string;
+  @IsOptional()
+  salary?: string;
+
+  @IsNumber()
+  @IsPositive()
+  @IsOptional()
+  salaryMin?: number;
+
+  @IsNumber()
+  @IsPositive()
+  @IsOptional()
+  salaryMax?: number;
+
+  @IsString()
+  @IsOptional()
+  salaryCurrency?: string;
+
+  @IsEnum(EWorkMode)
+  @IsOptional()
+  workMode?: EWorkMode;
+
+  @IsString()
+  @IsOptional()
+  location?: string;
+
+  @IsInt()
+  @IsPositive()
+  @IsOptional()
+  openingsCount?: number;
 
   @IsDate()
   @Type(() => Date)

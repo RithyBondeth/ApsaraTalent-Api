@@ -33,6 +33,10 @@ import { IMatchingService } from '@app/contracts/interfaces/service/job-service.
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
+import {
+  AiMatchProfilesDTO,
+  AiMatchProfilesResponseDTO,
+} from '@app/contracts/dtos/job/matching/ai-match-profiles.dto';
 
 @Injectable()
 export class MatchingService implements IMatchingService {
@@ -977,6 +981,58 @@ Return valid JSON only.`,
     }
   }
 
+  async getAiMatchProfiles(
+    aiMatchProfilesDTO: AiMatchProfilesDTO,
+  ): Promise<AiMatchProfilesResponseDTO> {
+    const [employee, company] = await Promise.all([
+      this.employeeRepo.findOne({
+        where: { id: aiMatchProfilesDTO.eid },
+        relations: ['skills', 'experiences', 'careerScopes', 'educations'],
+      }),
+      this.companyRepo.findOne({
+        where: { id: aiMatchProfilesDTO.cid },
+        relations: ['openPositions', 'benefits', 'values', 'careerScopes'],
+      }),
+    ]);
+
+    if (!employee || !company) {
+      throw new RpcException({
+        message: 'Employee or Company not found.',
+        statusCode: 404,
+      });
+    }
+
+    return {
+      employeeProfile: {
+        job: employee.job,
+        yearsOfExperience: employee.yearsOfExperience,
+        availability: employee.availability,
+        description: employee.description,
+        location: employee.location,
+        skills: (employee.skills ?? []).map((s) => s.name),
+        careerScopes: (employee.careerScopes ?? []).map((c) => c.name),
+        education: (employee.educations ?? []).map(
+          (e) => `${e.degree} at ${e.school}`,
+        ),
+        experience: (employee.experiences ?? []).map((e) => e.title),
+      },
+      companyProfile: {
+        name: company.name,
+        industry: company.industry,
+        description: company.description,
+        companySize: company.companySize,
+        location: company.location,
+        openPositions: (company.openPositions ?? []).map((j) => ({
+          title: j.title,
+          skillsRequired: j.skillsRequired,
+          experienceRequired: j.experienceRequired,
+          type: j.type,
+        })),
+        careerScopes: (company.careerScopes ?? []).map((c) => c.name),
+      },
+    };
+  }
+
   async getAiInterviewPrep(
     aiInterviewPrepDTO: AiInterviewPrepDTO,
   ): Promise<AiInterviewPrepResponseDTO> {
@@ -1052,25 +1108,24 @@ Return valid JSON only.`,
           {
             role: 'system',
             content: `You are an expert interview coach. Given a detailed candidate CV, a company profile${aiInterviewPrepDTO.interviewTitle ? `, and the specific interview round/type: "${aiInterviewPrepDTO.interviewTitle}"` : ''}, generate likely interview questions the candidate will face, each with a practical English answer tip AND a Khmer (ភាសាខ្មែរ) translation of both the question and the tip.
+                      ${aiInterviewPrepDTO.interviewTitle ? `IMPORTANT: Tailor question categories and depth specifically for a "${aiInterviewPrepDTO.interviewTitle}" interview. For example, a Technical Round should heavily weight Technical questions; a Cultural/HR round should focus on Behavioral and Culture Fit; a General interview should be balanced.` : ''}
 
-${aiInterviewPrepDTO.interviewTitle ? `IMPORTANT: Tailor question categories and depth specifically for a "${aiInterviewPrepDTO.interviewTitle}" interview. For example, a Technical Round should heavily weight Technical questions; a Cultural/HR round should focus on Behavioral and Culture Fit; a General interview should be balanced.` : ''}
+                      Return a JSON object with exactly this structure:
+                      {
+                        "questions": [
+                          {
+                            "question": "English question here",
+                            "questionKm": "សំណួរជាភាសាខ្មែរ",
+                            "category": "Technical",
+                            "tip": "English answer tip here",
+                            "tipKm": "គន្លឹះចម្លើយជាភាសាខ្មែរ"
+                          },
+                          ...
+                        ]
+                      }
 
-Return a JSON object with exactly this structure:
-{
-  "questions": [
-    {
-      "question": "English question here",
-      "questionKm": "សំណួរជាភាសាខ្មែរ",
-      "category": "Technical",
-      "tip": "English answer tip here",
-      "tipKm": "គន្លឹះចម្លើយជាភាសាខ្មែរ"
-    },
-    ...
-  ]
-}
-
-Categories must be one of: "Technical", "Behavioral", "Culture Fit", "Situational".
-Generate 12 to 15 questions — draw deeply from the candidate's specific work experience, education background, listed skills, and career scope. Make questions highly specific to their CV (reference actual job titles or skills they listed). Tips must be 1-2 sentences of concrete, actionable advice tailored to this candidate. Khmer translations must be natural and accurate. Return valid JSON only.`,
+                      Categories must be one of: "Technical", "Behavioral", "Culture Fit", "Situational".
+                      Generate 12 to 15 questions — draw deeply from the candidate's specific work experience, education background, listed skills, and career scope. Make questions highly specific to their CV (reference actual job titles or skills they listed). Tips must be 1-2 sentences of concrete, actionable advice tailored to this candidate. Khmer translations must be natural and accurate. Return valid JSON only.`,
           },
           {
             role: 'user',

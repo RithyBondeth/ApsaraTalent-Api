@@ -12,6 +12,7 @@ import { CompanyFavoriteEmployee } from '@app/common/database/entities/company/f
 import { Job } from '@app/common/database/entities/company/job.entity';
 import { EmployeeFavoriteCompany } from '@app/common/database/entities/employee/favorite-company.entity';
 import { Employee } from '@app/common/database/entities/employee/employee.entity';
+import { Application } from '@app/common/database/entities/application.entity';
 import { Interview } from '@app/common/database/entities/interview.entity';
 import { JobMatching } from '@app/common/database/entities/job-matching.entity';
 import { User } from '@app/common/database/entities/user.entity';
@@ -24,13 +25,16 @@ import { TerminusModule } from '@nestjs/terminus';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 import { JobHealthController } from './health/health.controller';
+import { ApplicationController } from './controllers/application.controller';
 import { InterviewController } from './controllers/interview.controller';
 import { JobController } from './controllers/job-service.controller';
 import { MatchingController } from './controllers/matching.controller';
+import { ApplicationService } from './services/application.service';
 import { InterviewService } from './services/interview.service';
 import { JobService } from './services/job-service.service';
 import { MatchingService } from './services/matching.service';
 import {
+  I_APPLICATION_SERVICE,
   I_INTERVIEW_SERVICE,
   I_JOB_SERVICE_SERVICE,
   I_MATCHING_SERVICE,
@@ -64,6 +68,7 @@ import {
       Company,
       Employee,
       Job,
+      Application,
       JobMatching,
       EmployeeFavoriteCompany,
       CompanyFavoriteEmployee,
@@ -74,12 +79,14 @@ import {
     JobController,
     MatchingController,
     InterviewController,
+    ApplicationController,
     JobHealthController,
   ],
   providers: [
     { provide: I_JOB_SERVICE_SERVICE, useClass: JobService },
     { provide: I_MATCHING_SERVICE, useClass: MatchingService },
     { provide: I_INTERVIEW_SERVICE, useClass: InterviewService },
+    { provide: I_APPLICATION_SERVICE, useClass: ApplicationService },
     RedisCacheHealthIndicator,
     {
       provide: APP_INTERCEPTOR,

@@ -159,6 +159,8 @@ export class RegisterService implements IRegisterService {
         location: companyRegisterDTO.location,
         companySize: companyRegisterDTO.companySize,
         foundedYear: companyRegisterDTO.foundedYear,
+        websiteUrl: companyRegisterDTO.websiteUrl ?? null,
+        companyType: companyRegisterDTO.companyType ?? null,
       });
       await queryRunner.manager.save(Company, newCompany);
 
@@ -341,6 +343,13 @@ export class RegisterService implements IRegisterService {
         description: employeeRegisterDTO.description,
         location: employeeRegisterDTO.location,
         phone: employeeRegisterDTO.phone,
+        workMode: employeeRegisterDTO.workMode ?? null,
+        noticePeriod: employeeRegisterDTO.noticePeriod ?? null,
+        portfolioUrl: employeeRegisterDTO.portfolioUrl ?? null,
+        linkedinUrl: employeeRegisterDTO.linkedinUrl ?? null,
+        languages: employeeRegisterDTO.languages ?? null,
+        expectedSalaryMin: employeeRegisterDTO.expectedSalaryMin ?? null,
+        expectedSalaryMax: employeeRegisterDTO.expectedSalaryMax ?? null,
       });
       await queryRunner.manager.save(Employee, newEmployee);
 

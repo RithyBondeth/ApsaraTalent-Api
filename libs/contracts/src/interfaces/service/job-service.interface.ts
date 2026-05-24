@@ -22,12 +22,20 @@ import {
   AiMatchExplanationResponseDTO,
   AiInterviewPrepDTO,
   AiInterviewPrepResponseDTO,
+  ApplicationResponseDTO,
+  ApplyJobDTO,
+  UpdateApplicationStatusDTO,
 } from '@app/contracts/dtos/job';
+import {
+  AiMatchProfilesDTO,
+  AiMatchProfilesResponseDTO,
+} from '@app/contracts/dtos/job/matching/ai-match-profiles.dto';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
 
 export const I_JOB_SERVICE_SERVICE = 'IJobServiceService';
 export const I_MATCHING_SERVICE = 'IMatchingService';
 export const I_INTERVIEW_SERVICE = 'IInterviewService';
+export const I_APPLICATION_SERVICE = 'IApplicationService';
 
 export interface IJobServiceService {
   findAllJobs(paginationDTO: PaginationDTO): Promise<JobResponseDTO[]>;
@@ -61,6 +69,9 @@ export interface IMatchingService {
   getAiMatchExplanation(
     aiMatchExplanationDTO: AiMatchExplanationDTO,
   ): Promise<AiMatchExplanationResponseDTO>;
+  getAiMatchProfiles(
+    aiMatchProfilesDTO: AiMatchProfilesDTO,
+  ): Promise<AiMatchProfilesResponseDTO>;
   getAiInterviewPrep(
     aiInterviewPrepDTO: AiInterviewPrepDTO,
   ): Promise<AiInterviewPrepResponseDTO>;
@@ -79,4 +90,24 @@ export interface IInterviewService {
   updateInterviewStatus(
     updateInterviewStatusDTO: UpdateInterviewStatusDTO,
   ): Promise<UpdateInterviewStatusResponseDTO>;
+}
+
+export interface IApplicationService {
+  applyJob(
+    employeeId: string,
+    applyJobDTO: ApplyJobDTO,
+  ): Promise<ApplicationResponseDTO>;
+  getMyApplications(employeeId: string): Promise<ApplicationResponseDTO[]>;
+  getJobApplications(
+    jobId: string,
+    companyId: string,
+  ): Promise<ApplicationResponseDTO[]>;
+  updateApplicationStatus(
+    companyId: string,
+    updateApplicationStatusDTO: UpdateApplicationStatusDTO,
+  ): Promise<ApplicationResponseDTO>;
+  withdrawApplication(
+    employeeId: string,
+    applicationId: string,
+  ): Promise<{ message: string }>;
 }

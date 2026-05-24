@@ -1,4 +1,6 @@
 import { EGender } from '@app/common/database/enums/gender.enum';
+import { EWorkMode } from '@app/common/database/enums/work-mode.enum';
+import { ENoticePeriod } from '@app/common/database/enums/notice-period.enum';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -7,7 +9,9 @@ import {
   IsEmail,
   IsEnum,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
+  IsPositive,
   IsString,
   IsStrongPassword,
   IsUrl,
@@ -102,6 +106,37 @@ export class EmployeeRegisterDTO {
   @Type(() => SocialDTO)
   @IsOptional()
   socials?: SocialDTO[];
+
+  @IsEnum(EWorkMode)
+  @IsOptional()
+  workMode?: EWorkMode;
+
+  @IsEnum(ENoticePeriod)
+  @IsOptional()
+  noticePeriod?: ENoticePeriod;
+
+  @IsUrl()
+  @IsOptional()
+  portfolioUrl?: string;
+
+  @IsUrl()
+  @IsOptional()
+  linkedinUrl?: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  languages?: string[];
+
+  @IsNumber()
+  @IsPositive()
+  @IsOptional()
+  expectedSalaryMin?: number;
+
+  @IsNumber()
+  @IsPositive()
+  @IsOptional()
+  expectedSalaryMax?: number;
 }
 
 class SkillDTO {

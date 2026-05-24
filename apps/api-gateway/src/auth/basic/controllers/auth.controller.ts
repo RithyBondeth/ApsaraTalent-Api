@@ -2,6 +2,7 @@ import { IBasicAuthController } from '@app/contracts/interfaces/controller/auth-
 import { ThrottlerGuard } from '@app/common/throttler/guards/throttler.guard';
 import { AuthGuard } from '@app/common/guards/auth.guard';
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -12,11 +13,19 @@ import {
   Post,
   Req,
   Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { ClientProxy } from '@nestjs/microservices';
 import { Request, Response } from 'express';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
+import {
+  ResumeParseService,
+  ParsedResumeData,
+} from '../../services/resume-parse.service';
 import {
   CompanyRegisterDTO,
   EmployeeRegisterDTO,
@@ -52,6 +61,7 @@ import { User } from '@app/common/database/entities/user.entity';
 export class AuthController implements IBasicAuthController {
   constructor(
     @Inject(AUTH_SERVICE.NAME) private readonly authClient: ClientProxy,
+    private readonly resumeParse: ResumeParseService,
   ) {}
 
   @Post('register-company')
@@ -319,5 +329,34 @@ export class AuthController implements IBasicAuthController {
     } catch {
       return fallback;
     }
+  }
+
+  /**
+   * Public endpoint — no auth required (used during employee signup).
+   * Accepts a PDF resume upload, extracts text, and returns structured
+   *Ccandidate data via OpenAI so the signup form can be pre-filled.
+   */
+  @Post('parse-resume')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(
+    FileInterceptor('resume', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        if (file.mimetype !== 'application/pdf') {
+          return cb(
+            new BadRequestException('Only PDF files are accepted.'),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async parseResume(
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<ParsedResumeData> {
+    if (!file) throw new BadRequestException('No resume file received.');
+    return this.resumeParse.parseResume(file.buffer, file.mimetype);
   }
 }

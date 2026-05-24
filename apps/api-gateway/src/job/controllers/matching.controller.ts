@@ -9,11 +9,13 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UseGuards,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { Response } from 'express';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
 import { JOB } from '@app/contracts/constants/domain/job.constant';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
@@ -30,6 +32,8 @@ import {
 import { JobAccessBase } from '../shared/job-access.base';
 import { rpcCall } from '../../utils/rpc-call';
 import { SocketBroadcastService } from '../../socket/socket-broadcast.service';
+import { AiStreamService } from '../../ai-stream/ai-stream.service';
+import { AiMatchingService } from '../services/ai-matching.service';
 
 @Controller('match')
 @UseGuards(AuthGuard)
@@ -41,6 +45,8 @@ export class JobMatchingController
     @Inject(JOB_SERVICE.NAME) private readonly jobClient: ClientProxy,
     @Inject(USER_SERVICE.NAME) userClient: ClientProxy,
     private readonly socketBroadcastService: SocketBroadcastService,
+    private readonly aiStream: AiStreamService,
+    private readonly aiMatching: AiMatchingService,
   ) {
     super(userClient);
   }
@@ -162,14 +168,10 @@ export class JobMatchingController
     @Param('id') id: string,
     @Query('role') role: string,
   ): Promise<AnalyticsResponseDTO> {
-    const analyticsPayload = {
-      userId: id,
-      role,
-    };
     return rpcCall<AnalyticsResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.GET_ANALYTICS,
-      analyticsPayload,
+      { userId: id, role },
     );
   }
 
@@ -189,6 +191,30 @@ export class JobMatchingController
     );
   }
 
+  @Get('ai-explanation/:eid/:cid/stream')
+  async streamAiMatchExplanation(
+    @Param('eid', ParseUUIDPipe) eid: string,
+    @Param('cid', ParseUUIDPipe) cid: string,
+    @Req() req: any,
+    @Res() res: Response,
+  ): Promise<void> {
+    await this.assertMatchParticipantAccess(req?.user?.id, eid, cid);
+
+    const { employeeProfile, companyProfile } = await rpcCall<{
+      employeeProfile: any;
+      companyProfile: any;
+    }>(this.jobClient, JOB_SERVICE.ACTIONS.GET_AI_MATCH_PROFILES, { eid, cid });
+
+    await this.aiStream.pipe(
+      this.aiMatching.getMatchExplanationMessages(
+        employeeProfile,
+        companyProfile,
+      ),
+      0.3,
+      res,
+    );
+  }
+
   @Get('ai-interview-prep/:eid/:cid')
   @HttpCode(HttpStatus.OK)
   async getAiInterviewPrep(
@@ -203,6 +229,53 @@ export class JobMatchingController
       JOB_SERVICE.ACTIONS.AI_INTERVIEW_PREP,
       { eid, cid, interviewTitle },
       JOB.AI_CONTROLLER_TIMEOUT,
+    );
+  }
+
+  @Get('ai-interview-prep/:eid/:cid/stream')
+  async streamAiInterviewPrep(
+    @Param('eid', ParseUUIDPipe) eid: string,
+    @Param('cid', ParseUUIDPipe) cid: string,
+    @Query('interviewTitle') interviewTitle: string | undefined,
+    @Req() req: any,
+    @Res() res: Response,
+  ): Promise<void> {
+    await this.assertMatchParticipantAccess(req?.user?.id, eid, cid);
+
+    const { employeeProfile, companyProfile } = await rpcCall<{
+      employeeProfile: any;
+      companyProfile: any;
+    }>(this.jobClient, JOB_SERVICE.ACTIONS.GET_AI_MATCH_PROFILES, { eid, cid });
+
+    await this.aiStream.pipe(
+      this.aiMatching.getInterviewPrepMessages(
+        employeeProfile,
+        companyProfile,
+        interviewTitle,
+      ),
+      0.4,
+      res,
+    );
+  }
+
+  @Get('ai-skill-gap/:eid/:cid/stream')
+  async streamAiSkillGap(
+    @Param('eid', ParseUUIDPipe) eid: string,
+    @Param('cid', ParseUUIDPipe) cid: string,
+    @Req() req: any,
+    @Res() res: Response,
+  ): Promise<void> {
+    await this.assertMatchParticipantAccess(req?.user?.id, eid, cid);
+
+    const { employeeProfile, companyProfile } = await rpcCall<{
+      employeeProfile: any;
+      companyProfile: any;
+    }>(this.jobClient, JOB_SERVICE.ACTIONS.GET_AI_MATCH_PROFILES, { eid, cid });
+
+    await this.aiStream.pipe(
+      this.aiMatching.getSkillGapMessages(employeeProfile, companyProfile),
+      0.3,
+      res,
     );
   }
 }

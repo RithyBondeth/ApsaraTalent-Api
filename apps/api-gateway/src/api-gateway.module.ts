@@ -5,6 +5,7 @@ import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import * as path from 'path';
+import { AiStreamModule } from './ai-stream/ai-stream.module';
 import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './chat/chat.module';
 import { HealthModule } from './health/health.module';
@@ -18,6 +19,7 @@ import { UserModule } from './user/user.module';
   imports: [
     ConfigModule,
     LoggerModule,
+    AiStreamModule,
     AuthModule,
     UploadfileModule,
     HealthModule,
