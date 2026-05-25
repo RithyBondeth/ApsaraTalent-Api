@@ -1,3 +1,4 @@
+export * from './api-gateway-service.interface';
 export * from './auth-service.interface';
 export * from './chat-service.interface';
 export * from './job-service.interface';

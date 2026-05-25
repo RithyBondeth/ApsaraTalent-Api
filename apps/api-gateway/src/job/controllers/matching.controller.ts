@@ -18,7 +18,6 @@ import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
 import { JOB } from '@app/contracts/constants/domain/job.constant';
-import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import {
   MatchResponseDTO,
   MatchCountResponseDTO,
@@ -29,34 +28,29 @@ import {
   AiMatchExplanationResponseDTO,
   AiInterviewPrepResponseDTO,
 } from '@app/contracts/dtos/job';
-import { JobAccessBase } from '../shared/job-access.base';
 import { rpcCall } from '../../utils/rpc-call';
 import { SocketBroadcastService } from '../../socket/socket-broadcast.service';
 import { AiStreamService } from '../../ai-stream/ai-stream.service';
 import { AiMatchingService } from '../services/ai-matching.service';
+import { JobAccessService } from '../services/job-access.service';
 
 @Controller('match')
 @UseGuards(AuthGuard)
-export class JobMatchingController
-  extends JobAccessBase
-  implements IMatchingController
-{
+export class JobMatchingController implements IMatchingController {
   constructor(
     @Inject(JOB_SERVICE.NAME) private readonly jobClient: ClientProxy,
-    @Inject(USER_SERVICE.NAME) userClient: ClientProxy,
     private readonly socketBroadcastService: SocketBroadcastService,
     private readonly aiStream: AiStreamService,
     private readonly aiMatching: AiMatchingService,
-  ) {
-    super(userClient);
-  }
+    private readonly jobAccess: JobAccessService,
+  ) {}
 
   @Post('employee/:eid/like/:cid')
   async employeeLikes(
     @Param() matchDTO: MatchDTO,
     @Req() req?: any,
   ): Promise<MatchResponseDTO> {
-    await this.assertEmployeeAccess(req?.user?.id, matchDTO.eid);
+    await this.jobAccess.assertEmployeeAccess(req?.user?.id, matchDTO.eid);
     const result = await rpcCall<MatchResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.EMPLOYEE_LIKES,
@@ -73,7 +67,7 @@ export class JobMatchingController
     @Param() matchDTO: MatchDTO,
     @Req() req?: any,
   ): Promise<MatchResponseDTO> {
-    await this.assertCompanyAccess(req?.user?.id, matchDTO.cid);
+    await this.jobAccess.assertCompanyAccess(req?.user?.id, matchDTO.cid);
     const result = await rpcCall<MatchResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.COMPANY_LIKES,
@@ -90,7 +84,7 @@ export class JobMatchingController
     @Param('eid', ParseUUIDPipe) eid: string,
     @Req() req?: any,
   ): Promise<FindCurrentLikeResponseDTO[]> {
-    await this.assertEmployeeAccess(req?.user?.id, eid);
+    await this.jobAccess.assertEmployeeAccess(req?.user?.id, eid);
     return rpcCall<FindCurrentLikeResponseDTO[]>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_LIKED,
@@ -103,7 +97,7 @@ export class JobMatchingController
     @Param('cid', ParseUUIDPipe) cid: string,
     @Req() req?: any,
   ): Promise<FindCurrentLikeResponseDTO[]> {
-    await this.assertCompanyAccess(req?.user?.id, cid);
+    await this.jobAccess.assertCompanyAccess(req?.user?.id, cid);
     return rpcCall<FindCurrentLikeResponseDTO[]>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_LIKED,
@@ -116,7 +110,7 @@ export class JobMatchingController
     @Param('eid', ParseUUIDPipe) eid: string,
     @Req() req?: any,
   ): Promise<FindCurrentMatchingResponseDTO[]> {
-    await this.assertEmployeeAccess(req?.user?.id, eid);
+    await this.jobAccess.assertEmployeeAccess(req?.user?.id, eid);
     return rpcCall<FindCurrentMatchingResponseDTO[]>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_MATCHING,
@@ -129,7 +123,7 @@ export class JobMatchingController
     @Param('cid', ParseUUIDPipe) cid: string,
     @Req() req?: any,
   ): Promise<FindCurrentMatchingResponseDTO[]> {
-    await this.assertCompanyAccess(req?.user?.id, cid);
+    await this.jobAccess.assertCompanyAccess(req?.user?.id, cid);
     return rpcCall<FindCurrentMatchingResponseDTO[]>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_MATCHING,
@@ -142,7 +136,7 @@ export class JobMatchingController
     @Param('eid', ParseUUIDPipe) eid: string,
     @Req() req?: any,
   ): Promise<MatchCountResponseDTO> {
-    await this.assertEmployeeAccess(req?.user?.id, eid);
+    await this.jobAccess.assertEmployeeAccess(req?.user?.id, eid);
     return rpcCall<MatchCountResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_MATCHING_COUNT,
@@ -155,7 +149,7 @@ export class JobMatchingController
     @Param('cid', ParseUUIDPipe) cid: string,
     @Req() req?: any,
   ): Promise<MatchCountResponseDTO> {
-    await this.assertCompanyAccess(req?.user?.id, cid);
+    await this.jobAccess.assertCompanyAccess(req?.user?.id, cid);
     return rpcCall<MatchCountResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_MATCHING_COUNT,
@@ -182,7 +176,7 @@ export class JobMatchingController
     @Param('cid', ParseUUIDPipe) cid: string,
     @Req() req?: any,
   ): Promise<AiMatchExplanationResponseDTO> {
-    await this.assertMatchParticipantAccess(req?.user?.id, eid, cid);
+    await this.jobAccess.assertMatchParticipantAccess(req?.user?.id, eid, cid);
     return rpcCall<AiMatchExplanationResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.AI_MATCH_EXPLANATION,
@@ -198,7 +192,7 @@ export class JobMatchingController
     @Req() req: any,
     @Res() res: Response,
   ): Promise<void> {
-    await this.assertMatchParticipantAccess(req?.user?.id, eid, cid);
+    await this.jobAccess.assertMatchParticipantAccess(req?.user?.id, eid, cid);
 
     const { employeeProfile, companyProfile } = await rpcCall<{
       employeeProfile: any;
@@ -223,7 +217,7 @@ export class JobMatchingController
     @Query('interviewTitle') interviewTitle?: string,
     @Req() req?: any,
   ): Promise<AiInterviewPrepResponseDTO> {
-    await this.assertMatchParticipantAccess(req?.user?.id, eid, cid);
+    await this.jobAccess.assertMatchParticipantAccess(req?.user?.id, eid, cid);
     return rpcCall<AiInterviewPrepResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.AI_INTERVIEW_PREP,
@@ -240,7 +234,7 @@ export class JobMatchingController
     @Req() req: any,
     @Res() res: Response,
   ): Promise<void> {
-    await this.assertMatchParticipantAccess(req?.user?.id, eid, cid);
+    await this.jobAccess.assertMatchParticipantAccess(req?.user?.id, eid, cid);
 
     const { employeeProfile, companyProfile } = await rpcCall<{
       employeeProfile: any;
@@ -265,7 +259,7 @@ export class JobMatchingController
     @Req() req: any,
     @Res() res: Response,
   ): Promise<void> {
-    await this.assertMatchParticipantAccess(req?.user?.id, eid, cid);
+    await this.jobAccess.assertMatchParticipantAccess(req?.user?.id, eid, cid);
 
     const { employeeProfile, companyProfile } = await rpcCall<{
       employeeProfile: any;

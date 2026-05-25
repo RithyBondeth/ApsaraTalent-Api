@@ -26,6 +26,7 @@ import {
   ResumeParseService,
   ParsedResumeData,
 } from '../../services/resume-parse.service';
+import { IceServersService } from '../../services/ice-servers.service';
 import {
   CompanyRegisterDTO,
   EmployeeRegisterDTO,
@@ -62,6 +63,7 @@ export class AuthController implements IBasicAuthController {
   constructor(
     @Inject(AUTH_SERVICE.NAME) private readonly authClient: ClientProxy,
     private readonly resumeParse: ResumeParseService,
+    private readonly iceServersService: IceServersService,
   ) {}
 
   @Post('register-company')
@@ -103,7 +105,6 @@ export class AuthController implements IBasicAuthController {
       loginDTO,
     );
 
-    // 2FA gate — do not issue cookies; return challenge to frontend
     if (response.requiresTwoFactor) {
       return new LoginResponseDTO({
         message: response.message,
@@ -228,7 +229,7 @@ export class AuthController implements IBasicAuthController {
     );
   }
 
-  /** Initiate 2FA setup — generates TOTP secret and QR code URI. Requires auth. */
+  /** Initiate 2FA setup — Generates TOTP secret and QR code URI. Requires auth. */
   @Post('2fa/setup')
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard)
@@ -296,46 +297,6 @@ export class AuthController implements IBasicAuthController {
     return response;
   }
 
-  /** Returns Twilio TURN credentials for WebRTC peer connections. */
-  @Get('ice-servers')
-  @HttpCode(HttpStatus.OK)
-  async getIceServers(): Promise<{ iceServers: object[] }> {
-    const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const authToken = process.env.TWILIO_AUTH_TOKEN;
-    const fallback = {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-      ],
-    };
-
-    if (!accountSid || !authToken) return fallback;
-
-    try {
-      // Ask Twilio for short-lived TURN credentials. If that fails, callers can
-      // still connect with public STUN servers for best-effort WebRTC setup.
-      const credentials = Buffer.from(`${accountSid}:${authToken}`).toString(
-        'base64',
-      );
-      const response = await fetch(
-        `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Tokens.json`,
-        {
-          method: 'POST',
-          headers: { Authorization: `Basic ${credentials}` },
-        },
-      );
-      const data = (await response.json()) as any;
-      return { iceServers: data.ice_servers ?? fallback.iceServers };
-    } catch {
-      return fallback;
-    }
-  }
-
-  /**
-   * Public endpoint — no auth required (used during employee signup).
-   * Accepts a PDF resume upload, extracts text, and returns structured
-   *Ccandidate data via OpenAI so the signup form can be pre-filled.
-   */
   @Post('parse-resume')
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(
@@ -358,5 +319,12 @@ export class AuthController implements IBasicAuthController {
   ): Promise<ParsedResumeData> {
     if (!file) throw new BadRequestException('No resume file received.');
     return this.resumeParse.parseResume(file.buffer, file.mimetype);
+  }
+
+  /** Returns Twilio TURN credentials for WebRTC peer connections. */
+  @Get('ice-servers')
+  @HttpCode(HttpStatus.OK)
+  async getIceServers(): Promise<{ iceServers: object[] }> {
+    return this.iceServersService.getIceServers();
   }
 }

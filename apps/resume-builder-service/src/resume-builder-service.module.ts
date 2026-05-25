@@ -15,6 +15,7 @@ import { ResumeBuilderController } from './controllers/resume-builder.controller
 import { ResumeTemplateController } from './controllers/resume-template.controller';
 import { ImageService } from './services/image.service';
 import { ResumeBuilderService } from './services/resume-builder.service';
+import { PdfGeneratorService } from './services/pdf-generator.service';
 import { ResumeTemplateSeedService } from './services/resume-template-seed.service';
 import { ResumeTemplateService } from './services/resume-template.service';
 
@@ -41,6 +42,7 @@ import {
   providers: [
     { provide: I_RESUME_BUILDER_SERVICE, useClass: ResumeBuilderService },
     ImageService,
+    PdfGeneratorService,
     { provide: I_RESUME_TEMPLATE_SERVICE, useClass: ResumeTemplateService },
     ResumeTemplateSeedService,
     RedisCacheHealthIndicator,

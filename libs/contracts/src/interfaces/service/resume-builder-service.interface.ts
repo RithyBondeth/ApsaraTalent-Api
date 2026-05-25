@@ -22,6 +22,7 @@ import {
 
 export const I_RESUME_BUILDER_SERVICE = 'IResumeBuilderService';
 export const I_RESUME_TEMPLATE_SERVICE = 'IResumeTemplateService';
+export const I_PDF_GENERATOR_SERVICE = 'IPdfGeneratorService';
 
 export interface IResumeBuilderService {
   buildResume(buildResumeDTO: BuildResumeDTO): Promise<BuildResumeResponseDTO>;
@@ -40,6 +41,10 @@ export interface IResumeBuilderService {
   generateInterviewPrepPdf(
     generateInterviewPrepPdfDTO: GenerateInterviewPrepPdfDTO,
   ): Promise<GenerateInterviewPrepPdfResponseDTO>;
+}
+
+export interface IPdfGeneratorService {
+  generate(html: string): Promise<Buffer>;
 }
 
 export interface IResumeTemplateService {

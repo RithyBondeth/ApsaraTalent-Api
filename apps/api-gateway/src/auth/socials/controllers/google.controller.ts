@@ -10,19 +10,15 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { ClientProxy } from '@nestjs/microservices';
+
 import { Response } from 'express';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
 import { GoogleAuthGuard } from '../guards/google-auth.guard';
-import { handleSocialAuthCallback } from '../shared/social-auth-callback.helper';
+import { SocialAuthService } from '../../services/social-auth.service';
 
 @Controller('social/google')
 export class GoogleController implements IGoogleAuthController {
-  constructor(
-    @Inject(AUTH_SERVICE.NAME) private readonly authService: ClientProxy,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly socialAuthService: SocialAuthService) {}
 
   @Get('login')
   @HttpCode(HttpStatus.OK)
@@ -33,9 +29,7 @@ export class GoogleController implements IGoogleAuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(GoogleAuthGuard)
   async googleCallback(@Req() req: any, @Res() res: Response): Promise<void> {
-    return await handleSocialAuthCallback({
-      authService: this.authService,
-      configService: this.configService,
+    return this.socialAuthService.handleCallback({
       req,
       res,
       action: AUTH_SERVICE.ACTIONS.GOOGLE_AUTH,

@@ -185,15 +185,9 @@ export class CallGateway implements ICallGateway {
         reason: callEndDTO.reason,
       });
 
-    const reason = (callEndDTO.reason || 'ended').toLowerCase();
-    const content =
-      reason === 'missed'
-        ? 'Missed call'
-        : reason === 'declined'
-          ? 'Call declined'
-          : reason === 'error'
-            ? 'Call failed'
-            : 'Call ended';
+    const content = this.chatNotificationService.resolveCallEndContent(
+      callEndDTO.reason,
+    );
 
     await this.chatNotificationService.emitCallLogMessage(this.server, {
       senderId: client.data.userId,

@@ -10,20 +10,15 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
 import { LinkedInAuthGuard } from '../guards/linkedin-auth.guard';
-import { handleSocialAuthCallback } from '../shared/social-auth-callback.helper';
+import { SocialAuthService } from '../../services/social-auth.service';
 import { LinkedInAuthDTO } from '@app/contracts';
 
 @Controller('social/linkedin')
 export class LinkedInController implements ILinkedInAuthController {
-  constructor(
-    @Inject(AUTH_SERVICE.NAME) private readonly authService: ClientProxy,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly socialAuthService: SocialAuthService) {}
 
   @Get('login')
   @HttpCode(HttpStatus.OK)
@@ -43,9 +38,7 @@ export class LinkedInController implements ILinkedInAuthController {
       provider: req.user.provider ?? null,
     };
 
-    return await handleSocialAuthCallback({
-      authService: this.authService,
-      configService: this.configService,
+    return this.socialAuthService.handleCallback({
       req,
       res,
       action: AUTH_SERVICE.ACTIONS.LINKEDIN_AUTH,

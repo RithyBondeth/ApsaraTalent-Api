@@ -18,9 +18,9 @@ import {
   OptimizeResumeResponseDTO,
 } from '@app/contracts/dtos/resume';
 import { ImageService } from './image.service';
+import { PdfGeneratorService } from './pdf-generator.service';
 import { IResumeBuilderService } from '@app/contracts/interfaces/service/resume-builder-service.interface';
 import { buildResumeSystemPrompt } from '../utils/resume-prompt.util';
-import { generatePdf } from '../utils/pdf-generator.util';
 import { buildCoverLetterHtml } from '../utils/cover-letter-templates.util';
 import { buildInterviewPrepHtml } from '../utils/interview-prep-template.util';
 
@@ -31,6 +31,7 @@ export class ResumeBuilderService implements IResumeBuilderService {
   constructor(
     private readonly configService: ConfigService,
     private readonly imageService: ImageService,
+    private readonly pdfGeneratorService: PdfGeneratorService,
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(ResumeBuilderService.name);
@@ -51,7 +52,7 @@ export class ResumeBuilderService implements IResumeBuilderService {
       }
 
       const htmlContent = await this.generateHTMLContent(buildResumeDTO);
-      const pdfBuffer = await generatePdf(htmlContent);
+      const pdfBuffer = await this.pdfGeneratorService.generate(htmlContent);
 
       return new BuildResumeResponseDTO({
         filename: 'resume.pdf',
@@ -241,7 +242,7 @@ Guidelines:
         paragraphsHtml,
       });
 
-      const pdfBuffer = await generatePdf(html);
+      const pdfBuffer = await this.pdfGeneratorService.generate(html);
 
       const slugify = (s: string) =>
         s
@@ -274,7 +275,7 @@ Guidelines:
         generateInterviewPrepPdfDTO.companyIndustry,
         generateInterviewPrepPdfDTO.questions,
       );
-      const pdfBuffer = await generatePdf(html);
+      const pdfBuffer = await this.pdfGeneratorService.generate(html);
       const slugify = (s: string) =>
         s
           .toLowerCase()

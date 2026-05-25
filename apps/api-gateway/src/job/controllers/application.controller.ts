@@ -1,6 +1,5 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
-import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import {
   ApplyJobDTO,
   ApplicationResponseDTO,
@@ -21,22 +20,17 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { JobAccessBase } from '../shared/job-access.base';
 import { rpcCall } from '../../utils/rpc-call';
 import { IApplicationController } from '@app/contracts/interfaces/controller/application-controller.interface';
+import { JobAccessService } from '../services/job-access.service';
 
 @Controller('job/application')
 @UseGuards(AuthGuard)
-export class ApplicationController
-  extends JobAccessBase
-  implements IApplicationController
-{
+export class ApplicationController implements IApplicationController {
   constructor(
     @Inject(JOB_SERVICE.NAME) private readonly jobClient: ClientProxy,
-    @Inject(USER_SERVICE.NAME) userClient: ClientProxy,
-  ) {
-    super(userClient);
-  }
+    private readonly jobAccess: JobAccessService,
+  ) {}
 
   @Post()
   async applyJob(
@@ -67,7 +61,7 @@ export class ApplicationController
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @Req() req?: any,
   ): Promise<ApplicationResponseDTO[]> {
-    await this.assertCompanyAccess(req?.user?.id, companyId);
+    await this.jobAccess.assertCompanyAccess(req?.user?.id, companyId);
     return rpcCall<ApplicationResponseDTO[]>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.GET_JOB_APPLICATIONS,
@@ -81,7 +75,7 @@ export class ApplicationController
     @Req() req?: any,
   ): Promise<ApplicationResponseDTO> {
     if (!req?.user?.id) throw new ForbiddenException('Unauthorized request.');
-    const profile = await this.getCurrentUserProfile(req.user.id);
+    const profile = await this.jobAccess.getCurrentUserProfile(req.user.id);
     if (profile?.role !== 'company' || !profile?.company?.id) {
       throw new ForbiddenException(
         'Only companies can update application status.',

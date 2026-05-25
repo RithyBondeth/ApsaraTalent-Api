@@ -1,21 +1,23 @@
-import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { rpcCall } from '../../utils/rpc-call';
+import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { UserResponseDTO } from '@app/contracts';
+import { IJobAccessService } from '@app/contracts/interfaces/service';
+import { rpcCall } from '../../utils/rpc-call';
 
-export abstract class JobAccessBase {
-  constructor(protected readonly userClient: ClientProxy) {}
+@Injectable()
+export class JobAccessService implements IJobAccessService {
+  constructor(
+    @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
+  ) {}
 
-  protected async getCurrentUserProfile(
-    userId: string,
-  ): Promise<UserResponseDTO> {
+  async getCurrentUserProfile(userId: string): Promise<UserResponseDTO> {
     return rpcCall(this.userClient, USER_SERVICE.ACTIONS.GET_CURRENT_USER, {
-      userId: userId,
+      userId,
     });
   }
 
-  protected async assertEmployeeAccess(
+  async assertEmployeeAccess(
     requestUserId: string,
     employeeId: string,
   ): Promise<void> {
@@ -35,7 +37,7 @@ export abstract class JobAccessBase {
     }
   }
 
-  protected async assertCompanyAccess(
+  async assertCompanyAccess(
     requestUserId: string,
     companyId: string,
   ): Promise<void> {
@@ -55,7 +57,7 @@ export abstract class JobAccessBase {
     }
   }
 
-  protected async assertMatchParticipantAccess(
+  async assertMatchParticipantAccess(
     requestUserId: string,
     eid: string,
     cid: string,

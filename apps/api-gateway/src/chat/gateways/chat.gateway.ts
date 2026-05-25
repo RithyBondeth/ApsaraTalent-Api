@@ -30,6 +30,7 @@ import { SocketStateService } from '../services/socket-state.service';
 import { ChatRateLimiterService } from '../services/chat-rate-limiter.service';
 import { ChatNotificationService } from '../services/chat-notification.service';
 import { SocketBroadcastService } from '../../socket/socket-broadcast.service';
+import { ChatMessageService } from '../services/chat-message.service';
 import { extractChatToken } from '../utils/chat-token.util';
 import { isOriginAllowed } from '../../utils/cors-origin.util';
 import { IChatGateway } from '@app/contracts/interfaces/gateway/chat-gateway.interface';
@@ -85,6 +86,7 @@ export class ChatGateway
     private readonly chatRateLimiterService: ChatRateLimiterService,
     private readonly chatNotificationService: ChatNotificationService,
     private readonly socketBroadcastService: SocketBroadcastService,
+    private readonly chatMessageService: ChatMessageService,
     @Inject(CHAT_SERVICE.NAME) private readonly chatServiceClient: ClientProxy,
   ) {}
 
@@ -228,32 +230,11 @@ export class ChatGateway
         return;
       }
 
-      const usersData = await firstValueFrom(
-        this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.VALIDATE_CHAT_USERS, {
-          senderId: client.data.userId,
-          receiverId: sendMessageDTO.receiverId,
-        }),
-      );
-
-      const messagePayload = {
-        senderId: usersData.sender.id,
-        receiverId: usersData.receiver.id,
-        content: trimmedContent,
-        type: messageType,
-        timestamp: new Date(),
-        replyToId: sendMessageDTO.replyToId ?? null,
-        attachment: sendMessageDTO.attachment ?? null,
-        attachmentFilename: sendMessageDTO.attachmentFilename ?? null,
-        attachmentDuration: sendMessageDTO.attachmentDuration ?? null,
-        attachmentAmplitude: sendMessageDTO.attachmentAmplitude ?? null,
-      };
-
-      const savedMessage = await firstValueFrom(
-        this.chatServiceClient.send(
-          CHAT_SERVICE.ACTIONS.CREATE_MESSAGE,
-          messagePayload,
-        ),
-      );
+      const { usersData, savedMessage } =
+        await this.chatMessageService.sendMessage(
+          client.data.userId,
+          sendMessageDTO,
+        );
 
       this.server
         .to(usersData.receiver.id)

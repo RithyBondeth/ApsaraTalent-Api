@@ -14,6 +14,8 @@ import { GitHubStrategy } from './socials/strategies/github.strategy';
 import { GoogleStrategy } from './socials/strategies/google.strategy';
 import { LinkedInStrategy } from './socials/strategies/linkedin.strategy';
 import { ResumeParseService } from './services/resume-parse.service';
+import { IceServersService } from './services/ice-servers.service';
+import { SocialAuthService } from './services/social-auth.service';
 
 @Module({
   imports: [
@@ -47,6 +49,8 @@ import { ResumeParseService } from './services/resume-parse.service';
     GitHubStrategy,
     FacebookStrategy,
     ResumeParseService,
+    IceServersService,
+    SocialAuthService,
   ],
 })
 export class AuthModule {}

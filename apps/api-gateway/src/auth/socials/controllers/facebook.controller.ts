@@ -10,19 +10,14 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
 import { FacebookAuthGuard } from '../guards/facebook-auth.guard';
-import { handleSocialAuthCallback } from '../shared/social-auth-callback.helper';
+import { SocialAuthService } from '../../services/social-auth.service';
 
 @Controller('social/facebook')
 export class FacebookController implements IFacebookAuthController {
-  constructor(
-    @Inject(AUTH_SERVICE.NAME) private readonly authService: ClientProxy,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly socialAuthService: SocialAuthService) {}
 
   @Get('login')
   @HttpCode(HttpStatus.OK)
@@ -33,9 +28,7 @@ export class FacebookController implements IFacebookAuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(FacebookAuthGuard)
   async facebookCallback(@Req() req: any, @Res() res: Response): Promise<void> {
-    return await handleSocialAuthCallback({
-      authService: this.authService,
-      configService: this.configService,
+    return this.socialAuthService.handleCallback({
       req,
       res,
       action: AUTH_SERVICE.ACTIONS.FACEBOOK_AUTH,

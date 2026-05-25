@@ -107,6 +107,14 @@ export class ChatNotificationService {
     }
   }
 
+  resolveCallEndContent(reason: string): string {
+    const normalized = (reason || 'ended').toLowerCase();
+    if (normalized === 'missed') return 'Missed call';
+    if (normalized === 'declined') return 'Call declined';
+    if (normalized === 'error') return 'Call failed';
+    return 'Call ended';
+  }
+
   async emitCallLogMessage(
     server: Server,
     params: {
