@@ -1,7 +1,8 @@
+import { IChatRateLimiterService } from '@app/contracts';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
-export class ChatRateLimiterService {
+export class ChatRateLimiterService implements IChatRateLimiterService {
   private readonly rateLimitMap = new Map<string, number[]>();
   private readonly MAX_MESSAGES_PER_WINDOW = 10;
   private readonly RATE_LIMIT_WINDOW_MS = 5000;

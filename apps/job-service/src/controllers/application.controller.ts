@@ -1,13 +1,16 @@
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
-import {
-  ApplyJobDTO,
-  ApplicationResponseDTO,
-  UpdateApplicationStatusDTO,
-} from '@app/contracts/dtos/job';
 import { IApplicationRpcController } from '@app/contracts/interfaces/controller/application-controller.interface';
-import { I_APPLICATION_SERVICE, IApplicationService } from '@app/contracts';
+import {
+  ApplyApplicationDTO,
+  ApplyApplicationResponseDTO,
+  GetApplicationResponseDTO,
+  I_APPLICATION_SERVICE,
+  IApplicationService,
+  UpdateApplicationStatusDTO,
+  UpdateApplicationStatusResponseDTO,
+} from '@app/contracts';
 
 @Controller()
 export class ApplicationController implements IApplicationRpcController {
@@ -17,26 +20,30 @@ export class ApplicationController implements IApplicationRpcController {
   ) {}
 
   @MessagePattern(JOB_SERVICE.ACTIONS.APPLY_JOB)
-  applyJob(
-    @Payload() payload: { employeeId: string; applyJobDTO: ApplyJobDTO },
-  ): Promise<ApplicationResponseDTO> {
-    return this.applicationService.applyJob(
+  applyApplication(
+    @Payload()
+    payload: {
+      employeeId: string;
+      applyApplicationDTO: ApplyApplicationDTO;
+    },
+  ): Promise<ApplyApplicationResponseDTO> {
+    return this.applicationService.applyApplication(
       payload.employeeId,
-      payload.applyJobDTO,
+      payload.applyApplicationDTO,
     );
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.GET_MY_APPLICATIONS)
   getMyApplications(
     @Payload() payload: { employeeId: string },
-  ): Promise<ApplicationResponseDTO[]> {
+  ): Promise<GetApplicationResponseDTO[]> {
     return this.applicationService.getMyApplications(payload.employeeId);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.GET_JOB_APPLICATIONS)
   getJobApplications(
     @Payload() payload: { jobId: string; companyId: string },
-  ): Promise<ApplicationResponseDTO[]> {
+  ): Promise<GetApplicationResponseDTO[]> {
     return this.applicationService.getJobApplications(
       payload.jobId,
       payload.companyId,
@@ -50,7 +57,7 @@ export class ApplicationController implements IApplicationRpcController {
       companyId: string;
       updateApplicationStatusDTO: UpdateApplicationStatusDTO;
     },
-  ): Promise<ApplicationResponseDTO> {
+  ): Promise<UpdateApplicationStatusResponseDTO> {
     return this.applicationService.updateApplicationStatus(
       payload.companyId,
       payload.updateApplicationStatusDTO,

@@ -5,10 +5,7 @@ import {
   Injectable,
   Logger,
 } from '@nestjs/common';
-import {
-  ISocialAuthService,
-  SocialCallbackParams,
-} from '@app/contracts/interfaces/service';
+import { ISocialAuthService } from '@app/contracts/interfaces/service';
 import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
@@ -16,15 +13,16 @@ import { firstValueFrom, timeout } from 'rxjs';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
 import { AUTH } from '@app/contracts/constants/domain/auth.constant';
 import {
-  SocialAuthResult,
-  SuccessHtmlOptions,
-  ErrorHtmlOptions,
-} from '@app/contracts/interfaces/domain/auth.interface';
-import {
   isProductionEnvironment,
   setAuthTokenCookies,
   setRememberCookie,
 } from '../utils/auth-cookie.util';
+import {
+  IErrorHtmlOptions,
+  ISocialAuthCallbackOptions,
+  ISocialAuthResult,
+  ISuccessHtmlOptions,
+} from '@app/contracts';
 
 @Injectable()
 export class SocialAuthService implements ISocialAuthService {
@@ -35,10 +33,9 @@ export class SocialAuthService implements ISocialAuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  /* ------------------------------------------------------------------ */
-  /*  Public entry point                                                */
-  /* ------------------------------------------------------------------ */
-  async handleCallback(params: SocialCallbackParams): Promise<void> {
+  async handleCallback(
+    socialAuthParams: ISocialAuthCallbackOptions,
+  ): Promise<void> {
     const frontendOrigin = this.getFrontendOrigin();
     const {
       req,
@@ -50,7 +47,7 @@ export class SocialAuthService implements ISocialAuthService {
       errorType,
       failureMessage,
       timeoutMs = AUTH.OAUTH_CALLBACK_TIMEOUT,
-    } = params;
+    } = socialAuthParams;
 
     try {
       const remember = req.session?.remember;
@@ -70,7 +67,7 @@ export class SocialAuthService implements ISocialAuthService {
 
       const result = await firstValueFrom(
         this.authService
-          .send<SocialAuthResult>(action, payload)
+          .send<ISocialAuthResult>(action, payload)
           .pipe(timeout(timeoutMs)),
       );
 
@@ -138,7 +135,7 @@ export class SocialAuthService implements ISocialAuthService {
   private setSocialAuthCookies(
     res: Response,
     remember: unknown,
-    result: SocialAuthResult,
+    result: ISocialAuthResult,
   ): void {
     const rememberMe = this.getRememberFlag(remember);
     const maxAge = rememberMe ? AUTH.REMEMBER_ME_MAXAGE : AUTH.TOKEN_MAXAGE;
@@ -161,7 +158,7 @@ export class SocialAuthService implements ISocialAuthService {
     successType,
     remember,
     result,
-  }: SuccessHtmlOptions): string {
+  }: ISuccessHtmlOptions): string {
     return `
     <!doctype html>
     <html>
@@ -207,7 +204,7 @@ export class SocialAuthService implements ISocialAuthService {
     targetOrigin,
     errorType,
     errorMessage,
-  }: ErrorHtmlOptions): string {
+  }: IErrorHtmlOptions): string {
     return `
     <!doctype html>
     <html>

@@ -21,7 +21,7 @@ import { JOB } from '@app/contracts/constants/domain/job.constant';
 import {
   MatchResponseDTO,
   MatchCountResponseDTO,
-  AnalyticsResponseDTO,
+  MatchingAnalyticsResponseDTO,
   FindCurrentMatchingResponseDTO,
   FindCurrentLikeResponseDTO,
   MatchDTO,
@@ -158,11 +158,11 @@ export class JobMatchingController implements IMatchingController {
   }
 
   @Get('analytics/:id')
-  async getAnalytics(
+  async getMatchingAnalytics(
     @Param('id') id: string,
     @Query('role') role: string,
-  ): Promise<AnalyticsResponseDTO> {
-    return rpcCall<AnalyticsResponseDTO>(
+  ): Promise<MatchingAnalyticsResponseDTO> {
+    return rpcCall<MatchingAnalyticsResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.GET_ANALYTICS,
       { userId: id, role },

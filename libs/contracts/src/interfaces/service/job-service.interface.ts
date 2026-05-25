@@ -14,17 +14,19 @@ import {
   FindCurrentLikeResponseDTO,
   FindCurrentMatchingResponseDTO,
   MatchCountResponseDTO,
-  AnalyticsResponseDTO,
-  CompanyMatchLookupDTO,
-  EmployeeMatchLookupDTO,
-  MatchAnalyticsDTO,
   AiMatchExplanationDTO,
   AiMatchExplanationResponseDTO,
   AiInterviewPrepDTO,
   AiInterviewPrepResponseDTO,
-  ApplicationResponseDTO,
-  ApplyJobDTO,
   UpdateApplicationStatusDTO,
+  ApplyApplicationDTO,
+  ApplyApplicationResponseDTO,
+  GetApplicationResponseDTO,
+  UpdateApplicationStatusResponseDTO,
+  MatchingAnalyticsResponseDTO,
+  CompanyMatchingLookupDTO,
+  EmployeeMatchingLookupDTO,
+  MatchingAnalyticsDTO,
 } from '@app/contracts/dtos/job';
 import {
   AiMatchProfilesDTO,
@@ -46,26 +48,26 @@ export interface IMatchingService {
   employeeLikes(matchDTO: MatchDTO): Promise<MatchResponseDTO>;
   companyLikes(matchDTO: MatchDTO): Promise<MatchResponseDTO>;
   findCurrentEmployeeLiked(
-    employeeMatchLookupDTO: EmployeeMatchLookupDTO,
+    employeeMatchLookupDTO: EmployeeMatchingLookupDTO,
   ): Promise<FindCurrentLikeResponseDTO[]>;
   findCurrentCompanyLiked(
-    companyMatchLookupDTO: CompanyMatchLookupDTO,
+    companyMatchLookupDTO: CompanyMatchingLookupDTO,
   ): Promise<FindCurrentLikeResponseDTO[]>;
   findCurrentEmployeeMatching(
-    employeeMatchLookupDTO: EmployeeMatchLookupDTO,
+    employeeMatchLookupDTO: EmployeeMatchingLookupDTO,
   ): Promise<FindCurrentMatchingResponseDTO[]>;
   findCurrentCompanyMatching(
-    companyMatchLookupDTO: CompanyMatchLookupDTO,
+    companyMatchLookupDTO: CompanyMatchingLookupDTO,
   ): Promise<FindCurrentMatchingResponseDTO[]>;
   findCurrentEmployeeMatchingCount(
-    employeeMatchLookupDTO: EmployeeMatchLookupDTO,
+    employeeMatchLookupDTO: EmployeeMatchingLookupDTO,
   ): Promise<MatchCountResponseDTO>;
   findCurrentCompanyMatchingCount(
-    companyMatchLookupDTO: CompanyMatchLookupDTO,
+    companyMatchLookupDTO: CompanyMatchingLookupDTO,
   ): Promise<MatchCountResponseDTO>;
-  getAnalytics(
-    matchAnalyticsDTO: MatchAnalyticsDTO,
-  ): Promise<AnalyticsResponseDTO>;
+  getMatchingAnalytics(
+    matchAnalyticsDTO: MatchingAnalyticsDTO,
+  ): Promise<MatchingAnalyticsResponseDTO>;
   getAiMatchExplanation(
     aiMatchExplanationDTO: AiMatchExplanationDTO,
   ): Promise<AiMatchExplanationResponseDTO>;
@@ -93,19 +95,19 @@ export interface IInterviewService {
 }
 
 export interface IApplicationService {
-  applyJob(
+  applyApplication(
     employeeId: string,
-    applyJobDTO: ApplyJobDTO,
-  ): Promise<ApplicationResponseDTO>;
-  getMyApplications(employeeId: string): Promise<ApplicationResponseDTO[]>;
+    applyApplicationDTO: ApplyApplicationDTO,
+  ): Promise<ApplyApplicationResponseDTO>;
+  getMyApplications(employeeId: string): Promise<GetApplicationResponseDTO[]>;
   getJobApplications(
     jobId: string,
     companyId: string,
-  ): Promise<ApplicationResponseDTO[]>;
+  ): Promise<GetApplicationResponseDTO[]>;
   updateApplicationStatus(
     companyId: string,
     updateApplicationStatusDTO: UpdateApplicationStatusDTO,
-  ): Promise<ApplicationResponseDTO>;
+  ): Promise<UpdateApplicationStatusResponseDTO>;
   withdrawApplication(
     employeeId: string,
     applicationId: string,

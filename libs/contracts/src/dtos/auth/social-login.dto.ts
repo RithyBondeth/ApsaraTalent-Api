@@ -1,10 +1,4 @@
-import {
-  IsBoolean,
-  IsEmail,
-  IsOptional,
-  IsString,
-  IsUrl,
-} from 'class-validator';
+import { IsEmail, IsOptional, IsString, IsUrl } from 'class-validator';
 import { LoginResponseDTO } from './login.dto';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 

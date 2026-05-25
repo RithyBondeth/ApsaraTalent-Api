@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { ISocketStateService } from '@app/contracts';
 
 @Injectable()
-export class SocketStateService {
+export class SocketStateService implements ISocketStateService {
   private readonly connectedUsers = new Map<string, Set<string>>();
 
   getConnectedUsers(): Map<string, Set<string>> {

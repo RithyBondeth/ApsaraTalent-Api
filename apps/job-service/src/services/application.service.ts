@@ -8,11 +8,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import {
-  ApplyJobDTO,
-  ApplicationResponseDTO,
+  IApplicationService,
+  ApplyApplicationDTO,
+  ApplyApplicationResponseDTO,
+  GetApplicationResponseDTO,
   UpdateApplicationStatusDTO,
-} from '@app/contracts/dtos/job';
-import { IApplicationService } from '@app/contracts';
+  UpdateApplicationStatusResponseDTO,
+} from '@app/contracts';
 
 @Injectable()
 export class ApplicationService implements IApplicationService {
@@ -28,10 +30,10 @@ export class ApplicationService implements IApplicationService {
     this.logger.setContext(ApplicationService.name);
   }
 
-  async applyJob(
+  async applyApplication(
     employeeId: string,
-    applyJobDTO: ApplyJobDTO,
-  ): Promise<ApplicationResponseDTO> {
+    applyApplicationDTO: ApplyApplicationDTO,
+  ): Promise<ApplyApplicationResponseDTO> {
     try {
       const employee = await this.employeeRepo.findOne({
         where: { user: { id: employeeId } },
@@ -43,7 +45,7 @@ export class ApplicationService implements IApplicationService {
         });
 
       const job = await this.jobRepo.findOne({
-        where: { id: applyJobDTO.jobId },
+        where: { id: applyApplicationDTO.jobId },
         relations: ['company'],
       });
       if (!job)
@@ -52,7 +54,7 @@ export class ApplicationService implements IApplicationService {
       const existing = await this.applicationRepo.findOne({
         where: {
           employee: { id: employee.id },
-          job: { id: applyJobDTO.jobId },
+          job: { id: applyApplicationDTO.jobId },
         },
       });
       if (existing) {
@@ -66,12 +68,12 @@ export class ApplicationService implements IApplicationService {
         employee,
         job,
         status: EApplicationStatus.PENDING,
-        coverLetterNote: applyJobDTO.coverLetterNote ?? null,
+        coverLetterNote: applyApplicationDTO.coverLetterNote ?? null,
       });
 
       const saved = await this.applicationRepo.save(application);
 
-      return new ApplicationResponseDTO({
+      return new ApplyApplicationResponseDTO({
         id: saved.id,
         status: saved.status,
         coverLetterNote: saved.coverLetterNote ?? undefined,
@@ -92,7 +94,7 @@ export class ApplicationService implements IApplicationService {
 
   async getMyApplications(
     employeeId: string,
-  ): Promise<ApplicationResponseDTO[]> {
+  ): Promise<GetApplicationResponseDTO[]> {
     try {
       const employee = await this.employeeRepo.findOne({
         where: { user: { id: employeeId } },
@@ -111,7 +113,7 @@ export class ApplicationService implements IApplicationService {
 
       return applications.map(
         (app) =>
-          new ApplicationResponseDTO({
+          new GetApplicationResponseDTO({
             id: app.id,
             status: app.status,
             coverLetterNote: app.coverLetterNote ?? undefined,
@@ -135,7 +137,7 @@ export class ApplicationService implements IApplicationService {
   async getJobApplications(
     jobId: string,
     companyId: string,
-  ): Promise<ApplicationResponseDTO[]> {
+  ): Promise<GetApplicationResponseDTO[]> {
     try {
       const job = await this.jobRepo.findOne({
         where: { id: jobId, company: { id: companyId } },
@@ -155,7 +157,7 @@ export class ApplicationService implements IApplicationService {
 
       return applications.map(
         (app) =>
-          new ApplicationResponseDTO({
+          new GetApplicationResponseDTO({
             id: app.id,
             status: app.status,
             coverLetterNote: app.coverLetterNote ?? undefined,
@@ -181,7 +183,7 @@ export class ApplicationService implements IApplicationService {
   async updateApplicationStatus(
     companyId: string,
     updateApplicationStatusDTO: UpdateApplicationStatusDTO,
-  ): Promise<ApplicationResponseDTO> {
+  ): Promise<UpdateApplicationStatusResponseDTO> {
     try {
       const application = await this.applicationRepo.findOne({
         where: { id: updateApplicationStatusDTO.applicationId },
@@ -198,7 +200,7 @@ export class ApplicationService implements IApplicationService {
       application.status = updateApplicationStatusDTO.status;
       const updated = await this.applicationRepo.save(application);
 
-      return new ApplicationResponseDTO({
+      return new UpdateApplicationStatusResponseDTO({
         id: updated.id,
         status: updated.status,
         coverLetterNote: updated.coverLetterNote ?? undefined,

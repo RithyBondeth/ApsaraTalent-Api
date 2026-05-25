@@ -1,16 +1,16 @@
 import { IsIn, IsUUID } from 'class-validator';
 
-export class EmployeeMatchLookupDTO {
+export class EmployeeMatchingLookupDTO {
   @IsUUID()
   eid: string;
 }
 
-export class CompanyMatchLookupDTO {
+export class CompanyMatchingLookupDTO {
   @IsUUID()
   cid: string;
 }
 
-export class MatchAnalyticsDTO {
+export class MatchingAnalyticsDTO {
   @IsUUID()
   userId: string;
 

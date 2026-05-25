@@ -14,12 +14,12 @@ import {
   RESUME_BUILDER_SERVICE,
   USER_SERVICE,
 } from '@app/contracts/constants';
-import { IHealthController } from '@app/contracts/interfaces/controller/health-controller.interface';
 import {
   HEALTH_DATABASE_TIMEOUT_MS,
   RedisCacheHealthIndicator,
 } from '@app/common';
 import { LivenessResponseDTO } from '@app/contracts/dtos/health';
+import { IHealthController } from '@app/contracts/interfaces/controller/health-controller.interface';
 import { InternalServiceHealthIndicator } from '../indicators/internal-service.health';
 
 const INTERNAL_SERVICES = [

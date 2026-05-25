@@ -1,24 +1,26 @@
 import {
-  ApplyJobDTO,
-  ApplicationResponseDTO,
+  ApplyApplicationDTO,
+  ApplyApplicationResponseDTO,
+  GetApplicationResponseDTO,
   UpdateApplicationStatusDTO,
-} from '@app/contracts/dtos';
+  UpdateApplicationStatusResponseDTO,
+} from '../../dtos';
 
 export interface IApplicationController {
-  applyJob(
-    applyJobDTO: ApplyJobDTO,
+  applyApplication(
+    applyApplicationDTO: ApplyApplicationDTO,
     req?: any,
-  ): Promise<ApplicationResponseDTO>;
-  getMyApplications(req?: any): Promise<ApplicationResponseDTO[]>;
+  ): Promise<ApplyApplicationResponseDTO>;
+  getMyApplications(req?: any): Promise<GetApplicationResponseDTO[]>;
   getJobApplications(
     jobId: string,
     companyId: string,
     req?: any,
-  ): Promise<ApplicationResponseDTO[]>;
+  ): Promise<GetApplicationResponseDTO[]>;
   updateApplicationStatus(
     updateApplicationStatusDTO: UpdateApplicationStatusDTO,
     req?: any,
-  ): Promise<ApplicationResponseDTO>;
+  ): Promise<UpdateApplicationStatusResponseDTO>;
   withdrawApplication(
     applicationId: string,
     req?: any,
@@ -26,21 +28,21 @@ export interface IApplicationController {
 }
 
 export interface IApplicationRpcController {
-  applyJob(payload: {
+  applyApplication(payload: {
     employeeId: string;
-    applyJobDTO: ApplyJobDTO;
-  }): Promise<ApplicationResponseDTO>;
+    applyApplicationDTO: ApplyApplicationDTO;
+  }): Promise<ApplyApplicationResponseDTO>;
   getMyApplications(payload: {
     employeeId: string;
-  }): Promise<ApplicationResponseDTO[]>;
+  }): Promise<GetApplicationResponseDTO[]>;
   getJobApplications(payload: {
     jobId: string;
     companyId: string;
-  }): Promise<ApplicationResponseDTO[]>;
+  }): Promise<GetApplicationResponseDTO[]>;
   updateApplicationStatus(payload: {
     companyId: string;
     updateApplicationStatusDTO: UpdateApplicationStatusDTO;
-  }): Promise<ApplicationResponseDTO>;
+  }): Promise<UpdateApplicationStatusResponseDTO>;
   withdrawApplication(payload: {
     employeeId: string;
     applicationId: string;

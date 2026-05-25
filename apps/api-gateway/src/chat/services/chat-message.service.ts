@@ -2,11 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-service.constant';
-import { SendMessageDTO } from '@app/contracts';
-import {
-  IChatMessageService,
-  SendMessageResult,
-} from '@app/contracts/interfaces/service';
+import { SendMessageDTO, SendMessageResultDTO } from '@app/contracts';
+import { IChatMessageService } from '@app/contracts/interfaces/service';
 
 @Injectable()
 export class ChatMessageService implements IChatMessageService {
@@ -17,7 +14,7 @@ export class ChatMessageService implements IChatMessageService {
   async sendMessage(
     senderId: string,
     sendMessageDTO: SendMessageDTO,
-  ): Promise<SendMessageResult> {
+  ): Promise<SendMessageResultDTO> {
     const trimmedContent = sendMessageDTO.content?.trim() ?? '';
     const hasAttachment = !!sendMessageDTO.attachment;
     const messageType = sendMessageDTO.type ?? 'text';

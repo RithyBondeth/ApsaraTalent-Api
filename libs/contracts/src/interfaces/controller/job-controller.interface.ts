@@ -1,5 +1,4 @@
 import {
-  AnalyticsResponseDTO,
   CreateInterviewDTO,
   CreateInterviewResponseDTO,
   GetInterviewResponseDTO,
@@ -13,13 +12,14 @@ import {
   MatchDTO,
   GetInterviewsByEmployeeDTO,
   GetInterviewsByCompanyDTO,
-  EmployeeMatchLookupDTO,
-  CompanyMatchLookupDTO,
-  MatchAnalyticsDTO,
   AiMatchExplanationDTO,
   AiMatchExplanationResponseDTO,
   AiInterviewPrepDTO,
   AiInterviewPrepResponseDTO,
+  MatchingAnalyticsResponseDTO,
+  CompanyMatchingLookupDTO,
+  EmployeeMatchingLookupDTO,
+  MatchingAnalyticsDTO,
 } from '@app/contracts/dtos/job';
 import {
   AiMatchProfilesDTO,
@@ -99,7 +99,10 @@ export interface IMatchingController {
     cid: string,
     req?: any,
   ): Promise<MatchCountResponseDTO>;
-  getAnalytics(id: string, role: string): Promise<AnalyticsResponseDTO>;
+  getMatchingAnalytics(
+    id: string,
+    role: string,
+  ): Promise<MatchingAnalyticsResponseDTO>;
   getAiMatchExplanation(
     eid: string,
     cid: string,
@@ -135,26 +138,26 @@ export interface IMatchingRpcController {
   employeeLikes(matchDTO: MatchDTO): Promise<MatchResponseDTO>;
   companyLikes(matchDTO: MatchDTO): Promise<MatchResponseDTO>;
   findCurrentEmployeeLiked(
-    employeeMatchLookupDTO: EmployeeMatchLookupDTO,
+    employeeMatchLookupDTO: EmployeeMatchingLookupDTO,
   ): Promise<FindCurrentLikeResponseDTO[]>;
   findCurrentCompanyLiked(
-    companyMatchLookupDTO: CompanyMatchLookupDTO,
+    companyMatchLookupDTO: CompanyMatchingLookupDTO,
   ): Promise<FindCurrentLikeResponseDTO[]>;
   findCurrentEmployeeMatching(
-    employeeMatchLookupDTO: EmployeeMatchLookupDTO,
+    employeeMatchLookupDTO: EmployeeMatchingLookupDTO,
   ): Promise<FindCurrentMatchingResponseDTO[]>;
   findCurrentCompanyMatching(
-    companyMatchLookupDTO: CompanyMatchLookupDTO,
+    companyMatchLookupDTO: CompanyMatchingLookupDTO,
   ): Promise<FindCurrentMatchingResponseDTO[]>;
   findCurrentEmployeeMatchingCount(
-    employeeMatchLookupDTO: EmployeeMatchLookupDTO,
+    employeeMatchLookupDTO: EmployeeMatchingLookupDTO,
   ): Promise<MatchCountResponseDTO>;
   findCurrentCompanyMatchingCount(
-    companyMatchLookupDTO: CompanyMatchLookupDTO,
+    companyMatchLookupDTO: CompanyMatchingLookupDTO,
   ): Promise<MatchCountResponseDTO>;
-  getAnalytics(
-    matchAnalyticsDTO: MatchAnalyticsDTO,
-  ): Promise<AnalyticsResponseDTO>;
+  getMatchingAnalytics(
+    matchAnalyticsDTO: MatchingAnalyticsDTO,
+  ): Promise<MatchingAnalyticsResponseDTO>;
   getAiMatchExplanation(
     aiMatchExplanationDTO: AiMatchExplanationDTO,
   ): Promise<AiMatchExplanationResponseDTO>;

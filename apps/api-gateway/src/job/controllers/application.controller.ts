@@ -1,11 +1,6 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
 import {
-  ApplyJobDTO,
-  ApplicationResponseDTO,
-  UpdateApplicationStatusDTO,
-} from '@app/contracts/dtos/job';
-import {
   Body,
   Controller,
   Delete,
@@ -23,6 +18,13 @@ import { ClientProxy } from '@nestjs/microservices';
 import { rpcCall } from '../../utils/rpc-call';
 import { IApplicationController } from '@app/contracts/interfaces/controller/application-controller.interface';
 import { JobAccessService } from '../services/job-access.service';
+import {
+  ApplyApplicationDTO,
+  ApplyApplicationResponseDTO,
+  GetApplicationResponseDTO,
+  UpdateApplicationStatusDTO,
+  UpdateApplicationStatusResponseDTO,
+} from '@app/contracts';
 
 @Controller('job/application')
 @UseGuards(AuthGuard)
@@ -33,22 +35,24 @@ export class ApplicationController implements IApplicationController {
   ) {}
 
   @Post()
-  async applyJob(
-    @Body() applyJobDTO: ApplyJobDTO,
+  async applyApplication(
+    @Body() applyApplicationDTO: ApplyApplicationDTO,
     @Req() req?: any,
-  ): Promise<ApplicationResponseDTO> {
+  ): Promise<ApplyApplicationResponseDTO> {
     if (!req?.user?.id) throw new ForbiddenException('Unauthorized request.');
-    return rpcCall<ApplicationResponseDTO>(
+    return rpcCall<ApplyApplicationResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.APPLY_JOB,
-      { employeeId: req.user.id, applyJobDTO },
+      { employeeId: req.user.id, applyApplicationDTO },
     );
   }
 
   @Get('mine')
-  async getMyApplications(@Req() req?: any): Promise<ApplicationResponseDTO[]> {
+  async getMyApplications(
+    @Req() req?: any,
+  ): Promise<GetApplicationResponseDTO[]> {
     if (!req?.user?.id) throw new ForbiddenException('Unauthorized request.');
-    return rpcCall<ApplicationResponseDTO[]>(
+    return rpcCall<GetApplicationResponseDTO[]>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.GET_MY_APPLICATIONS,
       { employeeId: req.user.id },
@@ -60,9 +64,9 @@ export class ApplicationController implements IApplicationController {
     @Param('jobId', ParseUUIDPipe) jobId: string,
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @Req() req?: any,
-  ): Promise<ApplicationResponseDTO[]> {
+  ): Promise<GetApplicationResponseDTO[]> {
     await this.jobAccess.assertCompanyAccess(req?.user?.id, companyId);
-    return rpcCall<ApplicationResponseDTO[]>(
+    return rpcCall<GetApplicationResponseDTO[]>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.GET_JOB_APPLICATIONS,
       { jobId, companyId },
@@ -73,7 +77,7 @@ export class ApplicationController implements IApplicationController {
   async updateApplicationStatus(
     @Body() updateApplicationStatusDTO: UpdateApplicationStatusDTO,
     @Req() req?: any,
-  ): Promise<ApplicationResponseDTO> {
+  ): Promise<UpdateApplicationStatusResponseDTO> {
     if (!req?.user?.id) throw new ForbiddenException('Unauthorized request.');
     const profile = await this.jobAccess.getCurrentUserProfile(req.user.id);
     if (profile?.role !== 'company' || !profile?.company?.id) {
@@ -81,7 +85,7 @@ export class ApplicationController implements IApplicationController {
         'Only companies can update application status.',
       );
     }
-    return rpcCall<ApplicationResponseDTO>(
+    return rpcCall<UpdateApplicationStatusResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.UPDATE_APPLICATION_STATUS,
       { companyId: profile.company.id, updateApplicationStatusDTO },

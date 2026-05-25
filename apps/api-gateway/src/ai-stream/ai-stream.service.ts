@@ -2,9 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { Response } from 'express';
+import { IAiStreamService } from '@app/contracts/interfaces/service/ai-stream-service.interface';
 
 @Injectable()
-export class AiStreamService {
+export class AiStreamService implements IAiStreamService {
   private readonly openai: OpenAI;
   readonly model: string;
 
@@ -51,7 +52,7 @@ export class AiStreamService {
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache, no-store');
     res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no'); // disable nginx proxy buffering
+    res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders();
 
     try {

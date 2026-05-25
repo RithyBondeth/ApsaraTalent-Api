@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsIn,
   IsNotEmpty,
   IsNumber,
@@ -10,7 +11,6 @@ import {
   ValidateIf,
 } from 'class-validator';
 
-/** WebSocket event: sendMessage — sent by the client */
 export class SendMessageDTO {
   @IsUUID()
   receiverId: string;
@@ -89,4 +89,19 @@ export class SendMessageResponseDTO {
   constructor(partial: Partial<SendMessageResponseDTO>) {
     Object.assign(this, partial);
   }
+}
+
+export class SendMessageResultDTO {
+  usersData: any;
+
+  savedMessage: any;
+
+  @IsString()
+  trimmedContent: string;
+
+  @IsString()
+  messageType: string;
+
+  @IsBoolean()
+  hasAttachment: boolean;
 }

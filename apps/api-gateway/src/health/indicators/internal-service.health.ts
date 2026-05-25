@@ -17,9 +17,10 @@ import {
   type HealthIndicatorResult,
 } from '@nestjs/terminus';
 import { firstValueFrom, timeout } from 'rxjs';
+import { IInternalServiceHealthIndicator } from '@app/contracts';
 
 @Injectable()
-export class InternalServiceHealthIndicator {
+export class InternalServiceHealthIndicator implements IInternalServiceHealthIndicator {
   private readonly clients: Record<string, ClientProxy>;
 
   constructor(

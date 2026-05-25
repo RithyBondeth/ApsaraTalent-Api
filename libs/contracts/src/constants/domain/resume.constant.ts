@@ -5,4 +5,6 @@ export const RESUME = {
   GENERATION_TIMEOUT: 30_000,
   /** Gateway-level timeout for the full build-resume RPC — ~3 minutes */
   CONTROLLER_TIMEOUT: 170_000,
+  /** Maximum characters of resume text to pass to OpenAI. */
+  MAX_TEXT_CHARS: 8_000,
 } as const;

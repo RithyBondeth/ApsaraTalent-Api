@@ -52,9 +52,7 @@ export function normalizeAuthServiceError(error: unknown): {
       ) {
         return { statusCode: parsedStatus, message: parsedMessage };
       }
-    } catch {
-      // Ignore malformed JSON and fall back to the generic error below.
-    }
+    } catch {}
   }
 
   return fallback;

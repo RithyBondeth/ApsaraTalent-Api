@@ -5,13 +5,17 @@ import { Server } from 'socket.io';
 import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-service.constant';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { CHAT, CHAT_WEBSOCKET_EVENTS } from '@app/contracts';
+import {
+  CHAT,
+  CHAT_WEBSOCKET_EVENTS,
+  IChatNotificationService,
+} from '@app/contracts';
 import { UserResponseDTO } from '@app/contracts/dtos';
 import { buildChatNotificationPreview } from '../utils/chat-notification.util';
 import { SocketStateService } from './socket-state.service';
 
 @Injectable()
-export class ChatNotificationService {
+export class ChatNotificationService implements IChatNotificationService {
   private readonly logger = new Logger(ChatNotificationService.name);
 
   constructor(
