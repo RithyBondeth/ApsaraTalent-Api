@@ -21,56 +21,50 @@ export class ApplicationController implements IApplicationRpcController {
 
   @MessagePattern(JOB_SERVICE.ACTIONS.APPLY_JOB)
   applyApplication(
-    @Payload()
-    payload: {
-      employeeId: string;
-      applyApplicationDTO: ApplyApplicationDTO;
-    },
+    @Payload('employeeId') employeeId: string,
+    @Payload('applyApplicationDTO') applyApplicationDTO: ApplyApplicationDTO,
   ): Promise<ApplyApplicationResponseDTO> {
     return this.applicationService.applyApplication(
-      payload.employeeId,
-      payload.applyApplicationDTO,
+      employeeId,
+      applyApplicationDTO,
     );
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.GET_MY_APPLICATIONS)
   getMyApplications(
-    @Payload() payload: { employeeId: string },
+    @Payload('employeeId') employeeId: string,
   ): Promise<GetApplicationResponseDTO[]> {
-    return this.applicationService.getMyApplications(payload.employeeId);
+    return this.applicationService.getMyApplications(employeeId);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.GET_JOB_APPLICATIONS)
   getJobApplications(
-    @Payload() payload: { jobId: string; companyId: string },
+    @Payload('jobId') jobId: string,
+    @Payload('companyId') companyId: string,
   ): Promise<GetApplicationResponseDTO[]> {
-    return this.applicationService.getJobApplications(
-      payload.jobId,
-      payload.companyId,
-    );
+    return this.applicationService.getJobApplications(jobId, companyId);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.UPDATE_APPLICATION_STATUS)
   updateApplicationStatus(
-    @Payload()
-    payload: {
-      companyId: string;
-      updateApplicationStatusDTO: UpdateApplicationStatusDTO;
-    },
+    @Payload('companyId') companyId: string,
+    @Payload('updateApplicationStatusDTO')
+    updateApplicationStatusDTO: UpdateApplicationStatusDTO,
   ): Promise<UpdateApplicationStatusResponseDTO> {
     return this.applicationService.updateApplicationStatus(
-      payload.companyId,
-      payload.updateApplicationStatusDTO,
+      companyId,
+      updateApplicationStatusDTO,
     );
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.WITHDRAW_APPLICATION)
   withdrawApplication(
-    @Payload() payload: { employeeId: string; applicationId: string },
+    @Payload('employeeId') employeeId: string,
+    @Payload('applicationId') applicationId: string,
   ): Promise<{ message: string }> {
     return this.applicationService.withdrawApplication(
-      payload.employeeId,
-      payload.applicationId,
+      employeeId,
+      applicationId,
     );
   }
 }

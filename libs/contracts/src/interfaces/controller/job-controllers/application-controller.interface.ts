@@ -28,23 +28,21 @@ export interface IApplicationController {
 }
 
 export interface IApplicationRpcController {
-  applyApplication(payload: {
-    employeeId: string;
-    applyApplicationDTO: ApplyApplicationDTO;
-  }): Promise<ApplyApplicationResponseDTO>;
-  getMyApplications(payload: {
-    employeeId: string;
-  }): Promise<GetApplicationResponseDTO[]>;
-  getJobApplications(payload: {
-    jobId: string;
-    companyId: string;
-  }): Promise<GetApplicationResponseDTO[]>;
-  updateApplicationStatus(payload: {
-    companyId: string;
-    updateApplicationStatusDTO: UpdateApplicationStatusDTO;
-  }): Promise<UpdateApplicationStatusResponseDTO>;
-  withdrawApplication(payload: {
-    employeeId: string;
-    applicationId: string;
-  }): Promise<{ message: string }>;
+  applyApplication(
+    employeeId: string,
+    applyApplicationDTO: ApplyApplicationDTO,
+  ): Promise<ApplyApplicationResponseDTO>;
+  getMyApplications(employeeId: string): Promise<GetApplicationResponseDTO[]>;
+  getJobApplications(
+    jobId: string,
+    companyId: string,
+  ): Promise<GetApplicationResponseDTO[]>;
+  updateApplicationStatus(
+    companyId: string,
+    updateApplicationStatusDTO: UpdateApplicationStatusDTO,
+  ): Promise<UpdateApplicationStatusResponseDTO>;
+  withdrawApplication(
+    employeeId: string,
+    applicationId: string,
+  ): Promise<{ message: string }>;
 }
