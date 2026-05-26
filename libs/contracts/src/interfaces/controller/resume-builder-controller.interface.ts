@@ -73,4 +73,10 @@ export interface IResumeBuilderController {
   ): Promise<GenerateInterviewPrepPdfResponseDTO>;
 }
 
-export interface IResumeBuilderRpcController extends IResumeBuilderController {}
+export interface IResumeBuilderRpcController extends Omit<
+  IResumeBuilderController,
+  | 'streamCoverLetter'
+  | 'streamPolishCoverLetter'
+  | 'streamOptimizeResume'
+  | 'streamRefineBio'
+> {}
