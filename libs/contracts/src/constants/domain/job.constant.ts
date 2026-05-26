@@ -1,4 +1,8 @@
 export const JOB = {
+  /** TTL for job list cache */
+  JOB_LIST_TTL: 5 * 60 * 1000, // 5 min
+  /** TTL for job search cache */
+  JOB_SEARCH_TTL: 2 * 60 * 1000, // 2 min
   /** Default interview duration when none is specified (minutes) */
   DEFAULT_INTERVIEW_DURATION: 30,
   /** Sentinel for unbounded company-size filter (max signed int32) */

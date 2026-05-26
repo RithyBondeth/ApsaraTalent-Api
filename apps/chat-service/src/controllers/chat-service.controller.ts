@@ -10,7 +10,6 @@ import {
 import {
   CreateOrGetChatDTO,
   GetRecentChatsResponseDTO,
-  IChatController,
   IChatRpcController,
   InitiateChatResponseDTO,
   ValidateChatUsersDTO,
@@ -126,11 +125,6 @@ export class ChatController implements IChatRpcController {
     return this.chatService.updateReaction(updateReactionRpcDTO);
   }
 
-  /**
-   * Edit a message's content.
-   * Only the original sender may edit; deleted messages cannot be edited.
-   * Sets isEdited=true so the UI shows "(edited)" label.
-   */
   @MessagePattern(CHAT_SERVICE.ACTIONS.EDIT_MESSAGE)
   async editMessage(
     @Payload() editMessageRpcDTO: EditMessageRpcDTO,
@@ -138,11 +132,6 @@ export class ChatController implements IChatRpcController {
     return this.chatService.editMessage(editMessageRpcDTO);
   }
 
-  /**
-   * Soft-delete a message.
-   * Only the original sender can delete; the row stays in the DB
-   * with isDeleted=true so reply references and read receipts are preserved.
-   */
   @MessagePattern(CHAT_SERVICE.ACTIONS.DELETE_MESSAGE)
   async deleteMessage(
     @Payload() deleteMessageRpcDTO: DeleteMessageRpcDTO,

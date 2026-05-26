@@ -22,8 +22,6 @@ import { RpcException } from '@nestjs/microservices';
 import { Repository } from 'typeorm';
 import { CacheCleanupService } from '../../shared/services/cache-cleanup.service';
 
-const ISSUER = 'Apsara Talent';
-
 @Injectable()
 export class TwoFactorService implements ITwoFactorService {
   constructor(
@@ -44,7 +42,7 @@ export class TwoFactorService implements ITwoFactorService {
       const otpAuthUrl = generateURI({
         secret,
         label: user.email ?? user.phone ?? user.id,
-        issuer: ISSUER,
+        issuer: 'Apsara Talent',
       });
 
       // Persist the secret (not yet enabled — enable() sets the flag)

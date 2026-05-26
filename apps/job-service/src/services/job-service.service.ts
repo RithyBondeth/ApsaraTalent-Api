@@ -16,9 +16,6 @@ import { IJobServiceService } from '@app/contracts/interfaces/service/job-servic
 import { JOB } from '@app/contracts/constants/domain/job.constant';
 import { PaginationDTO } from '@app/contracts';
 
-const JOB_LIST_TTL = 5 * 60 * 1000; // 5 min
-const JOB_SEARCH_TTL = 2 * 60 * 1000; // 2 min
-
 @Injectable()
 export class JobService implements IJobServiceService {
   constructor(
@@ -49,7 +46,7 @@ export class JobService implements IJobServiceService {
         order: { createdAt: 'DESC' },
       });
       const result = jobs.map((job) => new JobResponseDTO(job));
-      await this.redisService.set(cacheKey, result, JOB_LIST_TTL);
+      await this.redisService.set(cacheKey, result, JOB.JOB_LIST_TTL);
     } catch (error) {
       this.logger.error(
         (error as Error).message || 'An error occurred while fetching the job',
@@ -286,7 +283,7 @@ export class JobService implements IJobServiceService {
       }
 
       const result = jobs.map((job) => new SearchJobResponseDTO(job));
-      await this.redisService.set(cacheKey, result, JOB_SEARCH_TTL);
+      await this.redisService.set(cacheKey, result, JOB.JOB_SEARCH_TTL);
       return result;
     } catch (error) {
       this.logger.error(

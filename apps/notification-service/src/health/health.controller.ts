@@ -9,7 +9,7 @@ import {
   HealthIndicatorService,
   TypeOrmHealthIndicator,
 } from '@nestjs/terminus';
-import { PushNotificationService } from '../push-notification.service';
+import { PushNotificationService } from '../services/push-notification.service';
 import { IHealthRpcController } from '@app/contracts';
 
 @Controller()

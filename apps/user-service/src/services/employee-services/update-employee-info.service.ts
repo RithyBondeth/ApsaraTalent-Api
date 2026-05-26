@@ -12,7 +12,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import {
-  UpdateEmployeeInfoRequestDTO,
+  UpdateEmployeeInfoRpcDTO,
   UpdateEmployeeInfoResponseDTO,
   EmployeeResponseDTO,
 } from '@app/contracts/dtos/user';
@@ -39,9 +39,9 @@ export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
   ) {}
 
   async updateEmployeeInfo(
-    updateEmployeeInfoRequestDTO: UpdateEmployeeInfoRequestDTO,
+    updateEmployeeInfoRpcDTO: UpdateEmployeeInfoRpcDTO,
   ): Promise<UpdateEmployeeInfoResponseDTO> {
-    const { employeeId, updateEmployeeInfoDTO } = updateEmployeeInfoRequestDTO;
+    const { employeeId, updateEmployeeInfoDTO } = updateEmployeeInfoRpcDTO;
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },

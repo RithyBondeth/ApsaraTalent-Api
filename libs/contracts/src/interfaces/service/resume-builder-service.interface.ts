@@ -43,6 +43,10 @@ export interface IResumeBuilderService {
   ): Promise<GenerateInterviewPrepPdfResponseDTO>;
 }
 
+export interface IImageService {
+  optimizeProfilePicture(imageData: string): Promise<string>;
+}
+
 export interface IPdfGeneratorService {
   generate(html: string): Promise<Buffer>;
 }

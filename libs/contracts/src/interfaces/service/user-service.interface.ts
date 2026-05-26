@@ -35,9 +35,9 @@ import {
   RemoveEmployeeCoverLetterResponseDTO,
   RemoveEmployeeResumeResponseDTO,
   SearchEmployeeResponseDTO,
-  UpdateCompanyInfoRequestDTO,
+  UpdateCompanyInfoRpcDTO,
   UpdateCompanyInfoResponseDTO,
-  UpdateEmployeeInfoRequestDTO,
+  UpdateEmployeeInfoRpcDTO,
   UpdateEmployeeInfoResponseDTO,
   UpdatePushNotificationTokenDTO,
   UpdatePushNotificationTokenResponseDTO,
@@ -75,7 +75,7 @@ export const I_EXPERIENCE_AND_EDUCATION_SERVICE =
 
 export interface IUpdateEmployeeInfoService {
   updateEmployeeInfo(
-    updateEmployeeInfoRequestDTO: UpdateEmployeeInfoRequestDTO,
+    updateEmployeeInfoRpcDTO: UpdateEmployeeInfoRpcDTO,
   ): Promise<UpdateEmployeeInfoResponseDTO>;
 }
 
@@ -90,7 +90,7 @@ export interface IImageEmployeeService {
 
 export interface IUpdateCompanyInfoService {
   updateCompanyInfo(
-    updateCompanyInfoRequestDTO: UpdateCompanyInfoRequestDTO,
+    updateCompanyInfoRpcDTO: UpdateCompanyInfoRpcDTO,
   ): Promise<UpdateCompanyInfoResponseDTO>;
 }
 

@@ -41,7 +41,7 @@ export class CompanyRecommendationsDTO extends CompanyIdDTO {
   limit?: number;
 }
 
-export class UpdateCompanyInfoRequestDTO extends CompanyIdDTO {
+export class UpdateCompanyInfoRpcDTO extends CompanyIdDTO {
   @ValidateNested()
   @Type(() => UpdateCompanyInfoDTO)
   updateCompanyInfoDTO: UpdateCompanyInfoDTO;

@@ -10,7 +10,7 @@ import {
   RemoveOpenPositionDTO,
   RemoveOpenPositionResponseDTO,
   UpdateCompanyInfoDTO,
-  UpdateCompanyInfoRequestDTO,
+  UpdateCompanyInfoRpcDTO,
   UpdateCompanyInfoResponseDTO,
   UploadCompanyAvatarDTO,
   UploadCompanyAvatarResponseDTO,
@@ -85,7 +85,7 @@ export interface IUpdateCompanyInfoController {
 
 export interface IUpdateCompanyInfoRpcController {
   updateCompanyInfo(
-    updateCompanyInfoRequestDTO: UpdateCompanyInfoRequestDTO,
+    updateCompanyInfoRpcDTO: UpdateCompanyInfoRpcDTO,
   ): Promise<UpdateCompanyInfoResponseDTO>;
 }
 

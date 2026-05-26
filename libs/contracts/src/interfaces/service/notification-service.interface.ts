@@ -11,6 +11,7 @@ import {
   NotificationUserDTO,
   ReadAllNotificationResponseDTO,
 } from '@app/contracts/dtos/notification';
+import { IPushNotificationPayload } from '../domain/notification.interface';
 
 export const I_NOTIFICATION_SERVICE = 'INotificationService';
 
@@ -37,4 +38,17 @@ export interface INotificationService {
   deleteAllNotifications(
     notificationUserDTO: NotificationUserDTO,
   ): Promise<DeleteNotificationResponseDTO>;
+}
+
+export interface IPushNotificationService {
+  sendToToken(
+    token: string,
+    pushNotificationPayload: IPushNotificationPayload,
+  ): Promise<{
+    success: boolean;
+    skipped?: boolean;
+    reason?: string;
+    response?: any;
+    error?: string;
+  }>;
 }

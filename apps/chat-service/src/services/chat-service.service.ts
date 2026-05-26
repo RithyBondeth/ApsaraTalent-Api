@@ -256,19 +256,6 @@ export class ChatService implements IChatService {
     }
   }
 
-  /**
-   * Edit a message's text content.
-   *
-   * Flow:
-   *  1. Verify the requester is the SENDER of the message.
-   *  2. Reject edits on already-deleted messages (tombstone can't be edited).
-   *  3. Update content and set isEdited = true so the UI shows "(edited)".
-   *  4. Return the minimal payload the gateway needs to broadcast the change.
-   *
-   * Design notes:
-   *  - We do NOT store an edit history in this version (single latest content only).
-   *  - Only text content is editable; message type and attachments are immutable.
-   */
   async editMessage(
     editMessageDTO: EditMessageRpcDTO,
   ): Promise<EditMessageResponseDTO> {
@@ -332,12 +319,6 @@ export class ChatService implements IChatService {
     });
   }
 
-  /**
-   * Soft-delete a message.
-   *
-   * Only the original sender can delete; the row stays in the DB
-   * with isDeleted=true so reply references and read receipts are preserved.
-   */
   async deleteMessage(
     deleteMessageDTO: DeleteMessageRpcDTO,
   ): Promise<DeleteMessageResponseDTO> {

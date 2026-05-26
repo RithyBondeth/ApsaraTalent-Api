@@ -16,6 +16,6 @@ export class LoginController implements IBasicAuthLoginRpcController {
 
   @MessagePattern(AUTH_SERVICE.ACTIONS.LOGIN)
   async login(@Payload() loginDTO: LoginDTO): Promise<LoginResponseDTO> {
-    return await this.loginService.login(loginDTO);
+    return this.loginService.login(loginDTO);
   }
 }

@@ -28,29 +28,27 @@ export class TwoFactorController implements IBasicAuthTwoFactorRpcController {
   async twoFactorSetup(
     @Payload() twoFactorSetupDTO: TwoFactorSetupDTO,
   ): Promise<TwoFactorSetupResponseDTO> {
-    return await this.twoFactorService.twoFactorSetup(twoFactorSetupDTO);
+    return this.twoFactorService.twoFactorSetup(twoFactorSetupDTO);
   }
 
   @MessagePattern(AUTH_SERVICE.ACTIONS.TWO_FACTOR_ENABLE)
   async twoFactorEnable(
     @Payload() twoFactorEnableDTO: TwoFactorEnableDTO,
   ): Promise<TwoFactorEnableResponseDTO> {
-    return await this.twoFactorService.twoFactorEnable(twoFactorEnableDTO);
+    return this.twoFactorService.twoFactorEnable(twoFactorEnableDTO);
   }
 
   @MessagePattern(AUTH_SERVICE.ACTIONS.TWO_FACTOR_DISABLE)
   async twoFactorDisable(
     @Payload() twoFactorDisableDTO: TwoFactorDisableDTO,
   ): Promise<TwoFactorDisableResponseDTO> {
-    return await this.twoFactorService.twoFactorDisable(twoFactorDisableDTO);
+    return this.twoFactorService.twoFactorDisable(twoFactorDisableDTO);
   }
 
   @MessagePattern(AUTH_SERVICE.ACTIONS.TWO_FACTOR_VERIFY_LOGIN)
   async twoFactorVerifyLogin(
     @Payload() twoFactorVerifyLoginDTO: TwoFactorVerifyLoginDTO,
   ): Promise<TwoFactorVerifyLoginResponseDTO> {
-    return await this.twoFactorService.twoFactorVerifyLogin(
-      twoFactorVerifyLoginDTO,
-    );
+    return this.twoFactorService.twoFactorVerifyLogin(twoFactorVerifyLoginDTO);
   }
 }

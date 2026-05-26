@@ -807,32 +807,6 @@ export class UserService implements IUserService, OnModuleInit {
     }
   }
 
-  // Helper method to get favorite relationship (optional)
-  async getEmployeeFavoriteRelationship(
-    eid: string,
-    cid: string,
-  ): Promise<EmployeeFavoriteCompany | null> {
-    return await this.empFavoriteCmpRepository.findOne({
-      where: {
-        employee: { id: eid },
-        company: { id: cid },
-      },
-    });
-  }
-
-  // Helper method to get company favorite relationship (optional)
-  async getCompanyFavoriteRelationship(
-    cid: string,
-    eid: string,
-  ): Promise<CompanyFavoriteEmployee | null> {
-    return await this.cmpFavoriteEmpRepository.findOne({
-      where: {
-        company: { id: cid },
-        employee: { id: eid },
-      },
-    });
-  }
-
   async clearCurrentUserCache(userIdDTO: UserIdDTO): Promise<void> {
     const { userId } = userIdDTO;
     await Promise.all([

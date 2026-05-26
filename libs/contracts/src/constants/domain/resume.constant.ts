@@ -7,4 +7,8 @@ export const RESUME = {
   CONTROLLER_TIMEOUT: 170_000,
   /** Maximum characters of resume text to pass to OpenAI. */
   MAX_TEXT_CHARS: 8_000,
+  /** Cache TTL for resume templates */
+  TEMPLATE_TTL: 60 * 60 * 1000, // 1 hour — static data
+  /** Cache TTL for resume template search */
+  TEMPLATE_SEARCH_TTL: 30 * 60 * 1000, // 30 min
 } as const;

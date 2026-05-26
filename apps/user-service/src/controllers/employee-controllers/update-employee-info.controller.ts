@@ -3,7 +3,7 @@ import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import {
-  UpdateEmployeeInfoRequestDTO,
+  UpdateEmployeeInfoRpcDTO,
   UpdateEmployeeInfoResponseDTO,
 } from '@app/contracts/dtos/user';
 import {
@@ -20,10 +20,10 @@ export class UpdateEmployeeInfoController implements IUpdateEmployeeRpcControlle
 
   @MessagePattern(USER_SERVICE.ACTIONS.UPDATE_EMPLOYEE_INFO)
   async updateEmployeeInfo(
-    @Payload() updateEmployeeInfoRequestDTO: UpdateEmployeeInfoRequestDTO,
+    @Payload() updateEmployeeInfoRpcDTO: UpdateEmployeeInfoRpcDTO,
   ): Promise<UpdateEmployeeInfoResponseDTO> {
     return this.updateEmployeeInfoService.updateEmployeeInfo(
-      updateEmployeeInfoRequestDTO,
+      updateEmployeeInfoRpcDTO,
     );
   }
 }

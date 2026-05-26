@@ -13,7 +13,7 @@ import {
   SearchEmployeeDTO,
   SearchEmployeeResponseDTO,
   UpdateEmployeeInfoDTO,
-  UpdateEmployeeInfoRequestDTO,
+  UpdateEmployeeInfoRpcDTO,
   UpdateEmployeeInfoResponseDTO,
   UploadEmployeeAvatarDTO,
   UploadEmployeeAvatarResponseDTO,
@@ -70,7 +70,7 @@ export interface IUpdateEmployeeController {
 
 export interface IUpdateEmployeeRpcController {
   updateEmployeeInfo(
-    updateEmployeeInfoRequestDTO: UpdateEmployeeInfoRequestDTO,
+    updateEmployeeInfoRpcDTO: UpdateEmployeeInfoRpcDTO,
   ): Promise<UpdateEmployeeInfoResponseDTO>;
 }
 

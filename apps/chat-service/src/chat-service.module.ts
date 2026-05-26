@@ -14,8 +14,8 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { TerminusModule } from '@nestjs/terminus';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { ChatService } from './chat-service.service';
-import { ChatController } from './chat-service.controller';
+import { ChatService } from './services/chat-service.service';
+import { ChatController } from './controllers/chat-service.controller';
 import { ChatHealthController } from './health/health.controller';
 import { I_CHAT_SERVICE } from '@app/contracts/interfaces/service/chat-service.interface';
 

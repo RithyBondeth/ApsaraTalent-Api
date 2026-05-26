@@ -1,18 +1,15 @@
+import { IPushNotificationService } from '@app/contracts';
+import {
+  IPushNotificationPayload,
+  IPushNotificationResponse,
+} from '@app/contracts/interfaces/domain/notification.interface';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
 import { PinoLogger } from 'nestjs-pino';
 
-type PushPayload = {
-  title: string;
-  body: string;
-  data?: Record<string, any> | null;
-  /** Sender's avatar URL — shown as the notification icon */
-  senderAvatar?: string | null;
-};
-
 @Injectable()
-export class PushNotificationService {
+export class PushNotificationService implements IPushNotificationService {
   private firebaseApp: admin.app.App | null = null;
 
   constructor(
@@ -90,14 +87,8 @@ export class PushNotificationService {
 
   async sendToToken(
     token: string,
-    payload: PushPayload,
-  ): Promise<{
-    success: boolean;
-    skipped?: boolean;
-    reason?: string;
-    response?: any;
-    error?: string;
-  }> {
+    pushNotificationPayload: IPushNotificationPayload,
+  ): Promise<IPushNotificationResponse> {
     if (!token) {
       return { success: false, skipped: true, reason: 'missing token' };
     }
@@ -110,11 +101,11 @@ export class PushNotificationService {
     }
 
     try {
-      const normalizedData = this.normalizeData(payload.data);
+      const normalizedData = this.normalizeData(pushNotificationPayload.data);
 
       // Use sender avatar as the notification icon when available,
       // falling back to the app's default icon.
-      const icon = payload.senderAvatar || undefined;
+      const icon = pushNotificationPayload.senderAvatar || undefined;
 
       // tag: group all messages from the same sender into one notification slot.
       // New messages from the same sender replace the previous one instead of stacking.
@@ -127,15 +118,15 @@ export class PushNotificationService {
       const message: admin.messaging.Message = {
         token,
         notification: {
-          title: payload.title,
-          body: payload.body,
+          title: pushNotificationPayload.title,
+          body: pushNotificationPayload.body,
           ...(icon && { imageUrl: icon }),
         },
         data: normalizedData,
         webpush: {
           notification: {
-            title: payload.title,
-            body: payload.body,
+            title: pushNotificationPayload.title,
+            body: pushNotificationPayload.body,
             ...(icon && { icon }),
             badge: '/icon.svg',
             vibrate: [200, 100, 200],

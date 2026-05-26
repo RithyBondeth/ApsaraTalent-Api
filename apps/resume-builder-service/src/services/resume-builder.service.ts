@@ -88,11 +88,11 @@ export class ResumeBuilderService implements IResumeBuilderService {
           {
             role: 'system',
             content: `You are a professional resume coach. Analyze the candidate's resume and return a JSON object with exactly these fields:
-- "overallFeedback": (string) 2-3 sentence overall assessment
-- "suggestedSummary": (string) an improved professional summary
-- "experienceSuggestions": (array) each item has { "index": number, "improvedDescription": string, "improvedAchievements": string[] }
-- "suggestedSkills": (string[]) up to 6 additional relevant skills to add based on experience
-Return valid JSON only.`,
+                      - "overallFeedback": (string) 2-3 sentence overall assessment
+                      - "suggestedSummary": (string) an improved professional summary
+                      - "experienceSuggestions": (array) each item has { "index": number, "improvedDescription": string, "improvedAchievements": string[] }
+                      - "suggestedSkills": (string[]) up to 6 additional relevant skills to add based on experience
+                      Return valid JSON only.`,
           },
           {
             role: 'user',
@@ -139,16 +139,16 @@ Return valid JSON only.`,
           {
             role: 'user',
             content: `Write a cover letter for:
-Candidate: ${generateCoverLetterDTO.employeeName}
-Current role: ${generateCoverLetterDTO.employeeJob ?? 'Professional'}
-Years of experience: ${generateCoverLetterDTO.employeeExperience ?? 'Experienced'}
-Skills: ${skills}
-About the candidate: ${generateCoverLetterDTO.employeeDescription ?? ''}
+                      Candidate: ${generateCoverLetterDTO.employeeName}
+                      Current role: ${generateCoverLetterDTO.employeeJob ?? 'Professional'}
+                      Years of experience: ${generateCoverLetterDTO.employeeExperience ?? 'Experienced'}
+                      Skills: ${skills}
+                      About the candidate: ${generateCoverLetterDTO.employeeDescription ?? ''}
 
-Company: ${generateCoverLetterDTO.companyName}
-Industry: ${generateCoverLetterDTO.companyIndustry ?? ''}
-About the company: ${generateCoverLetterDTO.companyDescription ?? ''}
-Applying for: ${positions}`,
+                      Company: ${generateCoverLetterDTO.companyName}
+                      Industry: ${generateCoverLetterDTO.companyIndustry ?? ''}
+                      About the company: ${generateCoverLetterDTO.companyDescription ?? ''}
+                      Applying for: ${positions}`,
           },
         ],
       });
@@ -179,16 +179,16 @@ Applying for: ${positions}`,
           {
             role: 'system',
             content: `You are an expert cover letter writer and career coach.
-Your task is to polish the provided cover letter to make it more professional, compelling, and impactful.
+                      Your task is to polish the provided cover letter to make it more professional, compelling, and impactful.
 
-Guidelines:
-- Keep the same core content, structure, and specific details (company name, role, skills mentioned)
-- Elevate the language to sound confident and polished — avoid clichés like "I am writing to express my interest"
-- Use strong, active verbs and concrete phrasing
-- Ensure the opening is engaging and the closing is memorable
-- Keep roughly the same length; do not add new facts not present in the original
-- Preserve all paragraph breaks
-- Return only the improved cover letter text — no explanations, no headers, no markdown`,
+                      Guidelines:
+                      - Keep the same core content, structure, and specific details (company name, role, skills mentioned)
+                      - Elevate the language to sound confident and polished — avoid clichés like "I am writing to express my interest"
+                      - Use strong, active verbs and concrete phrasing
+                      - Ensure the opening is engaging and the closing is memorable
+                      - Keep roughly the same length; do not add new facts not present in the original
+                      - Preserve all paragraph breaks
+                      - Return only the improved cover letter text — no explanations, no headers, no markdown`,
           },
           {
             role: 'user',

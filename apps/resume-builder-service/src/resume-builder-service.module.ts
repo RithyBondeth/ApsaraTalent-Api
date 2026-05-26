@@ -16,7 +16,7 @@ import { ResumeTemplateController } from './controllers/resume-template.controll
 import { ImageService } from './services/image.service';
 import { ResumeBuilderService } from './services/resume-builder.service';
 import { PdfGeneratorService } from './services/pdf-generator.service';
-import { ResumeTemplateSeedService } from './services/resume-template-seed.service';
+import { ResumeTemplateSeedService } from './services/seed/resume-template-seed.service';
 import { ResumeTemplateService } from './services/resume-template.service';
 
 import {

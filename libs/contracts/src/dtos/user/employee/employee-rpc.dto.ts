@@ -41,7 +41,7 @@ export class EmployeeRecommendationsDTO extends EmployeeIdDTO {
   limit?: number;
 }
 
-export class UpdateEmployeeInfoRequestDTO extends EmployeeIdDTO {
+export class UpdateEmployeeInfoRpcDTO extends EmployeeIdDTO {
   @ValidateNested()
   @Type(() => UpdateEmployeeInfoDTO)
   updateEmployeeInfoDTO: UpdateEmployeeInfoDTO;

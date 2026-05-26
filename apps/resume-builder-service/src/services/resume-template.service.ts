@@ -14,9 +14,8 @@ import {
   SearchResumeTemplateResponseDTO,
 } from '@app/contracts/dtos/resume/template';
 import { IResumeTemplateService } from '@app/contracts/interfaces/service/resume-builder-service.interface';
+import { RESUME } from '@app/contracts';
 
-const TEMPLATE_TTL = 60 * 60 * 1000; // 1 hour — static data
-const TEMPLATE_SEARCH_TTL = 30 * 60 * 1000; // 30 min
 @Injectable()
 export class ResumeTemplateService implements IResumeTemplateService {
   constructor(
@@ -48,7 +47,7 @@ export class ResumeTemplateService implements IResumeTemplateService {
       const result = templates.map(
         (template) => new ResumeTemplateResponseDTO(template),
       );
-      await this.redisService.set(cacheKey, result, TEMPLATE_TTL);
+      await this.redisService.set(cacheKey, result, RESUME.TEMPLATE_TTL);
       return result;
     } catch (error) {
       if (error instanceof RpcException) throw error;
@@ -88,7 +87,7 @@ export class ResumeTemplateService implements IResumeTemplateService {
         });
 
       const result = new ResumeTemplateResponseDTO(template);
-      await this.redisService.set(cacheKey, result, TEMPLATE_TTL);
+      await this.redisService.set(cacheKey, result, RESUME.TEMPLATE_TTL);
       return result;
     } catch (error) {
       if (error instanceof RpcException) throw error;
@@ -199,7 +198,7 @@ export class ResumeTemplateService implements IResumeTemplateService {
       const result = templates.map(
         (template) => new SearchResumeTemplateResponseDTO(template),
       );
-      await this.redisService.set(cacheKey, result, TEMPLATE_SEARCH_TTL);
+      await this.redisService.set(cacheKey, result, RESUME.TEMPLATE_SEARCH_TTL);
       return result;
     } catch (error) {
       if (error instanceof RpcException) throw error;
