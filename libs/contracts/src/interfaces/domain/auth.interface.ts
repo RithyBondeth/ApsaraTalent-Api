@@ -32,8 +32,6 @@ export interface IErrorHtmlOptions {
 }
 
 export interface ISocialAuthCallbackOptions {
-  authService: ClientProxy;
-  configService: ConfigService;
   req: any;
   res: Response;
   action: unknown;

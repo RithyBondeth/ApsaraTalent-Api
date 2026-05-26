@@ -39,57 +39,15 @@ import {
   FavoriteCountResponseDTO,
 } from '@app/contracts/dtos/user';
 import { rpcCall } from '../../utils/rpc-call';
+import { UserAccessService } from '../services/user-access.service';
 
 @Controller('user')
 @UseGuards(AuthGuard)
 export class UserController implements IUserController {
   constructor(
     @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
+    private readonly userAccessService: UserAccessService,
   ) {}
-
-  private async getCurrentUserProfile(userId: string): Promise<any> {
-    return rpcCall(this.userClient, USER_SERVICE.ACTIONS.GET_CURRENT_USER, {
-      userId: userId,
-    });
-  }
-
-  private async assertEmployeeAccess(
-    requestUserId: string,
-    employeeId: string,
-  ): Promise<void> {
-    if (!requestUserId) {
-      throw new ForbiddenException('Unauthorized request.');
-    }
-    const profile = await this.getCurrentUserProfile(requestUserId);
-    if (
-      profile?.role !== 'employee' ||
-      !profile?.employee?.id ||
-      profile.employee.id !== employeeId
-    ) {
-      throw new ForbiddenException(
-        'You do not have permission to access this employee resource.',
-      );
-    }
-  }
-
-  private async assertCompanyAccess(
-    requestUserId: string,
-    companyId: string,
-  ): Promise<void> {
-    if (!requestUserId) {
-      throw new ForbiddenException('Unauthorized request.');
-    }
-    const profile = await this.getCurrentUserProfile(requestUserId);
-    if (
-      profile?.role !== 'company' ||
-      !profile?.company?.id ||
-      profile.company.id !== companyId
-    ) {
-      throw new ForbiddenException(
-        'You do not have permission to access this company resource.',
-      );
-    }
-  }
 
   @Get('all')
   async findAllUsers(
@@ -144,7 +102,7 @@ export class UserController implements IUserController {
     @Param() employeeCompanyFavoriteDTO: EmployeeCompanyFavoriteDTO,
     @Req() req?: any,
   ): Promise<EmployeeFavoriteCompanyResponseDTO> {
-    await this.assertEmployeeAccess(
+    await this.userAccessService.assertEmployeeAccess(
       req?.user?.id,
       employeeCompanyFavoriteDTO.eid,
     );
@@ -161,7 +119,7 @@ export class UserController implements IUserController {
     companyEmployeeFavoriteDTO: EmployeeCompanyFavoriteWithFavoriteIdDTO,
     @Req() req?: any,
   ): Promise<EmployeeUnfavoriteCompanyResponseDTO> {
-    await this.assertEmployeeAccess(
+    await this.userAccessService.assertEmployeeAccess(
       req?.user?.id,
       companyEmployeeFavoriteDTO.eid,
     );
@@ -177,7 +135,7 @@ export class UserController implements IUserController {
     @Param() companyEmployeeFavoriteDTO: CompanyEmployeeFavoriteDTO,
     @Req() req?: any,
   ): Promise<CompanyFavoriteEmployeeResponseDTO> {
-    await this.assertCompanyAccess(
+    await this.userAccessService.assertCompanyAccess(
       req?.user?.id,
       companyEmployeeFavoriteDTO.cid,
     );
@@ -194,7 +152,7 @@ export class UserController implements IUserController {
     companyEmployeeFavoriteDTO: CompanyEmployeeFavoriteWithFavoriteIdDTO,
     @Req() req?: any,
   ): Promise<CompanyUnfavoriteEmployeeResponseDTO> {
-    await this.assertCompanyAccess(
+    await this.userAccessService.assertCompanyAccess(
       req?.user?.id,
       companyEmployeeFavoriteDTO.cid,
     );
@@ -210,7 +168,7 @@ export class UserController implements IUserController {
     @Param() employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
     @Req() req?: any,
   ): Promise<EmployeeFavoritesListItemDTO[]> {
-    await this.assertEmployeeAccess(
+    await this.userAccessService.assertEmployeeAccess(
       req?.user?.id,
       employeeFavoriteLookupDTO.eid,
     );
@@ -226,7 +184,10 @@ export class UserController implements IUserController {
     @Param() companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
     @Req() req?: any,
   ): Promise<CompanyFavoritesListItemDTO[]> {
-    await this.assertCompanyAccess(req?.user?.id, companyFavoriteLookupDTO.cid);
+    await this.userAccessService.assertCompanyAccess(
+      req?.user?.id,
+      companyFavoriteLookupDTO.cid,
+    );
     return rpcCall<CompanyFavoritesListItemDTO[]>(
       this.userClient,
       USER_SERVICE.ACTIONS.FIND_ALL_COMPANY_FAVORITE,
@@ -239,7 +200,7 @@ export class UserController implements IUserController {
     @Param() employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
     @Req() req?: any,
   ): Promise<FavoriteCountResponseDTO> {
-    await this.assertEmployeeAccess(
+    await this.userAccessService.assertEmployeeAccess(
       req?.user?.id,
       employeeFavoriteLookupDTO.eid,
     );
@@ -255,7 +216,10 @@ export class UserController implements IUserController {
     @Param() companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
     @Req() req?: any,
   ): Promise<FavoriteCountResponseDTO> {
-    await this.assertCompanyAccess(req?.user?.id, companyFavoriteLookupDTO.cid);
+    await this.userAccessService.assertCompanyAccess(
+      req?.user?.id,
+      companyFavoriteLookupDTO.cid,
+    );
     return rpcCall<FavoriteCountResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.COUNT_COMPANY_FAVORITE,
@@ -278,7 +242,10 @@ export class UserController implements IUserController {
     @Query('limit') limit?: number,
     @Req() req?: any,
   ): Promise<CompanyResponseDTO[]> {
-    await this.assertEmployeeAccess(req?.user?.id, employeeId);
+    await this.userAccessService.assertEmployeeAccess(
+      req?.user?.id,
+      employeeId,
+    );
     return rpcCall<CompanyResponseDTO[]>(
       this.userClient,
       USER_SERVICE.ACTIONS.GET_EMPLOYEE_RECOMMENDATIONS,
@@ -292,7 +259,7 @@ export class UserController implements IUserController {
     @Query('limit') limit?: number,
     @Req() req?: any,
   ): Promise<EmployeeResponseDTO[]> {
-    await this.assertCompanyAccess(req?.user?.id, companyId);
+    await this.userAccessService.assertCompanyAccess(req?.user?.id, companyId);
     return rpcCall<EmployeeResponseDTO[]>(
       this.userClient,
       USER_SERVICE.ACTIONS.GET_COMPANY_RECOMMENDATIONS,

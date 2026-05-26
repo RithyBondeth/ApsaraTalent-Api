@@ -7,6 +7,7 @@ import { CompanyController } from './controllers/company.controller';
 import { EmployeeController } from './controllers/employee.controller';
 import { PublicUserController } from './controllers/public-user.controller';
 import { UserController } from './controllers/user.controller';
+import { UserAccessService } from './services/user-access.service';
 
 @Module({
   imports: [
@@ -32,5 +33,6 @@ import { UserController } from './controllers/user.controller';
     CompanyController,
     PublicUserController,
   ],
+  providers: [UserAccessService],
 })
 export class UserModule {}

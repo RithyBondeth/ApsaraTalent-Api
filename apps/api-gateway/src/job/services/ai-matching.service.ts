@@ -1,8 +1,9 @@
+import { IAiMatchingService } from '@app/contracts';
 import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
 
 @Injectable()
-export class AiMatchingService {
+export class AiMatchingService implements IAiMatchingService {
   getMatchExplanationMessages(
     employeeProfile: any,
     companyProfile: any,

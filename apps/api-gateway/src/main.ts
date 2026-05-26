@@ -14,7 +14,7 @@ import { Logger } from 'nestjs-pino';
 import { join } from 'path';
 import { ApiGatewayModule } from './api-gateway.module';
 import { AUTH } from '@app/contracts/constants/domain/auth.constant';
-import { isOriginAllowed, parseAllowedOrigins } from './utils/cors-origin.util';
+import { isOriginAllowed, parseAllowedOrigins } from '@app/common';
 
 async function bootstrap() {
   const app =

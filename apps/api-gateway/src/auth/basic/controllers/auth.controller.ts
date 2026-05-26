@@ -22,10 +22,7 @@ import { memoryStorage } from 'multer';
 import { ClientProxy } from '@nestjs/microservices';
 import { Request, Response } from 'express';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
-import {
-  ResumeParseService,
-  ParsedResumeData,
-} from '../../services/resume-parse.service';
+import { ResumeParseService } from '../../services/resume-parse.service';
 import { IceServersService } from '../../services/ice-servers.service';
 import {
   CompanyRegisterDTO,
@@ -57,6 +54,7 @@ import {
 import { setAuthTokenCookies } from '../../utils/auth-cookie.util';
 import { sendAuthServiceRequest } from '../../utils/auth-rpc.util';
 import { User } from '@app/common/database/entities/user.entity';
+import { IParsedResumeData } from '@app/contracts';
 
 @Controller('auth')
 export class AuthController implements IBasicAuthController {
@@ -316,7 +314,7 @@ export class AuthController implements IBasicAuthController {
   )
   async parseResume(
     @UploadedFile() file: Express.Multer.File,
-  ): Promise<ParsedResumeData> {
+  ): Promise<IParsedResumeData> {
     if (!file) throw new BadRequestException('No resume file received.');
     return this.resumeParse.parseResume(file.buffer, file.mimetype);
   }

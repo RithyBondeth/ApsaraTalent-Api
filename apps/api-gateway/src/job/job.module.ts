@@ -9,7 +9,6 @@ import { InterviewController } from './controllers/interview.controller';
 import { JobController } from './controllers/job.controller';
 import { JobMatchingController } from './controllers/matching.controller';
 import { AiMatchingService } from './services/ai-matching.service';
-import { JobService } from './services/job.service';
 import { JobAccessService } from './services/job-access.service';
 
 @Module({
@@ -47,6 +46,6 @@ import { JobAccessService } from './services/job-access.service';
     InterviewController,
     ApplicationController,
   ],
-  providers: [AiMatchingService, JobService, JobAccessService],
+  providers: [AiMatchingService, JobAccessService],
 })
 export class JobModule {}

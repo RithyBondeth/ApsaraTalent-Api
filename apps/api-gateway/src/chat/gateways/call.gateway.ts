@@ -20,8 +20,8 @@ import {
   CallDeclinedResponseDTO,
   CallEndResponseDTO,
 } from '@app/contracts';
-import { isOriginAllowed } from '../../utils/cors-origin.util';
 import { ICallGateway } from '@app/contracts/interfaces/gateway/call-gateway.interface';
+import { isOriginAllowed } from '@app/common';
 
 @WebSocketGateway({
   namespace: '/chat',

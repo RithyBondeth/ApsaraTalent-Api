@@ -4,9 +4,10 @@ import {
   RefineProfileBioDTO,
   RefineProfileBioType,
 } from '@app/contracts/dtos/resume';
+import { IAiProfileBioService } from '@app/contracts';
 
 @Injectable()
-export class AiProfileBioService {
+export class AiProfileBioService implements IAiProfileBioService {
   getMessages(
     refineProfileBioDTO: RefineProfileBioDTO,
   ): OpenAI.Chat.ChatCompletionMessageParam[] {
@@ -168,7 +169,7 @@ export class AiProfileBioService {
   }
 
   /* ------------------------------------------------------------------ */
-  /*  Helpers                                                           */
+  /*  Private Helpers                                                   */
   /* ------------------------------------------------------------------ */
 
   private buildContext(lines: Array<string | false | undefined>): string {

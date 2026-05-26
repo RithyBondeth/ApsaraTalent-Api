@@ -32,7 +32,6 @@ import { ChatNotificationService } from '../services/chat-notification.service';
 import { SocketBroadcastService } from '../../socket/socket-broadcast.service';
 import { ChatMessageService } from '../services/chat-message.service';
 import { extractChatToken } from '../utils/chat-token.util';
-import { isOriginAllowed } from '../../utils/cors-origin.util';
 import { IChatGateway } from '@app/contracts/interfaces/gateway/chat-gateway.interface';
 import { GetUnreadCountResponseDTO } from '@app/contracts/dtos/chat/chat-gateway/get-unread-count.dto';
 import {
@@ -52,6 +51,7 @@ import {
   DeleteMessageDTO,
   DeleteMessageResponseDTO,
 } from '@app/contracts/dtos/chat/chat-gateway/delete-message.dto';
+import { isOriginAllowed } from '@app/common';
 
 @WebSocketGateway({
   namespace: '/chat',

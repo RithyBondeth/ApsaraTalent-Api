@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { Response } from 'express';
-import { IAiStreamService } from '@app/contracts/interfaces/service/ai-stream-service.interface';
+import { IAiStreamService } from '@app/contracts';
 
 @Injectable()
 export class AiStreamService implements IAiStreamService {

@@ -1,8 +1,9 @@
+import { ISocketBroadcastService } from '@app/contracts';
 import { Injectable } from '@nestjs/common';
 import { Server } from 'socket.io';
 
 @Injectable()
-export class SocketBroadcastService {
+export class SocketBroadcastService implements ISocketBroadcastService {
   private server: Server | null = null;
 
   setServer(server: Server): void {
