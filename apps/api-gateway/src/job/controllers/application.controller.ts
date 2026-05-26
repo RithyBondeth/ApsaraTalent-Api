@@ -16,7 +16,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { rpcCall } from '../../utils/rpc-call';
-import { IApplicationController } from '@app/contracts/interfaces/controller/application-controller.interface';
+import { IApplicationController } from '@app/contracts/interfaces/controller/job-controllers/application-controller.interface';
 import { JobAccessService } from '../services/job-access.service';
 import {
   ApplyApplicationDTO,

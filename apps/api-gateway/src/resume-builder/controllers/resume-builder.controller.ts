@@ -1,5 +1,5 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
-import { IResumeBuilderController } from '@app/contracts/interfaces/controller/resume-controller.interface';
+import { IResumeBuilderController } from '@app/contracts/interfaces/controller/resume-builder-controller.interface';
 import {
   Body,
   Controller,

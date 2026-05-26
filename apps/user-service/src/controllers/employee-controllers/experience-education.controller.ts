@@ -5,7 +5,7 @@ import {
   I_EXPERIENCE_AND_EDUCATION_SERVICE,
   IExperienceAndEducationService,
 } from '@app/contracts/interfaces/service/user-service.interface';
-import { IRemoveEmployeeItemsRpcController } from '@app/contracts/interfaces/controller/employee-controller.interface';
+import { IRemoveEmployeeItemsRpcController } from '@app/contracts/interfaces/controller/user-controllers/employee-controller.interface';
 import {
   RemoveEmployeeEducationDTO,
   RemoveEmployeeEducationResponseDTO,

@@ -1,7 +1,7 @@
 import { Controller, Get, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { IPublicUserController } from '@app/contracts/interfaces/controller/public-user-controller.interface';
+import { IPublicUserController } from '@app/contracts/interfaces/controller/user-controllers/public-user-controller.interface';
 import { LandingStatsResponseDTO } from '@app/contracts/dtos/user';
 import { rpcCall } from '../../utils/rpc-call';
 

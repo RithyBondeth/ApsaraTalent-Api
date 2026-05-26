@@ -4,7 +4,7 @@ import {
   GetApplicationResponseDTO,
   UpdateApplicationStatusDTO,
   UpdateApplicationStatusResponseDTO,
-} from '../../dtos';
+} from '../../../dtos';
 
 export interface IApplicationController {
   applyApplication(

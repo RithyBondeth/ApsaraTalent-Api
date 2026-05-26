@@ -1,7 +1,7 @@
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
-import { IApplicationRpcController } from '@app/contracts/interfaces/controller/application-controller.interface';
+import { IApplicationRpcController } from '@app/contracts/interfaces/controller/job-controllers/application-controller.interface';
 import {
   ApplyApplicationDTO,
   ApplyApplicationResponseDTO,

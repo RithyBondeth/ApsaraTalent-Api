@@ -1,5 +1,5 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
-import { IMatchingController } from '@app/contracts/interfaces/controller/job-controller.interface';
+import { IMatchingController } from '@app/contracts/interfaces/controller/job-controllers/job-controller.interface';
 import {
   Controller,
   Get,

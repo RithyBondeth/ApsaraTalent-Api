@@ -1,4 +1,4 @@
-import { IResumeTemplateRpcController } from '@app/contracts/interfaces/controller/resume-controller.interface';
+import { IResumeTemplateRpcController } from '@app/contracts/interfaces/controller/resume-builder-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/service-actions/resume-builder-service.constant';

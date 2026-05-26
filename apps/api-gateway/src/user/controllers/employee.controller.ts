@@ -1,5 +1,5 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
-import { IEmployeeController } from '@app/contracts/interfaces/controller/employee-controller.interface';
+import { IEmployeeController } from '@app/contracts/interfaces/controller/user-controllers/employee-controller.interface';
 import { UploadFileInterceptor } from '@app/common/uploadfile/uploadfile.interceptor';
 import {
   ALLOWED_DOCUMENT_MIME_TYPES,

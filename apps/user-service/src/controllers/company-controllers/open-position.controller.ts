@@ -1,7 +1,7 @@
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
-import { IOpenPositionRpcController } from '@app/contracts/interfaces/controller/company-controller.interface';
+import { IOpenPositionRpcController } from '@app/contracts/interfaces/controller/user-controllers/company-controller.interface';
 import {
   I_OPEN_POSITION_SERVICE,
   IOpenPositionService,

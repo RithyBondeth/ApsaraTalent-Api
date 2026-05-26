@@ -1,7 +1,7 @@
 import {
   IJobController,
   IJobRpcController,
-} from '@app/contracts/interfaces/controller/job-controller.interface';
+} from '@app/contracts/interfaces/controller/job-controllers/job-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';

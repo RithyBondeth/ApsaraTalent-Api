@@ -1,6 +1,6 @@
 import { AuthUser, User } from '@app/common/decorators/user.decorator';
 import { AuthGuard } from '@app/common/guards/auth.guard';
-import { IUserController } from '@app/contracts/interfaces/controller/user-controller.interface';
+import { IUserController } from '@app/contracts/interfaces/controller/user-controllers/user-controller.interface';
 import {
   Body,
   Controller,

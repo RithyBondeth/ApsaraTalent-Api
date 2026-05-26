@@ -1,5 +1,5 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
-import { ICompanyController } from '@app/contracts/interfaces/controller/company-controller.interface';
+import { ICompanyController } from '@app/contracts/interfaces/controller/user-controllers/company-controller.interface';
 import { UploadFileInterceptor } from '@app/common/uploadfile/uploadfile.interceptor';
 import { UploadFilesInterceptor } from '@app/common/uploadfile/uploadfiles.interceptor';
 import {

@@ -1,4 +1,4 @@
-import { IUploadEmployeeRpcController } from '@app/contracts/interfaces/controller/employee-controller.interface';
+import { IUploadEmployeeRpcController } from '@app/contracts/interfaces/controller/user-controllers/employee-controller.interface';
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
