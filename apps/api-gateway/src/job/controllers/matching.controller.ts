@@ -2,7 +2,10 @@ import { AuthGuard } from '@app/common/guards/auth.guard';
 import { IMatchingController } from '@app/contracts/interfaces/controller/job-controllers/job-controller.interface';
 import {
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Inject,
   Param,
   ParseUUIDPipe,
@@ -11,8 +14,6 @@ import {
   Req,
   Res,
   UseGuards,
-  HttpCode,
-  HttpStatus,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
@@ -60,6 +61,23 @@ export class JobMatchingController implements IMatchingController {
       this.socketBroadcastService.emitToUser(userId, 'badgeIncrement');
     });
     return result;
+  }
+
+  @Delete('unmatch/:eid/:cid')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async unmatch(
+    @Param('eid', ParseUUIDPipe) eid: string,
+    @Param('cid', ParseUUIDPipe) cid: string,
+    @Req() req?: any,
+  ): Promise<void> {
+    await this.jobAccess.assertMatchParticipantAccess(req?.user?.id, eid, cid);
+    await rpcCall<void>(this.jobClient, JOB_SERVICE.ACTIONS.UNMATCH, {
+      eid,
+      cid,
+    });
+    // Notify both parties so their matching pages update in real-time
+    this.socketBroadcastService.emitToUser(eid, 'unmatchUpdate');
+    this.socketBroadcastService.emitToUser(cid, 'unmatchUpdate');
   }
 
   @Post('company/:cid/like/:eid')

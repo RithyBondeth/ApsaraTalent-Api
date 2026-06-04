@@ -75,6 +75,7 @@ export interface IInterviewRpcController {
 export interface IMatchingController {
   employeeLikes(matchDTO: MatchDTO, req?: any): Promise<MatchResponseDTO>;
   companyLikes(matchDTO: MatchDTO, req?: any): Promise<MatchResponseDTO>;
+  unmatch(eid: string, cid: string, req?: any): Promise<void>;
   findCurrentEmployeeLiked(
     eid: string,
     req?: any,
@@ -137,6 +138,7 @@ export interface IMatchingController {
 export interface IMatchingRpcController {
   employeeLikes(matchDTO: MatchDTO): Promise<MatchResponseDTO>;
   companyLikes(matchDTO: MatchDTO): Promise<MatchResponseDTO>;
+  unmatch(matchDTO: MatchDTO): Promise<void>;
   findCurrentEmployeeLiked(
     employeeMatchLookupDTO: EmployeeMatchingLookupDTO,
   ): Promise<FindCurrentLikeResponseDTO[]>;

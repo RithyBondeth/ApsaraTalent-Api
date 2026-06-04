@@ -6,6 +6,7 @@ export const JOB_SERVICE = {
     FIND_ONE_JOB: { cmd: 'findOneJob' },
     EMPLOYEE_LIKES: { cmd: 'employeeLikes' },
     COMPANY_LIKES: { cmd: 'companyLikes' },
+    UNMATCH: { cmd: 'unmatch' },
     FIND_CURRENT_EMPLOYEE_LIKED: { cmd: 'findCurrentEmployeeLiked' },
     FIND_CURRENT_COMPANY_LIKED: { cmd: 'findCurrentCompanyLiked' },
     FIND_CURRENT_EMPLOYEE_MATCHING: { cmd: 'findCurrentEmployeeMatching' },

@@ -45,6 +45,11 @@ export class MatchingController implements IMatchingRpcController {
     return this.matchingService.companyLikes(matchDTO);
   }
 
+  @MessagePattern(JOB_SERVICE.ACTIONS.UNMATCH)
+  async unmatch(@Payload() matchDTO: MatchDTO): Promise<void> {
+    return this.matchingService.unmatch(matchDTO);
+  }
+
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_LIKED)
   async findCurrentEmployeeLiked(
     @Payload() employeeMatchLookupDTO: EmployeeMatchingLookupDTO,

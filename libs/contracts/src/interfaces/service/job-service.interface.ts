@@ -47,6 +47,7 @@ export interface IJobServiceService {
 export interface IMatchingService {
   employeeLikes(matchDTO: MatchDTO): Promise<MatchResponseDTO>;
   companyLikes(matchDTO: MatchDTO): Promise<MatchResponseDTO>;
+  unmatch(matchDTO: MatchDTO): Promise<void>;
   findCurrentEmployeeLiked(
     employeeMatchLookupDTO: EmployeeMatchingLookupDTO,
   ): Promise<FindCurrentLikeResponseDTO[]>;

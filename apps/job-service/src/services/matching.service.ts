@@ -2,6 +2,7 @@ import { Company } from '@app/common/database/entities/company/company.entity';
 import { CompanyFavoriteEmployee } from '@app/common/database/entities/company/favorite-employee.entity';
 import { Employee } from '@app/common/database/entities/employee/employee.entity';
 import { EmployeeFavoriteCompany } from '@app/common/database/entities/employee/favorite-company.entity';
+import { Interview } from '@app/common/database/entities/interview.entity';
 import { JobMatching } from '@app/common/database/entities/job-matching.entity';
 import { EmailService } from '@app/common/email/email.service';
 import { RedisService } from '@app/common/redis/redis.service';
@@ -53,6 +54,8 @@ export class MatchingService implements IMatchingService {
     private readonly employeeFavoriteCompanyRepo: Repository<EmployeeFavoriteCompany>,
     @InjectRepository(CompanyFavoriteEmployee)
     private readonly companyFavoriteEmployeeRepo: Repository<CompanyFavoriteEmployee>,
+    @InjectRepository(Interview)
+    private readonly interviewRepo: Repository<Interview>,
     private readonly emailService: EmailService,
     private readonly logger: Logger,
     private readonly redisService: RedisService,
@@ -226,6 +229,45 @@ export class MatchingService implements IMatchingService {
       throw new RpcException({
         message: error?.message || 'An error occurred while liking.',
         statusCode: 500,
+      });
+    }
+  }
+
+  async unmatch(matchDTO: MatchDTO): Promise<void> {
+    try {
+      const match = await this.jobMatchingRepo.findOne({
+        where: {
+          employee: { id: matchDTO.eid },
+          company: { id: matchDTO.cid },
+        },
+      });
+
+      if (!match) {
+        throw new RpcException({
+          message: 'Match not found.',
+          statusCode: 404,
+        });
+      }
+
+      // Delete the match record and all interviews between these two parties
+      await Promise.all([
+        this.jobMatchingRepo.delete({ id: match.id }),
+        this.interviewRepo.delete({
+          employee: { id: matchDTO.eid },
+          company: { id: matchDTO.cid },
+        }),
+      ]);
+
+      // Invalidate matching caches for both sides so lists refresh immediately
+      await this.redisService.invalidateMatchingCaches(
+        matchDTO.eid,
+        matchDTO.cid,
+      );
+    } catch (error: any) {
+      this.logger.error(error?.message || error);
+      throw new RpcException({
+        message: error?.message || 'An error occurred while unmatching.',
+        statusCode: error?.statusCode || 500,
       });
     }
   }
