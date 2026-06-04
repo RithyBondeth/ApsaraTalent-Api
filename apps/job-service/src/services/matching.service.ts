@@ -38,6 +38,10 @@ import {
   AiMatchProfilesDTO,
   AiMatchProfilesResponseDTO,
 } from '@app/contracts/dtos/job/matching/ai-match-profiles.dto';
+import {
+  UnMatchDTO,
+  UnMatchResposneDTO,
+} from '@app/contracts/dtos/job/matching/unmatch.dto';
 
 @Injectable()
 export class MatchingService implements IMatchingService {
@@ -233,12 +237,12 @@ export class MatchingService implements IMatchingService {
     }
   }
 
-  async unmatch(matchDTO: MatchDTO): Promise<void> {
+  async unmatch(unMatchDTO: UnMatchDTO): Promise<UnMatchResposneDTO> {
     try {
       const match = await this.jobMatchingRepo.findOne({
         where: {
-          employee: { id: matchDTO.eid },
-          company: { id: matchDTO.cid },
+          employee: { id: unMatchDTO.eid },
+          company: { id: unMatchDTO.cid },
         },
       });
 
@@ -253,16 +257,21 @@ export class MatchingService implements IMatchingService {
       await Promise.all([
         this.jobMatchingRepo.delete({ id: match.id }),
         this.interviewRepo.delete({
-          employee: { id: matchDTO.eid },
-          company: { id: matchDTO.cid },
+          employee: { id: unMatchDTO.eid },
+          company: { id: unMatchDTO.cid },
         }),
       ]);
 
       // Invalidate matching caches for both sides so lists refresh immediately
       await this.redisService.invalidateMatchingCaches(
-        matchDTO.eid,
-        matchDTO.cid,
+        unMatchDTO.eid,
+        unMatchDTO.cid,
       );
+
+      return new UnMatchResposneDTO({
+        message: 'Unmatched successfully.',
+        success: true,
+      });
     } catch (error: any) {
       this.logger.error(error?.message || error);
       throw new RpcException({

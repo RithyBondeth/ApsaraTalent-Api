@@ -14,7 +14,7 @@ import {
   I_INTERVIEW_SERVICE,
   IInterviewService,
 } from '@app/contracts/interfaces/service/job-service.interface';
-import { IInterviewRpcController } from '@app/contracts';
+import { IInterviewRpcController } from '@app/contracts/interfaces/controller/job-controllers/interview-controller.interface';
 
 @Controller()
 export class InterviewController implements IInterviewRpcController {

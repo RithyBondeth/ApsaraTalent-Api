@@ -1,5 +1,5 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
-import { IMatchingController } from '@app/contracts/interfaces/controller/job-controllers/job-controller.interface';
+import { IMatchingController } from '@app/contracts/interfaces/controller/job-controllers/matching-controller.interface';
 import {
   Controller,
   Delete,
@@ -34,6 +34,10 @@ import { SocketBroadcastService } from '../../socket/socket-broadcast.service';
 import { AiStreamService } from '../../ai-stream/ai-stream.service';
 import { AiMatchingService } from '../services/ai-matching.service';
 import { JobAccessService } from '../services/job-access.service';
+import {
+  UnMatchDTO,
+  UnMatchResposneDTO,
+} from '@app/contracts/dtos/job/matching/unmatch.dto';
 
 @Controller('match')
 @UseGuards(AuthGuard)
@@ -66,18 +70,22 @@ export class JobMatchingController implements IMatchingController {
   @Delete('unmatch/:eid/:cid')
   @HttpCode(HttpStatus.NO_CONTENT)
   async unmatch(
-    @Param('eid', ParseUUIDPipe) eid: string,
-    @Param('cid', ParseUUIDPipe) cid: string,
+    @Param() unMatchDTO: UnMatchDTO,
     @Req() req?: any,
-  ): Promise<void> {
-    await this.jobAccess.assertMatchParticipantAccess(req?.user?.id, eid, cid);
-    await rpcCall<void>(this.jobClient, JOB_SERVICE.ACTIONS.UNMATCH, {
-      eid,
-      cid,
-    });
-    // Notify both parties so their matching pages update in real-time
-    this.socketBroadcastService.emitToUser(eid, 'unmatchUpdate');
-    this.socketBroadcastService.emitToUser(cid, 'unmatchUpdate');
+  ): Promise<UnMatchResposneDTO> {
+    await this.jobAccess.assertMatchParticipantAccess(
+      req?.user?.id,
+      unMatchDTO.eid,
+      unMatchDTO.cid,
+    );
+    const result = await rpcCall<UnMatchResposneDTO>(
+      this.jobClient,
+      JOB_SERVICE.ACTIONS.UNMATCH,
+      unMatchDTO,
+    );
+    this.socketBroadcastService.emitToUser(unMatchDTO.eid, 'unmatchUpdate');
+    this.socketBroadcastService.emitToUser(unMatchDTO.cid, 'unmatchUpdate');
+    return result;
   }
 
   @Post('company/:cid/like/:eid')

@@ -1,6 +1,5 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
-import { IInterviewController } from '@app/contracts/interfaces/controller/job-controllers/job-controller.interface';
 import {
   CreateInterviewDTO,
   CreateInterviewResponseDTO,
@@ -25,6 +24,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { rpcCall } from '../../utils/rpc-call';
 import { SocketBroadcastService } from '../../socket/socket-broadcast.service';
 import { JobAccessService } from '../services/job-access.service';
+import { IInterviewController } from '@app/contracts/interfaces/controller/job-controllers/interview-controller.interface';
 
 @Controller('match/interview')
 @UseGuards(AuthGuard)

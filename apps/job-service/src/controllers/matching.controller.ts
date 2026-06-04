@@ -20,11 +20,15 @@ import {
   I_MATCHING_SERVICE,
   IMatchingService,
 } from '@app/contracts/interfaces/service/job-service.interface';
-import { IMatchingRpcController } from '@app/contracts';
+import { IMatchingRpcController } from '@app/contracts/interfaces/controller/job-controllers/matching-controller.interface';
 import {
   AiMatchProfilesDTO,
   AiMatchProfilesResponseDTO,
 } from '@app/contracts/dtos/job/matching/ai-match-profiles.dto';
+import {
+  UnMatchDTO,
+  UnMatchResposneDTO,
+} from '@app/contracts/dtos/job/matching/unmatch.dto';
 
 @Controller()
 export class MatchingController implements IMatchingRpcController {
@@ -46,8 +50,10 @@ export class MatchingController implements IMatchingRpcController {
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.UNMATCH)
-  async unmatch(@Payload() matchDTO: MatchDTO): Promise<void> {
-    return this.matchingService.unmatch(matchDTO);
+  async unmatch(
+    @Payload() unMatchDTO: UnMatchDTO,
+  ): Promise<UnMatchResposneDTO> {
+    return this.matchingService.unmatch(unMatchDTO);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_LIKED)

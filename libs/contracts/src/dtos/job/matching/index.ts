@@ -1,4 +1,4 @@
-export * from './like.dto';
+export * from './match.dto';
 export * from './analytics.dto';
 export * from './count-matching.dto';
 export * from './find-current-matching.dto';

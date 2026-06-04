@@ -32,6 +32,10 @@ import {
   AiMatchProfilesDTO,
   AiMatchProfilesResponseDTO,
 } from '@app/contracts/dtos/job/matching/ai-match-profiles.dto';
+import {
+  UnMatchDTO,
+  UnMatchResposneDTO,
+} from '@app/contracts/dtos/job/matching/unmatch.dto';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
 
 export const I_JOB_SERVICE_SERVICE = 'IJobServiceService';
@@ -47,7 +51,7 @@ export interface IJobServiceService {
 export interface IMatchingService {
   employeeLikes(matchDTO: MatchDTO): Promise<MatchResponseDTO>;
   companyLikes(matchDTO: MatchDTO): Promise<MatchResponseDTO>;
-  unmatch(matchDTO: MatchDTO): Promise<void>;
+  unmatch(unMatchDTO: UnMatchDTO): Promise<UnMatchResposneDTO>;
   findCurrentEmployeeLiked(
     employeeMatchLookupDTO: EmployeeMatchingLookupDTO,
   ): Promise<FindCurrentLikeResponseDTO[]>;
