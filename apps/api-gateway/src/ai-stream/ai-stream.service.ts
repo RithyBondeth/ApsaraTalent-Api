@@ -3,11 +3,13 @@ import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { Response } from 'express';
 import { IAiStreamService } from '@app/contracts';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class AiStreamService implements IAiStreamService {
   private readonly openai: OpenAI;
   readonly model: string;
+  private readonly logger = new Logger(AiStreamService.name);
 
   constructor(private readonly config: ConfigService) {
     this.openai = new OpenAI({ apiKey: config.get<string>('openai.apiKey') });
@@ -72,6 +74,7 @@ export class AiStreamService implements IAiStreamService {
 
       res.write(`data: ${JSON.stringify({ t: 'done' })}\n\n`);
     } catch (err: any) {
+      this.logger.error('[OpenAI Stream Error]', err);
       res.write(
         `data: ${JSON.stringify({ t: 'error', v: err?.message ?? 'Stream failed' })}\n\n`,
       );

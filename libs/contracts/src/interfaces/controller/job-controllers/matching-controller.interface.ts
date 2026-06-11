@@ -1,3 +1,4 @@
+import { Response } from 'express';
 import {
   MatchDTO,
   MatchResponseDTO,
@@ -57,6 +58,7 @@ export interface IMatchingController {
   getAiMatchExplanation(
     eid: string,
     cid: string,
+    lang?: string,
     req?: any,
   ): Promise<AiMatchExplanationResponseDTO>;
   getAiInterviewPrep(
@@ -67,21 +69,23 @@ export interface IMatchingController {
   streamAiMatchExplanation(
     eid: string,
     cid: string,
+    lang: string | undefined,
+    req: any,
     res: Response,
-    req?: any,
   ): Promise<void>;
   streamAiInterviewPrep(
     eid: string,
     cid: string,
     interviewTitle: string | undefined,
+    req: any,
     res: Response,
-    req?: any,
   ): Promise<void>;
   streamAiSkillGap(
     eid: string,
     cid: string,
+    lang: string | undefined,
+    req: any,
     res: Response,
-    req?: any,
   ): Promise<void>;
 }
 

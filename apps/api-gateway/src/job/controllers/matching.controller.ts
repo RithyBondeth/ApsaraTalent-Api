@@ -200,13 +200,14 @@ export class JobMatchingController implements IMatchingController {
   async getAiMatchExplanation(
     @Param('eid', ParseUUIDPipe) eid: string,
     @Param('cid', ParseUUIDPipe) cid: string,
+    @Query('lang') lang?: string,
     @Req() req?: any,
   ): Promise<AiMatchExplanationResponseDTO> {
     await this.jobAccess.assertMatchParticipantAccess(req?.user?.id, eid, cid);
     return rpcCall<AiMatchExplanationResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.AI_MATCH_EXPLANATION,
-      { eid, cid },
+      { eid, cid, lang },
       JOB.AI_CONTROLLER_TIMEOUT,
     );
   }
@@ -215,6 +216,7 @@ export class JobMatchingController implements IMatchingController {
   async streamAiMatchExplanation(
     @Param('eid', ParseUUIDPipe) eid: string,
     @Param('cid', ParseUUIDPipe) cid: string,
+    @Query('lang') lang: string | undefined,
     @Req() req: any,
     @Res() res: Response,
   ): Promise<void> {
@@ -229,6 +231,7 @@ export class JobMatchingController implements IMatchingController {
       this.aiMatching.getMatchExplanationMessages(
         employeeProfile,
         companyProfile,
+        lang,
       ),
       0.3,
       res,
@@ -282,6 +285,7 @@ export class JobMatchingController implements IMatchingController {
   async streamAiSkillGap(
     @Param('eid', ParseUUIDPipe) eid: string,
     @Param('cid', ParseUUIDPipe) cid: string,
+    @Query('lang') lang: string | undefined,
     @Req() req: any,
     @Res() res: Response,
   ): Promise<void> {
@@ -293,7 +297,11 @@ export class JobMatchingController implements IMatchingController {
     }>(this.jobClient, JOB_SERVICE.ACTIONS.GET_AI_MATCH_PROFILES, { eid, cid });
 
     await this.aiStream.pipe(
-      this.aiMatching.getSkillGapMessages(employeeProfile, companyProfile),
+      this.aiMatching.getSkillGapMessages(
+        employeeProfile,
+        companyProfile,
+        lang,
+      ),
       0.3,
       res,
     );

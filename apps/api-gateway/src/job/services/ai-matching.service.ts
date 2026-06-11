@@ -7,7 +7,12 @@ export class AiMatchingService implements IAiMatchingService {
   getMatchExplanationMessages(
     employeeProfile: any,
     companyProfile: any,
+    lang?: string,
   ): OpenAI.Chat.ChatCompletionMessageParam[] {
+    const langInstructions =
+      lang === 'km'
+        ? '\nIMPORTANT: The EXPLANATION, STRENGTH, and GAP fields MUST be written entirely in Khmer language (ភាសាខ្មែរ).'
+        : '';
     return [
       {
         role: 'system',
@@ -23,7 +28,7 @@ export class AiMatchingService implements IAiMatchingService {
                   GAP:<one area to improve>
                   GAP:<one area to improve>
                   GAP:<one area to improve>
-                  Output only these lines. No extra text, no blank lines between them.`,
+                  Output only these lines. No extra text, no blank lines between them.${langInstructions}`,
       },
       {
         role: 'user',
@@ -64,7 +69,12 @@ export class AiMatchingService implements IAiMatchingService {
   getSkillGapMessages(
     employeeProfile: any,
     companyProfile: any,
+    lang?: string,
   ): OpenAI.Chat.ChatCompletionMessageParam[] {
+    const langInstructions =
+      lang === 'km'
+        ? '\nIMPORTANT: All text values (skill, tip, topPriority) MUST be written entirely in Khmer language (ភាសាខ្មែរ) except for exact technical terms like React or Docker. The output structure must remain valid JSON.'
+        : '';
     return [
       {
         role: 'system',
@@ -86,7 +96,7 @@ export class AiMatchingService implements IAiMatchingService {
                   - Keep skill names concise (e.g. "Docker", "React", "Project Management")
                   - Output 3-10 missing skills maximum
                   - estimatedWeeks: realistic total time to acquire all missing skills
-                  - If no skill gap, output only the summary with overallGap:"none" and estimatedWeeks:0`,
+                  - If no skill gap, output only the summary with overallGap:"none" and estimatedWeeks:0${langInstructions}`,
       },
       {
         role: 'user',

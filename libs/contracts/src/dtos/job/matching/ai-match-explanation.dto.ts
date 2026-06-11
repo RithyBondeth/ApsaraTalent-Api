@@ -1,4 +1,10 @@
-import { IsArray, IsNumber, IsString, IsUUID } from 'class-validator';
+import {
+  IsArray,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 export class AiMatchExplanationDTO {
   @IsUUID()
@@ -6,6 +12,10 @@ export class AiMatchExplanationDTO {
 
   @IsUUID()
   cid: string;
+
+  @IsOptional()
+  @IsString()
+  lang?: string;
 }
 
 export class AiMatchExplanationResponseDTO {

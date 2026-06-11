@@ -8,5 +8,3 @@ export class LivenessResponseDTO {
     Object.assign(this, partial);
   }
 }
-
-export class HealthDTO {}

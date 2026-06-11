@@ -101,6 +101,7 @@ export interface IAiMatchingService {
   getMatchExplanationMessages(
     employeeProfile: any,
     companyProfile: any,
+    lang?: string,
   ): OpenAI.Chat.ChatCompletionMessageParam[];
 
   getInterviewPrepMessages(
@@ -112,6 +113,7 @@ export interface IAiMatchingService {
   getSkillGapMessages(
     employeeProfile: any,
     companyProfile: any,
+    lang?: string,
   ): OpenAI.Chat.ChatCompletionMessageParam[];
 }
 
