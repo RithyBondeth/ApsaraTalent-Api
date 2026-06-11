@@ -27,8 +27,10 @@ export class RedisService {
   }
 
   generateSearchKey(entity: string, query: any): string {
-    const queryString = JSON.stringify(query);
-    return `${this.PREFIX}:${entity}:search:${queryString}`;
+    const sorted = Object.fromEntries(
+      Object.entries(query).sort(([a], [b]) => a.localeCompare(b)),
+    );
+    return `${this.PREFIX}:${entity}:search:${JSON.stringify(sorted)}`;
   }
 
   generateEmployeeFavoriteCountKey(employeeId: string): string {
@@ -157,7 +159,10 @@ export class RedisService {
   }
 
   generateJobSearchKey(query: any): string {
-    return `${this.JOB_PREFIX}:job:search:${JSON.stringify(query)}`;
+    const sorted = Object.fromEntries(
+      Object.entries(query).sort(([a], [b]) => a.localeCompare(b)),
+    );
+    return `${this.JOB_PREFIX}:job:search:${JSON.stringify(sorted)}`;
   }
 
   generateMatchingKey(type: string, id: string): string {

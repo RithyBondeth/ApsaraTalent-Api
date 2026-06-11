@@ -35,6 +35,7 @@ import {
   RemoveEmployeeResumeResponseDTO,
   SearchEmployeeDTO,
   SearchEmployeeResponseDTO,
+  SearchEmployeeResult,
   UpdateEmployeeInfoDTO,
   UpdateEmployeeInfoResponseDTO,
   UploadEmployeeAvatarResponseDTO,
@@ -208,11 +209,18 @@ export class EmployeeController implements IEmployeeController {
   @Get('search-employee')
   async searchEmployee(
     @Query() searchEmployeeDTO: SearchEmployeeDTO,
-  ): Promise<SearchEmployeeResponseDTO[]> {
-    return rpcCall<SearchEmployeeResponseDTO[]>(
+  ): Promise<SearchEmployeeResult> {
+    const payload = {
+      ...searchEmployeeDTO,
+      ...(searchEmployeeDTO.page && { page: Number(searchEmployeeDTO.page) }),
+      ...(searchEmployeeDTO.pageSize && {
+        pageSize: Number(searchEmployeeDTO.pageSize),
+      }),
+    };
+    return rpcCall<SearchEmployeeResult>(
       this.userClient,
       USER_SERVICE.ACTIONS.SEARCH_EMPLOYEES,
-      searchEmployeeDTO,
+      payload,
     );
   }
 }

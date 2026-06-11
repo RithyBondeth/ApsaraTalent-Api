@@ -76,6 +76,16 @@ export class SearchJobDTO {
   @IsOptional()
   @IsEnum(EWorkMode)
   workMode?: EWorkMode;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  page?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  pageSize?: number;
 }
 
 export class UserInJobResponseDTO {
@@ -217,4 +227,12 @@ export class SearchJobResponseDTO extends JobResponseDTO {
   constructor(partial: Partial<SearchJobResponseDTO>) {
     super(partial);
   }
+}
+
+export class SearchJobResult {
+  data: SearchJobResponseDTO[];
+  total: number;
+  page: number;
+  pageSize: number;
+  isUsingFallback: boolean;
 }

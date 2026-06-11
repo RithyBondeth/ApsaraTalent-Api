@@ -11,7 +11,7 @@ import {
   RemoveEmployeeExperienceResponseDTO,
   RemoveEmployeeResumeResponseDTO,
   SearchEmployeeDTO,
-  SearchEmployeeResponseDTO,
+  SearchEmployeeResult,
   UpdateEmployeeInfoDTO,
   UpdateEmployeeInfoRpcDTO,
   UpdateEmployeeInfoResponseDTO,
@@ -56,7 +56,7 @@ export interface IImageEmployeeRpcController {
 export interface ISearchEmployeeController {
   searchEmployee(
     searchEmployeeDTO: SearchEmployeeDTO,
-  ): Promise<SearchEmployeeResponseDTO[]>;
+  ): Promise<SearchEmployeeResult>;
 }
 
 export interface ISearchEmployeeRpcController extends ISearchEmployeeController {}

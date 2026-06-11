@@ -4,12 +4,12 @@ import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
-import { Brackets, MoreThan, Repository } from 'typeorm';
+import { Brackets, MoreThan, Repository, SelectQueryBuilder } from 'typeorm';
 import { SCOPE_SIMILARITY_THRESHOLD } from '@app/common/embedding/embedding.service';
-import { extractSalaryRange } from '@app/utils/functions/extract-salary-range';
 import {
   JobResponseDTO,
   SearchJobResponseDTO,
+  SearchJobResult,
   SearchJobDTO,
 } from '@app/contracts/dtos/job';
 import { IJobServiceService } from '@app/contracts/interfaces/service/job-service.interface';
@@ -59,11 +59,9 @@ export class JobService implements IJobServiceService {
     }
   }
 
-  async searchJobs(
-    searchJobDTO: SearchJobDTO,
-  ): Promise<SearchJobResponseDTO[]> {
+  async searchJobs(searchJobDTO: SearchJobDTO): Promise<SearchJobResult> {
     const cacheKey = this.redisService.generateJobSearchKey(searchJobDTO);
-    const cached = await this.redisService.get<JobResponseDTO[]>(cacheKey);
+    const cached = await this.redisService.get<SearchJobResult>(cacheKey);
     if (cached) {
       this.logger.info('Job search cache HIT');
       return cached;
@@ -86,203 +84,178 @@ export class JobService implements IJobServiceService {
         jobType,
         experienceLevel,
         educationRequired,
+        page = 1,
+        pageSize = 20,
       } = searchJobDTO;
 
-      const now = new Date();
-      const query = this.jobRepo
-        .createQueryBuilder('job')
-        .leftJoinAndSelect('job.company', 'company')
-        .leftJoinAndSelect('company.careerScopes', 'careerScope')
-        .leftJoinAndSelect('company.user', 'user')
-        .where('(job.expireDate IS NULL OR job.expireDate > :now)', { now });
+      const buildQuery = (withScopes: boolean): SelectQueryBuilder<Job> => {
+        const now = new Date();
+        const qb = this.jobRepo
+          .createQueryBuilder('job')
+          .leftJoinAndSelect('job.company', 'company')
+          .leftJoinAndSelect('company.careerScopes', 'careerScope')
+          .leftJoinAndSelect('company.user', 'user')
+          .where('(job.expireDate IS NULL OR job.expireDate > :now)', { now });
 
-      // Keyword
-      if (keyword) {
-        query.andWhere(
-          '(job.title ILIKE :keyword OR job.description ILIKE :keyword)',
-          {
-            keyword: `%${keyword}%`,
-          },
-        );
-      }
-
-      // Location
-      if (location) {
-        query.andWhere('company.location ILIKE :location', {
-          location: `%${location}%`,
-        });
-      }
-
-      // Company size
-      if (companySizeMin || companySizeMax) {
-        query.andWhere('company.companySize BETWEEN :min AND :max', {
-          min: companySizeMin || 0,
-          max: companySizeMax || JOB.MAX_COMPANY_SIZE,
-        });
-      }
-
-      // Dates
-      if (postedDateFrom || postedDateTo) {
-        const fromDate = postedDateFrom
-          ? new Date(postedDateFrom)
-          : new Date(0);
-        const toDate = postedDateTo ? new Date(postedDateTo) : new Date();
-
-        query.andWhere('job.createdAt BETWEEN :from AND :to', {
-          from: fromDate,
-          to: toDate,
-        });
-      }
-
-      // Job type
-      if (jobType && jobType.length > 0) {
-        query.andWhere(
-          new Brackets((qb) => {
-            jobType.forEach((type, index) => {
-              if (index === 0) {
-                qb.where('job.type ILIKE :type_' + index, {
-                  ['type_' + index]: `%${type}%`,
-                });
-              } else {
-                qb.orWhere('job.type ILIKE :type_' + index, {
-                  ['type_' + index]: `%${type}%`,
-                });
-              }
-            });
-          }),
-        );
-      }
-
-      // Experience Level
-      if (
-        experienceLevel &&
-        experienceLevel !== 'All' &&
-        experienceLevel !== ''
-      ) {
-        const mappedExps = [experienceLevel];
-
-        // Map modern UI strings to legacy database strings to catch old records
-        if (experienceLevel === '1 - 2 years') {
-          mappedExps.push(
-            '1 - 3 years',
-            '1+ year',
-            '2+ years',
-            'More than 2 years',
+        if (keyword) {
+          qb.andWhere(
+            '(job.title ILIKE :keyword OR job.description ILIKE :keyword)',
+            { keyword: `%${keyword}%` },
           );
-        } else if (experienceLevel === '3 - 5 years') {
-          mappedExps.push('1 - 3 years');
-        } else if (experienceLevel === '6 - 10 years') {
-          mappedExps.push('5 - 10 years');
         }
 
-        query.andWhere('job.experienceRequired IN (:...mappedExps)', {
-          mappedExps,
-        });
-      }
+        if (location) {
+          qb.andWhere('company.location ILIKE :location', {
+            location: `%${location}%`,
+          });
+        }
 
-      // Education
-      if (educationRequired && educationRequired.length > 0) {
-        query.andWhere(
-          new Brackets((qb) => {
-            educationRequired.forEach((edu, index) => {
-              if (index === 0) {
-                qb.where(
-                  'LOWER(job.educationRequired) ILIKE :education_' + index,
-                  {
-                    ['education_' + index]: `%${edu.toLowerCase()}%`,
-                  },
-                );
-              } else {
-                qb.orWhere(
-                  'LOWER(job.educationRequired) ILIKE :education_' + index,
-                  {
-                    ['education_' + index]: `%${edu.toLowerCase()}%`,
-                  },
-                );
-              }
-            });
-          }),
-        );
-      }
+        if (companySizeMin || companySizeMax) {
+          qb.andWhere('company.companySize BETWEEN :csMin AND :csMax', {
+            csMin: companySizeMin || 0,
+            csMax: companySizeMax || JOB.MAX_COMPANY_SIZE,
+          });
+        }
 
-      // Career scopes — semantic similarity via pgvector cosine distance.
-      // A job is included when at least one of its company's career scopes
-      // has a stored embedding semantically close to any of the search scopes.
-      // Jobs from companies whose scopes have no embedding yet are excluded
-      // when a scope filter is active; run the backfill script to cover them.
-      // Career scopes — semantic similarity via pgvector.
-      // Bypasses the TypeORM alias entirely: joins the junction table and
-      // career_scope independently inside a correlated EXISTS so PostgreSQL
-      // never needs to resolve the unmapped `embedding` column via the ORM alias.
-      if (careerScopes && careerScopes.length > 0) {
-        query.andWhere(
-          `EXISTS (
-             SELECT 1
-             FROM company_career_scopes_career_scope ccs
-             INNER JOIN career_scope cs_candidate
-               ON cs_candidate.id = ccs."careerScopeId"
-             WHERE ccs."companyId" = company.id
-               AND (
-                 -- Branch A: semantic match via pgvector (when both sides have embeddings)
-                 (
-                   cs_candidate.embedding IS NOT NULL
-                   AND EXISTS (
-                     SELECT 1 FROM career_scope cs_ref
-                     WHERE cs_ref.name IN (:...searchScopes)
-                       AND cs_ref.embedding IS NOT NULL
-                       AND (1 - (cs_candidate.embedding <=> cs_ref.embedding)) > :simThreshold
+        if (postedDateFrom || postedDateTo) {
+          qb.andWhere('job.createdAt BETWEEN :from AND :to', {
+            from: postedDateFrom ? new Date(postedDateFrom) : new Date(0),
+            to: postedDateTo ? new Date(postedDateTo) : new Date(),
+          });
+        }
+
+        // SQL salary range filter using numeric columns
+        if (salaryMin !== undefined || salaryMax !== undefined) {
+          qb.andWhere(
+            'job.salaryMin IS NOT NULL AND job.salaryMax IS NOT NULL' +
+              ' AND job.salaryMin <= :salaryMax AND job.salaryMax >= :salaryMin',
+            {
+              salaryMin: salaryMin ?? 0,
+              salaryMax: salaryMax ?? Number.MAX_SAFE_INTEGER,
+            },
+          );
+        }
+
+        if (jobType && jobType.length > 0) {
+          qb.andWhere(
+            new Brackets((inner) => {
+              jobType.forEach((type, index) => {
+                const param = `jtype_${index}`;
+                if (index === 0) {
+                  inner.where(`job.type ILIKE :${param}`, {
+                    [param]: `%${type}%`,
+                  });
+                } else {
+                  inner.orWhere(`job.type ILIKE :${param}`, {
+                    [param]: `%${type}%`,
+                  });
+                }
+              });
+            }),
+          );
+        }
+
+        if (
+          experienceLevel &&
+          experienceLevel !== 'All' &&
+          experienceLevel !== ''
+        ) {
+          qb.andWhere('job.experienceRequired = :experienceLevel', {
+            experienceLevel,
+          });
+        }
+
+        if (educationRequired && educationRequired.length > 0) {
+          qb.andWhere(
+            new Brackets((inner) => {
+              educationRequired.forEach((edu, index) => {
+                const param = `edu_${index}`;
+                if (index === 0) {
+                  inner.where(`LOWER(job.educationRequired) ILIKE :${param}`, {
+                    [param]: `%${edu.toLowerCase()}%`,
+                  });
+                } else {
+                  inner.orWhere(
+                    `LOWER(job.educationRequired) ILIKE :${param}`,
+                    {
+                      [param]: `%${edu.toLowerCase()}%`,
+                    },
+                  );
+                }
+              });
+            }),
+          );
+        }
+
+        if (withScopes && careerScopes && careerScopes.length > 0) {
+          qb.andWhere(
+            `EXISTS (
+               SELECT 1
+               FROM company_career_scopes_career_scope ccs
+               INNER JOIN career_scope cs_candidate
+                 ON cs_candidate.id = ccs."careerScopeId"
+               WHERE ccs."companyId" = company.id
+                 AND (
+                   (
+                     cs_candidate.embedding IS NOT NULL
+                     AND EXISTS (
+                       SELECT 1 FROM career_scope cs_ref
+                       WHERE cs_ref.name IN (:...searchScopes)
+                         AND cs_ref.embedding IS NOT NULL
+                         AND (1 - (cs_candidate.embedding <=> cs_ref.embedding)) > :simThreshold
+                     )
                    )
+                   OR cs_candidate.name IN (:...searchScopes)
                  )
-                 OR
-                 -- Branch B: exact name fallback (used while embeddings are being built,
-                 --           or when a scope has no embedding yet). Ensures results are
-                 --           always consistent regardless of embedding availability.
-                 cs_candidate.name IN (:...searchScopes)
-               )
-           )`,
-          {
-            searchScopes: careerScopes,
-            simThreshold: SCOPE_SIMILARITY_THRESHOLD,
-          },
-        );
+             )`,
+            {
+              searchScopes: careerScopes,
+              simThreshold: SCOPE_SIMILARITY_THRESHOLD,
+            },
+          );
+        }
+
+        const validSortFields = ['createdAt', 'title', 'companySize'];
+        const field = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
+        const order =
+          (sortOrder as string).toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+        if (field === 'companySize') {
+          qb.orderBy(`company.${field}`, order).addOrderBy('job.id', 'ASC');
+        } else {
+          qb.orderBy(`job.${field}`, order).addOrderBy('job.id', 'ASC');
+        }
+
+        return qb;
+      };
+
+      const scopedQuery = buildQuery(true);
+      const total = await scopedQuery.getCount();
+      scopedQuery.skip((page - 1) * pageSize).take(pageSize);
+      const jobs = await scopedQuery.getMany();
+
+      // Scope fallback: on page 1, if the scoped query returned nothing and
+      // scopes were provided, retry without the scope filter.
+      let finalJobs = jobs;
+      let finalTotal = total;
+      let isUsingFallback = false;
+
+      if (jobs.length === 0 && careerScopes?.length > 0 && page === 1) {
+        const fallbackQuery = buildQuery(false);
+        finalTotal = await fallbackQuery.getCount();
+        fallbackQuery.skip(0).take(pageSize);
+        finalJobs = await fallbackQuery.getMany();
+        isUsingFallback = true;
       }
 
-      // Sorting
-      const validSortFields = ['createdAt', 'title', 'companySize'];
-      const sortField = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
+      const result: SearchJobResult = {
+        data: finalJobs.map((job) => new SearchJobResponseDTO(job)),
+        total: finalTotal,
+        page,
+        pageSize,
+        isUsingFallback,
+      };
 
-      if (sortField === 'companySize') {
-        query
-          .orderBy(`company.${sortField}`, sortOrder as 'ASC' | 'DESC')
-          .addOrderBy('job.id', 'ASC');
-      } else {
-        query
-          .orderBy(`job.${sortField}`, sortOrder as 'ASC' | 'DESC')
-          .addOrderBy('job.id', 'ASC');
-      }
-
-      let jobs = await query.getMany();
-
-      // Post-query salary filtering
-      if (salaryMin !== undefined || salaryMax !== undefined) {
-        const min = salaryMin ?? 0;
-        const max = salaryMax ?? Number.MAX_SAFE_INTEGER;
-
-        jobs = jobs.filter((job) => {
-          if (!job.salary) return false;
-          const [jobMin, jobMax] = extractSalaryRange(job.salary);
-          return jobMin <= max && jobMax >= min;
-        });
-      }
-
-      if (!jobs.length) {
-        throw new RpcException({
-          message: 'No jobs found matching your criteria',
-          statusCode: 404,
-        });
-      }
-
-      const result = jobs.map((job) => new SearchJobResponseDTO(job));
       await this.redisService.set(cacheKey, result, JOB.JOB_SEARCH_TTL);
       return result;
     } catch (error) {

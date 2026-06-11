@@ -34,7 +34,7 @@ import {
   RemoveEmployeeAvatarResponseDTO,
   RemoveEmployeeCoverLetterResponseDTO,
   RemoveEmployeeResumeResponseDTO,
-  SearchEmployeeResponseDTO,
+  SearchEmployeeResult,
   UpdateCompanyInfoRpcDTO,
   UpdateCompanyInfoResponseDTO,
   UpdateEmployeeInfoRpcDTO,
@@ -145,7 +145,7 @@ export interface IUploadEmployeeReferenceService {
 export interface ISearchEmployeeService {
   searchEmployee(
     searchEmployeeDTO: SearchEmployeeDTO,
-  ): Promise<SearchEmployeeResponseDTO[]>;
+  ): Promise<SearchEmployeeResult>;
 }
 
 export interface IUserService {

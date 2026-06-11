@@ -1,6 +1,7 @@
 import {
   JobResponseDTO,
   SearchJobResponseDTO,
+  SearchJobResult,
   CreateInterviewDTO,
   GetInterviewsByCompanyDTO,
   GetInterviewsByEmployeeDTO,
@@ -45,7 +46,7 @@ export const I_APPLICATION_SERVICE = 'IApplicationService';
 
 export interface IJobServiceService {
   findAllJobs(paginationDTO: PaginationDTO): Promise<JobResponseDTO[]>;
-  searchJobs(searchJobDTO: SearchJobDTO): Promise<SearchJobResponseDTO[]>;
+  searchJobs(searchJobDTO: SearchJobDTO): Promise<SearchJobResult>;
 }
 
 export interface IMatchingService {
