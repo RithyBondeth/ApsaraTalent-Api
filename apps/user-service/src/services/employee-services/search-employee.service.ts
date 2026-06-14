@@ -26,18 +26,28 @@ export class SearchEmployeeService implements ISearchEmployeeService {
   async searchEmployee(
     searchEmployeeDTO: SearchEmployeeDTO,
   ): Promise<SearchEmployeeResult> {
+    // Per-user liked exclusions make the cache key unique per user and would
+    // bloat Redis with single-use entries — bypass the cache when present.
+    const hasExclusions =
+      !!searchEmployeeDTO.excludeEmployeeIds &&
+      searchEmployeeDTO.excludeEmployeeIds.length > 0;
+
     const cacheKey = this.redisService.generateSearchKey(
       'employee',
       searchEmployeeDTO,
     );
-    const cached = await this.redisService.get<SearchEmployeeResult>(cacheKey);
 
-    if (cached) {
-      this.logger.info('Employee search cache HIT');
-      return cached;
+    if (!hasExclusions) {
+      const cached =
+        await this.redisService.get<SearchEmployeeResult>(cacheKey);
+
+      if (cached) {
+        this.logger.info('Employee search cache HIT');
+        return cached;
+      }
+
+      this.logger.info('Employee search cache MISS');
     }
-
-    this.logger.info('Employee search cache MISS');
 
     try {
       const {
@@ -51,6 +61,8 @@ export class SearchEmployeeService implements ISearchEmployeeService {
         sortOrder,
         page = 1,
         pageSize = 20,
+        excludeEmployeeIds,
+        requesterId,
       } = searchEmployeeDTO;
 
       const buildQuery = (
@@ -108,6 +120,25 @@ export class SearchEmployeeService implements ISearchEmployeeService {
                 }
               });
             }),
+          );
+        }
+
+        if (excludeEmployeeIds && excludeEmployeeIds.length > 0) {
+          qb.andWhere('employee.id NOT IN (:...excludeEmployeeIds)', {
+            excludeEmployeeIds,
+          });
+        }
+
+        // Hide candidates blocked in EITHER direction between the searcher and
+        // the candidate (mutual invisibility).
+        if (requesterId) {
+          qb.andWhere(
+            `NOT EXISTS (
+               SELECT 1 FROM user_block ub
+               WHERE (ub."blockerId" = :requesterId AND ub."blockedId" = "user"."id")
+                  OR (ub."blockerId" = "user"."id" AND ub."blockedId" = :requesterId)
+             )`,
+            { requesterId },
           );
         }
 
@@ -174,9 +205,8 @@ export class SearchEmployeeService implements ISearchEmployeeService {
       };
 
       const scopedQuery = buildQuery(true);
-      const total = await scopedQuery.getCount();
       scopedQuery.skip((page - 1) * pageSize).take(pageSize);
-      const employees = await scopedQuery.getMany();
+      const [employees, total] = await scopedQuery.getManyAndCount();
 
       // Scope fallback: on page 1, if the scoped query returned nothing and
       // scopes were provided, retry without the scope filter.
@@ -186,9 +216,10 @@ export class SearchEmployeeService implements ISearchEmployeeService {
 
       if (employees.length === 0 && careerScopes?.length > 0 && page === 1) {
         const fallbackQuery = buildQuery(false);
-        finalTotal = await fallbackQuery.getCount();
         fallbackQuery.skip(0).take(pageSize);
-        finalEmployees = await fallbackQuery.getMany();
+        const [fbEmps, fbTotal] = await fallbackQuery.getManyAndCount();
+        finalEmployees = fbEmps;
+        finalTotal = fbTotal;
         isUsingFallback = true;
       }
 
@@ -206,7 +237,9 @@ export class SearchEmployeeService implements ISearchEmployeeService {
         isUsingFallback,
       };
 
-      await this.redisService.set(cacheKey, result, CACHE_TTL.SHORT);
+      if (!hasExclusions) {
+        await this.redisService.set(cacheKey, result, CACHE_TTL.SHORT);
+      }
       return result;
     } catch (error) {
       this.logger.error(

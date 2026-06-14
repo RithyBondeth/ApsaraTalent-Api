@@ -5,3 +5,4 @@ export * from './count-all-users.dto';
 export * from './user-rpc.dto';
 export * from './company';
 export * from './employee';
+export * from './moderation/moderation.dto';

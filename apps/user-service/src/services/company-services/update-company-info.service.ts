@@ -371,7 +371,12 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
       );
       keysToDelete.push(this.redisService.generateListKey('user', {}));
 
-      await Promise.all(keysToDelete.map((k) => this.redisService.del(k)));
+      await Promise.all([
+        ...keysToDelete.map((k) => this.redisService.del(k)),
+        // Company edits can change job postings or fields that job search
+        // filters/sorts on (e.g. company location, size), so refresh those.
+        this.redisService.invalidateJobSearchCaches(),
+      ]);
 
       return new UpdateCompanyInfoResponseDTO({
         message: 'Company information updated successfully',

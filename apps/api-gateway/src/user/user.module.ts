@@ -5,6 +5,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { CompanyController } from './controllers/company.controller';
 import { EmployeeController } from './controllers/employee.controller';
+import { ModerationController } from './controllers/moderation.controller';
 import { PublicUserController } from './controllers/public-user.controller';
 import { UserController } from './controllers/user.controller';
 import { UserAccessService } from './services/user-access.service';
@@ -32,6 +33,7 @@ import { UserAccessService } from './services/user-access.service';
     EmployeeController,
     CompanyController,
     PublicUserController,
+    ModerationController,
   ],
   providers: [UserAccessService],
 })

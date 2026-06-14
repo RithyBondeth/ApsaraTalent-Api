@@ -5,12 +5,15 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
+  MinLength,
 } from 'class-validator';
 import { EmployeeResponseDTO } from '../../shared/user.dto';
 
 export class SearchEmployeeDTO {
   @IsOptional()
   @IsString()
+  @MinLength(2)
   keyword?: string;
 
   @IsOptional()
@@ -54,6 +57,16 @@ export class SearchEmployeeDTO {
   @IsNumber()
   @Type(() => Number)
   pageSize?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+  excludeEmployeeIds?: string[];
+
+  @IsOptional()
+  @IsUUID()
+  requesterId?: string;
 }
 
 export class SearchEmployeeResponseDTO extends EmployeeResponseDTO {

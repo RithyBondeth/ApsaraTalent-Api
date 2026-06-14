@@ -4,7 +4,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import {
   SearchEmployeeDTO,
-  SearchEmployeeResponseDTO,
+  SearchEmployeeResult,
 } from '@app/contracts/dtos/user';
 import {
   I_SEARCH_EMPLOYEE_SERVICE,
@@ -21,7 +21,7 @@ export class SearchEmployeeController implements ISearchEmployeeRpcController {
   @MessagePattern(USER_SERVICE.ACTIONS.SEARCH_EMPLOYEES)
   async searchEmployee(
     @Payload() searchEmployeeDTO: SearchEmployeeDTO,
-  ): Promise<SearchEmployeeResponseDTO[]> {
+  ): Promise<SearchEmployeeResult> {
     return this.searchEmployeeService.searchEmployee(searchEmployeeDTO);
   }
 }

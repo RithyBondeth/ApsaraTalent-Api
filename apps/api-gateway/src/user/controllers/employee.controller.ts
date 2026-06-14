@@ -1,4 +1,5 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
+import { AuthUser, User } from '@app/common/decorators/user.decorator';
 import { IEmployeeController } from '@app/contracts/interfaces/controller/user-controllers/employee-controller.interface';
 import { UploadFileInterceptor } from '@app/common/uploadfile/uploadfile.interceptor';
 import {
@@ -64,12 +65,13 @@ export class EmployeeController implements IEmployeeController {
 
   @Get('one/:employeeId')
   async findOneById(
+    @User() user: AuthUser,
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
   ): Promise<EmployeeResponseDTO> {
     return rpcCall<EmployeeResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.FIND_ONE_EMPLOYEE_BY_ID,
-      { employeeId },
+      { employeeId, requesterId: user.id },
     );
   }
 
@@ -208,6 +210,7 @@ export class EmployeeController implements IEmployeeController {
 
   @Get('search-employee')
   async searchEmployee(
+    @User() user: AuthUser,
     @Query() searchEmployeeDTO: SearchEmployeeDTO,
   ): Promise<SearchEmployeeResult> {
     const payload = {
@@ -216,11 +219,13 @@ export class EmployeeController implements IEmployeeController {
       ...(searchEmployeeDTO.pageSize && {
         pageSize: Number(searchEmployeeDTO.pageSize),
       }),
+      requesterId: user.id,
     };
     return rpcCall<SearchEmployeeResult>(
       this.userClient,
       USER_SERVICE.ACTIONS.SEARCH_EMPLOYEES,
       payload,
+      20_000,
     );
   }
 }

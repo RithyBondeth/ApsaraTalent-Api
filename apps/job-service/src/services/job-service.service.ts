@@ -60,13 +60,22 @@ export class JobService implements IJobServiceService {
   }
 
   async searchJobs(searchJobDTO: SearchJobDTO): Promise<SearchJobResult> {
+    // Per-user liked exclusions make the cache key unique per user and would
+    // bloat Redis with single-use entries — bypass the cache when present.
+    const hasExclusions =
+      !!searchJobDTO.excludeCompanyIds &&
+      searchJobDTO.excludeCompanyIds.length > 0;
+
     const cacheKey = this.redisService.generateJobSearchKey(searchJobDTO);
-    const cached = await this.redisService.get<SearchJobResult>(cacheKey);
-    if (cached) {
-      this.logger.info('Job search cache HIT');
-      return cached;
+
+    if (!hasExclusions) {
+      const cached = await this.redisService.get<SearchJobResult>(cacheKey);
+      if (cached) {
+        this.logger.info('Job search cache HIT');
+        return cached;
+      }
+      this.logger.info('Job search cache MISS');
     }
-    this.logger.info('Job search cache MISS');
 
     try {
       const {
@@ -86,6 +95,8 @@ export class JobService implements IJobServiceService {
         educationRequired,
         page = 1,
         pageSize = 20,
+        excludeCompanyIds,
+        requesterId,
       } = searchJobDTO;
 
       const buildQuery = (withScopes: boolean): SelectQueryBuilder<Job> => {
@@ -187,6 +198,25 @@ export class JobService implements IJobServiceService {
           );
         }
 
+        if (excludeCompanyIds && excludeCompanyIds.length > 0) {
+          qb.andWhere('company.id NOT IN (:...excludeCompanyIds)', {
+            excludeCompanyIds,
+          });
+        }
+
+        // Hide jobs from companies blocked in EITHER direction between the
+        // searcher and the company (mutual invisibility).
+        if (requesterId) {
+          qb.andWhere(
+            `NOT EXISTS (
+               SELECT 1 FROM user_block ub
+               WHERE (ub."blockerId" = :requesterId AND ub."blockedId" = "user"."id")
+                  OR (ub."blockerId" = "user"."id" AND ub."blockedId" = :requesterId)
+             )`,
+            { requesterId },
+          );
+        }
+
         if (withScopes && careerScopes && careerScopes.length > 0) {
           qb.andWhere(
             `EXISTS (
@@ -230,9 +260,8 @@ export class JobService implements IJobServiceService {
       };
 
       const scopedQuery = buildQuery(true);
-      const total = await scopedQuery.getCount();
       scopedQuery.skip((page - 1) * pageSize).take(pageSize);
-      const jobs = await scopedQuery.getMany();
+      const [jobs, total] = await scopedQuery.getManyAndCount();
 
       // Scope fallback: on page 1, if the scoped query returned nothing and
       // scopes were provided, retry without the scope filter.
@@ -242,9 +271,10 @@ export class JobService implements IJobServiceService {
 
       if (jobs.length === 0 && careerScopes?.length > 0 && page === 1) {
         const fallbackQuery = buildQuery(false);
-        finalTotal = await fallbackQuery.getCount();
         fallbackQuery.skip(0).take(pageSize);
-        finalJobs = await fallbackQuery.getMany();
+        const [fbJobs, fbTotal] = await fallbackQuery.getManyAndCount();
+        finalJobs = fbJobs;
+        finalTotal = fbTotal;
         isUsingFallback = true;
       }
 
@@ -256,7 +286,9 @@ export class JobService implements IJobServiceService {
         isUsingFallback,
       };
 
-      await this.redisService.set(cacheKey, result, JOB.JOB_SEARCH_TTL);
+      if (!hasExclusions) {
+        await this.redisService.set(cacheKey, result, JOB.JOB_SEARCH_TTL);
+      }
       return result;
     } catch (error) {
       this.logger.error(

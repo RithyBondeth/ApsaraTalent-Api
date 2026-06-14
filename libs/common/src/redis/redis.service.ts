@@ -81,14 +81,21 @@ export class RedisService {
     }
   }
 
-  async delPattern(pattern: string): Promise<void> {
+  // Delete keys matching a pattern
+  async delPattern(
+    pattern: string,
+    prefix: string = this.PREFIX,
+  ): Promise<void> {
     try {
       const client = (this.cacheManager.stores as any).getClient();
       if (client && typeof client.keys === 'function') {
-        const keys = await client.keys(`${this.PREFIX}:${pattern}`);
+        const fullPattern = `${prefix}:${pattern}`;
+        const keys = await client.keys(fullPattern);
         if (keys.length > 0) {
           await Promise.all(keys.map((key: any) => this.del(key)));
-          this.logger.log(`Deleted ${keys.length} keys matching ${pattern}`);
+          this.logger.log(
+            `Deleted ${keys.length} keys matching ${fullPattern}`,
+          );
         }
       }
     } catch (error) {
@@ -98,7 +105,7 @@ export class RedisService {
     }
   }
 
-  // ⚠️ REPLACE pattern deletion with simple del calls
+  // REPLACE pattern deletion with simple del calls
   async invalidateUser(userId: string): Promise<void> {
     // Instead of pattern deletion, delete specific known keys
     await Promise.all([
@@ -124,7 +131,7 @@ export class RedisService {
     ]);
   }
 
-  // 🆕 NEW: Helper for list invalidation (optional)
+  // Helper for list invalidation (optional)
   async invalidateListPages(
     entity: string,
     pages: number[] = [1, 2, 3],
@@ -167,6 +174,15 @@ export class RedisService {
 
   generateMatchingKey(type: string, id: string): string {
     return `${this.JOB_PREFIX}:matching:${type}:${id}`;
+  }
+
+  // Invalidate cached job searches and job lists. Job keys live under
+  // JOB_PREFIX, so we must pass it explicitly to delPattern.
+  async invalidateJobSearchCaches(): Promise<void> {
+    await Promise.all([
+      this.delPattern('job:search:*', this.JOB_PREFIX),
+      this.delPattern('job:list:*', this.JOB_PREFIX),
+    ]);
   }
 
   async invalidateMatchingCaches(eid: string, cid: string): Promise<void> {

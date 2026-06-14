@@ -61,7 +61,11 @@ export class OpenPositionService implements IOpenPositionService {
       await this.jobRepository.delete(opId);
 
       // Invalidate cache after deletion
-      await this.invalidateCompanyCaches(companyId);
+      await Promise.all([
+        this.invalidateCompanyCaches(companyId),
+        // A removed job must disappear from job search/list results too.
+        this.redisService.invalidateJobSearchCaches(),
+      ]);
 
       return new RemoveOpenPositionResponseDTO({
         message: `${removedJob.title} position was removed successfully.`,

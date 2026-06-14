@@ -13,6 +13,10 @@ import { UpdateEmployeeInfoDTO } from './update-employee-info.dto';
 export class EmployeeIdDTO {
   @IsUUID()
   employeeId: string;
+
+  @IsOptional()
+  @IsUUID()
+  requesterId?: string;
 }
 
 export class EmployeeCompanyFavoriteDTO {

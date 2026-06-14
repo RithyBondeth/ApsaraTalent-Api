@@ -1,4 +1,5 @@
 import { Employee } from '@app/common/database/entities/employee/employee.entity';
+import { UserBlock } from '@app/common/database/entities/moderation/user-block.entity';
 import { User } from '@app/common/database/entities/user.entity';
 import { RedisService } from '@app/common/redis/redis.service';
 import { Injectable } from '@nestjs/common';
@@ -22,6 +23,8 @@ export class FindEmployeeService implements IFindEmployeeService {
     private readonly employeeRepository: Repository<Employee>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(UserBlock)
+    private readonly blockRepository: Repository<UserBlock>,
     private readonly logger: PinoLogger,
     private readonly redisService: RedisService,
   ) {}
@@ -82,7 +85,37 @@ export class FindEmployeeService implements IFindEmployeeService {
   async findOneById(
     employeeIdDTO: EmployeeIdDTO,
   ): Promise<EmployeeResponseDTO> {
-    const { employeeId } = employeeIdDTO;
+    const { employeeId, requesterId } = employeeIdDTO;
+
+    // Instagram/Facebook-style block: if a block exists in either direction
+    // between the viewer and this profile's owner, the profile is unavailable.
+    if (requesterId) {
+      const targetUser = await this.userRepository.findOne({
+        where: { employee: { id: employeeId } },
+        select: { id: true },
+      });
+      if (!targetUser) {
+        throw new RpcException({
+          statusCode: 404,
+          message: 'This profile is not available.',
+        });
+      }
+      if (requesterId !== targetUser.id) {
+        const blocked = await this.blockRepository.exists({
+          where: [
+            { blocker: { id: requesterId }, blocked: { id: targetUser.id } },
+            { blocker: { id: targetUser.id }, blocked: { id: requesterId } },
+          ],
+        });
+        if (blocked) {
+          throw new RpcException({
+            statusCode: 404,
+            message: 'This profile is not available.',
+          });
+        }
+      }
+    }
+
     const cacheKey = this.redisService.generateEmployeeKey(
       'detail',
       employeeId,

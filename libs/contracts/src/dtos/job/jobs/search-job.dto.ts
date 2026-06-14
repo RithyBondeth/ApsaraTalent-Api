@@ -9,11 +9,14 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
+  MinLength,
 } from 'class-validator';
 
 export class SearchJobDTO {
   @IsOptional()
   @IsString()
+  @MinLength(2)
   keyword?: string;
 
   @IsOptional()
@@ -86,6 +89,16 @@ export class SearchJobDTO {
   @IsNumber()
   @Type(() => Number)
   pageSize?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+  excludeCompanyIds?: string[];
+
+  @IsOptional()
+  @IsUUID()
+  requesterId?: string;
 }
 
 export class UserInJobResponseDTO {

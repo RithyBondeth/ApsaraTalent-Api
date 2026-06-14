@@ -9,6 +9,7 @@ import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { User } from '@app/common/database/entities/user.entity';
+import { UserBlock } from '@app/common/database/entities/moderation/user-block.entity';
 import { isUuid, resolveUserId, resolveUserIdSafe } from '@app/common';
 import { IChatService } from '@app/contracts/interfaces/service/chat-service.interface';
 import {
@@ -49,11 +50,35 @@ export class ChatService implements IChatService {
   constructor(
     @InjectRepository(Chat) private readonly chatRepository: Repository<Chat>,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @InjectRepository(UserBlock)
+    private readonly blockRepository: Repository<UserBlock>,
     @Inject(USER_SERVICE.NAME) private readonly userServiceClient: ClientProxy,
     private readonly redisService: RedisService,
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(ChatService.name);
+  }
+
+  /**
+   * Throws if either user has blocked the other — used to gate chat creation
+   * and message sending in both directions.
+   */
+  private async assertNotBlocked(
+    userIdA: string,
+    userIdB: string,
+  ): Promise<void> {
+    const blocked = await this.blockRepository.exists({
+      where: [
+        { blocker: { id: userIdA }, blocked: { id: userIdB } },
+        { blocker: { id: userIdB }, blocked: { id: userIdA } },
+      ],
+    });
+    if (blocked) {
+      throw new RpcException({
+        statusCode: 403,
+        message: 'You can no longer message this user.',
+      });
+    }
   }
 
   /**
@@ -96,6 +121,7 @@ export class ChatService implements IChatService {
       const receiverUserId = await this.resolveUserId(
         createOrGetChatDTO.receiverId,
       );
+      await this.assertNotBlocked(senderUserId, receiverUserId);
       const partner = await this.userRepository.findOne({
         where: { id: receiverUserId },
         relations: ['employee', 'company'],
@@ -165,6 +191,7 @@ export class ChatService implements IChatService {
       const receiverUserId = await this.resolveUserId(
         createMessageDTO.receiverId,
       );
+      await this.assertNotBlocked(senderUserId, receiverUserId);
       this.logger.info(
         `Creating message: ${senderUserId} -> ${receiverUserId}`,
       );

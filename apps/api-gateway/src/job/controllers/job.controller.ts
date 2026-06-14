@@ -1,4 +1,5 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
+import { AuthUser, User } from '@app/common/decorators/user.decorator';
 import { IJobController } from '@app/contracts/interfaces/controller/job-controllers/job-controller.interface';
 import { Controller, Get, Inject, Query, UseGuards } from '@nestjs/common';
 import {
@@ -34,6 +35,7 @@ export class JobController implements IJobController {
 
   @Get('search')
   async searchJobs(
+    @User() user: AuthUser,
     @Query() searchJobDTO: SearchJobDTO,
   ): Promise<SearchJobResult> {
     const payload = {
@@ -52,12 +54,14 @@ export class JobController implements IJobController {
       }),
       ...(searchJobDTO.page && { page: Number(searchJobDTO.page) }),
       ...(searchJobDTO.pageSize && { pageSize: Number(searchJobDTO.pageSize) }),
+      requesterId: user.id,
     };
 
     return rpcCall<SearchJobResult>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.SEARCH_JOBS,
       payload,
+      20_000,
     );
   }
 }

@@ -21,6 +21,8 @@ import { Experience } from '@app/common/database/entities/employee/experience.en
 import { EmployeeFavoriteCompany } from '@app/common/database/entities/employee/favorite-company.entity';
 import { Skill } from '@app/common/database/entities/employee/skill.entity';
 import { JobMatching } from '@app/common/database/entities/job-matching.entity';
+import { UserBlock } from '@app/common/database/entities/moderation/user-block.entity';
+import { UserReport } from '@app/common/database/entities/moderation/user-report.entity';
 import { Social } from '@app/common/database/entities/social.entity';
 import { User } from '@app/common/database/entities/user.entity';
 import { CacheInvalidationService } from '@app/common/redis/cache-invalidation.service';
@@ -40,6 +42,7 @@ import { ImageEmployeeController } from './controllers/employee-controllers/imag
 import { SearchEmployeeController } from './controllers/employee-controllers/search-employee.controller';
 import { UpdateEmployeeInfoController } from './controllers/employee-controllers/update-employee-info.controller';
 import { UploadEmployeeReferenceController } from './controllers/employee-controllers/upload-employee-reference.controller';
+import { ModerationController } from './controllers/moderation/moderation.controller';
 import { UserController } from './controllers/user.controller';
 import { UserHealthController } from './health/health.controller';
 import { FindCompanyService } from './services/company-services/find-company.service';
@@ -52,6 +55,7 @@ import { ImageEmployeeService } from './services/employee-services/image-employe
 import { SearchEmployeeService } from './services/employee-services/search-employee.service';
 import { UpdateEmployeeInfoService } from './services/employee-services/update-employee-info.service';
 import { UploadEmployeeReferenceService } from './services/employee-services/upload-employee-reference.service';
+import { ModerationService } from './services/moderation/moderation.service';
 import { UserService } from './services/user.service';
 import {
   I_UPDATE_EMPLOYEE_INFO_SERVICE,
@@ -65,6 +69,7 @@ import {
   I_USER_SERVICE,
   I_OPEN_POSITION_SERVICE,
   I_EXPERIENCE_AND_EDUCATION_SERVICE,
+  I_MODERATION_SERVICE,
 } from '@app/contracts/interfaces/service/user-service.interface';
 
 @Module({
@@ -87,6 +92,8 @@ import {
       EmployeeFavoriteCompany,
       CompanyFavoriteEmployee,
       JobMatching,
+      UserBlock,
+      UserReport,
     ]),
     LoggerModule,
     UploadfileModule,
@@ -118,6 +125,7 @@ import {
     UserHealthController,
     OpenPositionController,
     ExperienceAndEducationController,
+    ModerationController,
   ],
   providers: [
     {
@@ -143,6 +151,7 @@ import {
       provide: I_EXPERIENCE_AND_EDUCATION_SERVICE,
       useClass: ExperienceAndEducationService,
     },
+    { provide: I_MODERATION_SERVICE, useClass: ModerationService },
     CacheInvalidationService,
     RedisCacheHealthIndicator,
     {

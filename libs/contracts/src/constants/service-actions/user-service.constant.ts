@@ -50,5 +50,11 @@ export const USER_SERVICE = {
 
     GET_EMPLOYEE_RECOMMENDATIONS: { cmd: 'getEmployeeRecommendations' },
     GET_COMPANY_RECOMMENDATIONS: { cmd: 'getCompanyRecommendations' },
+
+    BLOCK_USER: { cmd: 'blockUser' },
+    UNBLOCK_USER: { cmd: 'unblockUser' },
+    LIST_BLOCKED_USERS: { cmd: 'listBlockedUsers' },
+    GET_BLOCK_STATUS: { cmd: 'getBlockStatus' },
+    REPORT_USER: { cmd: 'reportUser' },
   },
 };

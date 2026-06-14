@@ -1,3 +1,4 @@
+import { AuthUser } from '@app/common/decorators/user.decorator';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
 import {
   CompanyIdDTO,
@@ -22,7 +23,7 @@ import {
 
 export interface IFindCompanyController {
   findAll(paginationDTO: PaginationDTO): Promise<CompanyResponseDTO[]>;
-  findOneById(companyId: string): Promise<CompanyResponseDTO>;
+  findOneById(user: AuthUser, companyId: string): Promise<CompanyResponseDTO>;
   countAllCompanies(): Promise<CountAllUsersResponseDTO>;
 }
 

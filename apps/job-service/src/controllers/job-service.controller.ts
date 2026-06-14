@@ -7,8 +7,8 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
 import {
   JobResponseDTO,
-  SearchJobResponseDTO,
   SearchJobDTO,
+  SearchJobResult,
 } from '@app/contracts/dtos/job';
 import {
   I_JOB_SERVICE_SERVICE,
@@ -31,9 +31,7 @@ export class JobController implements IJobRpcController {
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.SEARCH_JOBS)
-  searchJobs(
-    @Payload() searchJobDTO: SearchJobDTO,
-  ): Promise<SearchJobResponseDTO[]> {
+  searchJobs(@Payload() searchJobDTO: SearchJobDTO): Promise<SearchJobResult> {
     return this.jobService.searchJobs(searchJobDTO);
   }
 }

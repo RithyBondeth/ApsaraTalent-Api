@@ -1,4 +1,5 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
+import { AuthUser, User } from '@app/common/decorators/user.decorator';
 import { ICompanyController } from '@app/contracts/interfaces/controller/user-controllers/company-controller.interface';
 import { UploadFileInterceptor } from '@app/common/uploadfile/uploadfile.interceptor';
 import { UploadFilesInterceptor } from '@app/common/uploadfile/uploadfiles.interceptor';
@@ -60,12 +61,13 @@ export class CompanyController implements ICompanyController {
 
   @Get('one/:companyId')
   async findOneById(
+    @User() user: AuthUser,
     @Param('companyId', ParseUUIDPipe) companyId: string,
   ): Promise<CompanyResponseDTO> {
     return rpcCall<CompanyResponseDTO>(
       this.userClient,
       USER_SERVICE.ACTIONS.FIND_ONE_COMPANY_BY_ID,
-      { companyId },
+      { companyId, requesterId: user.id },
     );
   }
 

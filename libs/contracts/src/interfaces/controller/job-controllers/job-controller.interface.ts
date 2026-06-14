@@ -1,3 +1,4 @@
+import { AuthUser } from '@app/common/decorators/user.decorator';
 import {
   SearchJobDTO,
   SearchJobResponseDTO,
@@ -6,7 +7,10 @@ import {
 import { PaginationDTO } from '@app/contracts/dtos/shared';
 
 export interface IJobController {
-  searchJobs(searchJobQuery: SearchJobDTO): Promise<SearchJobResult>;
+  searchJobs(
+    user: AuthUser,
+    searchJobQuery: SearchJobDTO,
+  ): Promise<SearchJobResult>;
   findAllJobs(pagination: PaginationDTO): Promise<SearchJobResponseDTO[]>;
 }
 

@@ -15,6 +15,8 @@ import { EmployeeFavoriteCompany } from '../entities/employee/favorite-company.e
 import { Skill } from '../entities/employee/skill.entity';
 import { Interview } from '../entities/interview.entity';
 import { JobMatching } from '../entities/job-matching.entity';
+import { UserBlock } from '../entities/moderation/user-block.entity';
+import { UserReport } from '../entities/moderation/user-report.entity';
 import { Notification } from '../entities/notification.entity';
 import { ResumeTemplate } from '../entities/resume-template.entity';
 import { Social } from '../entities/social.entity';
@@ -46,6 +48,8 @@ export const databaseConfig = async (
     CompanyFavoriteEmployee,
     EmployeeFavoriteCompany,
     Interview,
+    UserBlock,
+    UserReport,
   ],
   // Connection pool optimized for Neon PostgreSQL (remote, high-latency)
   extra: {

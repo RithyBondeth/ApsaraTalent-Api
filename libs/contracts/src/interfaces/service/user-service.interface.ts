@@ -58,6 +58,17 @@ import {
   SearchEmployeeDTO,
   UserIdDTO,
 } from '../../dtos/user';
+import {
+  BlockUserDTO,
+  UnblockUserDTO,
+  ListBlockedUsersDTO,
+  GetBlockStatusDTO,
+  ReportUserDTO,
+  BlockActionResponseDTO,
+  BlockedUserResponseDTO,
+  BlockStatusResponseDTO,
+  ReportUserResponseDTO,
+} from '../../dtos/user/moderation/moderation.dto';
 
 export const I_UPDATE_EMPLOYEE_INFO_SERVICE = 'IUpdateEmployeeInfoService';
 export const I_IMAGE_EMPLOYEE_SERVICE = 'IImageEmployeeService';
@@ -72,6 +83,7 @@ export const I_USER_SERVICE = 'IUserService';
 export const I_OPEN_POSITION_SERVICE = 'IOpenPositionService';
 export const I_EXPERIENCE_AND_EDUCATION_SERVICE =
   'IExperienceAndEducationService';
+export const I_MODERATION_SERVICE = 'IModerationService';
 
 export interface IUpdateEmployeeInfoService {
   updateEmployeeInfo(
@@ -202,4 +214,16 @@ export interface IExperienceAndEducationService {
   removeEmployeeEducation(
     removeEmployeeEducationDTO: RemoveEmployeeEducationDTO,
   ): Promise<RemoveEmployeeEducationResponseDTO>;
+}
+
+export interface IModerationService {
+  blockUser(blockUserDTO: BlockUserDTO): Promise<BlockActionResponseDTO>;
+  unblockUser(unblockUserDTO: UnblockUserDTO): Promise<BlockActionResponseDTO>;
+  listBlockedUsers(
+    listBlockedUsersDTO: ListBlockedUsersDTO,
+  ): Promise<BlockedUserResponseDTO[]>;
+  getBlockStatus(
+    getBlockStatusDTO: GetBlockStatusDTO,
+  ): Promise<BlockStatusResponseDTO>;
+  reportUser(reportUserDTO: ReportUserDTO): Promise<ReportUserResponseDTO>;
 }

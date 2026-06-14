@@ -1,3 +1,4 @@
+import { AuthUser } from '@app/common/decorators/user.decorator';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
 import {
   CountAllUsersResponseDTO,
@@ -25,7 +26,7 @@ import {
 
 export interface IFindEmployeeController {
   findAll(paginationDTO: PaginationDTO): Promise<EmployeeResponseDTO[]>;
-  findOneById(employeeId: string): Promise<EmployeeResponseDTO>;
+  findOneById(user: AuthUser, employeeId: string): Promise<EmployeeResponseDTO>;
 }
 
 export interface IFindEmployeeRpcController {
@@ -60,6 +61,13 @@ export interface ISearchEmployeeController {
 }
 
 export interface ISearchEmployeeRpcController extends ISearchEmployeeController {}
+
+export interface ISearchEmployeeHttpController {
+  searchEmployee(
+    user: AuthUser,
+    searchEmployeeDTO: SearchEmployeeDTO,
+  ): Promise<SearchEmployeeResult>;
+}
 
 export interface IUpdateEmployeeController {
   updateEmployeeInfo(
@@ -130,7 +138,7 @@ export interface IEmployeeController
   extends
     IFindEmployeeController,
     IImageEmployeeController,
-    ISearchEmployeeController,
+    ISearchEmployeeHttpController,
     IUpdateEmployeeController,
     IUploadEmployeeController,
     IRemoveEmployeeItemsController {}

@@ -7,6 +7,7 @@ import {
 import { RedisModule } from '@app/common/redis/redis.module';
 import { ConfigModule } from '@app/common/config';
 import { Chat } from '@app/common/database/entities/chat.entity';
+import { UserBlock } from '@app/common/database/entities/moderation/user-block.entity';
 import { User } from '@app/common/database/entities/user.entity';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -27,7 +28,7 @@ import { I_CHAT_SERVICE } from '@app/contracts/interfaces/service/chat-service.i
     JwtModule,
     RedisModule,
     TerminusModule,
-    TypeOrmModule.forFeature([User, Chat]),
+    TypeOrmModule.forFeature([User, Chat, UserBlock]),
     ClientsModule.registerAsync([
       {
         name: USER_SERVICE.NAME,
