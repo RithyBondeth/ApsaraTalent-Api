@@ -249,7 +249,11 @@ export class UserController implements IUserController {
     return rpcCall<CompanyResponseDTO[]>(
       this.userClient,
       USER_SERVICE.ACTIONS.GET_EMPLOYEE_RECOMMENDATIONS,
-      { employeeId, limit: limit ? Number(limit) : 10 },
+      {
+        employeeId,
+        limit: limit ? Number(limit) : 10,
+        requesterId: req?.user?.id,
+      },
     );
   }
 
@@ -263,7 +267,11 @@ export class UserController implements IUserController {
     return rpcCall<EmployeeResponseDTO[]>(
       this.userClient,
       USER_SERVICE.ACTIONS.GET_COMPANY_RECOMMENDATIONS,
-      { companyId, limit: limit ? Number(limit) : 10 },
+      {
+        companyId,
+        limit: limit ? Number(limit) : 10,
+        requesterId: req?.user?.id,
+      },
     );
   }
 }

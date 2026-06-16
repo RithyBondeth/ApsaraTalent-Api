@@ -55,6 +55,7 @@ export const USER_SERVICE = {
     UNBLOCK_USER: { cmd: 'unblockUser' },
     LIST_BLOCKED_USERS: { cmd: 'listBlockedUsers' },
     GET_BLOCK_STATUS: { cmd: 'getBlockStatus' },
+    GET_HIDDEN_PROFILE_IDS: { cmd: 'getHiddenProfileIds' },
     REPORT_USER: { cmd: 'reportUser' },
   },
 };

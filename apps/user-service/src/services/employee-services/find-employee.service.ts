@@ -6,7 +6,7 @@ import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
-import { Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import {
   CountAllUsersResponseDTO,
   EmployeeResponseDTO,
@@ -29,24 +29,70 @@ export class FindEmployeeService implements IFindEmployeeService {
     private readonly redisService: RedisService,
   ) {}
 
+  /**
+   * User ids blocked in either direction with `userId` — used to hide blocked
+   * profiles from feed listings (mutual invisibility).
+   */
+  private async getBlockedCounterpartUserIds(
+    userId: string,
+  ): Promise<string[]> {
+    const rows = await this.blockRepository.find({
+      where: [{ blocker: { id: userId } }, { blocked: { id: userId } }],
+    });
+    const ids = new Set<string>();
+    for (const r of rows) {
+      if (r.blocker?.id && r.blocker.id !== userId) ids.add(r.blocker.id);
+      if (r.blocked?.id && r.blocked.id !== userId) ids.add(r.blocked.id);
+    }
+    return [...ids];
+  }
+
   async findAll(paginationDTO: PaginationDTO): Promise<EmployeeResponseDTO[]> {
-    const { skip = 0, limit = 10 } = paginationDTO;
+    const { skip = 0, limit = 10, requesterId } = paginationDTO;
+
+    const blockedUserIds = requesterId
+      ? await this.getBlockedCounterpartUserIds(requesterId)
+      : [];
+
+    // Resolve blocked user ids -> employee ids so we can exclude by the
+    // employee's OWN primary key. Filtering by a relation column together with
+    // skip/take + one-to-many joins is unreliable in TypeORM, so we avoid it.
+    let excludeEmployeeIds: string[] = [];
+    if (blockedUserIds.length > 0) {
+      const blockedEmployees = await this.employeeRepository.find({
+        where: { user: { id: In(blockedUserIds) } },
+        select: { id: true },
+      });
+      excludeEmployeeIds = blockedEmployees.map((e) => e.id);
+    }
+
+    // When a block filter is active we BYPASS the cache (read + write) so that
+    // filtered results never get stored under a shared key — otherwise an
+    // unblocked user stays hidden until TTL. (Pattern-based invalidation is a
+    // no-op with cache-manager v7, so we cannot rely on clearing it.)
+    const hasFilter = excludeEmployeeIds.length > 0;
     const cacheKey = this.redisService.generateListKey('employee', {
       skip,
       limit,
     });
-    const cached = await this.redisService.get<EmployeeResponseDTO[]>(cacheKey);
 
-    if (cached) {
-      this.logger.info('All employees list cache HIT');
-      return cached;
+    if (!hasFilter) {
+      const cached =
+        await this.redisService.get<EmployeeResponseDTO[]>(cacheKey);
+      if (cached) {
+        this.logger.info('All employees list cache HIT');
+        return cached;
+      }
     }
 
     this.logger.info('All employees cache MISS');
 
     try {
       const employees = await this.employeeRepository.find({
-        where: { isHide: false },
+        where: {
+          isHide: false,
+          ...(hasFilter ? { id: Not(In(excludeEmployeeIds)) } : {}),
+        },
         relations: [
           'skills',
           'careerScopes',
@@ -65,7 +111,9 @@ export class FindEmployeeService implements IFindEmployeeService {
 
       const result = employees.map((emp) => new EmployeeResponseDTO(emp));
 
-      await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);
+      if (!hasFilter) {
+        await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);
+      }
 
       return result;
     } catch (error) {

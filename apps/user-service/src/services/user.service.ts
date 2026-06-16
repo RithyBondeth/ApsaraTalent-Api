@@ -4,6 +4,7 @@ import {
   jobTitleSimilarityScore,
   parseEmbedding,
 } from '@app/common/embedding/embedding.util';
+import { Job } from '@app/common/database/entities/company/job.entity';
 import { CompanyFavoriteEmployee } from '@app/common/database/entities/company/favorite-employee.entity';
 import { EmployeeFavoriteCompany } from '@app/common/database/entities/employee/favorite-company.entity';
 import { JobMatching } from '@app/common/database/entities/job-matching.entity';
@@ -822,19 +823,116 @@ export class UserService implements IUserService, OnModuleInit {
     ]);
   }
 
+  /**
+   * Whether the user is on either side of any block. When true, feeds /
+   * recommendations must bypass the cache so block/unblock reflects instantly
+   * (cache-manager v7 pattern invalidation is a no-op here).
+   */
+  private async requesterHasBlocks(userId: string): Promise<boolean> {
+    const rows = await this.userRepository.query(
+      'SELECT 1 FROM user_block WHERE "blockerId" = $1 OR "blockedId" = $1 LIMIT 1',
+      [userId],
+    );
+    return Array.isArray(rows) && rows.length > 0;
+  }
+
+  // ── Recommendation tuning ────────────────────────────────────────────
+  // The pool is bounded so scoring never scans the whole platform (the cause
+  // of the original 504s). ANN retrieval picks the most relevant candidates;
+  // a broad top-up preserves recall when career scopes aren't tagged yet.
+  private static readonly RECO_POOL_CAP = 200;
+  private static readonly RECO_SCOPE_ANN_K = 25;
+  private static readonly RECO_DEFAULT_LIMIT = 10;
+  private static readonly RECO_MAX_LIMIT = 50;
+  private static readonly RECO_MIN_SCORE = 10;
+
+  // Excludes users blocked in either direction. Expects the root alias `user`
+  // and binds :reqId. Shared by both recommendation candidate queries.
+  private static readonly BLOCK_NOT_EXISTS = `NOT EXISTS (
+    SELECT 1 FROM user_block ub
+    WHERE (ub."blockerId" = :reqId AND ub."blockedId" = "user"."id")
+       OR (ub."blockerId" = "user"."id" AND ub."blockedId" = :reqId)
+  )`;
+
+  private clampRecoLimit(limit?: number): number {
+    const n = Number(limit);
+    if (!Number.isFinite(n) || n < 1) return UserService.RECO_DEFAULT_LIMIT;
+    return Math.min(Math.floor(n), UserService.RECO_MAX_LIMIT);
+  }
+
+  /** Average equal-length vectors into a unit centroid; null when none valid. */
+  private vectorCentroid(vectors: number[][]): number[] | null {
+    const valid = vectors.filter((v) => Array.isArray(v) && v.length > 0);
+    if (valid.length === 0) return null;
+    const dims = valid[0].length;
+    const sum = new Array<number>(dims).fill(0);
+    let used = 0;
+    for (const v of valid) {
+      if (v.length !== dims) continue;
+      for (let i = 0; i < dims; i++) sum[i] += v[i];
+      used++;
+    }
+    if (used === 0) return null;
+    let mag = 0;
+    for (let i = 0; i < dims; i++) {
+      sum[i] /= used;
+      mag += sum[i] * sum[i];
+    }
+    mag = Math.sqrt(mag);
+    if (mag === 0) return null;
+    for (let i = 0; i < dims; i++) sum[i] /= mag;
+    return sum;
+  }
+
+  /** Format a number[] as a pgvector literal: [a,b,c]. */
+  private toVectorLiteral(vec: number[]): string {
+    return `[${vec.join(',')}]`;
+  }
+
+  /**
+   * Career-scope ids nearest to a query vector, using the HNSW cosine index
+   * (idx_career_scope_embedding_hnsw). This is the ANN retrieval step that lets
+   * Postgres — not Node — do the heavy similarity search over all scopes.
+   */
+  private async nearestScopeIds(
+    queryVec: number[],
+    k: number,
+  ): Promise<string[]> {
+    const rows = await this.careerScopeRepository
+      .createQueryBuilder('cs')
+      .select('cs.id', 'id')
+      .where('cs.embedding IS NOT NULL')
+      .orderBy('cs.embedding <=> CAST(:qvec AS vector)', 'ASC')
+      .setParameter('qvec', this.toVectorLiteral(queryVec))
+      .limit(k)
+      .getRawMany<{ id: string }>();
+    return rows.map((r) => r.id);
+  }
+
   async getEmployeeRecommendations(
     employeeRecommendationsDTO: EmployeeRecommendationsDTO,
   ): Promise<CompanyResponseDTO[]> {
-    const { employeeId } = employeeRecommendationsDTO;
+    const { employeeId, requesterId } = employeeRecommendationsDTO;
+    const take = this.clampRecoLimit(employeeRecommendationsDTO.limit);
+
+    // Bypass the cache when the requester has any block so the recommendation
+    // list never caches filtered results (an unblocked user would otherwise
+    // stay hidden until TTL).
+    const hasBlocks = requesterId
+      ? await this.requesterHasBlocks(requesterId)
+      : false;
+
     const cacheKey = this.redisService.generateListKey(
       'employee-recommendations',
-      { employeeId },
+      { employeeId, limit: take },
     );
-    const cached = await this.redisService.get<any[]>(cacheKey);
 
-    if (cached) {
-      this.logger.info(`Employee ${employeeId} recommendations cache HIT`);
-      return cached;
+    if (!hasBlocks) {
+      const cached = await this.redisService.get<any[]>(cacheKey);
+      if (cached) {
+        this.logger.info(`Employee ${employeeId} recommendations cache HIT`);
+        return cached;
+      }
     }
 
     this.logger.info(`Employee ${employeeId} recommendations cache MISS`);
@@ -874,43 +972,111 @@ export class UserService implements IUserService, OnModuleInit {
       });
       const likedCompanyIds = likedMatches.map((m) => m.company.id);
 
-      // 3. Candidate pool: all companies with open positions.
-      //    The scoring (not the pool) determines relevance — a broad pool ensures no related
-      //    company is missed just because they haven't filled in career scopes or skill tags.
-      //    Scoring gives 0 to unrelated companies, which the MIN_SCORE filter removes.
-      const openPositionsQb = this.userRepository
-        .createQueryBuilder('user')
-        .select('user.id', 'userId')
-        .innerJoin('user.company', 'company')
-        .innerJoin('company.openPositions', 'openPositions')
-        .groupBy('user.id');
+      // 3. Candidate pool (BOUNDED — retrieve-then-rerank).
+      //    Step 1: use the pgvector HNSW index to find the companies whose
+      //    career scopes are semantically nearest the employee. Step 2: top up
+      //    with a broad capped pool so recall holds when scopes aren't tagged.
+      //    Detailed scoring below re-ranks this bounded set; MIN_SCORE drops
+      //    the unrelated. This replaces the previous full-table scan.
+      const empScopeEmbeddings = (employee?.careerScopes ?? [])
+        .map((s) => parseEmbedding((s as any).embedding))
+        .filter((v): v is number[] => Array.isArray(v) && v.length > 0);
+      const queryVec = this.vectorCentroid(empScopeEmbeddings);
 
-      if (likedCompanyIds.length > 0) {
-        openPositionsQb.andWhere('company.id NOT IN (:...likedCompanyIds)', {
-          likedCompanyIds,
-        });
+      let userIds: string[] = [];
+
+      if (queryVec) {
+        const scopeIds = await this.nearestScopeIds(
+          queryVec,
+          UserService.RECO_SCOPE_ANN_K,
+        );
+        if (scopeIds.length > 0) {
+          const annQb = this.userRepository
+            .createQueryBuilder('user')
+            .select('user.id', 'userId')
+            .innerJoin('user.company', 'company')
+            .innerJoin('company.openPositions', 'openPositions')
+            .innerJoin('company.careerScopes', 'cs')
+            .where('cs.id IN (:...scopeIds)', { scopeIds })
+            .groupBy('user.id')
+            .limit(UserService.RECO_POOL_CAP);
+          if (likedCompanyIds.length > 0) {
+            annQb.andWhere('company.id NOT IN (:...likedCompanyIds)', {
+              likedCompanyIds,
+            });
+          }
+          if (requesterId) {
+            annQb.andWhere(UserService.BLOCK_NOT_EXISTS, {
+              reqId: requesterId,
+            });
+          }
+          userIds = (await annQb.getRawMany<{ userId: string }>()).map(
+            (r) => r.userId,
+          );
+        }
       }
 
-      const candidateRows = await openPositionsQb.getRawMany<{
-        userId: string;
-      }>();
-      const userIds = candidateRows.map((r) => r.userId);
+      if (userIds.length < UserService.RECO_POOL_CAP) {
+        const broadQb = this.userRepository
+          .createQueryBuilder('user')
+          .select('user.id', 'userId')
+          .innerJoin('user.company', 'company')
+          .innerJoin('company.openPositions', 'openPositions')
+          .groupBy('user.id')
+          .limit(UserService.RECO_POOL_CAP - userIds.length);
+        if (likedCompanyIds.length > 0) {
+          broadQb.andWhere('company.id NOT IN (:...likedCompanyIds)', {
+            likedCompanyIds,
+          });
+        }
+        if (userIds.length > 0) {
+          broadQb.andWhere('user.id NOT IN (:...have)', { have: userIds });
+        }
+        if (requesterId) {
+          broadQb.andWhere(UserService.BLOCK_NOT_EXISTS, {
+            reqId: requesterId,
+          });
+        }
+        const more = (await broadQb.getRawMany<{ userId: string }>()).map(
+          (r) => r.userId,
+        );
+        userIds = [...userIds, ...more];
+      }
+
       if (userIds.length === 0) return [];
 
-      // 4. Load full company + job data for scoring.
-      //    Include embeddings on candidate career scopes (Factor 1) and
-      //    job title embeddings (Factor 3 semantic match).
-      const users = await this.userRepository
-        .createQueryBuilder('user')
-        .innerJoinAndSelect('user.company', 'company')
-        .leftJoinAndSelect('company.careerScopes', 'careerScopes')
-        .addSelect('careerScopes.embedding')
-        .leftJoinAndSelect('company.openPositions', 'openPositions')
-        .addSelect('openPositions.titleEmbedding')
-        .leftJoinAndSelect('company.benefits', 'benefits')
-        .leftJoinAndSelect('company.values', 'values')
-        .where('user.id IN (:...userIds)', { userIds })
-        .getMany();
+      // 4. Hydrate the bounded pool for scoring WITHOUT a cartesian product.
+      //    Career scopes and open positions are loaded in separate single-
+      //    collection queries (each carries its embedding once) and stitched,
+      //    instead of one multi-join that duplicates embeddings across rows.
+      //    benefits/values aren't needed for scoring — loaded later for the page.
+      const [scopeUsers, posUsers] = await Promise.all([
+        this.userRepository
+          .createQueryBuilder('user')
+          .innerJoinAndSelect('user.company', 'company')
+          .leftJoinAndSelect('company.careerScopes', 'careerScopes')
+          .addSelect('careerScopes.embedding')
+          .where('user.id IN (:...userIds)', { userIds })
+          .getMany(),
+        this.userRepository
+          .createQueryBuilder('user')
+          .innerJoinAndSelect('user.company', 'company')
+          .leftJoinAndSelect('company.openPositions', 'openPositions')
+          .addSelect('openPositions.titleEmbedding')
+          .where('user.id IN (:...userIds)', { userIds })
+          .getMany(),
+      ]);
+
+      const positionsByCompany = new Map<string, Job[]>();
+      for (const u of posUsers) {
+        if (u.company) {
+          positionsByCompany.set(u.company.id, u.company.openPositions ?? []);
+        }
+      }
+      const users = scopeUsers.filter((u) => u.company);
+      for (const u of users) {
+        u.company.openPositions = positionsByCompany.get(u.company.id) ?? [];
+      }
 
       const empDescWords = this.extractKeywords(employee?.description ?? '');
 
@@ -1042,20 +1208,53 @@ export class UserService implements IUserService, OnModuleInit {
 
       // MIN_SCORE filters out companies that are truly unrelated (e.g. healthcare for a developer)
       // while keeping companies that haven't fully filled their profile but are still relevant.
-      const MIN_SCORE = 10;
-      const recommendations = scored
-        .filter(({ score }) => score >= MIN_SCORE)
-        .map(
-          ({ user }) =>
-            new CompanyResponseDTO({
-              ...user.company,
-              openPositions: (user.company?.openPositions ?? []).map(
-                (job) => new JobPositionResponseDTO(job),
-              ),
-            }),
-        );
+      // Apply `limit` here so only the returned page is enriched below.
+      const ranked = scored
+        .filter(({ score }) => score >= UserService.RECO_MIN_SCORE)
+        .slice(0, take);
 
-      await this.redisService.set(cacheKey, recommendations, CACHE_TTL.LONG);
+      if (ranked.length === 0) {
+        if (!hasBlocks) {
+          await this.redisService.set(cacheKey, [], CACHE_TTL.LONG);
+        }
+        return [];
+      }
+
+      // Load benefits/values only for the ranked page (≤ take companies), so the
+      // 2-collection cartesian here is trivially small.
+      const rankedCompanyIds = ranked.map(({ user }) => user.company.id);
+      const bvUsers = await this.userRepository
+        .createQueryBuilder('user')
+        .innerJoinAndSelect('user.company', 'company')
+        .leftJoinAndSelect('company.benefits', 'benefits')
+        .leftJoinAndSelect('company.values', 'values')
+        .where('company.id IN (:...rankedCompanyIds)', { rankedCompanyIds })
+        .getMany();
+      const bvByCompany = new Map<string, { benefits: any[]; values: any[] }>();
+      for (const u of bvUsers) {
+        if (u.company) {
+          bvByCompany.set(u.company.id, {
+            benefits: u.company.benefits ?? [],
+            values: u.company.values ?? [],
+          });
+        }
+      }
+
+      const recommendations = ranked.map(({ user }) => {
+        const bv = bvByCompany.get(user.company.id);
+        return new CompanyResponseDTO({
+          ...user.company,
+          benefits: bv?.benefits ?? [],
+          values: bv?.values ?? [],
+          openPositions: (user.company?.openPositions ?? []).map(
+            (job) => new JobPositionResponseDTO(job),
+          ),
+        });
+      });
+
+      if (!hasBlocks) {
+        await this.redisService.set(cacheKey, recommendations, CACHE_TTL.LONG);
+      }
       return recommendations;
     } catch (error) {
       this.logger.warn(
@@ -1068,16 +1267,24 @@ export class UserService implements IUserService, OnModuleInit {
   async getCompanyRecommendations(
     companyRecommendationsDTO: CompanyRecommendationsDTO,
   ): Promise<EmployeeResponseDTO[]> {
-    const { companyId } = companyRecommendationsDTO;
+    const { companyId, requesterId } = companyRecommendationsDTO;
+    const take = this.clampRecoLimit(companyRecommendationsDTO.limit);
+
+    const hasBlocks = requesterId
+      ? await this.requesterHasBlocks(requesterId)
+      : false;
+
     const cacheKey = this.redisService.generateListKey(
       'company-recommendations',
-      { companyId },
+      { companyId, limit: take },
     );
-    const cached = await this.redisService.get<any[]>(cacheKey);
 
-    if (cached) {
-      this.logger.info(`Company ${companyId} recommendations cache HIT`);
-      return cached;
+    if (!hasBlocks) {
+      const cached = await this.redisService.get<any[]>(cacheKey);
+      if (cached) {
+        this.logger.info(`Company ${companyId} recommendations cache HIT`);
+        return cached;
+      }
     }
 
     this.logger.info(`Company ${companyId} recommendations cache MISS`);
@@ -1130,40 +1337,141 @@ export class UserService implements IUserService, OnModuleInit {
       });
       const likedEmployeeIds = likedMatches.map((m) => m.employee.id);
 
-      // 3. Candidate pool: all employees with a profile.
-      //    Scoring determines relevance — a broad pool ensures no relevant candidate is missed
-      //    just because their career scopes aren't tagged. MIN_SCORE filters the truly unrelated.
-      const allEmployeesQb = this.userRepository
-        .createQueryBuilder('user')
-        .select('user.id', 'userId')
-        .innerJoin('user.employee', 'employee')
-        .groupBy('user.id');
+      // 3. Candidate pool (BOUNDED — retrieve-then-rerank).
+      //    Use the pgvector HNSW index to find the employees whose career scopes
+      //    are semantically nearest the company, then top up with a broad capped
+      //    pool so recall holds when scopes aren't tagged. Scoring re-ranks this
+      //    bounded set; MIN_SCORE drops the unrelated. Replaces the full scan.
+      const cmpScopeEmbeddings = (company?.careerScopes ?? [])
+        .map((s) => parseEmbedding((s as any).embedding))
+        .filter((v): v is number[] => Array.isArray(v) && v.length > 0);
+      const queryVec = this.vectorCentroid(cmpScopeEmbeddings);
 
-      if (likedEmployeeIds.length > 0) {
-        allEmployeesQb.andWhere('employee.id NOT IN (:...likedEmployeeIds)', {
-          likedEmployeeIds,
-        });
+      let userIds: string[] = [];
+
+      if (queryVec) {
+        const scopeIds = await this.nearestScopeIds(
+          queryVec,
+          UserService.RECO_SCOPE_ANN_K,
+        );
+        if (scopeIds.length > 0) {
+          const annQb = this.userRepository
+            .createQueryBuilder('user')
+            .select('user.id', 'userId')
+            .innerJoin('user.employee', 'employee')
+            .innerJoin('employee.careerScopes', 'cs')
+            .where('cs.id IN (:...scopeIds)', { scopeIds })
+            .groupBy('user.id')
+            .limit(UserService.RECO_POOL_CAP);
+          if (likedEmployeeIds.length > 0) {
+            annQb.andWhere('employee.id NOT IN (:...likedEmployeeIds)', {
+              likedEmployeeIds,
+            });
+          }
+          if (requesterId) {
+            annQb.andWhere(UserService.BLOCK_NOT_EXISTS, {
+              reqId: requesterId,
+            });
+          }
+          userIds = (await annQb.getRawMany<{ userId: string }>()).map(
+            (r) => r.userId,
+          );
+        }
       }
 
-      const candidateRows = await allEmployeesQb.getRawMany<{
-        userId: string;
-      }>();
-      const userIds = candidateRows.map((r) => r.userId);
+      if (userIds.length < UserService.RECO_POOL_CAP) {
+        const broadQb = this.userRepository
+          .createQueryBuilder('user')
+          .select('user.id', 'userId')
+          .innerJoin('user.employee', 'employee')
+          .groupBy('user.id')
+          .limit(UserService.RECO_POOL_CAP - userIds.length);
+        if (likedEmployeeIds.length > 0) {
+          broadQb.andWhere('employee.id NOT IN (:...likedEmployeeIds)', {
+            likedEmployeeIds,
+          });
+        }
+        if (userIds.length > 0) {
+          broadQb.andWhere('user.id NOT IN (:...have)', { have: userIds });
+        }
+        if (requesterId) {
+          broadQb.andWhere(UserService.BLOCK_NOT_EXISTS, {
+            reqId: requesterId,
+          });
+        }
+        const more = (await broadQb.getRawMany<{ userId: string }>()).map(
+          (r) => r.userId,
+        );
+        userIds = [...userIds, ...more];
+      }
+
       if (userIds.length === 0) return [];
 
-      // 4. Load full employee profile data for scoring.
-      //    Include career scope embeddings (Factor 1) and job title embedding (Factor 3).
-      const users = await this.userRepository
+      // 4. Hydrate the bounded pool for scoring WITHOUT a cartesian product.
+      //    Each profile collection is loaded in its own single-collection query
+      //    (so embeddings/rows aren't multiplied across a multi-join) and then
+      //    stitched back onto the base employee by user id.
+      const baseUsers = await this.userRepository
         .createQueryBuilder('user')
         .innerJoinAndSelect('user.employee', 'employee')
         .addSelect('employee.jobEmbedding')
-        .leftJoinAndSelect('employee.careerScopes', 'careerScopes')
-        .addSelect('careerScopes.embedding')
-        .leftJoinAndSelect('employee.skills', 'skills')
-        .leftJoinAndSelect('employee.experiences', 'experiences')
-        .leftJoinAndSelect('employee.educations', 'educations')
         .where('user.id IN (:...userIds)', { userIds })
         .getMany();
+
+      const [scopeUsers, skillUsers, expUsers, eduUsers] = await Promise.all([
+        this.userRepository
+          .createQueryBuilder('user')
+          .innerJoinAndSelect('user.employee', 'employee')
+          .leftJoinAndSelect('employee.careerScopes', 'careerScopes')
+          .addSelect('careerScopes.embedding')
+          .where('user.id IN (:...userIds)', { userIds })
+          .getMany(),
+        this.userRepository
+          .createQueryBuilder('user')
+          .innerJoinAndSelect('user.employee', 'employee')
+          .leftJoinAndSelect('employee.skills', 'skills')
+          .where('user.id IN (:...userIds)', { userIds })
+          .getMany(),
+        this.userRepository
+          .createQueryBuilder('user')
+          .innerJoinAndSelect('user.employee', 'employee')
+          .leftJoinAndSelect('employee.experiences', 'experiences')
+          .where('user.id IN (:...userIds)', { userIds })
+          .getMany(),
+        this.userRepository
+          .createQueryBuilder('user')
+          .innerJoinAndSelect('user.employee', 'employee')
+          .leftJoinAndSelect('employee.educations', 'educations')
+          .where('user.id IN (:...userIds)', { userIds })
+          .getMany(),
+      ]);
+
+      const byUserId = new Map(baseUsers.map((u) => [u.id, u]));
+      for (const u of scopeUsers) {
+        const t = byUserId.get(u.id);
+        if (t?.employee && u.employee) {
+          t.employee.careerScopes = u.employee.careerScopes ?? [];
+        }
+      }
+      for (const u of skillUsers) {
+        const t = byUserId.get(u.id);
+        if (t?.employee && u.employee) {
+          t.employee.skills = u.employee.skills ?? [];
+        }
+      }
+      for (const u of expUsers) {
+        const t = byUserId.get(u.id);
+        if (t?.employee && u.employee) {
+          t.employee.experiences = u.employee.experiences ?? [];
+        }
+      }
+      for (const u of eduUsers) {
+        const t = byUserId.get(u.id);
+        if (t?.employee && u.employee) {
+          t.employee.educations = u.employee.educations ?? [];
+        }
+      }
+      const users = baseUsers.filter((u) => u.employee);
 
       // Build text corpus from all job titles + descriptions + skills for content matching
       const jobTextCorpus = jobs
@@ -1297,12 +1605,14 @@ export class UserService implements IUserService, OnModuleInit {
 
       scored.sort((a, b) => b.score - a.score);
 
-      const MIN_SCORE = 10;
       const recommendations = scored
-        .filter(({ score }) => score >= MIN_SCORE)
+        .filter(({ score }) => score >= UserService.RECO_MIN_SCORE)
+        .slice(0, take)
         .map(({ user }) => new EmployeeResponseDTO(user.employee));
 
-      await this.redisService.set(cacheKey, recommendations, CACHE_TTL.LONG);
+      if (!hasBlocks) {
+        await this.redisService.set(cacheKey, recommendations, CACHE_TTL.LONG);
+      }
       return recommendations;
     } catch (error) {
       this.logger.warn(

@@ -63,6 +63,7 @@ import {
   UnblockUserDTO,
   ListBlockedUsersDTO,
   GetBlockStatusDTO,
+  GetHiddenProfileIdsDTO,
   ReportUserDTO,
   BlockActionResponseDTO,
   BlockedUserResponseDTO,
@@ -225,5 +226,8 @@ export interface IModerationService {
   getBlockStatus(
     getBlockStatusDTO: GetBlockStatusDTO,
   ): Promise<BlockStatusResponseDTO>;
+  getHiddenProfileIds(
+    getHiddenProfileIdsDTO: GetHiddenProfileIdsDTO,
+  ): Promise<string[]>;
   reportUser(reportUserDTO: ReportUserDTO): Promise<ReportUserResponseDTO>;
 }

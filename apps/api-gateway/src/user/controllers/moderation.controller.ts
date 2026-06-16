@@ -77,6 +77,15 @@ export class ModerationController implements IModerationController {
     );
   }
 
+  @Get('hidden-ids')
+  async getHiddenProfileIds(@User() user: AuthUser): Promise<string[]> {
+    return rpcCall<string[]>(
+      this.userClient,
+      USER_SERVICE.ACTIONS.GET_HIDDEN_PROFILE_IDS,
+      { requesterId: user.id },
+    );
+  }
+
   @Post('report')
   async reportUser(
     @User() user: AuthUser,

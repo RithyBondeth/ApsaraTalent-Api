@@ -6,6 +6,7 @@ import {
   BlockUserDTO,
   CreateReportBodyDTO,
   GetBlockStatusDTO,
+  GetHiddenProfileIdsDTO,
   ListBlockedUsersDTO,
   ReportUserDTO,
   ReportUserResponseDTO,
@@ -22,6 +23,9 @@ export interface IModerationRpcController {
   getBlockStatus(
     getBlockStatusDTO: GetBlockStatusDTO,
   ): Promise<BlockStatusResponseDTO>;
+  getHiddenProfileIds(
+    getHiddenProfileIdsDTO: GetHiddenProfileIdsDTO,
+  ): Promise<string[]>;
   reportUser(reportUserDTO: ReportUserDTO): Promise<ReportUserResponseDTO>;
 }
 
@@ -34,6 +38,7 @@ export interface IModerationController {
     user: AuthUser,
     userId: string,
   ): Promise<BlockStatusResponseDTO>;
+  getHiddenProfileIds(user: AuthUser): Promise<string[]>;
   reportUser(
     user: AuthUser,
     body: CreateReportBodyDTO,

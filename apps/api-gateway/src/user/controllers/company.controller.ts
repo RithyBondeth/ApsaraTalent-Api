@@ -50,12 +50,13 @@ export class CompanyController implements ICompanyController {
 
   @Get('all')
   async findAll(
+    @User() user: AuthUser,
     @Query() paginationDTO: PaginationDTO,
   ): Promise<CompanyResponseDTO[]> {
     return rpcCall<CompanyResponseDTO[]>(
       this.userClient,
       USER_SERVICE.ACTIONS.FIND_ALL_COMPANY,
-      paginationDTO,
+      { ...paginationDTO, requesterId: user.id },
     );
   }
 

@@ -22,7 +22,10 @@ import {
 } from '@app/contracts/dtos/user';
 
 export interface IFindCompanyController {
-  findAll(paginationDTO: PaginationDTO): Promise<CompanyResponseDTO[]>;
+  findAll(
+    user: AuthUser,
+    paginationDTO: PaginationDTO,
+  ): Promise<CompanyResponseDTO[]>;
   findOneById(user: AuthUser, companyId: string): Promise<CompanyResponseDTO>;
   countAllCompanies(): Promise<CountAllUsersResponseDTO>;
 }

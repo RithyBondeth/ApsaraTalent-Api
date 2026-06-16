@@ -44,6 +44,11 @@ export class ListBlockedUsersDTO {
   blockerId: string;
 }
 
+export class GetHiddenProfileIdsDTO {
+  @IsUUID()
+  requesterId: string;
+}
+
 export class GetBlockStatusDTO {
   @IsUUID()
   userId: string;

@@ -5,6 +5,7 @@ import {
   BlockStatusResponseDTO,
   BlockUserDTO,
   GetBlockStatusDTO,
+  GetHiddenProfileIdsDTO,
   ListBlockedUsersDTO,
   ReportUserDTO,
   ReportUserResponseDTO,
@@ -48,6 +49,13 @@ export class ModerationController implements IModerationRpcController {
     @Payload() getBlockStatusDTO: GetBlockStatusDTO,
   ): Promise<BlockStatusResponseDTO> {
     return this.moderationService.getBlockStatus(getBlockStatusDTO);
+  }
+
+  @MessagePattern(USER_SERVICE.ACTIONS.GET_HIDDEN_PROFILE_IDS)
+  async getHiddenProfileIds(
+    @Payload() getHiddenProfileIdsDTO: GetHiddenProfileIdsDTO,
+  ): Promise<string[]> {
+    return this.moderationService.getHiddenProfileIds(getHiddenProfileIdsDTO);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REPORT_USER)

@@ -54,12 +54,13 @@ export class EmployeeController implements IEmployeeController {
 
   @Get('all')
   async findAll(
+    @User() user: AuthUser,
     @Query() paginationDTO: PaginationDTO,
   ): Promise<EmployeeResponseDTO[]> {
     return rpcCall<EmployeeResponseDTO[]>(
       this.userClient,
       USER_SERVICE.ACTIONS.FIND_ALL_EMPLOYEE,
-      paginationDTO,
+      { ...paginationDTO, requesterId: user.id },
     );
   }
 

@@ -15,11 +15,13 @@ import {
 } from '@app/contracts/dtos/user';
 import { IModerationService } from '@app/contracts/interfaces/service/user-service.interface';
 import { resolveUserId } from '@app/common';
+import { RedisService } from '@app/common/redis/redis.service';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
+import { GetHiddenProfileIdsDTO } from '@app/contracts/dtos/user';
 
 @Injectable()
 export class ModerationService implements IModerationService {
@@ -31,8 +33,23 @@ export class ModerationService implements IModerationService {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly logger: PinoLogger,
+    private readonly redisService: RedisService,
   ) {
     this.logger.setContext(ModerationService.name);
+  }
+
+  /**
+   * Block/unblock changes who appears in feeds and recommendations for BOTH
+   * users, so the cached feed lists must be cleared or an unblocked user stays
+   * hidden (and a blocked one stays visible) until the cache TTL expires.
+   */
+  private async invalidateFeedCaches(): Promise<void> {
+    await Promise.all([
+      this.redisService.delPattern('employee:list:*'),
+      this.redisService.delPattern('company:list:*'),
+      this.redisService.delPattern('employee-recommendations:list:*'),
+      this.redisService.delPattern('company-recommendations:list:*'),
+    ]);
   }
 
   /**
@@ -41,6 +58,56 @@ export class ModerationService implements IModerationService {
    */
   private async resolve(id: string): Promise<string> {
     return resolveUserId(this.userRepo, id);
+  }
+
+  /**
+   * All User ids blocked in either direction with `userId`.
+   */
+  private async getBlockedCounterpartUserIds(
+    userId: string,
+  ): Promise<string[]> {
+    const rows = await this.blockRepo.find({
+      where: [{ blocker: { id: userId } }, { blocked: { id: userId } }],
+    });
+    const ids = new Set<string>();
+    for (const r of rows) {
+      if (r.blocker?.id && r.blocker.id !== userId) ids.add(r.blocker.id);
+      if (r.blocked?.id && r.blocked.id !== userId) ids.add(r.blocked.id);
+    }
+    return [...ids];
+  }
+
+  /**
+   * Employee/company profile ids of everyone blocked in either direction with
+   * the requester — used by the client to hide their cards from the feed.
+   */
+  async getHiddenProfileIds(
+    getHiddenProfileIdsDTO: GetHiddenProfileIdsDTO,
+  ): Promise<string[]> {
+    try {
+      const requesterId = await this.resolve(
+        getHiddenProfileIdsDTO.requesterId,
+      );
+      const userIds = await this.getBlockedCounterpartUserIds(requesterId);
+      if (userIds.length === 0) return [];
+
+      const users = await this.userRepo.find({
+        where: { id: In(userIds) },
+        relations: ['employee', 'company'],
+      });
+
+      const ids: string[] = [];
+      for (const u of users) {
+        if (u.employee?.id) ids.push(u.employee.id);
+        if (u.company?.id) ids.push(u.company.id);
+      }
+      return ids;
+    } catch (error) {
+      this.logger.error(
+        (error as Error).message || 'Failed to load hidden profile ids.',
+      );
+      return [];
+    }
   }
 
   /**
@@ -94,6 +161,7 @@ export class ModerationService implements IModerationService {
             blocked: { id: blockedId } as User,
           }),
         );
+        await this.invalidateFeedCaches();
       }
 
       return new BlockActionResponseDTO({
@@ -116,10 +184,24 @@ export class ModerationService implements IModerationService {
     try {
       const blockerId = await this.resolve(unblockUserDTO.blockerId);
       const blockedId = await this.resolve(unblockUserDTO.blockedId);
-      await this.blockRepo.delete({
-        blocker: { id: blockerId },
-        blocked: { id: blockedId },
-      });
+      // Explicit FK columns — a nested-relation criteria in DELETE can silently
+      // match nothing, leaving the user blocked despite a success response.
+      const result = await this.blockRepo
+        .createQueryBuilder()
+        .delete()
+        .where('"blockerId" = :blockerId AND "blockedId" = :blockedId', {
+          blockerId,
+          blockedId,
+        })
+        .execute();
+
+      this.logger.info(
+        `Unblock ${blockerId} -> ${blockedId}: removed ${result.affected ?? 0} row(s)`,
+      );
+
+      if (result.affected && result.affected > 0) {
+        await this.invalidateFeedCaches();
+      }
 
       return new BlockActionResponseDTO({
         message: 'User unblocked successfully.',

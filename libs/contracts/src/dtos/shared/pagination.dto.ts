@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsNumber, IsOptional, Min } from 'class-validator';
+import { IsNumber, IsOptional, IsUUID, Min } from 'class-validator';
 
 export class PaginationDTO {
   @IsNumber()
@@ -13,4 +13,10 @@ export class PaginationDTO {
   @Type(() => Number)
   @Min(1)
   limit?: number;
+
+  // The requesting user's User.id — when present, results hide profiles blocked
+  // in either direction between the viewer and the candidate.
+  @IsOptional()
+  @IsUUID()
+  requesterId?: string;
 }

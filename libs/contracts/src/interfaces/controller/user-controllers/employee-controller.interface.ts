@@ -25,7 +25,10 @@ import {
 } from '@app/contracts/dtos/user';
 
 export interface IFindEmployeeController {
-  findAll(paginationDTO: PaginationDTO): Promise<EmployeeResponseDTO[]>;
+  findAll(
+    user: AuthUser,
+    paginationDTO: PaginationDTO,
+  ): Promise<EmployeeResponseDTO[]>;
   findOneById(user: AuthUser, employeeId: string): Promise<EmployeeResponseDTO>;
 }
 
