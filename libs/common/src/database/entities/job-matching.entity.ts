@@ -15,10 +15,10 @@ export class JobMatching {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Employee, { eager: true })
+  @ManyToOne(() => Employee)
   employee: Employee;
 
-  @ManyToOne(() => Company, { eager: true })
+  @ManyToOne(() => Company)
   company: Company;
 
   @Column({ default: false })

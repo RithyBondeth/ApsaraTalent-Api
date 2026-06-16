@@ -1,5 +1,7 @@
 import { DatabaseModule, LoggerModule } from '@app/common';
 import { ConfigModule } from '@app/common/config';
+import { RedisModule } from '@app/common/redis/redis.module';
+import { MetricsModule } from '@app/common/metrics/metrics.module';
 import { Notification } from '@app/common/database/entities/notification.entity';
 import { User } from '@app/common/database/entities/user.entity';
 import { Module } from '@nestjs/common';
@@ -14,8 +16,10 @@ import { I_NOTIFICATION_SERVICE } from '@app/contracts/interfaces/service/notifi
 @Module({
   imports: [
     ConfigModule,
+    MetricsModule,
     LoggerModule,
     DatabaseModule,
+    RedisModule,
     TerminusModule,
     TypeOrmModule.forFeature([Notification, User]),
   ],

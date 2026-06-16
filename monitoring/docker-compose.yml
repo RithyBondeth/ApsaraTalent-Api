@@ -1,0 +1,46 @@
+# Monitoring stack for the ApsaraTalent API.
+#   docker compose -f monitoring/docker-compose.yml up -d
+#
+# Prometheus UI:  http://localhost:9090
+# Grafana UI:     http://localhost:3030  (admin / admin — change on first login)
+#
+# Grafana is on host port 3030 and Prometheus on 9090 to avoid the API's
+# host ports (gateway 3000, services 3001-3007, metrics 9101-9107).
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: apsaratalent-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=15d'
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    # Lets the container reach services running on the host (needed on Linux;
+    # already implicit on Docker Desktop for macOS/Windows).
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: apsaratalent-grafana
+    ports:
+      - '3030:3000'
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  prometheus-data:
+  grafana-data:

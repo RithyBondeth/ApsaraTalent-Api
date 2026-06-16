@@ -965,12 +965,15 @@ export class UserService implements IUserService, OnModuleInit {
       const empJobTitle = (employee?.job ?? '').toLowerCase();
       const empJobEmbedding = parseEmbedding((employee as any)?.jobEmbedding);
 
-      // 2. Get company IDs the employee has already liked
-      const likedMatches = await this.jobMatchingRepository.find({
-        where: { employee: { id: employeeId }, employeeLiked: true },
-        relations: ['company'],
-      });
-      const likedCompanyIds = likedMatches.map((m) => m.company.id);
+      // 2. Get company IDs the employee has already liked — read the FK column
+      //    directly instead of hydrating each JobMatching + its company.
+      const likedRows = await this.jobMatchingRepository
+        .createQueryBuilder('jm')
+        .select('jm."companyId"', 'companyId')
+        .where('jm."employeeId" = :employeeId', { employeeId })
+        .andWhere('jm."employeeLiked" = true')
+        .getRawMany<{ companyId: string }>();
+      const likedCompanyIds = likedRows.map((r) => r.companyId).filter(Boolean);
 
       // 3. Candidate pool (BOUNDED — retrieve-then-rerank).
       //    Step 1: use the pgvector HNSW index to find the companies whose
@@ -1330,12 +1333,17 @@ export class UserService implements IUserService, OnModuleInit {
         999,
       );
 
-      // 2. Get employee IDs the company has already liked
-      const likedMatches = await this.jobMatchingRepository.find({
-        where: { company: { id: companyId }, companyLiked: true },
-        relations: ['employee'],
-      });
-      const likedEmployeeIds = likedMatches.map((m) => m.employee.id);
+      // 2. Get employee IDs the company has already liked — read the FK column
+      //    directly instead of hydrating each JobMatching + its employee.
+      const likedRows = await this.jobMatchingRepository
+        .createQueryBuilder('jm')
+        .select('jm."employeeId"', 'employeeId')
+        .where('jm."companyId" = :companyId', { companyId })
+        .andWhere('jm."companyLiked" = true')
+        .getRawMany<{ employeeId: string }>();
+      const likedEmployeeIds = likedRows
+        .map((r) => r.employeeId)
+        .filter(Boolean);
 
       // 3. Candidate pool (BOUNDED — retrieve-then-rerank).
       //    Use the pgvector HNSW index to find the employees whose career scopes

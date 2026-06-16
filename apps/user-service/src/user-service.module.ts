@@ -8,6 +8,7 @@ import {
   VectorColumnsModule,
 } from '@app/common';
 import { ConfigModule } from '@app/common/config';
+import { MetricsModule } from '@app/common/metrics/metrics.module';
 import { CareerScope } from '@app/common/database/entities/career-scope.entity';
 import { Benefit } from '@app/common/database/entities/company/benefit.entity';
 import { Company } from '@app/common/database/entities/company/company.entity';
@@ -75,6 +76,7 @@ import {
 @Module({
   imports: [
     ConfigModule,
+    MetricsModule,
     DatabaseModule,
     TypeOrmModule.forFeature([
       User,

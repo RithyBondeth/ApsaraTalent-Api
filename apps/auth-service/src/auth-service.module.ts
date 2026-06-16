@@ -1,5 +1,6 @@
 import { LoggerModule } from '@app/common';
 import { ConfigModule } from '@app/common/config';
+import { MetricsModule } from '@app/common/metrics/metrics.module';
 import { DatabaseModule } from '@app/common/database/database.module';
 import { CareerScope } from '@app/common/database/entities/career-scope.entity';
 import { Benefit } from '@app/common/database/entities/company/benefit.entity';
@@ -67,6 +68,7 @@ import {
 @Module({
   imports: [
     ConfigModule,
+    MetricsModule,
     LoggerModule,
     JwtModule,
     DatabaseModule,

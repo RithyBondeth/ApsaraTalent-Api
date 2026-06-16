@@ -46,36 +46,44 @@ export default () => ({
     auth: {
       host: process.env.AUTH_SERVICE_HOST,
       port: Number(process.env.AUTH_SERVICE_PORT),
+      metricsPort: Number(process.env.AUTH_SERVICE_METRICS_PORT) || 9101,
     },
 
     user: {
       host: process.env.USER_SERVICE_HOST,
       port: Number(process.env.USER_SERVICE_PORT),
+      metricsPort: Number(process.env.USER_SERVICE_METRICS_PORT) || 9102,
     },
 
     resume: {
       host: process.env.RESUME_SERVICE_HOST,
       port: Number(process.env.RESUME_SERVICE_PORT),
+      metricsPort: Number(process.env.RESUME_SERVICE_METRICS_PORT) || 9103,
     },
 
     chat: {
       host: process.env.CHAT_SERVICE_HOST,
       port: Number(process.env.CHAT_SERVICE_PORT),
+      metricsPort: Number(process.env.CHAT_SERVICE_METRICS_PORT) || 9104,
     },
 
     job: {
       host: process.env.JOB_SERVICE_HOST,
       port: Number(process.env.JOB_SERVICE_PORT),
+      metricsPort: Number(process.env.JOB_SERVICE_METRICS_PORT) || 9105,
     },
 
     payment: {
       host: process.env.PAYMENT_SERVICE_HOST,
       port: Number(process.env.PAYMENT_SERVICE_PORT),
+      metricsPort: Number(process.env.PAYMENT_SERVICE_METRICS_PORT) || 9106,
     },
 
     notification: {
       host: process.env.NOTIFICATION_SERVICE_HOST,
       port: Number(process.env.NOTIFICATION_SERVICE_PORT),
+      metricsPort:
+        Number(process.env.NOTIFICATION_SERVICE_METRICS_PORT) || 9107,
     },
   },
 

@@ -7,6 +7,7 @@ import {
 } from '@app/common';
 import { RedisModule } from '@app/common/redis/redis.module';
 import { ConfigModule } from '@app/common/config';
+import { MetricsModule } from '@app/common/metrics/metrics.module';
 import { Company } from '@app/common/database/entities/company/company.entity';
 import { CompanyFavoriteEmployee } from '@app/common/database/entities/company/favorite-employee.entity';
 import { Job } from '@app/common/database/entities/company/job.entity';
@@ -43,6 +44,7 @@ import {
 @Module({
   imports: [
     ConfigModule,
+    MetricsModule,
     DatabaseModule,
     LoggerModule,
     MessageModule,

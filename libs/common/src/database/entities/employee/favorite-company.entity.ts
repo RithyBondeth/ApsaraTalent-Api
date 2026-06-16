@@ -19,7 +19,7 @@ export class EmployeeFavoriteCompany {
   })
   employee: Employee;
 
-  @ManyToOne(() => Company, { eager: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => Company, { onDelete: 'CASCADE' })
   company: Company;
 
   @CreateDateColumn()

@@ -3,6 +3,8 @@ export const RESUME = {
   AVATAR_SIZE: 300,
   /** Puppeteer page-render timeout for PDF generation — 30 seconds */
   GENERATION_TIMEOUT: 30_000,
+  /** Max PDF renders running concurrently on the shared browser; excess queues. */
+  PDF_MAX_CONCURRENCY: 4,
   /** Gateway-level timeout for the full build-resume RPC — ~3 minutes */
   CONTROLLER_TIMEOUT: 170_000,
   /** Maximum characters of resume text to pass to OpenAI. */

@@ -7,42 +7,35 @@ import { GlobalRpcExceptionFilter } from '@app/common';
 import { ResumeBuilderServiceModule } from './resume-builder-service.module';
 
 async function bootstrap() {
-  // First, create the application context to access the ConfigService
-  const appContext = await NestFactory.createApplicationContext(
-    ResumeBuilderServiceModule,
-  );
-  const configService = appContext.get(ConfigService);
+  // Hybrid app: a small HTTP server (for the Prometheus /metrics endpoint) plus
+  // the TCP microservice that serves RPC from the gateway.
+  const app = await NestFactory.create(ResumeBuilderServiceModule);
+  const configService = app.get(ConfigService);
 
-  // =========================================================
-  // 1. MICROSERVICE SETUP
-  // =========================================================
-
-  const host = '0.0.0.0';
   const port = configService.get<number>('services.resume.port');
+  const metricsPort = configService.get<number>('services.resume.metricsPort');
 
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    ResumeBuilderServiceModule,
+  // =========================================================
+  // 1. MICROSERVICE TRANSPORT
+  // =========================================================
+  app.connectMicroservice<MicroserviceOptions>(
     {
       transport: Transport.TCP,
-      options: { host, port },
+      options: { host: '0.0.0.0', port },
     },
+    // Apply the app-level global pipes/filters to RPC handlers too.
+    { inheritAppConfig: true },
   );
 
   // =========================================================
   // 2. GLOBAL CONFIGURATION
   // =========================================================
-
-  // Handle RPC exceptions globally across the microservice
   app.useGlobalFilters(new GlobalRpcExceptionFilter());
-
-  // Ensure request payload validation and transformation via DTOs
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // Strips non-DTO properties automatically
-      transform: true, // Transforms payloads to instances of their DTO classes
-      transformOptions: {
-        enableImplicitConversion: true, // Automatically convert primitive types
-      },
+      whitelist: true,
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
       forbidNonWhitelisted: true,
       enableDebugMessages: process.env.NODE_ENV !== 'production',
     }),
@@ -51,16 +44,13 @@ async function bootstrap() {
   // =========================================================
   // 3. LOGGER & BOOTSTRAP
   // =========================================================
-
-  // Attach centralized logging via nestjs-pino
   const logger = app.get(Logger);
   app.useLogger(logger);
 
-  // Expose the microservice to the network
-  await app.listen();
-  logger.log(`Resume service is running on port ${port}`);
-
-  // Close the initial app context as it's no longer needed
-  await appContext.close();
+  await app.startAllMicroservices();
+  await app.listen(metricsPort);
+  logger.log(
+    `Resume service running (RPC TCP ${port}, metrics http://0.0.0.0:${metricsPort}/metrics)`,
+  );
 }
 bootstrap();

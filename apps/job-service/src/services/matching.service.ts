@@ -753,43 +753,53 @@ export class MatchingService implements IMatchingService {
     likeReceivedField: string,
   ): Promise<WeeklyActivityItemDTO[]> {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const result: WeeklyActivityItemDTO[] = [];
 
     const now = new Date();
+    // Inclusive 7-day window starting at 00:00 UTC six days ago.
+    const windowStart = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 6),
+    );
+
+    // One grouped query instead of seven day-by-day round-trips to the DB.
+    const rows: {
+      day: string;
+      likes: string;
+      received: string;
+      matches: string;
+    }[] = await this.jobMatchingRepo
+      .createQueryBuilder('jm')
+      .select([
+        `TO_CHAR(DATE_TRUNC('day', jm."createdAt"), 'YYYY-MM-DD') as day`,
+        `SUM(CASE WHEN jm."${likeGivenField}" = true THEN 1 ELSE 0 END) as likes`,
+        `SUM(CASE WHEN jm."${likeReceivedField}" = true THEN 1 ELSE 0 END) as received`,
+        `SUM(CASE WHEN jm."isMatched" = true THEN 1 ELSE 0 END) as matches`,
+      ])
+      .where(`jm."${entityField}Id" = :userId`, { userId })
+      .andWhere('jm."createdAt" >= :windowStart', { windowStart })
+      .groupBy(`DATE_TRUNC('day', jm."createdAt")`)
+      .getRawMany();
+
+    // Build a full 7-day map so days with zero activity are still included.
+    const dataMap = new Map(rows.map((r) => [r.day, r]));
+    const result: WeeklyActivityItemDTO[] = [];
+
     for (let i = 6; i >= 0; i--) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
-      const dayStart = new Date(
-        date.getFullYear(),
-        date.getMonth(),
-        date.getDate(),
+      const d = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - i),
       );
-      const dayEnd = new Date(dayStart);
-      dayEnd.setDate(dayEnd.getDate() + 1);
-
-      const qb = this.jobMatchingRepo.createQueryBuilder('jm');
-
-      // Count likes given, received, and matches for this day in a single query
-      const counts = await qb
-        .select([
-          `SUM(CASE WHEN jm."${likeGivenField}" = true THEN 1 ELSE 0 END) as likes`,
-          `SUM(CASE WHEN jm."${likeReceivedField}" = true THEN 1 ELSE 0 END) as received`,
-          `SUM(CASE WHEN jm."isMatched" = true THEN 1 ELSE 0 END) as matches`,
-        ])
-        .where(`jm."${entityField}Id" = :userId`, { userId })
-        .andWhere('jm."createdAt" >= :dayStart', { dayStart })
-        .andWhere('jm."createdAt" < :dayEnd', { dayEnd })
-        .getRawOne();
-
-      result.push({
-        day: days[dayStart.getDay()],
-        likes: parseInt(counts?.likes || '0', 10),
-        received: parseInt(counts?.received || '0', 10),
-        matches: parseInt(counts?.matches || '0', 10),
-      });
+      const label = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+      const row = dataMap.get(label);
+      result.push(
+        new WeeklyActivityItemDTO({
+          day: days[d.getUTCDay()],
+          likes: parseInt(row?.likes ?? '0', 10),
+          received: parseInt(row?.received ?? '0', 10),
+          matches: parseInt(row?.matches ?? '0', 10),
+        }),
+      );
     }
 
-    return result.map((r) => new WeeklyActivityItemDTO(r));
+    return result;
   }
 
   private async getMonthlyActivity(
@@ -1006,12 +1016,12 @@ export class MatchingService implements IMatchingService {
           {
             role: 'system',
             content: `You are a talent matching expert. Analyze the compatibility between a candidate and a company and return a JSON object with exactly these fields:
-- "score": (number 0-100) overall compatibility score
-- "verdict": (string) one-line verdict like "Strong Match", "Good Match", "Partial Match", or "Weak Match"
-- "explanation": (string) 2-3 sentence explanation of the match
-- "strengths": (string[]) 3-5 specific reasons why they are a good fit
-- "gaps": (string[]) 2-3 areas where the candidate falls short or could improve
-Return valid JSON only.`,
+                      - "score": (number 0-100) overall compatibility score
+                      - "verdict": (string) one-line verdict like "Strong Match", "Good Match", "Partial Match", or "Weak Match"
+                      - "explanation": (string) 2-3 sentence explanation of the match
+                      - "strengths": (string[]) 3-5 specific reasons why they are a good fit
+                      - "gaps": (string[]) 2-3 areas where the candidate falls short or could improve
+                      Return valid JSON only.`,
           },
           {
             role: 'user',

@@ -6,6 +6,7 @@ import {
 } from '@app/common';
 import { RedisModule } from '@app/common/redis/redis.module';
 import { ConfigModule } from '@app/common/config';
+import { MetricsModule } from '@app/common/metrics/metrics.module';
 import { ResumeTemplate } from '@app/common/database/entities/resume-template.entity';
 import { Module } from '@nestjs/common';
 import { TerminusModule } from '@nestjs/terminus';
@@ -27,6 +28,7 @@ import {
 @Module({
   imports: [
     ConfigModule,
+    MetricsModule,
     LoggerModule,
     DatabaseModule,
     UploadfileModule,

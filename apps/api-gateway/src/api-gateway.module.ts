@@ -14,6 +14,7 @@ import { NotificationModule } from './notification/notification.module';
 import { ResumeBuilderModule } from './resume-builder/resume-builder.module';
 import { SocketModule } from './socket/socket.module';
 import { UserModule } from './user/user.module';
+import { MetricsModule } from '@app/common/metrics/metrics.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { UserModule } from './user/user.module';
     ChatModule,
     JobModule,
     NotificationModule,
+    MetricsModule,
   ],
   providers: [
     {

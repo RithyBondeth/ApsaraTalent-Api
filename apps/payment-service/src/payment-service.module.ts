@@ -1,5 +1,6 @@
 import { ConfigValuesHealthIndicator, LoggerModule } from '@app/common';
 import { ConfigModule } from '@app/common/config';
+import { MetricsModule } from '@app/common/metrics/metrics.module';
 import { DatabaseModule } from '@app/common/database/database.module';
 import { Company } from '@app/common/database/entities/company/company.entity';
 import { PaymentTransaction } from '@app/common/database/entities/payment/payment-transaction.entity';
@@ -19,6 +20,7 @@ import { I_PAYMENT_SERVICE } from '@app/contracts/interfaces/service/payment-ser
 @Module({
   imports: [
     ConfigModule,
+    MetricsModule,
     LoggerModule,
     DatabaseModule,
     TerminusModule,

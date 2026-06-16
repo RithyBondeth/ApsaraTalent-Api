@@ -1,18 +1,74 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import * as puppeteer from 'puppeteer';
 import { RESUME } from '@app/contracts/constants/domain/resume.constant';
 import { IPdfGeneratorService } from '@app/contracts/interfaces/service';
 
 @Injectable()
-export class PdfGeneratorService implements IPdfGeneratorService {
-  async generate(html: string): Promise<Buffer> {
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox'],
-    });
+export class PdfGeneratorService
+  implements IPdfGeneratorService, OnModuleDestroy
+{
+  private readonly logger = new Logger(PdfGeneratorService.name);
 
+  // A single Chromium instance is shared across all requests. Launching a
+  // browser per PDF cost ~1–3s and 100–300MB each, and a burst of downloads
+  // could exhaust memory. We reuse one browser and only open/close lightweight
+  // pages per request.
+  private browser: puppeteer.Browser | null = null;
+  private launching: Promise<puppeteer.Browser> | null = null;
+
+  // Bound how many pages render at once so a traffic spike can't open hundreds
+  // of tabs on the shared browser. Excess requests wait in `waiters`.
+  private active = 0;
+  private readonly waiters: Array<() => void> = [];
+
+  async onModuleDestroy(): Promise<void> {
+    if (this.browser) {
+      await this.browser.close().catch(() => undefined);
+      this.browser = null;
+    }
+  }
+
+  /** Lazily launch (or relaunch if crashed) the shared browser. */
+  private async getBrowser(): Promise<puppeteer.Browser> {
+    if (this.browser?.connected) return this.browser;
+    // Collapse concurrent launches into a single in-flight promise.
+    if (!this.launching) {
+      this.launching = puppeteer
+        .launch({ headless: true, args: ['--no-sandbox'] })
+        .then((b) => {
+          this.browser = b;
+          this.launching = null;
+          return b;
+        })
+        .catch((err) => {
+          this.launching = null;
+          throw err;
+        });
+    }
+    return this.launching;
+  }
+
+  private async acquire(): Promise<void> {
+    if (this.active < RESUME.PDF_MAX_CONCURRENCY) {
+      this.active++;
+      return;
+    }
+    await new Promise<void>((resolve) => this.waiters.push(resolve));
+    this.active++;
+  }
+
+  private release(): void {
+    this.active--;
+    const next = this.waiters.shift();
+    if (next) next();
+  }
+
+  async generate(html: string): Promise<Buffer> {
+    await this.acquire();
+    let page: puppeteer.Page | undefined;
     try {
-      const page = await browser.newPage();
+      const browser = await this.getBrowser();
+      page = await browser.newPage();
       await page.setContent(html, {
         waitUntil: 'networkidle0',
         timeout: RESUME.GENERATION_TIMEOUT,
@@ -31,8 +87,12 @@ export class PdfGeneratorService implements IPdfGeneratorService {
       });
 
       return Buffer.from(pdf);
+    } catch (error) {
+      this.logger.error(`PDF generation failed: ${(error as Error).message}`);
+      throw error;
     } finally {
-      await browser.close();
+      if (page) await page.close().catch(() => undefined);
+      this.release();
     }
   }
 }

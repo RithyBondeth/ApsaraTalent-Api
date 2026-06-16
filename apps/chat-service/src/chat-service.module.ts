@@ -6,6 +6,7 @@ import {
 } from '@app/common';
 import { RedisModule } from '@app/common/redis/redis.module';
 import { ConfigModule } from '@app/common/config';
+import { MetricsModule } from '@app/common/metrics/metrics.module';
 import { Chat } from '@app/common/database/entities/chat.entity';
 import { UserBlock } from '@app/common/database/entities/moderation/user-block.entity';
 import { User } from '@app/common/database/entities/user.entity';
@@ -23,6 +24,7 @@ import { I_CHAT_SERVICE } from '@app/contracts/interfaces/service/chat-service.i
 @Module({
   imports: [
     ConfigModule,
+    MetricsModule,
     LoggerModule,
     DatabaseModule,
     JwtModule,

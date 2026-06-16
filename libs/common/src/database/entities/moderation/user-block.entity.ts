@@ -15,11 +15,11 @@ export class UserBlock {
   id: string;
 
   @Index()
-  @ManyToOne(() => User, { eager: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   blocker: User;
 
   @Index()
-  @ManyToOne(() => User, { eager: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   blocked: User;
 
   @CreateDateColumn()

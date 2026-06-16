@@ -20,6 +20,8 @@ import { Repository } from 'typeorm';
 import { PushNotificationService } from './push-notification.service';
 import { INotificationService } from '@app/contracts/interfaces/service/notification-service.interface';
 import { NOTIFICATION } from '@app/contracts/constants/domain/notification.constant';
+import { RedisService } from '@app/common/redis/redis.service';
+import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
 
 @Injectable()
 export class NotificationService implements INotificationService {
@@ -30,6 +32,7 @@ export class NotificationService implements INotificationService {
     private readonly userRepo: Repository<User>,
     private readonly pushNotificationService: PushNotificationService,
     private readonly logger: PinoLogger,
+    private readonly redisService: RedisService,
   ) {
     this.logger.setContext(NotificationService.name);
   }
@@ -64,7 +67,10 @@ export class NotificationService implements INotificationService {
       data: createNotificationCurrentUserDTO.data ?? null,
       isRead: false,
     });
-    let saved = await this.notificationRepo.save(notification);
+    const saved = await this.notificationRepo.save(notification);
+    await this.redisService.invalidateNotificationCaches(
+      createNotificationCurrentUserDTO.userId,
+    );
 
     if (createNotificationCurrentUserDTO.sendPush) {
       try {
@@ -128,8 +134,27 @@ export class NotificationService implements INotificationService {
     );
     const skip = (page - 1) * limit;
 
+    const unreadOnly = !!listNotificationsDTO.unreadOnly;
+    const cacheKey = this.redisService.generateNotificationListKey(
+      listNotificationsDTO.userId,
+      page,
+      limit,
+      unreadOnly,
+    );
+    const cached =
+      await this.redisService.get<NotificationListByUserResponseDTO>(cacheKey);
+    if (cached) {
+      this.logger.info(
+        `Notifications list cache HIT for user ${listNotificationsDTO.userId}`,
+      );
+      return cached;
+    }
+    this.logger.info(
+      `Notifications list cache MISS for user ${listNotificationsDTO.userId}`,
+    );
+
     const where: any = { user: { id: listNotificationsDTO.userId } };
-    if (listNotificationsDTO.unreadOnly) where.isRead = false;
+    if (unreadOnly) where.isRead = false;
 
     const [entities, total] = await this.notificationRepo.findAndCount({
       where,
@@ -138,7 +163,7 @@ export class NotificationService implements INotificationService {
       skip,
     });
 
-    return new NotificationListByUserResponseDTO({
+    const result = new NotificationListByUserResponseDTO({
       items: entities.map(
         (n) =>
           new GetAllNotificationResponseDTO({
@@ -155,6 +180,9 @@ export class NotificationService implements INotificationService {
       page,
       limit,
     });
+
+    await this.redisService.set(cacheKey, result, CACHE_TTL.SHORT);
+    return result;
   }
 
   async markRead(
@@ -167,6 +195,11 @@ export class NotificationService implements INotificationService {
       },
       { isRead: true },
     );
+    if (result.affected > 0) {
+      await this.redisService.invalidateNotificationCaches(
+        notificationIdDTO.userId,
+      );
+    }
     return new MarkNotificationAsReadResponseDTO({
       success: result.affected > 0,
     });
@@ -179,6 +212,9 @@ export class NotificationService implements INotificationService {
       { user: { id: notificationUserDTO.userId } as any, isRead: false },
       { isRead: true },
     );
+    await this.redisService.invalidateNotificationCaches(
+      notificationUserDTO.userId,
+    );
     return new ReadAllNotificationResponseDTO({
       success: true,
       affected: result.affected ?? 0,
@@ -188,10 +224,20 @@ export class NotificationService implements INotificationService {
   async getUnreadCount(
     notificationUserDTO: NotificationUserDTO,
   ): Promise<UnreadCountResponseDTO> {
+    const cacheKey = this.redisService.generateNotificationUnreadCountKey(
+      notificationUserDTO.userId,
+    );
+    const cached =
+      await this.redisService.get<UnreadCountResponseDTO>(cacheKey);
+    if (cached) return cached;
+
     const count = await this.notificationRepo.count({
       where: { user: { id: notificationUserDTO.userId } as any, isRead: false },
     });
-    return new UnreadCountResponseDTO({ unreadCount: count });
+    const result = new UnreadCountResponseDTO({ unreadCount: count });
+
+    await this.redisService.set(cacheKey, result, CACHE_TTL.SHORT);
+    return result;
   }
 
   async deleteNotification(
@@ -201,6 +247,11 @@ export class NotificationService implements INotificationService {
       id: notificationIdDTO.notificationId,
       user: { id: notificationIdDTO.userId } as any,
     });
+    if (result.affected > 0) {
+      await this.redisService.invalidateNotificationCaches(
+        notificationIdDTO.userId,
+      );
+    }
     return new DeleteNotificationResponseDTO({ success: result.affected > 0 });
   }
 
@@ -210,6 +261,9 @@ export class NotificationService implements INotificationService {
     const result = await this.notificationRepo.delete({
       user: { id: notificationUserDTO.userId } as any,
     });
+    await this.redisService.invalidateNotificationCaches(
+      notificationUserDTO.userId,
+    );
     return new DeleteNotificationResponseDTO({
       success: true,
       affected: result.affected ?? 0,

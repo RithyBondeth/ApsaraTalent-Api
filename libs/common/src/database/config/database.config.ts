@@ -51,11 +51,21 @@ export const databaseConfig = async (
     UserBlock,
     UserReport,
   ],
+  // Load relations as separate batched queries instead of a single multi-join.
+  // This prevents the cartesian-product row explosion (and embedding/column
+  // duplication) that happens when an entity is loaded with several collection
+  // relations at once via find({ relations: [...] }) or eager: true.
+  relationLoadStrategy: 'query',
+  // Log any query slower than 1s so slow paths are visible before they 504.
+  maxQueryExecutionTime: 1000,
   // Connection pool optimized for Neon PostgreSQL (remote, high-latency)
   extra: {
     max: 20, // Max pool connections (default was 10)
     min: 2, // Keep 2 warm connections ready
     idleTimeoutMillis: 60000, // Close idle connections after 60s
     connectionTimeoutMillis: 10000, // Wait up to 10s for connection (default 1s)
+    // Postgres kills any single statement that runs longer than 15s so a
+    // runaway query can never hold a pooled connection hostage.
+    statement_timeout: 15000,
   },
 });

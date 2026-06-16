@@ -16,11 +16,11 @@ export class UserReport {
   id: string;
 
   @Index()
-  @ManyToOne(() => User, { eager: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   reporter: User;
 
   @Index()
-  @ManyToOne(() => User, { eager: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   reported: User;
 
   @Column({ type: 'enum', enum: EReportReason })

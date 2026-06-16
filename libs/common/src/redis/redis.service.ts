@@ -245,4 +245,29 @@ export class RedisService {
     }
     await Promise.all(deletions);
   }
+
+  // ── Notification service ────────────────────────────────────────────
+  private readonly NOTIFICATION_PREFIX = 'apsaratalent:notification-service';
+
+  generateNotificationUnreadCountKey(userId: string): string {
+    return `${this.NOTIFICATION_PREFIX}:unread-count:${userId}`;
+  }
+
+  generateNotificationListKey(
+    userId: string,
+    page: number,
+    limit: number,
+    unreadOnly: boolean,
+  ): string {
+    return `${this.NOTIFICATION_PREFIX}:list:${userId}:page:${page}:limit:${limit}:unread:${unreadOnly}`;
+  }
+
+  // A user's unread count and every cached list page change together on any
+  // create / mark-read / delete, so drop them all for that user at once.
+  async invalidateNotificationCaches(userId: string): Promise<void> {
+    await Promise.all([
+      this.del(this.generateNotificationUnreadCountKey(userId)),
+      this.delPattern(`list:${userId}:*`, this.NOTIFICATION_PREFIX),
+    ]);
+  }
 }
