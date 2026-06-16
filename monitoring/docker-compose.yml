@@ -17,11 +17,26 @@ services:
       - '9090:9090'
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alerts.yml:/etc/prometheus/alerts.yml:ro
       - prometheus-data:/prometheus
     # Lets the container reach services running on the host (needed on Linux;
     # already implicit on Docker Desktop for macOS/Windows).
     extra_hosts:
       - 'host.docker.internal:host-gateway'
+    depends_on:
+      - alertmanager
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: apsaratalent-alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+    ports:
+      - '9093:9093'
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
     restart: unless-stopped
 
   grafana:
@@ -44,3 +59,4 @@ services:
 volumes:
   prometheus-data:
   grafana-data:
+  alertmanager-data:

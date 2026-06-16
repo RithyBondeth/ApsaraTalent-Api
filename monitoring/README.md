@@ -12,7 +12,8 @@ docker compose -f monitoring/docker-compose.yml up -d
 
 - **Grafana:** http://localhost:3030 (login `admin` / `admin`, change on first login)
   The "ApsaraTalent API — Performance" dashboard is auto-provisioned.
-- **Prometheus:** http://localhost:9090 (check Status → Targets are all `UP`).
+- **Prometheus:** http://localhost:9090 (check Status → Targets are all `UP`; Alerts tab shows rule state).
+- **Alertmanager:** http://localhost:9093 (fired alerts land here).
 
 Stop with `docker compose -f monitoring/docker-compose.yml down` (add `-v` to wipe stored metrics).
 
@@ -52,6 +53,28 @@ histogram_quantile(0.95, sum(rate(rpc_handler_duration_seconds_bucket[5m])) by (
 # 5xx rate per route
 sum(rate(http_request_duration_seconds_count{status_code=~"5.."}[5m])) by (route)
 ```
+
+## Alerting
+
+Rules live in `alerts.yml` (loaded by Prometheus, state visible at
+http://localhost:9090/alerts):
+
+| Alert | Fires when | Severity |
+|---|---|---|
+| `ServiceDown` | a target is unscrapeable >1m | critical |
+| `HighHttpP95Latency` | route p95 > 1s for 10m | warning |
+| `HighHttp5xxRate` | route 5xx ratio > 5% for 5m | critical |
+| `GatewayTimeouts` | any 504s on a route for 5m | critical |
+| `HighRpcP95Latency` | a service handler p95 > 1s for 10m | warning |
+| `HighEventLoopLag` | a service event-loop p99 > 100ms for 5m | warning |
+
+Routing is handled by **Alertmanager** (`alertmanager.yml`). By default alerts
+just collect in its UI. To get notified, uncomment the `slack_configs` block in
+`alertmanager.yml` and set your webhook URL (email/PagerDuty/etc. work the same
+way). Reload with `docker compose -f monitoring/docker-compose.yml restart alertmanager`.
+
+After editing `alerts.yml`, reload Prometheus:
+`curl -X POST http://localhost:9090/-/reload` (or restart the container).
 
 ## Notes
 
