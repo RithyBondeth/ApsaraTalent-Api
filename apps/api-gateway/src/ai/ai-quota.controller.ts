@@ -1,8 +1,6 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
-import {
-  AiQuotaService,
-  IAiQuotaUsage,
-} from '@app/common/throttler/ai-quota.service';
+import { AiQuotaService } from '@app/common/throttler/ai-quota.service';
+import { IAiQuotaUsage } from '@app/contracts/interfaces/domain/ai.interface';
 import { Controller, Get, Req, UseGuards } from '@nestjs/common';
 
 /**
