@@ -1,7 +1,7 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
 import {
   AiQuotaService,
-  AiQuotaUsage,
+  IAiQuotaUsage,
 } from '@app/common/throttler/ai-quota.service';
 import { Controller, Get, Req, UseGuards } from '@nestjs/common';
 
@@ -16,7 +16,7 @@ export class AiQuotaController {
   constructor(private readonly aiQuota: AiQuotaService) {}
 
   @Get('quota')
-  async getQuota(@Req() req: any): Promise<AiQuotaUsage> {
+  async getQuota(@Req() req: any): Promise<IAiQuotaUsage> {
     return this.aiQuota.getUsage(req.user.id);
   }
 }

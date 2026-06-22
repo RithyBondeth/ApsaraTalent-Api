@@ -21,7 +21,6 @@ import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
-    // Enables Sentry request context/tracing. No-op when SENTRY_DSN is unset.
     SentryModule.forRoot(),
     ConfigModule,
     LoggerModule,

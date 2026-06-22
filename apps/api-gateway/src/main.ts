@@ -1,5 +1,3 @@
-// Sentry must be initialized before any other import so it can instrument
-// the HTTP layer and dependencies. Keep this as the first line of the file.
 import '@app/common/sentry/instrument';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';

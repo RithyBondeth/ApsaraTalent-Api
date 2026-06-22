@@ -1,20 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RedisService } from '../redis/redis.service';
+import { IAiQuotaUsage } from '@app/contracts/interfaces/domain/ai.interface';
 
-/** Read-only snapshot of a user's AI usage for the current day. */
-export interface AiQuotaUsage {
-  daily: { used: number; limit: number; remaining: number };
-  /** ISO timestamp (UTC) when the daily quota resets. */
-  resetsAt: string;
-}
-
-/**
- * Centralizes the AI usage limits: the Redis key layout, the configured limits,
- * the consume (increment) operations used by AiQuotaGuard, and a read-only
- * snapshot used by the GET /ai/quota endpoint. Keeping the key/limit logic in
- * one place guarantees the guard and the usage endpoint never drift apart.
- */
 @Injectable()
 export class AiQuotaService {
   readonly rateLimit: number;
@@ -83,7 +71,7 @@ export class AiQuotaService {
   }
 
   /** Read-only snapshot of today's usage (does NOT consume quota). */
-  async getUsage(userId: string): Promise<AiQuotaUsage> {
+  async getUsage(userId: string): Promise<IAiQuotaUsage> {
     const today = this.today();
     const used =
       (await this.redisService.get<number>(this.dailyKey(userId, today))) ?? 0;

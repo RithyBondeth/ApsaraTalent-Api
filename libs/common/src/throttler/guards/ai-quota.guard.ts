@@ -7,19 +7,6 @@ import {
 } from '@nestjs/common';
 import { AiQuotaService } from '../ai-quota.service';
 
-/**
- * Per-user guard that protects the expensive OpenAI-backed endpoints
- * (AI match explanations, interview prep, skill-gap, resume/cover-letter
- * generation) against runaway cost and scripted abuse.
- *
- * Two independent limits are enforced, both scoped to the authenticated user:
- *   1. A short burst window  — blocks rapid-fire flooding.
- *   2. A daily quota         — caps total OpenAI spend per user per day.
- *
- * All limit/key logic lives in AiQuotaService so the guard and the
- * GET /ai/quota usage endpoint stay in sync. Must run AFTER an AuthGuard so
- * `req.user` is populated; unauthenticated requests pass through here.
- */
 @Injectable()
 export class AiQuotaGuard implements CanActivate {
   constructor(private readonly aiQuota: AiQuotaService) {}

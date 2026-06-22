@@ -1,4 +1,3 @@
-// Sentry must initialize before any other import (no-op without SENTRY_DSN).
 import '@app/common/sentry/instrument';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
