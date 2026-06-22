@@ -141,6 +141,13 @@ export default () => ({
     model: process.env.OPENAI_MODEL ?? 'gpt-4o',
   },
 
+  // Per-user usage limits for the OpenAI-backed AI endpoints (see AiQuotaGuard).
+  ai: {
+    rateLimit: Number(process.env.AI_RATE_LIMIT) || 10,
+    rateLimitWindowMs: Number(process.env.AI_RATE_LIMIT_WINDOW_MS) || 60000,
+    dailyQuota: Number(process.env.AI_DAILY_QUOTA) || 100,
+  },
+
   firebase: {
     serviceAccount: process.env.FIREBASE_SERVICE_ACCOUNT,
   },

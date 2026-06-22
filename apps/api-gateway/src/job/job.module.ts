@@ -1,4 +1,5 @@
 import { JwtModule, ThrottlerModule } from '@app/common';
+import { AiQuotaGuard } from '@app/common/throttler/guards/ai-quota.guard';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -46,6 +47,6 @@ import { JobAccessService } from './services/job-access.service';
     InterviewController,
     ApplicationController,
   ],
-  providers: [AiMatchingService, JobAccessService],
+  providers: [AiMatchingService, JobAccessService, AiQuotaGuard],
 })
 export class JobModule {}

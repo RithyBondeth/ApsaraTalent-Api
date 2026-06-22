@@ -1,5 +1,6 @@
 import { IBasicAuthController } from '@app/contracts/interfaces/controller/auth-controller.interface';
 import { ThrottlerGuard } from '@app/common/throttler/guards/throttler.guard';
+import { Throttle } from '@nestjs/throttler';
 import { AuthGuard } from '@app/common/guards/auth.guard';
 import {
   BadRequestException,
@@ -297,6 +298,11 @@ export class AuthController implements IBasicAuthController {
 
   @Post('parse-resume')
   @HttpCode(HttpStatus.OK)
+  // Unauthenticated (used during signup) + hits OpenAI, so it can't use the
+  // per-user AiQuotaGuard. Cap it by IP instead: 5 parses/minute is plenty for
+  // a real signup but blocks scripted abuse of the OpenAI-backed parser.
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @UseInterceptors(
     FileInterceptor('resume', {
       storage: memoryStorage(),

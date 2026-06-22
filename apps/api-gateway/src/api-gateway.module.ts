@@ -15,12 +15,19 @@ import { ResumeBuilderModule } from './resume-builder/resume-builder.module';
 import { SocketModule } from './socket/socket.module';
 import { UserModule } from './user/user.module';
 import { MetricsModule } from '@app/common/metrics/metrics.module';
+import { AiQuotaModule } from '@app/common/throttler/ai-quota.module';
+import { SentryModule } from '@sentry/nestjs/setup';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
+    // Enables Sentry request context/tracing. No-op when SENTRY_DSN is unset.
+    SentryModule.forRoot(),
     ConfigModule,
     LoggerModule,
     AiStreamModule,
+    AiQuotaModule,
+    AiModule,
     AuthModule,
     UploadfileModule,
     HealthModule,

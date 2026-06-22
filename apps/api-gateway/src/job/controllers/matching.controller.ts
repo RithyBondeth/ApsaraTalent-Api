@@ -1,4 +1,5 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
+import { AiQuotaGuard } from '@app/common/throttler/guards/ai-quota.guard';
 import { IMatchingController } from '@app/contracts/interfaces/controller/job-controllers/matching-controller.interface';
 import {
   Controller,
@@ -196,6 +197,7 @@ export class JobMatchingController implements IMatchingController {
   }
 
   @Get('ai-explanation/:eid/:cid')
+  @UseGuards(AiQuotaGuard)
   @HttpCode(HttpStatus.OK)
   async getAiMatchExplanation(
     @Param('eid', ParseUUIDPipe) eid: string,
@@ -213,6 +215,7 @@ export class JobMatchingController implements IMatchingController {
   }
 
   @Get('ai-explanation/:eid/:cid/stream')
+  @UseGuards(AiQuotaGuard)
   async streamAiMatchExplanation(
     @Param('eid', ParseUUIDPipe) eid: string,
     @Param('cid', ParseUUIDPipe) cid: string,
@@ -239,6 +242,7 @@ export class JobMatchingController implements IMatchingController {
   }
 
   @Get('ai-interview-prep/:eid/:cid')
+  @UseGuards(AiQuotaGuard)
   @HttpCode(HttpStatus.OK)
   async getAiInterviewPrep(
     @Param('eid', ParseUUIDPipe) eid: string,
@@ -256,6 +260,7 @@ export class JobMatchingController implements IMatchingController {
   }
 
   @Get('ai-interview-prep/:eid/:cid/stream')
+  @UseGuards(AiQuotaGuard)
   async streamAiInterviewPrep(
     @Param('eid', ParseUUIDPipe) eid: string,
     @Param('cid', ParseUUIDPipe) cid: string,
@@ -282,6 +287,7 @@ export class JobMatchingController implements IMatchingController {
   }
 
   @Get('ai-skill-gap/:eid/:cid/stream')
+  @UseGuards(AiQuotaGuard)
   async streamAiSkillGap(
     @Param('eid', ParseUUIDPipe) eid: string,
     @Param('cid', ParseUUIDPipe) cid: string,

@@ -102,6 +102,18 @@ export const validationSchema = Joi.object({
   // OpenAI
   OPENAI_API_KEY: Joi.string().optional(),
 
+  // AI usage limits (per authenticated user) — see AiQuotaGuard
+  AI_RATE_LIMIT: Joi.number().integer().min(1).default(10),
+  AI_RATE_LIMIT_WINDOW_MS: Joi.number().integer().min(1000).default(60000),
+  AI_DAILY_QUOTA: Joi.number().integer().min(1).default(100),
+
+  // Error monitoring (Sentry) — blank/unset disables reporting
+  SENTRY_DSN: Joi.string().allow('').optional(),
+  SENTRY_TRACES_SAMPLE_RATE: Joi.number().min(0).max(1).default(0.1),
+
+  // Metrics (Prometheus) — optional bearer token to protect /metrics
+  METRICS_TOKEN: Joi.string().allow('').optional(),
+
   // Firebase (Push Notifications)
   FIREBASE_SERVICE_ACCOUNT: Joi.string().optional(),
 

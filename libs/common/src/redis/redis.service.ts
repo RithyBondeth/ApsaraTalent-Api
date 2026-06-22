@@ -81,6 +81,39 @@ export class RedisService {
     }
   }
 
+  /**
+   * Fixed-window rate counter used by the AI quota guard.
+   *
+   * The caller supplies a window-stamped key (e.g. ending in `:2026-06-19` or
+   * a numeric window index), so re-setting the value with a constant TTL on
+   * each call never extends the logical window — the key naturally rolls over
+   * when the stamp changes and the TTL just garbage-collects the old key.
+   *
+   * Fails OPEN: if Redis is unreachable the request is allowed through, so an
+   * infra blip degrades cost-protection rather than taking AI features offline.
+   */
+  async hitRateLimit(
+    key: string,
+    limit: number,
+    ttlMs: number,
+  ): Promise<{ allowed: boolean; count: number; limit: number }> {
+    try {
+      const current = (await this.cacheManager.get<number>(key)) ?? 0;
+      if (current >= limit) {
+        return { allowed: false, count: current, limit };
+      }
+      await this.cacheManager.set(key, current + 1, ttlMs);
+      return { allowed: true, count: current + 1, limit };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.warn(
+        `Rate counter unavailable, allowing request: ${errorMessage}`,
+      );
+      return { allowed: true, count: 0, limit };
+    }
+  }
+
   // Delete keys matching a pattern
   async delPattern(
     pattern: string,

@@ -1,4 +1,5 @@
 import { JwtModule, UploadfileModule } from '@app/common';
+import { AiQuotaGuard } from '@app/common/throttler/guards/ai-quota.guard';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -26,6 +27,6 @@ import { AiProfileBioService } from './services/ai-profile-bio.service';
     JwtModule,
   ],
   controllers: [ResumeBuilderController, ResumeTemplateController],
-  providers: [AiProfileBioService],
+  providers: [AiProfileBioService, AiQuotaGuard],
 })
 export class ResumeBuilderModule {}

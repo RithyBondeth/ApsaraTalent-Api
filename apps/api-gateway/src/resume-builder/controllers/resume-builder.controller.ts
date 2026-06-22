@@ -1,4 +1,5 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
+import { AiQuotaGuard } from '@app/common/throttler/guards/ai-quota.guard';
 import { IResumeBuilderController } from '@app/contracts/interfaces/controller/resume-builder-controller.interface';
 import {
   Body,
@@ -44,6 +45,7 @@ export class ResumeBuilderController implements IResumeBuilderController {
   ) {}
 
   @Post('build-resume')
+  @UseGuards(AiQuotaGuard)
   @HttpCode(HttpStatus.CREATED)
   async buildResume(
     @Body() buildResumeDTO: BuildResumeDTO,
@@ -57,6 +59,7 @@ export class ResumeBuilderController implements IResumeBuilderController {
   }
 
   @Post('optimize')
+  @UseGuards(AiQuotaGuard)
   @HttpCode(HttpStatus.OK)
   async optimizeResume(
     @Body() optimizeResumeDTO: OptimizeResumeDTO,
@@ -70,6 +73,7 @@ export class ResumeBuilderController implements IResumeBuilderController {
   }
 
   @Post('cover-letter')
+  @UseGuards(AiQuotaGuard)
   @HttpCode(HttpStatus.OK)
   async generateCoverLetter(
     @Body() generateCoverLetterDTO: GenerateCoverLetterDTO,
@@ -83,6 +87,7 @@ export class ResumeBuilderController implements IResumeBuilderController {
   }
 
   @Post('cover-letter/stream')
+  @UseGuards(AiQuotaGuard)
   async streamCoverLetter(
     @Body() generateCoverLetterDTO: GenerateCoverLetterDTO,
     @Res() res: Response,
@@ -119,6 +124,7 @@ export class ResumeBuilderController implements IResumeBuilderController {
   }
 
   @Post('polish-cover-letter')
+  @UseGuards(AiQuotaGuard)
   @HttpCode(HttpStatus.OK)
   async polishCoverLetter(
     @Body() polishCoverLetterDTO: PolishCoverLetterDTO,
@@ -132,6 +138,7 @@ export class ResumeBuilderController implements IResumeBuilderController {
   }
 
   @Post('polish-cover-letter/stream')
+  @UseGuards(AiQuotaGuard)
   async streamPolishCoverLetter(
     @Body() polishCoverLetterDTO: PolishCoverLetterDTO,
     @Res() res: Response,
@@ -163,6 +170,7 @@ export class ResumeBuilderController implements IResumeBuilderController {
   }
 
   @Post('optimize/stream')
+  @UseGuards(AiQuotaGuard)
   async streamOptimizeResume(
     @Body() optimizeResumeDTO: OptimizeResumeDTO,
     @Res() res: Response,
@@ -228,6 +236,7 @@ export class ResumeBuilderController implements IResumeBuilderController {
   }
 
   @Post('refine-bio/stream')
+  @UseGuards(AiQuotaGuard)
   async streamRefineBio(
     @Body() refineProfileBioDTO: RefineProfileBioDTO,
     @Res() res: Response,

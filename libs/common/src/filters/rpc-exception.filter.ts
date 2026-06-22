@@ -5,6 +5,7 @@ import {
   HttpException,
   ExceptionFilter,
 } from '@nestjs/common';
+import * as Sentry from '@sentry/nestjs';
 import { Observable, throwError } from 'rxjs';
 import { RpcException } from '@nestjs/microservices';
 
@@ -16,6 +17,13 @@ import { RpcException } from '@nestjs/microservices';
 export class GlobalRpcExceptionFilter implements ExceptionFilter {
   catch(exception: any, host: ArgumentsHost): Observable<any> | void {
     const error = this.normalize(exception);
+    // Report unexpected server failures (5xx) to Sentry with the original
+    // exception so the real service-side stack trace is preserved — it would
+    // otherwise be flattened to a plain message crossing the RPC boundary.
+    // No-op when Sentry is not initialized (SENTRY_DSN unset).
+    if (error.statusCode >= HttpStatus.INTERNAL_SERVER_ERROR) {
+      Sentry.captureException(exception);
+    }
     if (host.getType() === 'http') {
       const res = host.switchToHttp().getResponse();
       res.status(error.statusCode).json(error);
