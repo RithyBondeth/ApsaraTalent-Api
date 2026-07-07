@@ -1,3 +1,8 @@
+// Load .env before reading SENTRY_DSN below — this file runs before Nest's
+// ConfigModule, so without this a DSN set only in .env (local dev) is never
+// seen. No-op in production, where env vars are real and no .env file exists.
+// dotenv never overrides variables already present in the environment.
+import 'dotenv/config';
 import * as Sentry from '@sentry/nestjs';
 
 /**
@@ -23,6 +28,9 @@ if (dsn) {
   Sentry.init({
     dsn,
     environment: process.env.NODE_ENV || 'development',
+    // SENTRY_DEBUG=true logs SDK activity (init, envelope sends) to stdout —
+    // use it to verify events are actually delivered.
+    debug: process.env.SENTRY_DEBUG === 'true',
     serverName: service,
     tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE) || 0.1,
     ...(service ? { initialScope: { tags: { service } } } : {}),
