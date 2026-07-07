@@ -44,8 +44,11 @@ scrape_configs:
         labels: { service: chat-service }
       - targets: ['host.docker.internal:9105']
         labels: { service: job-service }
-      - targets: ['host.docker.internal:9106']
-        labels: { service: payment-service }
+      # payment-service is not deployed (PaymentModule disabled in api-gateway) —
+      # kept out of scrape targets so it doesn't alert as permanently down.
+      # Re-enable together with the service (see .github/workflows/deploy.yml).
+      # - targets: ['host.docker.internal:9106']
+      #   labels: { service: payment-service }
       - targets: ['host.docker.internal:9107']
         labels: { service: notification-service }
     # authorization:
