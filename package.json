@@ -29,6 +29,7 @@
     "start:dev:job": "nest start job-service --watch",
     "start:dev:payment": "nest start payment-service --watch",
     "start:dev:notification": "nest start notification-service --watch",
+    "check:env": "ts-node -r tsconfig-paths/register scripts/check-env.ts",
     "seed": "ts-node -r tsconfig-paths/register scripts/seed.ts",
     "backfill:embeddings": "ts-node -r tsconfig-paths/register scripts/backfill-embeddings.ts",
     "start:api": "nest start api-gateway",
