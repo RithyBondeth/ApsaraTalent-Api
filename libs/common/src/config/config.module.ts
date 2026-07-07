@@ -13,14 +13,13 @@ import { validationSchema } from './validation.schema';
         allowUnknown: true,
         abortEarly: true,
       },
-      envFilePath: [
-        // '.env.local',
-        '.env',
-        // '.env.development',
-        // '.env.production',
-        // '.env.staging',
-        // '.env.test',
-      ],
+      // Tier-specific file first (chosen by NODE_ENV set in the run script),
+      // then plain .env as a fallback for any keys it doesn't override.
+      // NODE_ENV=staging -> .env.staging, =production -> .env.production, etc.
+      // Local dev (NODE_ENV unset or "local") has no .env.local here, so it
+      // falls through to .env. In Docker/Railway none of these files exist and
+      // ConfigModule reads the injected process.env — this stays a safe no-op.
+      envFilePath: [`.env.${process.env.NODE_ENV || 'local'}`, '.env'],
     }),
   ],
   exports: [NestConfigModule],
