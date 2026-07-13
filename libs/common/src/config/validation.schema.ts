@@ -3,7 +3,7 @@ import * as Joi from 'joi';
 export const validationSchema = Joi.object({
   // Node Environment
   NODE_ENV: Joi.string()
-    .valid('development', 'production', 'test', 'staging', 'local')
+    .valid('development', 'production', 'test', 'local')
     .default('development'),
 
   // Database

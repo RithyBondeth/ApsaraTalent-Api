@@ -9,6 +9,8 @@ import { ModerationController } from './controllers/moderation.controller';
 import { PublicUserController } from './controllers/public-user.controller';
 import { UserController } from './controllers/user.controller';
 import { UserAccessService } from './services/user-access.service';
+import { EmployeeProfileOwnerGuard } from './guards/employee-profile-owner.guard';
+import { CompanyProfileOwnerGuard } from './guards/company-profile-owner.guard';
 
 @Module({
   imports: [
@@ -35,6 +37,10 @@ import { UserAccessService } from './services/user-access.service';
     PublicUserController,
     ModerationController,
   ],
-  providers: [UserAccessService],
+  providers: [
+    UserAccessService,
+    EmployeeProfileOwnerGuard,
+    CompanyProfileOwnerGuard,
+  ],
 })
 export class UserModule {}

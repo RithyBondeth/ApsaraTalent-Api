@@ -5,7 +5,7 @@
  * Redis, or network — it just parses a .env file and validates it.
  *
  *   npm run check:env            # validates .env
- *   npm run check:env -- .env.production .env.staging
+ *   npm run check:env -- .env .env.production
  *
  * Exits non-zero if any file is missing or fails validation, so it is safe to
  * gate CI on it.

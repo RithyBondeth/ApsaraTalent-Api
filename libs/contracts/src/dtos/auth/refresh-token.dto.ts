@@ -5,6 +5,10 @@ export class RefreshTokenDTO {
   @IsString()
   @IsNotEmpty()
   refreshToken: string;
+
+  constructor(partial: Partial<RefreshTokenDTO>) {
+    Object.assign(this, partial);
+  }
 }
 
 export class RefreshTokenResponseDTO extends LoginResponseDTO {

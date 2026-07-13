@@ -63,8 +63,8 @@ export class TwoFactorVerifyLoginDTO {
 }
 
 export class TwoFactorVerifyLoginResponseDTO extends CoreResponseDTO {
-  accessToken: string;
-  refreshToken: string;
+  accessToken?: string;
+  refreshToken?: string;
   user: UserResponseDTO;
 
   constructor(partial: Partial<TwoFactorVerifyLoginResponseDTO>) {

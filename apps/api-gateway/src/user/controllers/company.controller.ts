@@ -40,6 +40,7 @@ import {
   UploadCompanyImagesResponseDTO,
 } from '@app/contracts/dtos/user';
 import { rpcCall } from '../../utils/rpc-call';
+import { CompanyProfileOwnerGuard } from '../guards/company-profile-owner.guard';
 
 @Controller('user/company')
 @UseGuards(AuthGuard)
@@ -73,6 +74,7 @@ export class CompanyController implements ICompanyController {
   }
 
   @Patch('update-info/:companyId')
+  @UseGuards(CompanyProfileOwnerGuard)
   async updateCompanyInfo(
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @Body() updateCompanyInfoDTO: UpdateCompanyInfoDTO,
@@ -88,6 +90,7 @@ export class CompanyController implements ICompanyController {
   }
 
   @Post('upload-avatar/:companyId')
+  @UseGuards(CompanyProfileOwnerGuard)
   @UseInterceptors(
     new UploadFileInterceptor(
       'avatar',
@@ -108,6 +111,7 @@ export class CompanyController implements ICompanyController {
   }
 
   @Post('remove-avatar/:companyId')
+  @UseGuards(CompanyProfileOwnerGuard)
   async removeCompanyAvatar(
     @Param('companyId', ParseUUIDPipe) companyId: string,
   ): Promise<RemoveCompanyAvatarResponseDTO> {
@@ -119,6 +123,7 @@ export class CompanyController implements ICompanyController {
   }
 
   @Post('upload-cover/:companyId')
+  @UseGuards(CompanyProfileOwnerGuard)
   @UseInterceptors(
     new UploadFileInterceptor(
       'cover',
@@ -139,6 +144,7 @@ export class CompanyController implements ICompanyController {
   }
 
   @Post('remove-cover/:companyId')
+  @UseGuards(CompanyProfileOwnerGuard)
   async removeCompanyCover(
     @Param('companyId', ParseUUIDPipe) companyId: string,
   ): Promise<RemoveCompanyCoverResponseDTO> {
@@ -150,6 +156,7 @@ export class CompanyController implements ICompanyController {
   }
 
   @Post('upload-images/:companyId')
+  @UseGuards(CompanyProfileOwnerGuard)
   @UseInterceptors(
     UploadFilesInterceptor(
       'images',
@@ -171,6 +178,7 @@ export class CompanyController implements ICompanyController {
   }
 
   @Delete('remove-images/:companyId/:imageId')
+  @UseGuards(CompanyProfileOwnerGuard)
   async removeCompanyImage(
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @Param('imageId', ParseUUIDPipe) imageId: string,
@@ -183,6 +191,7 @@ export class CompanyController implements ICompanyController {
   }
 
   @Delete('remove-open-position/:companyId/:opId')
+  @UseGuards(CompanyProfileOwnerGuard)
   async removeOpenPosition(
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @Param('opId', ParseUUIDPipe) opId: string,

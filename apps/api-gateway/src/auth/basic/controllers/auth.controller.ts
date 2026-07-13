@@ -52,7 +52,10 @@ import {
   TwoFactorVerifyLoginDTO,
   TwoFactorVerifyLoginResponseDTO,
 } from '@app/contracts/dtos/auth';
-import { setAuthTokenCookies } from '../../utils/auth-cookie.util';
+import {
+  clearAuthTokenCookies,
+  setAuthTokenCookies,
+} from '../../utils/auth-cookie.util';
 import { sendAuthServiceRequest } from '../../utils/auth-rpc.util';
 import { User } from '@app/common/database/entities/user.entity';
 import { IParsedResumeData } from '@app/contracts';
@@ -70,12 +73,21 @@ export class AuthController implements IBasicAuthController {
   @UseGuards(ThrottlerGuard)
   async registerCompany(
     @Body() companyRegisterDTO: CompanyRegisterDTO,
+    @Res({ passthrough: true }) res: Response,
   ): Promise<CompanyRegisterResponseDTO> {
-    return await sendAuthServiceRequest<CompanyRegisterResponseDTO>(
+    const response = await sendAuthServiceRequest<CompanyRegisterResponseDTO>(
       this.authClient,
       AUTH_SERVICE.ACTIONS.REGISTER_COMPANY,
       companyRegisterDTO,
     );
+    setAuthTokenCookies(res, {
+      accessToken: response.accessToken!,
+      refreshToken: response.refreshToken,
+    });
+    return new CompanyRegisterResponseDTO({
+      message: response.message,
+      user: response.user,
+    });
   }
 
   @Post('register-employee')
@@ -83,12 +95,21 @@ export class AuthController implements IBasicAuthController {
   @UseGuards(ThrottlerGuard)
   async registerEmployee(
     @Body() employeeRegisterDTO: EmployeeRegisterDTO,
+    @Res({ passthrough: true }) res: Response,
   ): Promise<EmployeeRegisterResponseDTO> {
-    return await sendAuthServiceRequest<EmployeeRegisterResponseDTO>(
+    const response = await sendAuthServiceRequest<EmployeeRegisterResponseDTO>(
       this.authClient,
       AUTH_SERVICE.ACTIONS.REGISTER_EMPLOYEE,
       employeeRegisterDTO,
     );
+    setAuthTokenCookies(res, {
+      accessToken: response.accessToken!,
+      refreshToken: response.refreshToken,
+    });
+    return new EmployeeRegisterResponseDTO({
+      message: response.message,
+      user: response.user,
+    });
   }
 
   @Post('login')
@@ -119,8 +140,6 @@ export class AuthController implements IBasicAuthController {
 
     return new LoginResponseDTO({
       message: response.message,
-      refreshToken: response.refreshToken,
-      accessToken: response.accessToken,
       user: response.user,
     });
   }
@@ -157,8 +176,6 @@ export class AuthController implements IBasicAuthController {
 
     return new VerifyOtpResponseDTO({
       message,
-      refreshToken,
-      accessToken,
       user,
     });
   }
@@ -195,24 +212,34 @@ export class AuthController implements IBasicAuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
   async refreshToken(
-    @Body() refreshTokenDTO: RefreshTokenDTO,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<RefreshTokenResponseDTO> {
+    const refreshTokenFromCookie = req.cookies?.['refresh-token'];
+    if (!refreshTokenFromCookie) {
+      throw new BadRequestException('No refresh token provided');
+    }
+
     const { accessToken, refreshToken, user, message } =
       await sendAuthServiceRequest<RefreshTokenResponseDTO>(
         this.authClient,
         AUTH_SERVICE.ACTIONS.REFRESH_TOKEN,
-        refreshTokenDTO,
+        new RefreshTokenDTO({ refreshToken: refreshTokenFromCookie }),
       );
 
     setAuthTokenCookies(res, { accessToken, refreshToken });
 
     return new RefreshTokenResponseDTO({
       message,
-      refreshToken,
-      accessToken,
       user,
     });
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  logout(@Res({ passthrough: true }) res: Response): { message: string } {
+    clearAuthTokenCookies(res);
+    return { message: 'Logged out successfully' };
   }
 
   @Post('verify-email/:emailVerificationToken')
@@ -293,7 +320,10 @@ export class AuthController implements IBasicAuthController {
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
     });
-    return response;
+    return new TwoFactorVerifyLoginResponseDTO({
+      message: response.message,
+      user: response.user,
+    });
   }
 
   @Post('parse-resume')

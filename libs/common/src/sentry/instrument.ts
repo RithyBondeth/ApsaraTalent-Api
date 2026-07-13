@@ -25,14 +25,31 @@ if (dsn) {
   const service =
     process.env.RAILWAY_SERVICE_NAME || process.env.SENTRY_SERVICE;
 
+  const tracesSampleRate =
+    Number(process.env.SENTRY_TRACES_SAMPLE_RATE) || 0.1;
+
   Sentry.init({
     dsn,
-    environment: process.env.NODE_ENV || 'development',
+    // NODE_ENV is "production" for local prod-mode runs too — the override
+    // lets them label themselves correctly (.env.production sets "local").
+    environment:
+      process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || 'development',
+    // Ties events to the deploy that produced them ("regressed in release X").
+    // Railway injects the commit SHA; SENTRY_RELEASE is a manual override.
+    release:
+      process.env.SENTRY_RELEASE || process.env.RAILWAY_GIT_COMMIT_SHA,
     // SENTRY_DEBUG=true logs SDK activity (init, envelope sends) to stdout —
     // use it to verify events are actually delivered.
     debug: process.env.SENTRY_DEBUG === 'true',
     serverName: service,
-    tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE) || 0.1,
+    // Sample traces, but never for infra noise: health checks and Prometheus
+    // scrapes fire constantly and would dominate the transaction quota.
+    tracesSampler: ({ name, parentSampled }) => {
+      if (name.includes('/health') || name.includes('/metrics')) return 0;
+      // Honor the upstream decision within a distributed trace.
+      if (typeof parentSampled === 'boolean') return parentSampled;
+      return tracesSampleRate;
+    },
     ...(service ? { initialScope: { tags: { service } } } : {}),
   });
 }

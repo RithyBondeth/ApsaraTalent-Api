@@ -7,6 +7,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as Sentry from '@sentry/nestjs';
 import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 import { Repository } from 'typeorm';
 import { User } from '../database/entities/user.entity';
@@ -54,6 +55,7 @@ export class AuthGuard implements CanActivate {
       const cached = await this.redisService.get<User>(cacheKey);
       if (cached) {
         request.user = cached;
+        this.identifyForSentry(cached);
         return true;
       }
     }
@@ -76,6 +78,13 @@ export class AuthGuard implements CanActivate {
     }
 
     request.user = user;
+    this.identifyForSentry(user);
     return true;
+  }
+
+  // Attach the user to Sentry's request-isolated scope so errors show who was
+  // affected. Only id + role — never email/name, to keep PII out of Sentry.
+  private identifyForSentry(user: User): void {
+    Sentry.setUser({ id: user.id, role: user.role });
   }
 }

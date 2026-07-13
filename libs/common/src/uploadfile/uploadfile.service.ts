@@ -30,7 +30,7 @@ export class UploadfileService {
   };
   getUploadFile(folderName: string, file: Express.Multer.File): string {
     // Store a relative public path in DB so environments can move freely
-    // (localhost / staging / production) without hardcoded hostnames.
+    // (localhost / production) without hardcoded hostnames.
     return `/storage/${folderName}/${file.filename}`;
   }
 

@@ -35,7 +35,6 @@ import {
   RemoveEmployeeExperienceResponseDTO,
   RemoveEmployeeResumeResponseDTO,
   SearchEmployeeDTO,
-  SearchEmployeeResponseDTO,
   SearchEmployeeResult,
   UpdateEmployeeInfoDTO,
   UpdateEmployeeInfoResponseDTO,
@@ -44,6 +43,7 @@ import {
   UploadEmployeeResumeResponseDTO,
 } from '@app/contracts/dtos/user';
 import { rpcCall } from '../../utils/rpc-call';
+import { EmployeeProfileOwnerGuard } from '../guards/employee-profile-owner.guard';
 
 @Controller('user/employee')
 @UseGuards(AuthGuard)
@@ -77,6 +77,7 @@ export class EmployeeController implements IEmployeeController {
   }
 
   @Patch('update-info/:employeeId')
+  @UseGuards(EmployeeProfileOwnerGuard)
   async updateEmployeeInfo(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @Body() updateEmployeeInfoDTO: UpdateEmployeeInfoDTO,
@@ -92,6 +93,7 @@ export class EmployeeController implements IEmployeeController {
   }
 
   @Post('upload-avatar/:employeeId')
+  @UseGuards(EmployeeProfileOwnerGuard)
   @UseInterceptors(
     new UploadFileInterceptor(
       'avatar',
@@ -113,6 +115,7 @@ export class EmployeeController implements IEmployeeController {
   }
 
   @Post('remove-avatar/:employeeId')
+  @UseGuards(EmployeeProfileOwnerGuard)
   async removeEmployeeAvatar(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
   ): Promise<RemoveEmployeeAvatarResponseDTO> {
@@ -124,6 +127,7 @@ export class EmployeeController implements IEmployeeController {
   }
 
   @Post('upload-resume/:employeeId')
+  @UseGuards(EmployeeProfileOwnerGuard)
   @UseInterceptors(
     new UploadFileInterceptor(
       'resume',
@@ -144,6 +148,7 @@ export class EmployeeController implements IEmployeeController {
   }
 
   @Post('remove-resume/:employeeId')
+  @UseGuards(EmployeeProfileOwnerGuard)
   async removeEmployeeResume(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
   ): Promise<RemoveEmployeeResumeResponseDTO> {
@@ -155,6 +160,7 @@ export class EmployeeController implements IEmployeeController {
   }
 
   @Post('upload-cover-letter/:employeeId')
+  @UseGuards(EmployeeProfileOwnerGuard)
   @UseInterceptors(
     new UploadFileInterceptor(
       'coverLetter',
@@ -175,6 +181,7 @@ export class EmployeeController implements IEmployeeController {
   }
 
   @Post('remove-cover-letter/:employeeId')
+  @UseGuards(EmployeeProfileOwnerGuard)
   async removeEmployeeCoverLetter(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
   ): Promise<RemoveEmployeeCoverLetterResponseDTO> {
@@ -186,6 +193,7 @@ export class EmployeeController implements IEmployeeController {
   }
 
   @Delete('remove-education/:employeeId/:educationId')
+  @UseGuards(EmployeeProfileOwnerGuard)
   async removeEmployeeEducation(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @Param('educationId', ParseUUIDPipe) educationId: string,
@@ -198,6 +206,7 @@ export class EmployeeController implements IEmployeeController {
   }
 
   @Delete('remove-experience/:employeeId/:experienceId')
+  @UseGuards(EmployeeProfileOwnerGuard)
   async removeEmployeeExperience(
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @Param('experienceId', ParseUUIDPipe) experienceId: string,

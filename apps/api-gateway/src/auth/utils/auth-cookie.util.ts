@@ -22,7 +22,7 @@ export function setAuthTokenCookies(
   const cookieOptions = {
     httpOnly: true,
     secure: isProduction,
-    sameSite: 'none' as const,
+    sameSite: isProduction ? ('none' as const) : ('lax' as const),
     path: '/',
   };
 
@@ -37,6 +37,21 @@ export function setAuthTokenCookies(
       maxAge: refreshMaxAge,
     });
   }
+}
+
+export function clearAuthTokenCookies(
+  res: Response,
+  isProduction = isProductionEnvironment(),
+): void {
+  const cookieOptions = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? ('none' as const) : ('lax' as const),
+    path: '/',
+  };
+
+  res.clearCookie('auth-token', cookieOptions);
+  res.clearCookie('refresh-token', cookieOptions);
 }
 
 export function setRememberCookie(

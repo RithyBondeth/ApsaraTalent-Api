@@ -15,7 +15,7 @@ import { validationSchema } from './validation.schema';
       },
       // Tier-specific file first (chosen by NODE_ENV set in the run script),
       // then plain .env as a fallback for any keys it doesn't override.
-      // NODE_ENV=staging -> .env.staging, =production -> .env.production, etc.
+      // NODE_ENV=production -> .env.production, etc.
       // Local dev (NODE_ENV unset or "local") has no .env.local here, so it
       // falls through to .env. In Docker/Railway none of these files exist and
       // ConfigModule reads the injected process.env — this stays a safe no-op.

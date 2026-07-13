@@ -63,7 +63,7 @@ export interface IBasicAuthResetPasswordRpcController {
 
 export interface IBasicAuthRefreshTokenController {
   refreshToken(
-    refreshTokenDTO: RefreshTokenDTO,
+    req: Request,
     res: Response,
   ): Promise<RefreshTokenResponseDTO>;
 }
@@ -89,9 +89,11 @@ export interface IBasicAuthVerifyEmailRpcController {
 export interface IBasicAuthRegisterController {
   registerCompany(
     companyRegisterDTO: CompanyRegisterDTO,
+    res: Response,
   ): Promise<CompanyRegisterResponseDTO>;
   registerEmployee(
     employeeRegisterDTO: EmployeeRegisterDTO,
+    res: Response,
   ): Promise<EmployeeRegisterResponseDTO>;
 }
 

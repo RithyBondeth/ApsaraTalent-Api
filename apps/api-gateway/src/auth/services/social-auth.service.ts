@@ -169,8 +169,6 @@ export class SocialAuthService implements ISocialAuthService {
           const message = {
             type: ${JSON.stringify(successType)},
             newUser: ${JSON.stringify(result.newUser || false)},
-            accessToken: ${JSON.stringify(result.accessToken)},
-            refreshToken: ${JSON.stringify(result.refreshToken ?? null)},
             remember: ${JSON.stringify(remember)},
             user: {
               email: ${JSON.stringify(result.email ?? null)},
