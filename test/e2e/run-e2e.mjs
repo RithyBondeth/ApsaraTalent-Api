@@ -142,8 +142,22 @@ function startService(name, env, synchronize = false) {
       stdio: ['ignore', 'pipe', 'pipe'],
     },
   );
-  child.stdout.pipe(log);
-  child.stderr.pipe(log);
+  // Keep the log open until both output streams have drained. The process
+  // `exit` event can fire before its stdout/stderr are flushed; without this,
+  // a failed service can leave CI with an empty diagnostic log.
+  child.stdout.pipe(log, { end: false });
+  child.stderr.pipe(log, { end: false });
+  let openStreams = 2;
+  const closeLogWhenDrained = () => {
+    openStreams -= 1;
+    if (openStreams === 0) log.end();
+  };
+  child.stdout.once('end', closeLogWhenDrained);
+  child.stderr.once('end', closeLogWhenDrained);
+  child.logFlushed = new Promise((resolvePromise) => {
+    log.once('finish', resolvePromise);
+    log.once('error', resolvePromise);
+  });
   child.logPath = logPath;
   children.push(child);
   child.once('exit', (code) => {
@@ -174,6 +188,7 @@ async function stopChildren() {
 async function printLogs() {
   for (const child of children) {
     try {
+      if (child.exitCode !== null) await child.logFlushed;
       const content = await readFile(child.logPath, 'utf8');
       process.stderr.write(
         `\n--- ${child.logPath} ---\n${content.slice(-6000)}\n`,
