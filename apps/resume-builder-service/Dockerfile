@@ -7,9 +7,8 @@ COPY nest-cli.json webpack.config.js ./
 COPY tsconfig*.json ./
 COPY apps/resume-builder-service ./apps/resume-builder-service
 COPY libs ./libs
-COPY utils ./utils
 
-RUN npm ci --legacy-peer-deps
+RUN npm ci
 RUN npx nest build resume-builder-service
 
 # Stage 2: Production
