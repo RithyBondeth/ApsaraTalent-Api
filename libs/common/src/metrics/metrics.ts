@@ -1,8 +1,4 @@
-import {
-  collectDefaultMetrics,
-  Histogram,
-  register,
-} from 'prom-client';
+import { collectDefaultMetrics, Histogram, register } from 'prom-client';
 
 // Node/process metrics (event-loop lag, heap, GC, CPU) on the default registry.
 // Safe to call once at module load; guarded so repeated imports don't re-register.
@@ -15,9 +11,7 @@ if (!defaultsStarted) {
 // Latency buckets in seconds — spread across the range we care about
 // (sub-100ms healthy ... multi-second slow) so Prometheus can compute
 // histogram_quantile() for p50/p95/p99.
-const LATENCY_BUCKETS = [
-  0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10,
-];
+const LATENCY_BUCKETS = [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10];
 
 export const httpRequestDuration = new Histogram({
   name: 'http_request_duration_seconds',

@@ -26,6 +26,7 @@ import {
   UploadAttachmentResponseDTO,
   InitiateChatDTO,
 } from '@app/contracts/dtos/chat';
+import { CanAccessAttachmentResponseDTO } from '@app/contracts/dtos/chat/chat-service/can-access-attachment.dto';
 import { rpcCall } from '../../utils/rpc-call';
 import { Response } from 'express';
 import { access } from 'fs/promises';
@@ -110,13 +111,13 @@ export class ChatController implements IChatController {
     }
 
     const attachment = `/chat/attachment/${date}/${filename}`;
-    let canAccess = await rpcCall<boolean>(
+    let accessResult = await rpcCall<CanAccessAttachmentResponseDTO>(
       this.chatClient,
       CHAT_SERVICE.ACTIONS.CAN_ACCESS_ATTACHMENT,
       { userId: req.user.id, attachment },
     );
-    if (!canAccess) {
-      canAccess = await rpcCall<boolean>(
+    if (!accessResult.canAccess) {
+      accessResult = await rpcCall<CanAccessAttachmentResponseDTO>(
         this.chatClient,
         CHAT_SERVICE.ACTIONS.CAN_ACCESS_ATTACHMENT,
         {
@@ -125,7 +126,9 @@ export class ChatController implements IChatController {
         },
       );
     }
-    if (!canAccess) throw new ForbiddenException('Attachment access denied');
+    if (!accessResult.canAccess) {
+      throw new ForbiddenException('Attachment access denied');
+    }
 
     const chatRoot = resolve(process.cwd(), 'storage', 'chat');
     const filePath = resolve(chatRoot, date, filename);

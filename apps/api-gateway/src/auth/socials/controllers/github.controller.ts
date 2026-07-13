@@ -4,8 +4,6 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Inject,
-  Query,
   Req,
   Res,
   UseGuards,
@@ -22,7 +20,7 @@ export class GithubController implements IGithubAuthController {
   @Get('login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(GithubAuthGuard)
-  async githubAuth(@Query('remember') remember: string): Promise<void> {}
+  async githubAuth(): Promise<void> {}
 
   @Get('callback')
   @HttpCode(HttpStatus.OK)

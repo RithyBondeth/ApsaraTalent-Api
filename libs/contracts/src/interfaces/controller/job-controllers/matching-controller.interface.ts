@@ -54,6 +54,7 @@ export interface IMatchingController {
   getMatchingAnalytics(
     id: string,
     role: string,
+    req?: any,
   ): Promise<MatchingAnalyticsResponseDTO>;
   getAiMatchExplanation(
     eid: string,

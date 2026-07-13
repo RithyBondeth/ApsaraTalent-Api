@@ -14,6 +14,7 @@ import {
   DeleteNotificationResponseDTO,
 } from '@app/contracts/dtos/notification';
 import { Injectable } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
@@ -199,10 +200,13 @@ export class NotificationService implements INotificationService {
       await this.redisService.invalidateNotificationCaches(
         notificationIdDTO.userId,
       );
+    } else {
+      throw new RpcException({
+        message: 'Notification not found',
+        statusCode: 404,
+      });
     }
-    return new MarkNotificationAsReadResponseDTO({
-      success: result.affected > 0,
-    });
+    return new MarkNotificationAsReadResponseDTO({ success: true });
   }
 
   async markAllRead(
@@ -251,8 +255,13 @@ export class NotificationService implements INotificationService {
       await this.redisService.invalidateNotificationCaches(
         notificationIdDTO.userId,
       );
+    } else {
+      throw new RpcException({
+        message: 'Notification not found',
+        statusCode: 404,
+      });
     }
-    return new DeleteNotificationResponseDTO({ success: result.affected > 0 });
+    return new DeleteNotificationResponseDTO({ success: true });
   }
 
   async deleteAllNotifications(

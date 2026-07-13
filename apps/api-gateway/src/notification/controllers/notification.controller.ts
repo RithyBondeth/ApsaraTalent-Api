@@ -17,7 +17,6 @@ import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/n
 import { INotificationController } from '@app/contracts/interfaces/controller/notification-controller.interface';
 import {
   UnreadCountResponseDTO,
-  GetAllNotificationResponseDTO,
   ListNotificationsQueryDTO,
   NotificationListByUserResponseDTO,
   MarkNotificationAsReadResponseDTO,
@@ -34,15 +33,6 @@ export class NotificationController implements INotificationController {
     @Inject(NOTIFICATION_SERVICE.NAME)
     private readonly notificationClient: ClientProxy,
   ) {}
-
-  @Get('all')
-  async getAllNotification(): Promise<GetAllNotificationResponseDTO[]> {
-    return rpcCall<GetAllNotificationResponseDTO[]>(
-      this.notificationClient,
-      NOTIFICATION_SERVICE.ACTIONS.FIND_ALL_NOTIFICATIONS,
-      {},
-    );
-  }
 
   @Get()
   @UseGuards(AuthGuard)

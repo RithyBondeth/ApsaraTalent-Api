@@ -1,9 +1,19 @@
 export default () => ({
   nodeEnv: process.env.NODE_ENV,
 
+  test: {
+    disableExternalIntegrations:
+      process.env.NODE_ENV === 'test' &&
+      process.env.DISABLE_EXTERNAL_INTEGRATIONS === 'true',
+  },
+
   database: {
     url: process.env.DATABASE_URL,
-    synchronize: process.env.DATABASE_SYNCHRONIZE === 'true',
+    // Never allow TypeORM to mutate a production schema at application start.
+    // Production changes must be applied through reviewed migrations.
+    synchronize:
+      process.env.NODE_ENV !== 'production' &&
+      process.env.DATABASE_SYNCHRONIZE === 'true',
   },
 
   jwt: {

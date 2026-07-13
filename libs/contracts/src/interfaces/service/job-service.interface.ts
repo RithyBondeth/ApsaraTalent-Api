@@ -1,6 +1,5 @@
 import {
   JobResponseDTO,
-  SearchJobResponseDTO,
   SearchJobResult,
   CreateInterviewDTO,
   GetInterviewsByCompanyDTO,

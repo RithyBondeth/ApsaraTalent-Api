@@ -40,8 +40,8 @@ export class CreateInterviewDTO {
   meetingLink?: string;
 
   @IsString()
-  @IsNotEmpty()
-  createdBy: string;
+  @IsOptional()
+  createdBy?: string;
 }
 
 export class CreateInterviewResponseDTO {

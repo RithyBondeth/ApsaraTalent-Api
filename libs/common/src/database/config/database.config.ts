@@ -21,6 +21,7 @@ import { Notification } from '../entities/notification.entity';
 import { ResumeTemplate } from '../entities/resume-template.entity';
 import { Social } from '../entities/social.entity';
 import { User } from '../entities/user.entity';
+import { Application } from '../entities/application.entity';
 
 export const databaseConfig = async (
   configService: ConfigService,
@@ -50,6 +51,7 @@ export const databaseConfig = async (
     Interview,
     UserBlock,
     UserReport,
+    Application,
   ],
   // Load relations as separate batched queries instead of a single multi-join.
   // This prevents the cartesian-product row explosion (and embedding/column

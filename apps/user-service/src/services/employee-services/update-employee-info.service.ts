@@ -238,7 +238,8 @@ export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
             });
 
             if (existing) {
-              const { id: _, ...updateData } = expDto;
+              const updateData = { ...expDto };
+              delete updateData.id;
               Object.assign(existing, updateData);
               await this.experienceRepository.save(existing);
             }
@@ -277,7 +278,8 @@ export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
             });
 
             if (existing) {
-              const { id: _, ...updateData } = eduDto;
+              const updateData = { ...eduDto };
+              delete updateData.id;
               Object.assign(existing, updateData);
               await this.educationRepository.save(existing);
             }
@@ -316,7 +318,8 @@ export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
             });
 
             if (existing) {
-              const { id: _, ...updateData } = socialDto;
+              const updateData = { ...socialDto };
+              delete updateData.id;
               Object.assign(existing, updateData);
               await this.socialRepository.save(existing);
             }

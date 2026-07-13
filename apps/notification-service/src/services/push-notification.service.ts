@@ -32,11 +32,11 @@ export class PushNotificationService implements IPushNotificationService {
     let serviceAccount: admin.ServiceAccount;
     try {
       serviceAccount = JSON.parse(raw);
-    } catch (error) {
+    } catch {
       try {
         const decoded = Buffer.from(raw, 'base64').toString('utf8');
         serviceAccount = JSON.parse(decoded);
-      } catch (innerError) {
+      } catch {
         this.logger.error(
           'Invalid FIREBASE_SERVICE_ACCOUNT (must be JSON or base64 JSON).',
         );

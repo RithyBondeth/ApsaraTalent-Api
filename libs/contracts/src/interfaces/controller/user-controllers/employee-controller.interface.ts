@@ -65,7 +65,7 @@ export interface ISearchEmployeeController {
   ): Promise<SearchEmployeeResult>;
 }
 
-export interface ISearchEmployeeRpcController extends ISearchEmployeeController {}
+export type ISearchEmployeeRpcController = ISearchEmployeeController;
 
 export interface ISearchEmployeeHttpController {
   searchEmployee(

@@ -4,8 +4,6 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Inject,
-  Query,
   Req,
   Res,
   UseGuards,
@@ -23,7 +21,7 @@ export class GoogleController implements IGoogleAuthController {
   @Get('login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(GoogleAuthGuard)
-  async googleAuth(@Query('remember') remember: string): Promise<void> {}
+  async googleAuth(): Promise<void> {}
 
   @Get('callback')
   @HttpCode(HttpStatus.OK)

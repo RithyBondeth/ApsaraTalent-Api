@@ -1,6 +1,7 @@
 import { HEALTH_PATTERN } from '@app/contracts/constants';
 import { HEALTH_DATABASE_TIMEOUT_MS } from '@app/common';
 import { Controller } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { MessagePattern } from '@nestjs/microservices';
 import {
   HealthCheckError,
@@ -19,6 +20,7 @@ export class NotificationHealthController implements IHealthRpcController {
     private readonly database: TypeOrmHealthIndicator,
     private readonly healthIndicatorService: HealthIndicatorService,
     private readonly pushNotificationService: PushNotificationService,
+    private readonly configService: ConfigService,
   ) {}
 
   @MessagePattern(HEALTH_PATTERN)
@@ -34,6 +36,15 @@ export class NotificationHealthController implements IHealthRpcController {
 
   private checkFirebaseHealth() {
     const indicator = this.healthIndicatorService.check('firebase');
+
+    if (
+      this.configService.get<boolean>('test.disableExternalIntegrations') ===
+      true
+    ) {
+      return indicator.up({
+        message: 'Firebase intentionally disabled in isolated tests',
+      });
+    }
 
     if (!this.pushNotificationService.isConfigured()) {
       throw new HealthCheckError(

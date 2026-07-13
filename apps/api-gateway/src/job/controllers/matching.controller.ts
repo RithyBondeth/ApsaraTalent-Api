@@ -2,6 +2,7 @@ import { AuthGuard } from '@app/common/guards/auth.guard';
 import { AiQuotaGuard } from '@app/common/throttler/guards/ai-quota.guard';
 import { IMatchingController } from '@app/contracts/interfaces/controller/job-controllers/matching-controller.interface';
 import {
+  BadRequestException,
   Controller,
   Delete,
   Get,
@@ -188,7 +189,15 @@ export class JobMatchingController implements IMatchingController {
   async getMatchingAnalytics(
     @Param('id') id: string,
     @Query('role') role: string,
+    @Req() req?: any,
   ): Promise<MatchingAnalyticsResponseDTO> {
+    if (role === 'employee') {
+      await this.jobAccess.assertEmployeeAccess(req?.user?.id, id);
+    } else if (role === 'company') {
+      await this.jobAccess.assertCompanyAccess(req?.user?.id, id);
+    } else {
+      throw new BadRequestException('Role must be employee or company.');
+    }
     return rpcCall<MatchingAnalyticsResponseDTO>(
       this.jobClient,
       JOB_SERVICE.ACTIONS.GET_ANALYTICS,

@@ -120,7 +120,12 @@ export class RedisService {
     prefix: string = this.PREFIX,
   ): Promise<void> {
     try {
-      const client = (this.cacheManager.stores as any).getClient();
+      const stores = this.cacheManager.stores as any;
+      const store = Array.isArray(stores) ? stores[0] : stores;
+      const client =
+        store?.getClient?.() ??
+        store?.store?.getClient?.() ??
+        (this.cacheManager as any).store?.getClient?.();
       if (client && typeof client.keys === 'function') {
         const fullPattern = `${prefix}:${pattern}`;
         const keys = await client.keys(fullPattern);
@@ -130,6 +135,11 @@ export class RedisService {
             `Deleted ${keys.length} keys matching ${fullPattern}`,
           );
         }
+      } else {
+        await this.cacheManager.clear();
+        this.logger.warn(
+          'Cache store does not support pattern deletion; cleared cache safely',
+        );
       }
     } catch (error) {
       const errorMessage =

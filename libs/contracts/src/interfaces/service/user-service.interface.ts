@@ -21,7 +21,6 @@ import {
   EmployeeFavoritesListItemDTO,
   CompanyFavoritesListItemDTO,
   RemoveCompanyImageDTO,
-  RemoveCompanyImageDTO as RemoveCompanyImagesDTO,
   RemoveCompanyImageResponseDTO,
   RemoveCompanyAvatarResponseDTO,
   RemoveCompanyCoverResponseDTO,

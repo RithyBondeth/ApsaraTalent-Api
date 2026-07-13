@@ -16,7 +16,10 @@ export class LinkedInStrategy extends PassportStrategy(Strategy, 'linkedin') {
     return { state: crypto.randomUUID() };
   }
 
-  userProfile(accessToken: string, done: Function): void {
+  userProfile(
+    accessToken: string,
+    done: (error: unknown, profile?: unknown) => void,
+  ): void {
     fetch(this.configService.get<string>('social.linkedin.profileUrl'), {
       headers: { Authorization: `Bearer ${accessToken}` },
     })

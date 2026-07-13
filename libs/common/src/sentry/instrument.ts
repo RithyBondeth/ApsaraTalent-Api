@@ -25,8 +25,7 @@ if (dsn) {
   const service =
     process.env.RAILWAY_SERVICE_NAME || process.env.SENTRY_SERVICE;
 
-  const tracesSampleRate =
-    Number(process.env.SENTRY_TRACES_SAMPLE_RATE) || 0.1;
+  const tracesSampleRate = Number(process.env.SENTRY_TRACES_SAMPLE_RATE) || 0.1;
 
   Sentry.init({
     dsn,
@@ -36,8 +35,7 @@ if (dsn) {
       process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || 'development',
     // Ties events to the deploy that produced them ("regressed in release X").
     // Railway injects the commit SHA; SENTRY_RELEASE is a manual override.
-    release:
-      process.env.SENTRY_RELEASE || process.env.RAILWAY_GIT_COMMIT_SHA,
+    release: process.env.SENTRY_RELEASE || process.env.RAILWAY_GIT_COMMIT_SHA,
     // SENTRY_DEBUG=true logs SDK activity (init, envelope sends) to stdout —
     // use it to verify events are actually delivered.
     debug: process.env.SENTRY_DEBUG === 'true',

@@ -1,6 +1,6 @@
 import { User } from '@app/common/database/entities/user.entity';
 import { JwtService } from '@app/common/jwt/jwt.service';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
@@ -25,9 +25,17 @@ export class RefreshTokenService implements IRefreshTokenService {
   ): Promise<RefreshTokenResponseDTO> {
     try {
       //Verify that the refresh token
-      const decoded = await this.jwtService.verifyRefreshToken(
-        refreshTokenDTO.refreshToken,
-      );
+      let decoded: { id: string };
+      try {
+        decoded = await this.jwtService.verifyRefreshToken(
+          refreshTokenDTO.refreshToken,
+        );
+      } catch {
+        throw new RpcException({
+          message: 'Invalid refresh token',
+          statusCode: 401,
+        });
+      }
 
       //Find the user associated with the refresh token
       const user = await this.userRepository.findOne({
@@ -35,9 +43,12 @@ export class RefreshTokenService implements IRefreshTokenService {
           id: decoded.id,
           refreshToken: refreshTokenDTO.refreshToken,
         },
-        relations: ['profile'],
       });
-      if (!user) throw new UnauthorizedException('Invalid refresh token');
+      if (!user)
+        throw new RpcException({
+          message: 'Invalid refresh token',
+          statusCode: 401,
+        });
 
       //Generate new access token and refresh token
       const [accessToken, refreshToken] = await Promise.all([

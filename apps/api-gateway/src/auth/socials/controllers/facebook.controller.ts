@@ -4,8 +4,6 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Inject,
-  Query,
   Req,
   Res,
   UseGuards,
@@ -22,7 +20,7 @@ export class FacebookController implements IFacebookAuthController {
   @Get('login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(FacebookAuthGuard)
-  async facebookAuth(@Query('remember') remember: string): Promise<void> {}
+  async facebookAuth(): Promise<void> {}
 
   @Get('callback')
   @HttpCode(HttpStatus.OK)

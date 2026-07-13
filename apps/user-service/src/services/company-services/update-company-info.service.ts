@@ -201,7 +201,8 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
 
             if (existing) {
               const previousTitle = existing.title;
-              const { id: _, ...updateData } = jobDto;
+              const updateData = { ...jobDto };
+              delete updateData.id;
               Object.assign(existing, updateData);
               await this.jobRepository.save(existing);
 
@@ -324,7 +325,8 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
             });
 
             if (existing) {
-              const { id: _, ...updateData } = socialDto;
+              const updateData = { ...socialDto };
+              delete updateData.id;
               Object.assign(existing, updateData);
               await this.socialRepository.save(existing);
             }

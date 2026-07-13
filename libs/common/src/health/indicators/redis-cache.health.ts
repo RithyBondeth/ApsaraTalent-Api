@@ -2,7 +2,7 @@ import { CACHE_MANAGER, type Cache } from '@nestjs/cache-manager';
 import { Inject, Injectable } from '@nestjs/common';
 import {
   HEALTH_CACHE_PROBE_PREFIX,
-  HEALTH_CACHE_PROBE_TTL_SECONDS,
+  HEALTH_CACHE_PROBE_TTL_MS,
 } from '../constants';
 import {
   HealthCheckError,
@@ -30,7 +30,7 @@ export class RedisCacheHealthIndicator {
       await this.cacheManager.set(
         probeKey,
         probeValue,
-        HEALTH_CACHE_PROBE_TTL_SECONDS,
+        HEALTH_CACHE_PROBE_TTL_MS,
       );
       const storedValue = await this.cacheManager.get<string>(probeKey);
       await this.cacheManager.del(probeKey);

@@ -4,7 +4,6 @@ import { IUserController } from '@app/contracts/interfaces/controller/user-contr
 import {
   Body,
   Controller,
-  ForbiddenException,
   Get,
   Inject,
   Param,

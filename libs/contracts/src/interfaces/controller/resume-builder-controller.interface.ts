@@ -36,7 +36,7 @@ export interface IResumeTemplateController {
   ): Promise<SearchResumeTemplateResponseDTO[]>;
 }
 
-export interface IResumeTemplateRpcController extends IResumeTemplateController {}
+export type IResumeTemplateRpcController = IResumeTemplateController;
 
 export interface IResumeBuilderController {
   buildResume(buildResumeDTO: BuildResumeDTO): Promise<BuildResumeResponseDTO>;
@@ -73,10 +73,10 @@ export interface IResumeBuilderController {
   ): Promise<GenerateInterviewPrepPdfResponseDTO>;
 }
 
-export interface IResumeBuilderRpcController extends Omit<
+export type IResumeBuilderRpcController = Omit<
   IResumeBuilderController,
   | 'streamCoverLetter'
   | 'streamPolishCoverLetter'
   | 'streamOptimizeResume'
   | 'streamRefineBio'
-> {}
+>;

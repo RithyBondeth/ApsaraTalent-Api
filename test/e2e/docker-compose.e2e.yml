@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: apsara_e2e
+      POSTGRES_USER: apsara_e2e
+      POSTGRES_PASSWORD: apsara_e2e
+    ports:
+      - '127.0.0.1:15432:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U apsara_e2e -d apsara_e2e']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    tmpfs:
+      - /var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    command: ['redis-server', '--save', '', '--appendonly', 'no']
+    ports:
+      - '127.0.0.1:16379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    tmpfs:
+      - /data

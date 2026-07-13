@@ -1,5 +1,3 @@
-import { ConfigService } from '@nestjs/config';
-import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
 
 export type OAuthProvider = 'google' | 'linkedin' | 'github' | 'facebook';

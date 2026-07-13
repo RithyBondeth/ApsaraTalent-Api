@@ -4,8 +4,6 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Inject,
-  Query,
   Req,
   Res,
   UseGuards,
@@ -23,7 +21,7 @@ export class LinkedInController implements ILinkedInAuthController {
   @Get('login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(LinkedInAuthGuard)
-  async linkedInAuth(@Query('remember') remember: string): Promise<void> {}
+  async linkedInAuth(): Promise<void> {}
 
   @Get('callback')
   @HttpCode(HttpStatus.OK)

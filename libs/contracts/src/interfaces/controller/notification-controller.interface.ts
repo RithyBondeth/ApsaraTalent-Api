@@ -14,7 +14,6 @@ import {
 } from '@app/contracts/dtos';
 
 export interface INotificationController {
-  getAllNotification(): Promise<GetAllNotificationResponseDTO[]>;
   listByUser(
     req: any,
     query: ListNotificationsQueryDTO,

@@ -5,6 +5,9 @@ export const validationSchema = Joi.object({
   NODE_ENV: Joi.string()
     .valid('development', 'production', 'test', 'local')
     .default('development'),
+  DISABLE_EXTERNAL_INTEGRATIONS: Joi.string()
+    .valid('true', 'false')
+    .default('false'),
 
   // Database
   DATABASE_URL: Joi.string().required(),

@@ -35,7 +35,7 @@ export async function resolveUserIdSafe(
 ): Promise<string | null> {
   try {
     return await resolveUserId(userRepository, id);
-  } catch (error) {
+  } catch {
     return null;
   }
 }
