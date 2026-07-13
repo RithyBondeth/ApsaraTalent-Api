@@ -15,11 +15,14 @@ import {
   Delete,
   Get,
   Inject,
+  NotFoundException,
   Param,
+  ParseEnumPipe,
   ParseUUIDPipe,
   Patch,
   Post,
   Query,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -44,6 +47,11 @@ import {
 } from '@app/contracts/dtos/user';
 import { rpcCall } from '../../utils/rpc-call';
 import { EmployeeProfileOwnerGuard } from '../guards/employee-profile-owner.guard';
+import { EmployeeDocumentAccessGuard } from '../guards/employee-document-access.guard';
+import { Response } from 'express';
+import { access } from 'fs/promises';
+import { basename, resolve, sep } from 'path';
+import { EEmployeeDocumentType } from '@app/common/database/enums/employee-document-type.enum';
 
 @Controller('user/employee')
 @UseGuards(AuthGuard)
@@ -74,6 +82,54 @@ export class EmployeeController implements IEmployeeController {
       USER_SERVICE.ACTIONS.FIND_ONE_EMPLOYEE_BY_ID,
       { employeeId, requesterId: user.id },
     );
+  }
+
+  @Get(':employeeId/document/:type')
+  @UseGuards(EmployeeDocumentAccessGuard)
+  async getDocument(
+    @User() user: AuthUser,
+    @Param('employeeId', ParseUUIDPipe) employeeId: string,
+    @Param('type', new ParseEnumPipe(EEmployeeDocumentType))
+    documentType: EEmployeeDocumentType,
+    @Res() res: Response,
+  ): Promise<void> {
+    const employee = await rpcCall<EmployeeResponseDTO>(
+      this.userClient,
+      USER_SERVICE.ACTIONS.FIND_ONE_EMPLOYEE_BY_ID,
+      { employeeId, requesterId: user.id },
+    );
+    const storedPath =
+      documentType === EEmployeeDocumentType.RESUME
+        ? employee.resume
+        : employee.coverLetter;
+    const folder =
+      documentType === EEmployeeDocumentType.RESUME
+        ? 'resumes'
+        : 'cover-letters';
+
+    if (!storedPath || !storedPath.startsWith(`/storage/${folder}/`)) {
+      throw new NotFoundException('Document not found');
+    }
+
+    const documentRoot = resolve(process.cwd(), 'storage', folder);
+    const filePath = resolve(documentRoot, basename(storedPath));
+    if (!filePath.startsWith(`${documentRoot}${sep}`)) {
+      throw new NotFoundException('Document not found');
+    }
+
+    try {
+      await access(filePath);
+    } catch {
+      throw new NotFoundException('Document not found');
+    }
+
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename*=UTF-8''${encodeURIComponent(basename(filePath))}`,
+    );
+    res.sendFile(filePath);
   }
 
   @Patch('update-info/:employeeId')

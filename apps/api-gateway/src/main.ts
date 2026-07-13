@@ -100,16 +100,23 @@ async function bootstrap() {
   // Enable Socket.IO WS adapter — required for ChatGateway realtime sync
   app.useWebSocketAdapter(new IoAdapter(app));
 
-  // Allow cross-origin loading of stored assets (avatars, covers, resumes, etc.)
-  // Helmet's default Cross-Origin-Resource-Policy: same-origin would block <img>
-  // tags and fetch() from the frontend (different port/origin) from loading files.
-  app.use('/storage', (_req: any, res: any, next: any) => {
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    next();
-  });
-
-  // Serve uploaded chat attachments publicly via /storage path
-  app.useStaticAssets(join(process.cwd(), 'storage'), { prefix: '/storage' });
+  // Only non-sensitive visual assets are public. Resumes, cover letters, and
+  // chat attachments are served by authenticated controller endpoints.
+  const publicStorageFolders = [
+    'employee-avatars',
+    'company-avatars',
+    'company-covers',
+    'company-images',
+    'resume-templates',
+  ];
+  for (const folder of publicStorageFolders) {
+    app.useStaticAssets(join(process.cwd(), 'storage', folder), {
+      prefix: `/storage/${folder}`,
+      setHeaders: (res) => {
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      },
+    });
+  }
 
   // =========================================================
   // 5. SWAGGER API DOCUMENTATION

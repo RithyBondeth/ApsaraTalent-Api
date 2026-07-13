@@ -55,4 +55,5 @@ export interface IChatService {
   ): Promise<GetChatHistoryResponseDTO>;
   getUnreadCount(u: string): Promise<number>;
   getRecentChats(u: string): Promise<GetRecentChatsResponseDTO[]>;
+  canAccessAttachment(userId: string, attachment: string): Promise<boolean>;
 }

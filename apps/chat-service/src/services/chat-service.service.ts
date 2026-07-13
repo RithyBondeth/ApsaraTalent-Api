@@ -91,7 +91,7 @@ export class ChatService implements IChatService {
     try {
       this.logger.debug(`Resolving ID: ${id}`);
       return await resolveUserId(this.userRepository, id);
-    } catch (error) {
+    } catch {
       throw new RpcException({
         message: `Could not resolve user ID from: ${id}`,
         statusCode: 404,
@@ -429,12 +429,8 @@ export class ChatService implements IChatService {
   async getChatHistory(
     getChatHistoryDTO: GetChatHistoryRpcDTO,
   ): Promise<GetChatHistoryResponseDTO> {
-    let {
-      userId1: u1,
-      userId2: u2,
-      limit = CHAT.DEFAULT_HISTORY_LIMIT,
-      offset = 0,
-    } = getChatHistoryDTO;
+    const { userId1: u1, userId2: u2 } = getChatHistoryDTO;
+    let { limit = CHAT.DEFAULT_HISTORY_LIMIT, offset = 0 } = getChatHistoryDTO;
     limit = Math.min(Math.max(1, limit), CHAT.MAX_HISTORY_LIMIT);
     offset = Math.min(Math.max(0, offset), CHAT.MAX_HISTORY_OFFSET);
     const userId1 = await this.resolveUserId(u1);
@@ -528,6 +524,23 @@ export class ChatService implements IChatService {
     });
     await this.redisService.set(cacheKey, count, UNREAD_COUNT_TTL);
     return count;
+  }
+
+  async canAccessAttachment(
+    userId: string,
+    attachment: string,
+  ): Promise<boolean> {
+    if (!userId || !attachment) return false;
+
+    const message = await this.chatRepository.findOne({
+      where: { attachment },
+      relations: ['sender', 'receiver'],
+    });
+
+    return Boolean(
+      message &&
+      (message.sender?.id === userId || message.receiver?.id === userId),
+    );
   }
 
   async updateReaction(

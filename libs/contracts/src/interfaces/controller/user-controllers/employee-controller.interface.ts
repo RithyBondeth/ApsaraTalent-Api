@@ -1,4 +1,6 @@
+import { EEmployeeDocumentType } from '@app/common/database/enums/employee-document-type.enum';
 import { AuthUser } from '@app/common/decorators/user.decorator';
+import { Response } from 'express';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
 import {
   CountAllUsersResponseDTO,
@@ -137,6 +139,15 @@ export interface IRemoveEmployeeItemsRpcController {
   ): Promise<RemoveEmployeeExperienceResponseDTO>;
 }
 
+export interface IEmployeeDocumentController {
+  getDocument(
+    user: AuthUser,
+    employeeId: string,
+    documentType: EEmployeeDocumentType,
+    res: Response,
+  ): Promise<void>;
+}
+
 export interface IEmployeeController
   extends
     IFindEmployeeController,
@@ -144,7 +155,8 @@ export interface IEmployeeController
     ISearchEmployeeHttpController,
     IUpdateEmployeeController,
     IUploadEmployeeController,
-    IRemoveEmployeeItemsController {}
+    IRemoveEmployeeItemsController,
+    IEmployeeDocumentController {}
 
 export interface IEmployeeRpcController
   extends

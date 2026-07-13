@@ -39,6 +39,10 @@ import {
   MarkAsReadResponseDTO,
   MarkAsReadRpcDTO,
 } from '@app/contracts/dtos/chat/chat-gateway/mark-as-read.dto';
+import {
+  CanAccessAttachmentDTO,
+  CanAccessAttachmentResponseDTO,
+} from '@app/contracts/dtos/chat/chat-service/can-access-attachment.dto';
 
 @Controller()
 export class ChatController implements IChatRpcController {
@@ -79,6 +83,18 @@ export class ChatController implements IChatRpcController {
   ): Promise<UserResponseDTO> {
     this.logger.info(`[CHAT] getUserByIdForChat: userId=${userId}`);
     return this.chatService.getUserByIdForChat(userId);
+  }
+
+  @MessagePattern(CHAT_SERVICE.ACTIONS.CAN_ACCESS_ATTACHMENT)
+  async canAccessAttachment(
+    @Payload() canAccessAttachmentDTO: CanAccessAttachmentDTO,
+  ): Promise<CanAccessAttachmentResponseDTO> {
+    return new CanAccessAttachmentResponseDTO({
+      canAccess: await this.chatService.canAccessAttachment(
+        canAccessAttachmentDTO.userId,
+        canAccessAttachmentDTO.attachment,
+      ),
+    });
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.VALIDATE_CHAT_USERS)

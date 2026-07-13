@@ -1,4 +1,5 @@
 import { UserResponseDTO } from '@app/contracts/dtos';
+import { Response } from 'express';
 import {
   CreateMessageDTO,
   CreateMessageResponseDTO,
@@ -20,6 +21,10 @@ import {
   ValidateChatUsersDTO,
   ValidateChatUsersResponseDTO,
 } from '@app/contracts/dtos/chat';
+import {
+  CanAccessAttachmentDTO,
+  CanAccessAttachmentResponseDTO,
+} from '@app/contracts/dtos/chat/chat-service/can-access-attachment.dto';
 
 export interface IChatController {
   initiateChat(
@@ -30,6 +35,12 @@ export interface IChatController {
   uploadAttachment(
     file: Express.Multer.File,
   ): Promise<UploadAttachmentResponseDTO>;
+  getAttachment(
+    date: string,
+    filename: string,
+    req: any,
+    res: Response,
+  ): Promise<void>;
 }
 
 export interface IChatRpcController {
@@ -43,6 +54,9 @@ export interface IChatRpcController {
     markAsReadRpcDTO: MarkAsReadRpcDTO,
   ): Promise<MarkAsReadResponseDTO>;
   getUserByIdForChat(userId: string): Promise<UserResponseDTO>;
+  canAccessAttachment(
+    canAccessAttachmentDTO: CanAccessAttachmentDTO,
+  ): Promise<CanAccessAttachmentResponseDTO>;
   validateChatUsers(
     validateChatUsersDTO: ValidateChatUsersDTO,
   ): Promise<ValidateChatUsersResponseDTO>;

@@ -12,6 +12,7 @@ export const CHAT_SERVICE = {
     EDIT_MESSAGE: { cmd: 'editMessage' },
     DELETE_MESSAGE: { cmd: 'deleteMessage' },
     GET_USER_BY_ID_FOR_CHAT: { cmd: 'getUserByIdForChat' },
+    CAN_ACCESS_ATTACHMENT: { cmd: 'canAccessAttachment' },
   },
 };
 

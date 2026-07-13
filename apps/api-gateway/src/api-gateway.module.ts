@@ -3,8 +3,6 @@ import { ConfigModule } from '@app/common/config';
 import { UploadfileModule } from '@app/common/uploadfile/uploadfile.module';
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { ServeStaticModule } from '@nestjs/serve-static';
-import * as path from 'path';
 import { AiStreamModule } from './ai-stream/ai-stream.module';
 import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './chat/chat.module';
@@ -31,10 +29,6 @@ import { AiModule } from './ai/ai.module';
     UploadfileModule,
     HealthModule,
     ResumeBuilderModule,
-    ServeStaticModule.forRoot({
-      rootPath: path.join(process.cwd(), 'storage'),
-      serveRoot: '/storage',
-    }),
     UserModule,
     JwtModule,
     SocketModule,

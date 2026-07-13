@@ -11,6 +11,7 @@ import { UserController } from './controllers/user.controller';
 import { UserAccessService } from './services/user-access.service';
 import { EmployeeProfileOwnerGuard } from './guards/employee-profile-owner.guard';
 import { CompanyProfileOwnerGuard } from './guards/company-profile-owner.guard';
+import { EmployeeDocumentAccessGuard } from './guards/employee-document-access.guard';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { CompanyProfileOwnerGuard } from './guards/company-profile-owner.guard';
     UserAccessService,
     EmployeeProfileOwnerGuard,
     CompanyProfileOwnerGuard,
+    EmployeeDocumentAccessGuard,
   ],
 })
 export class UserModule {}

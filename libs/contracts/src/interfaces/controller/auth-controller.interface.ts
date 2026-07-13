@@ -62,10 +62,7 @@ export interface IBasicAuthResetPasswordRpcController {
 }
 
 export interface IBasicAuthRefreshTokenController {
-  refreshToken(
-    req: Request,
-    res: Response,
-  ): Promise<RefreshTokenResponseDTO>;
+  refreshToken(req: Request, res: Response): Promise<RefreshTokenResponseDTO>;
 }
 
 export interface IBasicAuthRefreshTokenRpcController {
