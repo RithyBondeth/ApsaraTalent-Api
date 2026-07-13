@@ -8,7 +8,7 @@ COPY tsconfig*.json ./
 COPY apps/resume-builder-service ./apps/resume-builder-service
 COPY libs ./libs
 
-RUN npm ci
+RUN npm ci --include=optional
 RUN npx nest build resume-builder-service
 
 # Stage 2: Production
