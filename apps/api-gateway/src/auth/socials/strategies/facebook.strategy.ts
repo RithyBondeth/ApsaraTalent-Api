@@ -10,7 +10,11 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
     super(facebookAuthConfig(configService));
   }
 
-  async validate(accessToken: string, refreshToken: string, profile: Profile) {
+  async validate(
+    accessToken: string,
+    refreshToken: string,
+    profile: Profile,
+  ): Promise<any> {
     return {
       id: profile.id,
       email: profile.emails?.[0]?.value ?? null,

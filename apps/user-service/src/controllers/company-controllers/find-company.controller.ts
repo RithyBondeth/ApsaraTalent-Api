@@ -1,26 +1,41 @@
-import { IFindCompanyController } from '@app/common/interfaces/company.interface';
-import { Controller } from '@nestjs/common';
+import { IFindCompanyRpcController } from '@app/contracts/interfaces/controller/user-controllers/company-controller.interface';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
-import { UserPaginationDTO } from '../../dtos/user-pagination.dto';
-import { CompanyResponseDTO } from '../../dtos/user-response.dto';
-import { FindCompanyService } from '../../services/company-services/find-company.service';
+import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
+import {
+  CompanyResponseDTO,
+  CountAllUsersResponseDTO,
+  CompanyIdDTO,
+} from '@app/contracts/dtos/user';
+import { PaginationDTO } from '@app/contracts/dtos/shared';
+import {
+  I_FIND_COMPANY_SERVICE,
+  IFindCompanyService,
+} from '@app/contracts/interfaces/service/user-service.interface';
 
 @Controller()
-export class FindCompanyController implements IFindCompanyController {
-  constructor(private readonly findCompanyService: FindCompanyService) {}
+export class FindCompanyController implements IFindCompanyRpcController {
+  constructor(
+    @Inject(I_FIND_COMPANY_SERVICE)
+    private readonly findCompanyService: IFindCompanyService,
+  ) {}
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_COMPANY)
   async findAll(
-    @Payload() payload: { pagination: UserPaginationDTO },
+    @Payload() paginationDTO: PaginationDTO,
   ): Promise<CompanyResponseDTO[]> {
-    return this.findCompanyService.findAll(payload.pagination);
+    return this.findCompanyService.findAll(paginationDTO);
+  }
+
+  @MessagePattern(USER_SERVICE.ACTIONS.COUNT_ALL_COMPANY)
+  async countAllCompanies(): Promise<CountAllUsersResponseDTO> {
+    return this.findCompanyService.countAllCompanies();
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ONE_COMPANY_BY_ID)
   async findOneById(
-    @Payload() payload: { companyId: string },
+    @Payload() companyIdDTO: CompanyIdDTO,
   ): Promise<CompanyResponseDTO> {
-    return this.findCompanyService.findOneById(payload.companyId);
+    return this.findCompanyService.findOneById(companyIdDTO);
   }
 }

@@ -1,13 +1,16 @@
 import { JwtModule, ThrottlerModule } from '@app/common';
-import { User } from '@app/common/database/entities/user.entity';
+import { AiQuotaGuard } from '@app/common/throttler/guards/ai-quota.guard';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { JOB_SERVICE } from 'utils/constants/job-service.constant';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
+import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
+import { ApplicationController } from './controllers/application.controller';
+import { InterviewController } from './controllers/interview.controller';
 import { JobController } from './controllers/job.controller';
 import { JobMatchingController } from './controllers/matching.controller';
+import { AiMatchingService } from './services/ai-matching.service';
+import { JobAccessService } from './services/job-access.service';
 
 @Module({
   imports: [
@@ -37,9 +40,13 @@ import { JobMatchingController } from './controllers/matching.controller';
     ]),
     ThrottlerModule,
     JwtModule,
-    TypeOrmModule.forFeature([User]),
   ],
-  controllers: [JobController, JobMatchingController],
-  providers: [],
+  controllers: [
+    JobController,
+    JobMatchingController,
+    InterviewController,
+    ApplicationController,
+  ],
+  providers: [AiMatchingService, JobAccessService, AiQuotaGuard],
 })
 export class JobModule {}

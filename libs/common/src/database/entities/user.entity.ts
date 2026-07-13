@@ -1,14 +1,14 @@
 import * as bcrypt from 'bcrypt';
 import {
-    BeforeInsert,
-    BeforeUpdate,
-    Column,
-    CreateDateColumn,
-    Entity,
-    OneToOne,
-    PrimaryGeneratedColumn
+  BeforeInsert,
+  BeforeUpdate,
+  Column,
+  CreateDateColumn,
+  Entity,
+  OneToOne,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
-import { SALT_ROUNDS } from 'utils/constants/password.constant';
+import { SALT_ROUNDS } from '@app/contracts/constants/domain/password.constant';
 import { ELoginMethod } from '../enums/login-method.enum';
 import { EUserRole } from '../enums/user-role.enum';
 import { Company } from './company/company.entity';

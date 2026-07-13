@@ -9,9 +9,23 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import * as path from 'path';
 import { Repository } from 'typeorm';
+import { IImageCompanyService } from '@app/contracts/interfaces/service/user-service.interface';
+import {
+  CompanyIdDTO,
+  RemoveCompanyAvatarResponseDTO,
+  RemoveCompanyCoverResponseDTO,
+  RemoveCompanyImageDTO,
+  RemoveCompanyImageResponseDTO,
+  UploadCompanyAvatarDTO,
+  UploadCompanyAvatarResponseDTO,
+  UploadCompanyCoverDTO,
+  UploadCompanyCoverResponseDTO,
+  UploadCompanyImagesDTO,
+  UploadCompanyImagesResponseDTO,
+} from '@app/contracts/dtos/user';
 
 @Injectable()
-export class ImageCompanyService {
+export class ImageCompanyService implements IImageCompanyService {
   constructor(
     @InjectRepository(Company)
     private readonly companyRepository: Repository<Company>,
@@ -48,7 +62,10 @@ export class ImageCompanyService {
     this.logger.info({ companyId, keysToDelete }, 'Company caches invalidated');
   }
 
-  async uploadCompanyAvatar(companyId: string, avatar: Express.Multer.File) {
+  async uploadCompanyAvatar(
+    uploadCompanyAvatarDTO: UploadCompanyAvatarDTO,
+  ): Promise<UploadCompanyAvatarResponseDTO> {
+    const { companyId, avatar } = uploadCompanyAvatarDTO;
     try {
       const company = await this.companyRepository.findOne({
         where: { id: companyId },
@@ -93,7 +110,9 @@ export class ImageCompanyService {
       // Invalidate user caches (fix for stale avatar in findOneUserByID)
       await this.invalidateCompanyCaches(companyId);
 
-      return { message: "Company's avatar was successfully set." };
+      return new UploadCompanyAvatarResponseDTO({
+        message: "Company's avatar was successfully set.",
+      });
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
@@ -111,7 +130,10 @@ export class ImageCompanyService {
     }
   }
 
-  async removeCompanyAvatar(companyId: string) {
+  async removeCompanyAvatar(
+    companyIdDTO: CompanyIdDTO,
+  ): Promise<RemoveCompanyAvatarResponseDTO> {
+    const { companyId } = companyIdDTO;
     try {
       const company = await this.companyRepository.findOne({
         where: { id: companyId },
@@ -141,7 +163,9 @@ export class ImageCompanyService {
       // Invalidate caches
       await this.invalidateCompanyCaches(companyId);
 
-      return { message: "Company's avatar was successfully deleted." };
+      return new RemoveCompanyAvatarResponseDTO({
+        message: "Company's avatar was successfully deleted.",
+      });
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
@@ -159,7 +183,10 @@ export class ImageCompanyService {
     }
   }
 
-  async uploadCompanyCover(companyId: string, cover: Express.Multer.File) {
+  async uploadCompanyCover(
+    uploadCompanyCoverDTO: UploadCompanyCoverDTO,
+  ): Promise<UploadCompanyCoverResponseDTO> {
+    const { companyId, cover } = uploadCompanyCoverDTO;
     try {
       const company = await this.companyRepository.findOne({
         where: { id: companyId },
@@ -201,7 +228,9 @@ export class ImageCompanyService {
       // Invalidate caches (cover is also part of cached user detail)
       await this.invalidateCompanyCaches(companyId);
 
-      return { message: "Company's cover was successfully set." };
+      return new UploadCompanyCoverResponseDTO({
+        message: "Company's cover was successfully set.",
+      });
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
@@ -219,7 +248,10 @@ export class ImageCompanyService {
     }
   }
 
-  async removeCompanyCover(companyId: string) {
+  async removeCompanyCover(
+    companyIdDTO: CompanyIdDTO,
+  ): Promise<RemoveCompanyCoverResponseDTO> {
+    const { companyId } = companyIdDTO;
     try {
       const company = await this.companyRepository.findOne({
         where: { id: companyId },
@@ -248,7 +280,9 @@ export class ImageCompanyService {
       // Invalidate caches
       await this.invalidateCompanyCaches(companyId);
 
-      return { message: "Company's cover was successfully deleted." };
+      return new RemoveCompanyCoverResponseDTO({
+        message: "Company's cover was successfully deleted.",
+      });
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
@@ -266,7 +300,10 @@ export class ImageCompanyService {
     }
   }
 
-  async uploadCompanyImage(companyId: string, images: Express.Multer.File[]) {
+  async uploadCompanyImages(
+    uploadCompanyImagesDTO: UploadCompanyImagesDTO,
+  ): Promise<UploadCompanyImagesResponseDTO> {
+    const { companyId, images } = uploadCompanyImagesDTO;
     try {
       const company = await this.companyRepository.findOne({
         where: { id: companyId },
@@ -305,7 +342,9 @@ export class ImageCompanyService {
       // Invalidate caches (company.images is used in cached user response)
       await this.invalidateCompanyCaches(companyId);
 
-      return { message: "Company's images were successfully set." };
+      return new UploadCompanyImagesResponseDTO({
+        message: "Company's images were successfully set.",
+      });
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
@@ -323,7 +362,10 @@ export class ImageCompanyService {
     }
   }
 
-  async removeCompanyImage(companyId: string, imageId: string) {
+  async removeCompanyImage(
+    removeCompanyImageDTO: RemoveCompanyImageDTO,
+  ): Promise<RemoveCompanyImageResponseDTO> {
+    const { companyId, imageId } = removeCompanyImageDTO;
     try {
       const image = await this.imageRepository.findOne({
         where: { id: imageId, company: { id: companyId } },
@@ -350,7 +392,9 @@ export class ImageCompanyService {
       // Invalidate caches
       await this.invalidateCompanyCaches(companyId);
 
-      return { message: "Company's image was successfully removed." };
+      return new RemoveCompanyImageResponseDTO({
+        message: "Company's image was successfully removed.",
+      });
     } catch (error) {
       this.logger.error(
         (error as Error).message ||

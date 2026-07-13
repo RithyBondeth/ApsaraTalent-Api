@@ -3,7 +3,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-COPY nest-cli.json ./
+COPY nest-cli.json webpack.config.js ./
 COPY tsconfig*.json ./
 COPY apps/chat-service ./apps/chat-service
 COPY libs ./libs
@@ -25,4 +25,4 @@ COPY --from=builder /app/package.json ./
 
 EXPOSE 3004
 
-CMD ["node", "dist/apps/chat-service/main"]
+CMD ["node", "--enable-source-maps", "dist/apps/chat-service/main"]

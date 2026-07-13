@@ -1,27 +1,41 @@
 import { User } from '@app/common/database/entities/user.entity';
 import { JwtService } from '@app/common/jwt/jwt.service';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
-import { RefreshTokenResponseDTO } from '../dtos/refresh-token-response.dto';
-import { RefreshTokenDTO } from '../dtos/refresh-token.dto';
+import { IRefreshTokenService } from '@app/contracts/interfaces/service/auth-service.interface';
+import {
+  RefreshTokenDTO,
+  RefreshTokenResponseDTO,
+  UserResponseDTO,
+} from '@app/contracts';
 
 @Injectable()
-export class RefreshTokenService {
+export class RefreshTokenService implements IRefreshTokenService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
     private readonly logger: PinoLogger,
   ) {}
 
-  async refreshToken(refreshTokenDTO: RefreshTokenDTO) {
+  async refreshToken(
+    refreshTokenDTO: RefreshTokenDTO,
+  ): Promise<RefreshTokenResponseDTO> {
     try {
       //Verify that the refresh token
-      const decoded = await this.jwtService.verifyRefreshToken(
-        refreshTokenDTO.refreshToken,
-      );
+      let decoded: { id: string };
+      try {
+        decoded = await this.jwtService.verifyRefreshToken(
+          refreshTokenDTO.refreshToken,
+        );
+      } catch {
+        throw new RpcException({
+          message: 'Invalid refresh token',
+          statusCode: 401,
+        });
+      }
 
       //Find the user associated with the refresh token
       const user = await this.userRepository.findOne({
@@ -29,9 +43,12 @@ export class RefreshTokenService {
           id: decoded.id,
           refreshToken: refreshTokenDTO.refreshToken,
         },
-        relations: ['profile'],
       });
-      if (!user) throw new UnauthorizedException('Invalid refresh token');
+      if (!user)
+        throw new RpcException({
+          message: 'Invalid refresh token',
+          statusCode: 401,
+        });
 
       //Generate new access token and refresh token
       const [accessToken, refreshToken] = await Promise.all([
@@ -52,7 +69,11 @@ export class RefreshTokenService {
         message: 'New refresh token was created successfully',
         accessToken: accessToken,
         refreshToken: refreshToken,
-        user: user,
+        user: new UserResponseDTO({
+          ...user,
+          employee: undefined,
+          company: undefined,
+        }),
       });
     } catch (error) {
       this.logger.error(

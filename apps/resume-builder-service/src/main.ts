@@ -1,49 +1,57 @@
+import '@app/common/sentry/instrument';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Logger } from 'nestjs-pino';
+import { GlobalRpcExceptionFilter } from '@app/common';
 import { ResumeBuilderServiceModule } from './resume-builder-service.module';
 
 async function bootstrap() {
-  const appContext = await NestFactory.createApplicationContext(
-    ResumeBuilderServiceModule,
-  );
-  const configService = appContext.get(ConfigService);
+  // Hybrid app: a small HTTP server (for the Prometheus /metrics endpoint) plus
+  // the TCP microservice that serves RPC from the gateway.
+  const app = await NestFactory.create(ResumeBuilderServiceModule);
+  const configService = app.get(ConfigService);
 
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    ResumeBuilderServiceModule,
+  const port = configService.get<number>('services.resume.port');
+  const metricsPort = configService.get<number>('services.resume.metricsPort');
+
+  // =========================================================
+  // 1. MICROSERVICE TRANSPORT
+  // =========================================================
+  app.connectMicroservice<MicroserviceOptions>(
     {
       transport: Transport.TCP,
-      options: {
-        host: '0.0.0.0',
-        port: configService.get<number>('services.resume.port'),
-      },
+      options: { host: '0.0.0.0', port },
     },
+    // Apply the app-level global pipes/filters to RPC handlers too.
+    { inheritAppConfig: true },
   );
 
-  // Pipe Validation Setup
+  // =========================================================
+  // 2. GLOBAL CONFIGURATION
+  // =========================================================
+  app.useGlobalFilters(new GlobalRpcExceptionFilter());
   app.useGlobalPipes(
     new ValidationPipe({
-      transform: true,
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
       whitelist: true,
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
       forbidNonWhitelisted: true,
-      enableDebugMessages: true,
+      enableDebugMessages: process.env.NODE_ENV !== 'production',
     }),
   );
 
-  // Logger setup
+  // =========================================================
+  // 3. LOGGER & BOOTSTRAP
+  // =========================================================
   const logger = app.get(Logger);
   app.useLogger(logger);
 
-  await app.listen();
-  const port = configService.get<number>('services.resume.port');
-  logger.log(`Resume service is running on port ${port}`);
-
-  // Close the app context
-  await appContext.close();
+  await app.startAllMicroservices();
+  await app.listen(metricsPort);
+  logger.log(
+    `Resume service running (RPC TCP ${port}, metrics http://0.0.0.0:${metricsPort}/metrics)`,
+  );
 }
 bootstrap();

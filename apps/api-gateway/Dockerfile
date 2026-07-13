@@ -3,7 +3,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-COPY nest-cli.json ./
+COPY nest-cli.json webpack.config.js ./
 COPY tsconfig*.json ./
 COPY apps/api-gateway ./apps/api-gateway
 COPY apps/resume-builder-service ./apps/resume-builder-service
@@ -44,4 +44,4 @@ RUN mkdir -p storage
 
 EXPOSE 3000
 
-CMD ["node", "dist/apps/api-gateway/main.js"]
+CMD ["node", "--enable-source-maps", "dist/apps/api-gateway/main.js"]

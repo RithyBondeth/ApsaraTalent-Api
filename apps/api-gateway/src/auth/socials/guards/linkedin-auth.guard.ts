@@ -1,14 +1,17 @@
-import { ExecutionContext, Injectable } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import {
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { AuthGuard, IAuthModuleOptions } from '@nestjs/passport';
 import { Request } from 'express';
-import { buildPublicCallbackUrl } from './oauth-callback-url';
+import { buildPublicCallbackUrl } from '../shared/oauth-callback-url.util';
 
 @Injectable()
 export class LinkedInAuthGuard extends AuthGuard('linkedin') {
   canActivate(context: ExecutionContext) {
     const req = context.switchToHttp().getRequest<Request>();
 
-    // Save remember query
     const remember = req.query.remember;
     if (typeof remember === 'string') {
       (req.session as any).remember = remember === 'true';
@@ -17,13 +20,20 @@ export class LinkedInAuthGuard extends AuthGuard('linkedin') {
     return super.canActivate(context);
   }
 
-  getAuthenticateOptions(context: ExecutionContext) {
+  getAuthenticateOptions(context: ExecutionContext): IAuthModuleOptions {
     const req = context.switchToHttp().getRequest<Request>();
     return {
       callbackURL: buildPublicCallbackUrl(req, 'linkedin'),
     };
   }
 
-  // Allow OAuth to continue
-  handleRequest = (err: any, user: any) => user;
+  handleRequest(err: any, user: any, info?: any): any {
+    if (err) throw err;
+    if (!user) {
+      throw new UnauthorizedException(
+        info?.message || 'LinkedIn authentication was not completed',
+      );
+    }
+    return user;
+  }
 }

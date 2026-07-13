@@ -1,0 +1,193 @@
+{
+  "uid": "apsaratalent-api",
+  "title": "ApsaraTalent API — Performance",
+  "tags": ["apsaratalent", "api"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Service Up",
+      "datasource": { "type": "prometheus", "uid": "apsaratalent-prometheus" },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN" }, "1": { "text": "UP" } } }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "horizontal",
+        "colorMode": "background",
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "up{job=~\"apsaratalent.*\"}",
+          "legendFormat": "{{service}}",
+          "instant": true,
+          "datasource": { "type": "prometheus", "uid": "apsaratalent-prometheus" }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "HTTP p95 latency by route (gateway)",
+      "datasource": { "type": "prometheus", "uid": "apsaratalent-prometheus" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 6 },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route))",
+          "legendFormat": "{{route}}",
+          "datasource": { "type": "prometheus", "uid": "apsaratalent-prometheus" }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "HTTP request rate by route",
+      "datasource": { "type": "prometheus", "uid": "apsaratalent-prometheus" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 6 },
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(http_request_duration_seconds_count[5m])) by (route)",
+          "legendFormat": "{{route}}",
+          "datasource": { "type": "prometheus", "uid": "apsaratalent-prometheus" }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "HTTP 5xx error rate by route",
+      "datasource": { "type": "prometheus", "uid": "apsaratalent-prometheus" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 15 },
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "drawStyle": "line", "fillOpacity": 20 }, "color": { "mode": "fixed", "fixedColor": "red" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(http_request_duration_seconds_count{status_code=~\"5..\"}[5m])) by (route)",
+          "legendFormat": "{{route}}",
+          "datasource": { "type": "prometheus", "uid": "apsaratalent-prometheus" }
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "RPC handler p95 by service / handler",
+      "datasource": { "type": "prometheus", "uid": "apsaratalent-prometheus" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 15 },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum(rate(rpc_handler_duration_seconds_bucket[5m])) by (le, service, handler))",
+          "legendFormat": "{{service}} · {{handler}}",
+          "datasource": { "type": "prometheus", "uid": "apsaratalent-prometheus" }
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Node event-loop lag p99 by service",
+      "datasource": { "type": "prometheus", "uid": "apsaratalent-prometheus" },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 24 },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "nodejs_eventloop_lag_p99_seconds{job=~\"apsaratalent.*\"}",
+          "legendFormat": "{{service}}",
+          "datasource": { "type": "prometheus", "uid": "apsaratalent-prometheus" }
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "CPU cores by service",
+      "datasource": { "type": "prometheus", "uid": "apsaratalent-prometheus" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 33 },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(process_cpu_seconds_total{job=~\"apsaratalent.*\"}[5m])",
+          "legendFormat": "{{service}}",
+          "datasource": { "type": "prometheus", "uid": "apsaratalent-prometheus" }
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Heap used / total by service",
+      "datasource": { "type": "prometheus", "uid": "apsaratalent-prometheus" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 33 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1, "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "nodejs_heap_size_used_bytes{job=~\"apsaratalent.*\"} / nodejs_heap_size_total_bytes{job=~\"apsaratalent.*\"}",
+          "legendFormat": "{{service}}",
+          "datasource": { "type": "prometheus", "uid": "apsaratalent-prometheus" }
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "DB pool — total & waiting by service",
+      "datasource": { "type": "prometheus", "uid": "apsaratalent-prometheus" },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 42 },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "db_pool_connections_total{job=~\"apsaratalent.*\"}",
+          "legendFormat": "{{service}} total",
+          "datasource": { "type": "prometheus", "uid": "apsaratalent-prometheus" }
+        },
+        {
+          "refId": "B",
+          "expr": "db_pool_connections_waiting{job=~\"apsaratalent.*\"}",
+          "legendFormat": "{{service}} waiting",
+          "datasource": { "type": "prometheus", "uid": "apsaratalent-prometheus" }
+        }
+      ]
+    }
+  ]
+}

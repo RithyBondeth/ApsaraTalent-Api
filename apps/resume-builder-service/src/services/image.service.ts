@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PinoLogger } from 'nestjs-pino';
 import sharp from 'sharp';
+import { RESUME } from '@app/contracts/constants/domain/resume.constant';
+import { IImageService } from '@app/contracts/interfaces/service';
 
 @Injectable()
-export class ImageService {
+export class ImageService implements IImageService {
   constructor(private readonly logger: PinoLogger) {
     this.logger.setContext(ImageService.name);
   }
@@ -24,7 +26,10 @@ export class ImageService {
       const imageBuffer = Buffer.from(base64Data, 'base64');
 
       const optimizedBuffer = await sharp(imageBuffer)
-        .resize(300, 300, { fit: 'cover', position: 'center' })
+        .resize(RESUME.AVATAR_SIZE, RESUME.AVATAR_SIZE, {
+          fit: 'cover',
+          position: 'center',
+        })
         .jpeg({ quality: 85 })
         .toBuffer();
 

@@ -1,9 +1,19 @@
 export default () => ({
   nodeEnv: process.env.NODE_ENV,
 
+  test: {
+    disableExternalIntegrations:
+      process.env.NODE_ENV === 'test' &&
+      process.env.DISABLE_EXTERNAL_INTEGRATIONS === 'true',
+  },
+
   database: {
     url: process.env.DATABASE_URL,
-    synchronize: process.env.DATABASE_SYNCHRONIZE === 'true',
+    // Never allow TypeORM to mutate a production schema at application start.
+    // Production changes must be applied through reviewed migrations.
+    synchronize:
+      process.env.NODE_ENV !== 'production' &&
+      process.env.DATABASE_SYNCHRONIZE === 'true',
   },
 
   jwt: {
@@ -46,36 +56,44 @@ export default () => ({
     auth: {
       host: process.env.AUTH_SERVICE_HOST,
       port: Number(process.env.AUTH_SERVICE_PORT),
+      metricsPort: Number(process.env.AUTH_SERVICE_METRICS_PORT) || 9101,
     },
 
     user: {
       host: process.env.USER_SERVICE_HOST,
       port: Number(process.env.USER_SERVICE_PORT),
+      metricsPort: Number(process.env.USER_SERVICE_METRICS_PORT) || 9102,
     },
 
     resume: {
       host: process.env.RESUME_SERVICE_HOST,
       port: Number(process.env.RESUME_SERVICE_PORT),
+      metricsPort: Number(process.env.RESUME_SERVICE_METRICS_PORT) || 9103,
     },
 
     chat: {
       host: process.env.CHAT_SERVICE_HOST,
       port: Number(process.env.CHAT_SERVICE_PORT),
+      metricsPort: Number(process.env.CHAT_SERVICE_METRICS_PORT) || 9104,
     },
 
     job: {
       host: process.env.JOB_SERVICE_HOST,
       port: Number(process.env.JOB_SERVICE_PORT),
+      metricsPort: Number(process.env.JOB_SERVICE_METRICS_PORT) || 9105,
     },
 
     payment: {
       host: process.env.PAYMENT_SERVICE_HOST,
       port: Number(process.env.PAYMENT_SERVICE_PORT),
+      metricsPort: Number(process.env.PAYMENT_SERVICE_METRICS_PORT) || 9106,
     },
 
     notification: {
       host: process.env.NOTIFICATION_SERVICE_HOST,
       port: Number(process.env.NOTIFICATION_SERVICE_PORT),
+      metricsPort:
+        Number(process.env.NOTIFICATION_SERVICE_METRICS_PORT) || 9107,
     },
   },
 
@@ -130,6 +148,13 @@ export default () => ({
 
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
+    model: process.env.OPENAI_MODEL ?? 'gpt-4o',
+  },
+
+  ai: {
+    rateLimit: Number(process.env.AI_RATE_LIMIT) || 10,
+    rateLimitWindowMs: Number(process.env.AI_RATE_LIMIT_WINDOW_MS) || 60000,
+    dailyQuota: Number(process.env.AI_DAILY_QUOTA) || 100,
   },
 
   firebase: {

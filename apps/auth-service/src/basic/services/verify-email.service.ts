@@ -5,10 +5,11 @@ import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
-import { VerifyEmailResponseDTO } from '../dtos/verify-email-response.dto';
+import { VerifyEmailDTO, VerifyEmailResponseDTO } from '@app/contracts';
+import { IVerifyEmailService } from '@app/contracts/interfaces/service/auth-service.interface';
 
 @Injectable()
-export class VerifyEmailService {
+export class VerifyEmailService implements IVerifyEmailService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
@@ -16,16 +17,16 @@ export class VerifyEmailService {
   ) {}
 
   async verifyEmail(
-    emailVerificationToken: string,
+    verifyEmailDTO: VerifyEmailDTO,
   ): Promise<VerifyEmailResponseDTO> {
     try {
       //Find the user by email verification token
       const decoded = await this.jwtService.verifyEmailToken(
-        emailVerificationToken,
+        verifyEmailDTO.emailVerificationToken,
       );
       const user = await this.userRepository.findOne({
         where: {
-          emailVerificationToken: emailVerificationToken,
+          emailVerificationToken: verifyEmailDTO.emailVerificationToken,
           email: decoded.email,
         },
       });
@@ -42,9 +43,9 @@ export class VerifyEmailService {
       //Save user into the database
       await this.userRepository.save(user);
 
-      return new VerifyEmailResponseDTO(
-        'Your email was verified successfully. Now you can login',
-      );
+      return new VerifyEmailResponseDTO({
+        message: 'Your email was verified successfully. Now you can login',
+      });
     } catch (error) {
       this.logger.error(
         (error as Error).message || 'An error occurred while verifying email.',

@@ -1,14 +1,17 @@
-import { DatabaseModule, JwtModule } from '@app/common';
-import { User } from '@app/common/database/entities/user.entity';
+import { JwtModule } from '@app/common';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { CHAT_SERVICE } from 'utils/constants/chat-service.constant';
-import { NOTIFICATION_SERVICE } from 'utils/constants/notification.constant';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
-import { ChatController } from './chat.controller';
-import { ChatGateway } from './chat.gateway';
+import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-service.constant';
+import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
+import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
+import { ChatController } from './controllers/chat.controller';
+import { ChatGateway } from './gateways/chat.gateway';
+import { CallGateway } from './gateways/call.gateway';
+import { SocketStateService } from './services/socket-state.service';
+import { ChatNotificationService } from './services/chat-notification.service';
+import { ChatRateLimiterService } from './services/chat-rate-limiter.service';
+import { ChatMessageService } from './services/chat-message.service';
 
 @Module({
   imports: [
@@ -47,11 +50,16 @@ import { ChatGateway } from './chat.gateway';
         inject: [ConfigService],
       },
     ]),
-    DatabaseModule,
     JwtModule,
-    TypeOrmModule.forFeature([User]),
   ],
   controllers: [ChatController],
-  providers: [ChatGateway], // ← was missing — gateway never started without this
+  providers: [
+    ChatGateway,
+    CallGateway,
+    SocketStateService,
+    ChatRateLimiterService,
+    ChatNotificationService,
+    ChatMessageService,
+  ],
 })
 export class ChatModule {}

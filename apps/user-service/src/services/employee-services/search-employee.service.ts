@@ -1,196 +1,252 @@
 import { Employee } from '@app/common/database/entities/employee/employee.entity';
-import { User } from '@app/common/database/entities/user.entity';
 import { RedisService } from '@app/common/redis/redis.service';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
-import { Brackets, Repository } from 'typeorm';
-import { SearchEmployeeDto } from '../../dtos/employee/search-employee.dto';
-import { EmployeeResponseDTO } from '../../dtos/user-response.dto';
+import { Brackets, Repository, SelectQueryBuilder } from 'typeorm';
+import { SCOPE_SIMILARITY_THRESHOLD } from '@app/common/embedding/embedding.service';
+import {
+  SearchEmployeeDTO,
+  SearchEmployeeResponseDTO,
+  SearchEmployeeResult,
+} from '@app/contracts/dtos/user';
+import { ISearchEmployeeService } from '@app/contracts/interfaces/service/user-service.interface';
+import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
 
 @Injectable()
-export class SearchEmployeeService {
+export class SearchEmployeeService implements ISearchEmployeeService {
   constructor(
     @InjectRepository(Employee)
     private readonly employeeRepo: Repository<Employee>,
-    @InjectRepository(User) private readonly userRepo: Repository<User>,
     private readonly logger: PinoLogger,
     private readonly redisService: RedisService,
   ) {}
 
   async searchEmployee(
-    query: SearchEmployeeDto,
-  ): Promise<EmployeeResponseDTO[]> {
-    const cacheKey = this.redisService.generateSearchKey('employee', query);
-    const cached = await this.redisService.get<EmployeeResponseDTO[]>(cacheKey);
+    searchEmployeeDTO: SearchEmployeeDTO,
+  ): Promise<SearchEmployeeResult> {
+    // Per-user liked exclusions make the cache key unique per user and would
+    // bloat Redis with single-use entries — bypass the cache when present.
+    const hasExclusions =
+      !!searchEmployeeDTO.excludeEmployeeIds &&
+      searchEmployeeDTO.excludeEmployeeIds.length > 0;
 
-    if (cached) {
-      this.logger.info('Employee search cache HIT');
-      return cached;
+    const cacheKey = this.redisService.generateSearchKey(
+      'employee',
+      searchEmployeeDTO,
+    );
+
+    if (!hasExclusions) {
+      const cached =
+        await this.redisService.get<SearchEmployeeResult>(cacheKey);
+
+      if (cached) {
+        this.logger.info('Employee search cache HIT');
+        return cached;
+      }
+
+      this.logger.info('Employee search cache MISS');
     }
 
-    this.logger.info('Employee search cache MISS');
-
     try {
-      const qb = this.employeeRepo
-        .createQueryBuilder('employee')
-        .leftJoinAndSelect('employee.skills', 'skill')
-        .leftJoinAndSelect('employee.careerScopes', 'careerScope')
-        .leftJoinAndSelect('employee.experiences', 'experience')
-        .leftJoinAndSelect('employee.educations', 'edu');
+      const {
+        keyword,
+        location,
+        careerScopes,
+        jobType,
+        experienceLevel,
+        education,
+        sortBy,
+        sortOrder,
+        page = 1,
+        pageSize = 20,
+        excludeEmployeeIds,
+        requesterId,
+      } = searchEmployeeDTO;
 
-      // Keyword: job title, first name, last name
-      if (query.keyword) {
-        qb.andWhere(
-          `(employee.job ILIKE :keyword OR employee.firstname ILIKE :keyword OR employee.lastname ILIKE :keyword)`,
-          { keyword: `%${query.keyword}%` },
-        );
-      }
+      const buildQuery = (
+        withScopes: boolean,
+      ): SelectQueryBuilder<Employee> => {
+        const qb = this.employeeRepo
+          .createQueryBuilder('employee')
+          .leftJoinAndSelect('employee.user', 'user')
+          .leftJoinAndSelect('employee.skills', 'skill')
+          .leftJoinAndSelect('employee.careerScopes', 'careerScope')
+          .leftJoinAndSelect('employee.experiences', 'experience')
+          .leftJoinAndSelect('employee.educations', 'edu')
+          .where('employee.isHide = :isHide', { isHide: false });
 
-      // Location
-      if (query.location) {
-        qb.andWhere('employee.location ILIKE :location', {
-          location: `%${query.location}%`,
-        });
-      }
-
-      // Career Scopes
-      if (query.careerScopes?.length > 0) {
-        qb.andWhere('careerScope.name IN (:...careerScopes)', {
-          careerScopes: query.careerScopes,
-        });
-      }
-
-      // Job Type (availability)
-      if (query.jobType) {
-        qb.andWhere('employee.availability = :jobType', {
-          jobType: query.jobType,
-        });
-      }
-
-      // Experience Level
-      if (
-        query.experienceLevel &&
-        query.experienceLevel !== 'All' &&
-        query.experienceLevel !== ''
-      ) {
-        const mappedExps = [query.experienceLevel];
-
-        // Map modern UI strings to legacy database strings to catch old records
-        if (query.experienceLevel === '1 - 2 years') {
-          mappedExps.push(
-            '1 - 3 years',
-            '1+ year',
-            '2+ years',
-            'More than 2 years',
+        if (keyword) {
+          qb.andWhere(
+            '(employee.job ILIKE :keyword OR employee.firstname ILIKE :keyword OR employee.lastname ILIKE :keyword)',
+            { keyword: `%${keyword}%` },
           );
-        } else if (query.experienceLevel === '3 - 5 years') {
-          mappedExps.push('1 - 3 years');
-        } else if (query.experienceLevel === '6 - 10 years') {
-          mappedExps.push('5 - 10 years');
         }
 
-        qb.andWhere('employee.yearsOfExperience IN (:...mappedExps)', {
-          mappedExps,
-        });
-      }
-
-      // Education
-      if (query.education && query.education.length > 0) {
-        qb.andWhere(
-          new Brackets((bracket) => {
-            query.education.forEach((edu, index) => {
-              const paramName = `degree_${index}`;
-              if (index === 0) {
-                bracket.where(`edu.degree ILIKE :${paramName}`, {
-                  [paramName]: `%${edu}%`,
-                });
-              } else {
-                bracket.orWhere(`edu.degree ILIKE :${paramName}`, {
-                  [paramName]: `%${edu}%`,
-                });
-              }
-            });
-          }),
-        );
-      }
-
-      // Dynamic Sort
-      const validSortFields = [
-        'firstname',
-        'lastname',
-        'yearsOfExperience',
-        'createdAt',
-      ];
-      const sortField = validSortFields.includes(query.sortBy)
-        ? `employee.${query.sortBy}`
-        : 'employee.createdAt';
-      const sortOrder = ['ASC', 'DESC'].includes(query.sortOrder?.toUpperCase())
-        ? query.sortOrder.toUpperCase()
-        : 'DESC';
-
-      if (query.sortBy === 'yearsOfExperience') {
-        qb.orderBy(
-          `CASE "employee"."yearsOfExperience"
-            WHEN 'No Experience' THEN 0
-            WHEN 'Less than 1 year' THEN 1
-            WHEN '1+ year' THEN 2
-            WHEN '1 - 2 years' THEN 3
-            WHEN '1 - 3 years' THEN 3
-            WHEN '2+ years' THEN 4
-            WHEN 'More than 2 years' THEN 4
-            WHEN '3 - 5 years' THEN 5
-            WHEN '5 - 10 years' THEN 6
-            WHEN '6 - 10 years' THEN 6
-            WHEN '10+ years' THEN 7
-            ELSE 8
-          END`,
-          sortOrder as 'ASC' | 'DESC',
-        );
-      } else {
-        qb.orderBy(sortField, sortOrder as 'ASC' | 'DESC');
-      }
-
-      const employees = await qb.getMany();
-
-      if (!employees.length) {
-        throw new RpcException({
-          message: 'No employees found matching your criteria.',
-          statusCode: 404,
-        });
-      }
-
-      const employeesWithUsers = await Promise.all(
-        employees.map(async (emp) => {
-          const user = await this.userRepo.findOne({
-            where: {
-              employee: {
-                id: emp.id,
-              },
-            },
+        if (location) {
+          qb.andWhere('employee.location ILIKE :location', {
+            location: `%${location}%`,
           });
-          return { employee: emp, userId: user.id };
-        }),
-      );
+        }
 
-      const result = employeesWithUsers.map(
-        ({ employee, userId }) =>
-          new EmployeeResponseDTO({
-            ...employee,
-            userId: userId,
-          }),
-      );
+        if (jobType) {
+          qb.andWhere('employee.availability = :jobType', { jobType });
+        }
 
-      // Cache search results for 1 minute (shorter because search is frequent)
-      await this.redisService.set(cacheKey, result, 60000);
+        if (
+          experienceLevel &&
+          experienceLevel !== 'All' &&
+          experienceLevel !== ''
+        ) {
+          qb.andWhere('employee.yearsOfExperience = :experienceLevel', {
+            experienceLevel,
+          });
+        }
 
+        if (education && education.length > 0) {
+          qb.andWhere(
+            new Brackets((bracket) => {
+              education.forEach((edu, index) => {
+                const paramName = `degree_${index}`;
+                if (index === 0) {
+                  bracket.where(`edu.degree ILIKE :${paramName}`, {
+                    [paramName]: `%${edu}%`,
+                  });
+                } else {
+                  bracket.orWhere(`edu.degree ILIKE :${paramName}`, {
+                    [paramName]: `%${edu}%`,
+                  });
+                }
+              });
+            }),
+          );
+        }
+
+        if (excludeEmployeeIds && excludeEmployeeIds.length > 0) {
+          qb.andWhere('employee.id NOT IN (:...excludeEmployeeIds)', {
+            excludeEmployeeIds,
+          });
+        }
+
+        // Hide candidates blocked in EITHER direction between the searcher and
+        // the candidate (mutual invisibility).
+        if (requesterId) {
+          qb.andWhere(
+            `NOT EXISTS (
+               SELECT 1 FROM user_block ub
+               WHERE (ub."blockerId" = :requesterId AND ub."blockedId" = "user"."id")
+                  OR (ub."blockerId" = "user"."id" AND ub."blockedId" = :requesterId)
+             )`,
+            { requesterId },
+          );
+        }
+
+        if (withScopes && careerScopes?.length > 0) {
+          qb.andWhere(
+            `EXISTS (
+               SELECT 1
+               FROM employee_career_scopes_career_scope ecs
+               INNER JOIN career_scope cs_candidate
+                 ON cs_candidate.id = ecs."careerScopeId"
+               WHERE ecs."employeeId" = employee.id
+                 AND (
+                   (
+                     cs_candidate.embedding IS NOT NULL
+                     AND EXISTS (
+                       SELECT 1 FROM career_scope cs_ref
+                       WHERE cs_ref.name IN (:...searchScopes)
+                         AND cs_ref.embedding IS NOT NULL
+                         AND (1 - (cs_candidate.embedding <=> cs_ref.embedding)) > :simThreshold
+                     )
+                   )
+                   OR cs_candidate.name IN (:...searchScopes)
+                 )
+             )`,
+            {
+              searchScopes: careerScopes,
+              simThreshold: SCOPE_SIMILARITY_THRESHOLD,
+            },
+          );
+        }
+
+        const validSortFields = [
+          'firstname',
+          'lastname',
+          'yearsOfExperience',
+          'createdAt',
+        ];
+        const field = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
+        const order = (sortOrder?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC') as
+          | 'ASC'
+          | 'DESC';
+
+        if (field === 'yearsOfExperience') {
+          qb.orderBy(
+            `CASE "employee"."yearsOfExperience"
+              WHEN 'No Experience' THEN 0
+              WHEN 'Less than 1 year' THEN 1
+              WHEN '1 - 2 years' THEN 2
+              WHEN '3 - 5 years' THEN 3
+              WHEN '6 - 10 years' THEN 4
+              WHEN '10+ years' THEN 5
+              ELSE 6
+            END`,
+            order,
+          ).addOrderBy('employee.id', 'ASC');
+        } else {
+          qb.orderBy(`employee.${field}`, order).addOrderBy(
+            'employee.id',
+            'ASC',
+          );
+        }
+
+        return qb;
+      };
+
+      const scopedQuery = buildQuery(true);
+      scopedQuery.skip((page - 1) * pageSize).take(pageSize);
+      const [employees, total] = await scopedQuery.getManyAndCount();
+
+      // Scope fallback: on page 1, if the scoped query returned nothing and
+      // scopes were provided, retry without the scope filter.
+      let finalEmployees = employees;
+      let finalTotal = total;
+      let isUsingFallback = false;
+
+      if (employees.length === 0 && careerScopes?.length > 0 && page === 1) {
+        const fallbackQuery = buildQuery(false);
+        fallbackQuery.skip(0).take(pageSize);
+        const [fbEmps, fbTotal] = await fallbackQuery.getManyAndCount();
+        finalEmployees = fbEmps;
+        finalTotal = fbTotal;
+        isUsingFallback = true;
+      }
+
+      const result: SearchEmployeeResult = {
+        data: finalEmployees.map(
+          (employee) =>
+            new SearchEmployeeResponseDTO({
+              ...employee,
+              userId: employee.user?.id,
+            }),
+        ),
+        total: finalTotal,
+        page,
+        pageSize,
+        isUsingFallback,
+      };
+
+      if (!hasExclusions) {
+        await this.redisService.set(cacheKey, result, CACHE_TTL.SHORT);
+      }
       return result;
     } catch (error) {
       this.logger.error(
         (error as Error).message ||
           'An error occurred while searching for employees.',
       );
+      if (error instanceof RpcException) throw error;
       throw new RpcException({
         message:
           (error as Error).message ||

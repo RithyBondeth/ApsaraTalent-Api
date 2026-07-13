@@ -1,31 +1,40 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
-import { ExperienceAndEducationService } from '../../services/employee-services/experienc-education.service';
+import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
+import {
+  I_EXPERIENCE_AND_EDUCATION_SERVICE,
+  IExperienceAndEducationService,
+} from '@app/contracts/interfaces/service/user-service.interface';
+import { IRemoveEmployeeItemsRpcController } from '@app/contracts/interfaces/controller/user-controllers/employee-controller.interface';
+import {
+  RemoveEmployeeEducationDTO,
+  RemoveEmployeeEducationResponseDTO,
+  RemoveEmployeeExperienceDTO,
+  RemoveEmployeeExperienceResponseDTO,
+} from '@app/contracts/dtos/user';
 
 @Controller()
-export class ExperienceAndEducationController {
+export class ExperienceAndEducationController implements IRemoveEmployeeItemsRpcController {
   constructor(
-    private readonly experienceAndEducationService: ExperienceAndEducationService,
+    @Inject(I_EXPERIENCE_AND_EDUCATION_SERVICE)
+    private readonly experienceAndEducationService: IExperienceAndEducationService,
   ) {}
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_EXPERIENCE)
   async removeEmployeeExperience(
-    @Payload() payload: { employeeId: string; experienceId: string },
-  ) {
+    @Payload() removeEmployeeExperienceDTO: RemoveEmployeeExperienceDTO,
+  ): Promise<RemoveEmployeeExperienceResponseDTO> {
     return this.experienceAndEducationService.removeEmployeeExperience(
-      payload.employeeId,
-      payload.experienceId,
+      removeEmployeeExperienceDTO,
     );
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_EDUCATION)
   async removeEmployeeEducation(
-    @Payload() payload: { employeeId: string; educationId: string },
-  ) {
+    @Payload() removeEmployeeEducationDTO: RemoveEmployeeEducationDTO,
+  ): Promise<RemoveEmployeeEducationResponseDTO> {
     return this.experienceAndEducationService.removeEmployeeEducation(
-      payload.employeeId,
-      payload.educationId,
+      removeEmployeeEducationDTO,
     );
   }
 }

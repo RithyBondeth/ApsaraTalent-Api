@@ -1,0 +1,56 @@
+# Prometheus scrape config for the ApsaraTalent API.
+#
+# Prometheus runs in Docker; the API services run on the host, so targets use
+# host.docker.internal (mapped via extra_hosts in docker-compose for Linux).
+#
+# Ports: gateway HTTP = 3000; each microservice exposes /metrics on 9101-9107
+# (see services.<svc>.metricsPort in libs/common/src/config/configuration.ts).
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+scrape_configs:
+  # End-to-end HTTP latency (http_request_duration_seconds) at the gateway.
+  - job_name: apsaratalent-gateway
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['host.docker.internal:3000']
+        labels:
+          service: api-gateway
+    # If METRICS_TOKEN is set on the apps, uncomment and fill in:
+    # authorization:
+    #   type: Bearer
+    #   credentials: 'YOUR_METRICS_TOKEN'
+
+  # Per-service RPC handler latency (rpc_handler_duration_seconds) + Node metrics.
+  - job_name: apsaratalent-services
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['host.docker.internal:9101']
+        labels: { service: auth-service }
+      - targets: ['host.docker.internal:9102']
+        labels: { service: user-service }
+      - targets: ['host.docker.internal:9103']
+        labels: { service: resume-builder-service }
+      - targets: ['host.docker.internal:9104']
+        labels: { service: chat-service }
+      - targets: ['host.docker.internal:9105']
+        labels: { service: job-service }
+      # payment-service is not deployed (PaymentModule disabled in api-gateway) —
+      # kept out of scrape targets so it doesn't alert as permanently down.
+      # Re-enable together with the service (see .github/workflows/deploy.yml).
+      # - targets: ['host.docker.internal:9106']
+      #   labels: { service: payment-service }
+      - targets: ['host.docker.internal:9107']
+        labels: { service: notification-service }
+    # authorization:
+    #   type: Bearer
+    #   credentials: 'YOUR_METRICS_TOKEN'

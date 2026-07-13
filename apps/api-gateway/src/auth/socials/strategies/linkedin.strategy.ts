@@ -12,11 +12,14 @@ export class LinkedInStrategy extends PassportStrategy(Strategy, 'linkedin') {
     super(linkedInConfig(configService));
   }
 
-  authorizationParams() {
+  authorizationParams(): { state: string } {
     return { state: crypto.randomUUID() };
   }
 
-  userProfile(accessToken: string, done: Function) {
+  userProfile(
+    accessToken: string,
+    done: (error: unknown, profile?: unknown) => void,
+  ): void {
     fetch(this.configService.get<string>('social.linkedin.profileUrl'), {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
@@ -33,8 +36,7 @@ export class LinkedInStrategy extends PassportStrategy(Strategy, 'linkedin') {
       .catch((err) => done(err));
   }
 
-  async validate(_: string, __: string, profile: any) {
-    console.log('LinkedIn validate():', profile);
+  async validate(_: string, __: string, profile: any): Promise<any> {
     return profile;
   }
 }

@@ -3,31 +3,37 @@ import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
-import { MessageService } from '@app/common/message/message.service';
-import { Inject, Injectable } from '@nestjs/common';
-import { ClientProxy, RpcException } from '@nestjs/microservices';
+import { Injectable } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
-import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
-import { LoginOtpDTO } from '../dtos/login-otp.dto';
-import { VerifyOtpDTO } from '../dtos/verify-otp.dto';
+import { ILoginOTPService } from '@app/contracts/interfaces/service/auth-service.interface';
+import { AUTH } from '@app/contracts/constants/domain/auth.constant';
+import {
+  LoginOtpDTO,
+  LoginOtpResponseDTO,
+  UserResponseDTO,
+  VerifyOtpDTO,
+  VerifyOtpResponseDTO,
+} from '@app/contracts';
+import { CacheCleanupService } from '../../shared/services/cache-cleanup.service';
 
 @Injectable()
-export class LoginOTPService {
+export class LoginOTPService implements ILoginOTPService {
   constructor(
-    @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
     @InjectRepository(User) private readonly userRepo: Repository<User>,
-    private readonly messageService: MessageService,
     private readonly jwtService: JwtService,
+    private readonly cacheCleanupService: CacheCleanupService,
     private readonly logger: PinoLogger,
   ) {}
 
-  async loginOtp(loginOtpDTO: LoginOtpDTO): Promise<any> {
+  async loginOtp(loginOtpDTO: LoginOtpDTO): Promise<LoginOtpResponseDTO> {
     try {
-      const otpCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6 Digit
-      const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 min
+      const otpCode = Math.floor(
+        AUTH.OTP_MIN + Math.random() * AUTH.OTP_RANGE,
+      ).toString();
+      const otpExpires = new Date(Date.now() + AUTH.OTP_EXPIRY);
 
       let user = await this.userRepo.findOne({
         where: { phone: loginOtpDTO.phone },
@@ -43,12 +49,14 @@ export class LoginOTPService {
       await this.userRepo.save(user);
 
       //await this.messageService.sendOtp(loginOtpDTO.phone, otpCode);
-      console.log('OTP code: ', otpCode);
+      this.logger.debug(
+        { phone: loginOtpDTO.phone },
+        'OTP generated and stored successfully',
+      );
 
-      return {
+      return new LoginOtpResponseDTO({
         message: `OTP sent successfully to ${loginOtpDTO.phone}`,
-        isSuccess: true,
-      };
+      });
     } catch (error) {
       this.logger.error((error as Error).message || 'Login OTP failed.');
       if (error instanceof RpcException) throw error;
@@ -59,7 +67,7 @@ export class LoginOTPService {
     }
   }
 
-  async verifyOtp(verifyOtpDTO: VerifyOtpDTO): Promise<any> {
+  async verifyOtp(verifyOtpDTO: VerifyOtpDTO): Promise<VerifyOtpResponseDTO> {
     try {
       const user = await this.userRepo.findOne({
         where: {
@@ -100,27 +108,19 @@ export class LoginOTPService {
       // Save user updates
       await this.userRepo.save(user);
 
-      // Clear Cache in USER SERVICE
-      console.log('[AUTH] sending CLEAR_USER_CACHE from LOGIN_OTP', user.id);
-      await firstValueFrom(
-        this.userClient.send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, {
-          userId: user.id,
-        }),
-      );
+      // Clear user login cache
+      await this.cacheCleanupService.clear(user.id);
 
-      return {
+      return new VerifyOtpResponseDTO({
         message: 'OTP verified successfully',
-        isSuccess: true,
         accessToken,
         refreshToken,
-        user: {
-          id: user.id,
-          phone: user.phone,
-          role: user.role,
-          lastLoginMethod: user.lastLoginMethod,
-          lastLoginAt: user.lastLoginAt,
-        },
-      };
+        user: new UserResponseDTO({
+          ...user,
+          employee: undefined,
+          company: undefined,
+        }),
+      });
     } catch (error) {
       this.logger.error((error as Error).message || 'Verify OTP failed.');
       if (error instanceof RpcException) throw error;

@@ -2,24 +2,23 @@ import { User } from '@app/common/database/entities/user.entity';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
-import { Inject, Injectable } from '@nestjs/common';
-import { ClientProxy, RpcException } from '@nestjs/microservices';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { PinoLogger } from 'nestjs-pino';
-import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
-import { checkEmail } from 'utils/functions/check-email';
-import { LoginResponseDTO } from '../dtos/login-response.dto';
-import { LoginDTO } from '../dtos/login.dto';
+import { checkEmail } from '@app/utils/functions/check-email';
+import { ILoginService } from '@app/contracts/interfaces/service/auth-service.interface';
+import { LoginDTO, LoginResponseDTO, UserResponseDTO } from '@app/contracts';
+import { CacheCleanupService } from '../../shared/services/cache-cleanup.service';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
-export class LoginService {
+export class LoginService implements ILoginService {
   constructor(
-    @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
+    private readonly cacheCleanupService: CacheCleanupService,
     private readonly logger: PinoLogger,
   ) {}
 
@@ -42,7 +41,7 @@ export class LoginService {
         statusCode: 401,
       });
 
-      if (!user) throw invalidCredentialsError;
+      if (!user || !user.password) throw invalidCredentialsError;
 
       //Compare password
       const validPassword: boolean = await bcrypt.compare(
@@ -58,6 +57,15 @@ export class LoginService {
           message: 'Please verify your email first',
           statusCode: 403,
         });
+
+      // If 2FA is enabled, return a challenge instead of issuing tokens
+      if (user.isTwoFactorEnabled) {
+        return new LoginResponseDTO({
+          message: 'Two-factor authentication required',
+          requiresTwoFactor: true,
+          userId: user.id,
+        });
+      }
 
       //Generate tokens
       const payload: IPayload = {
@@ -77,21 +85,18 @@ export class LoginService {
       await this.userRepository.save(user);
 
       // Clear Cache in USER SERVICE
-      this.logger.info(
-        `[AUTH] Clearing user cache after login for userId=${user.id}`,
-      );
-      await firstValueFrom(
-        this.userClient.send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, {
-          userId: user.id,
-        }),
-      );
+      await this.cacheCleanupService.clear(user.id);
 
       //Return token and user details
       return new LoginResponseDTO({
         message: 'Successfully Logged in',
         accessToken: accessToken,
         refreshToken: refreshToken,
-        user: user,
+        user: new UserResponseDTO({
+          ...user,
+          employee: undefined,
+          company: undefined,
+        }),
       });
     } catch (error) {
       this.logger.error((error as Error).message || 'Login failed');

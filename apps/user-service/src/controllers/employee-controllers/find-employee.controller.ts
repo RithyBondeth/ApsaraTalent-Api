@@ -1,26 +1,41 @@
-import { IFindEmployeeController } from '@app/common/interfaces/employee-controller.interface';
-import { Controller } from '@nestjs/common';
+import { IFindEmployeeRpcController } from '@app/contracts/interfaces/controller/user-controllers/employee-controller.interface';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
-import { UserPaginationDTO } from '../../dtos/user-pagination.dto';
-import { EmployeeResponseDTO } from '../../dtos/user-response.dto';
-import { FindEmployeeService } from '../../services/employee-services/find-employee.service';
+import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
+import {
+  CountAllUsersResponseDTO,
+  EmployeeResponseDTO,
+  EmployeeIdDTO,
+} from '@app/contracts/dtos/user';
+import { PaginationDTO } from '@app/contracts/dtos/shared';
+import {
+  I_FIND_EMPLOYEE_SERVICE,
+  IFindEmployeeService,
+} from '@app/contracts/interfaces/service/user-service.interface';
 
 @Controller()
-export class FindEmployeeController implements IFindEmployeeController {
-  constructor(private readonly findEmployeeService: FindEmployeeService) {}
+export class FindEmployeeController implements IFindEmployeeRpcController {
+  constructor(
+    @Inject(I_FIND_EMPLOYEE_SERVICE)
+    private readonly findEmployeeService: IFindEmployeeService,
+  ) {}
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_EMPLOYEE)
   async findAll(
-    @Payload() payload: { pagination: UserPaginationDTO },
+    @Payload() paginationDTO: PaginationDTO,
   ): Promise<EmployeeResponseDTO[]> {
-    return this.findEmployeeService.findAll(payload.pagination);
+    return this.findEmployeeService.findAll(paginationDTO);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ONE_EMPLOYEE_BY_ID)
   async findOneById(
-    @Payload() payload: { employeeId: string },
+    @Payload() employeeIdDTO: EmployeeIdDTO,
   ): Promise<EmployeeResponseDTO> {
-    return this.findEmployeeService.findOneById(payload.employeeId);
+    return this.findEmployeeService.findOneById(employeeIdDTO);
+  }
+
+  @MessagePattern(USER_SERVICE.ACTIONS.COUNT_ALL_EMPLOYEE)
+  async countAllEmployees(): Promise<CountAllUsersResponseDTO> {
+    return this.findEmployeeService.countAllEmployees();
   }
 }

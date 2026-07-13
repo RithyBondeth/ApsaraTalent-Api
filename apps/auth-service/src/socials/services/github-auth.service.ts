@@ -2,46 +2,47 @@ import { User } from '@app/common/database/entities/user.entity';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
-import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
-import { GithubAuthDTO } from '../dtos/github-auth.dto';
+import { GithubAuthDTO, GithubLoginResponseDTO } from '@app/contracts';
+import { IGithubAuthService } from '@app/contracts/interfaces/service/auth-service.interface';
+import { CacheCleanupService } from '../../shared/services/cache-cleanup.service';
 
 @Injectable()
-export class GithubAuthService {
+export class GithubAuthService implements IGithubAuthService {
   constructor(
-    @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
+    private readonly cacheCleanupService: CacheCleanupService,
     private readonly logger: PinoLogger,
   ) {}
 
-  async githubLogin(githubData: GithubAuthDTO) {
+  async githubLogin(
+    githubDataDTO: GithubAuthDTO,
+  ): Promise<GithubLoginResponseDTO> {
     try {
       // Find a user by email
       const user = await this.userRepository.findOne({
-        where: { email: githubData.email },
+        where: { email: githubDataDTO.email },
       });
 
       if (!user) {
         // If user does not exist, return data for frontend role selection
-        return {
+        return new GithubLoginResponseDTO({
           message: 'Successfully Logged in with Github',
           newUser: true,
-          email: githubData.email,
-          username: githubData.username,
-          picture: githubData.picture,
-          provider: githubData.provider,
-        };
+          email: githubDataDTO.email,
+          username: githubDataDTO.username,
+          picture: githubDataDTO.picture,
+          provider: githubDataDTO.provider,
+        });
       }
 
       // Update user with githubId and login tracking
-      if (!user.githubId && githubData.id) {
-        user.githubId = githubData.id;
+      if (!user.githubId && githubDataDTO.id) {
+        user.githubId = githubDataDTO.id;
       }
       user.lastLoginMethod = ELoginMethod.GITHUB;
       user.lastLoginAt = new Date();
@@ -59,15 +60,10 @@ export class GithubAuthService {
         this.jwtService.generateRefreshToken(user.id),
       ]);
 
-      // Clear Cache in USER SERVICE
-      console.log('[AUTH] sending CLEAR_USER_CACHE from GITHUB LOGIN', user.id);
-      await firstValueFrom(
-        this.userClient.send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, {
-          userId: user.id,
-        }),
-      );
+      // Clear Cache in USER SERVICE (non-blocking — must not prevent login)
+      this.cacheCleanupService.clearSafe(user.id, 'GitHub');
 
-      return {
+      return new GithubLoginResponseDTO({
         message: 'Successfully Logged in with Github',
         newUser: false,
         email: null,
@@ -78,13 +74,13 @@ export class GithubAuthService {
         lastLoginAt: user.lastLoginAt,
         accessToken,
         refreshToken,
-      };
+      });
     } catch (error) {
       this.logger.error('Google login error:', {
         error: (error as Error).message,
         stack: (error as Error).stack,
-        githubId: githubData.id,
-        email: githubData.email,
+        githubId: githubDataDTO.id,
+        email: githubDataDTO.email,
       });
       throw new UnauthorizedException('Failed to authenticate with Github');
     }

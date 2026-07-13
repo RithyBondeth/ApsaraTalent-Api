@@ -1,50 +1,61 @@
-import { IUploadEmployeeController } from '@app/common/interfaces/employee-controller.interface';
-import { Controller } from '@nestjs/common';
+import { IUploadEmployeeRpcController } from '@app/contracts/interfaces/controller/user-controllers/employee-controller.interface';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
-import { UploadEmployeeReferenceService } from '../../services/employee-services/upload-employee-reference.service';
+import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
+import {
+  I_UPLOAD_EMPLOYEE_REFERENCE_SERVICE,
+  IUploadEmployeeReferenceService,
+} from '@app/contracts/interfaces/service/user-service.interface';
+import {
+  EmployeeIdDTO,
+  RemoveEmployeeCoverLetterResponseDTO,
+  RemoveEmployeeResumeResponseDTO,
+  UploadEmployeeCoverLetterDTO,
+  UploadEmployeeCoverLetterResponseDTO,
+  UploadEmployeeResumeDTO,
+  UploadEmployeeResumeResponseDTO,
+} from '@app/contracts/dtos/user';
 
 @Controller()
-export class UploadEmployeeReferenceController implements IUploadEmployeeController {
+export class UploadEmployeeReferenceController implements IUploadEmployeeRpcController {
   constructor(
-    private readonly uploadEmployeeReferenceService: UploadEmployeeReferenceService,
+    @Inject(I_UPLOAD_EMPLOYEE_REFERENCE_SERVICE)
+    private readonly uploadEmployeeReferenceService: IUploadEmployeeReferenceService,
   ) {}
 
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_RESUME)
   async uploadEmployeeResume(
-    @Payload() payload: { employeeId: string; resume: Express.Multer.File },
-  ) {
+    @Payload() uploadEmployeeResumeDTO: UploadEmployeeResumeDTO,
+  ): Promise<UploadEmployeeResumeResponseDTO> {
     return this.uploadEmployeeReferenceService.uploadEmployeeResume(
-      payload.employeeId,
-      payload.resume,
+      uploadEmployeeResumeDTO,
     );
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_RESUME)
-  async removeEmployeeResume(@Payload() payload: { employeeId: string }) {
+  async removeEmployeeResume(
+    @Payload() employeeIdDTO: EmployeeIdDTO,
+  ): Promise<RemoveEmployeeResumeResponseDTO> {
     return this.uploadEmployeeReferenceService.removeEmployeeResume(
-      payload.employeeId,
+      employeeIdDTO,
     );
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_COVER_LETTER)
   async uploadEmployeeCoverLetter(
-    @Payload()
-    payload: {
-      employeeId: string;
-      coverLetter: Express.Multer.File;
-    },
-  ) {
+    @Payload() uploadEmployeeCoverLetterDTO: UploadEmployeeCoverLetterDTO,
+  ): Promise<UploadEmployeeCoverLetterResponseDTO> {
     return this.uploadEmployeeReferenceService.uploadEmployeeCoverLetter(
-      payload.employeeId,
-      payload.coverLetter,
+      uploadEmployeeCoverLetterDTO,
     );
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_COVER_LETTER)
-  async removeEmployeeCoverLetter(@Payload() payload: { employeeId: string }) {
+  async removeEmployeeCoverLetter(
+    @Payload() employeeIdDTO: EmployeeIdDTO,
+  ): Promise<RemoveEmployeeCoverLetterResponseDTO> {
     return this.uploadEmployeeReferenceService.removeEmployeeCoverLetter(
-      payload.employeeId,
+      employeeIdDTO,
     );
   }
 }

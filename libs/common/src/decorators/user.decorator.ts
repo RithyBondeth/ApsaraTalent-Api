@@ -1,11 +1,11 @@
 import {
-    createParamDecorator,
-    ExecutionContext,
-    NotFoundException
+  createParamDecorator,
+  ExecutionContext,
+  NotFoundException,
 } from '@nestjs/common';
 import { EUserRole } from '../database/enums/user-role.enum';
 
-export type TUser = {
+export interface AuthUser {
   firstname?: string;
   lastname?: string;
   username?: string;
@@ -15,10 +15,10 @@ export type TUser = {
   id: string;
   iat: number;
   exp: number;
-};
+}
 
 export const User = createParamDecorator(
-  (data: any, context: ExecutionContext): TUser => {
+  (data: any, context: ExecutionContext): AuthUser => {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
     if (!user) throw new NotFoundException("There's no token found.");

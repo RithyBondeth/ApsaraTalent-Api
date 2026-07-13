@@ -7,9 +7,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import * as path from 'path';
 import { Repository } from 'typeorm';
+import { IImageEmployeeService } from '@app/contracts/interfaces/service/user-service.interface';
+import {
+  EmployeeIdDTO,
+  RemoveEmployeeAvatarResponseDTO,
+  UploadEmployeeAvatarDTO,
+  UploadEmployeeAvatarResponseDTO,
+} from '@app/contracts/dtos/user';
 
 @Injectable()
-export class ImageEmployeeService {
+export class ImageEmployeeService implements IImageEmployeeService {
   constructor(
     @InjectRepository(Employee)
     private readonly employeeRepository: Repository<Employee>,
@@ -18,7 +25,10 @@ export class ImageEmployeeService {
     private readonly logger: PinoLogger,
   ) {}
 
-  async uploadEmployeeAvatar(employeeId: string, avatar: Express.Multer.File) {
+  async uploadEmployeeAvatar(
+    uploadEmployeeAvatarDTO: UploadEmployeeAvatarDTO,
+  ): Promise<UploadEmployeeAvatarResponseDTO> {
+    const { employeeId, avatar } = uploadEmployeeAvatarDTO;
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
@@ -59,7 +69,9 @@ export class ImageEmployeeService {
       // Invalidate user caches (fix for stale avatar in findOneUserByID)
       await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
 
-      return { message: "Employee's avatar was successfully set." };
+      return new UploadEmployeeAvatarResponseDTO({
+        message: "Employee's avatar was successfully set.",
+      });
     } catch (error) {
       // Handle error
       this.logger.error(
@@ -75,7 +87,10 @@ export class ImageEmployeeService {
     }
   }
 
-  async removeEmployeeAvatar(employeeId: string) {
+  async removeEmployeeAvatar(
+    employeeIdDTO: EmployeeIdDTO,
+  ): Promise<RemoveEmployeeAvatarResponseDTO> {
+    const { employeeId } = employeeIdDTO;
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
@@ -102,7 +117,9 @@ export class ImageEmployeeService {
       // Invalidate user caches
       await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
 
-      return { message: "Employee's avatar was successfully deleted." };
+      return new RemoveEmployeeAvatarResponseDTO({
+        message: "Employee's avatar was successfully deleted.",
+      });
     } catch (error) {
       // Handle error
       this.logger.error(

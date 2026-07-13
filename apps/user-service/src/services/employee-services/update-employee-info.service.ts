@@ -4,19 +4,22 @@ import { Employee } from '@app/common/database/entities/employee/employee.entity
 import { Experience } from '@app/common/database/entities/employee/experience.entity';
 import { Skill } from '@app/common/database/entities/employee/skill.entity';
 import { Social } from '@app/common/database/entities/social.entity';
-import { User } from '@app/common/database/entities/user.entity';
+import { EmbeddingService } from '@app/common/embedding/embedding.service';
 import { CacheInvalidationService } from '@app/common/redis/cache-invalidation.service';
-import { RedisService } from '@app/common/redis/redis.service';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
-import { UpdateEmployeeInfoDTO } from '../../dtos/employee/update-employee-info.dto';
-import { EmployeeResponseDTO } from '../../dtos/user-response.dto';
+import {
+  UpdateEmployeeInfoRpcDTO,
+  UpdateEmployeeInfoResponseDTO,
+  EmployeeResponseDTO,
+} from '@app/contracts/dtos/user';
+import { IUpdateEmployeeInfoService } from '@app/contracts/interfaces/service/user-service.interface';
 
 @Injectable()
-export class UpdateEmployeeInfoService {
+export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
   constructor(
     @InjectRepository(Employee)
     private readonly employeeRepository: Repository<Employee>,
@@ -30,17 +33,15 @@ export class UpdateEmployeeInfoService {
     private readonly socialRepository: Repository<Social>,
     @InjectRepository(Education)
     private readonly educationRepository: Repository<Education>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
     private readonly logger: PinoLogger,
-    private readonly redisService: RedisService,
     private readonly cacheInvalidationService: CacheInvalidationService,
+    private readonly embeddingService: EmbeddingService,
   ) {}
 
   async updateEmployeeInfo(
-    updateEmployeeInfoDTO: UpdateEmployeeInfoDTO,
-    employeeId: string,
-  ): Promise<{ message: string; employee: EmployeeResponseDTO }> {
+    updateEmployeeInfoRpcDTO: UpdateEmployeeInfoRpcDTO,
+  ): Promise<UpdateEmployeeInfoResponseDTO> {
+    const { employeeId, updateEmployeeInfoDTO } = updateEmployeeInfoRpcDTO;
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
@@ -78,8 +79,31 @@ export class UpdateEmployeeInfoService {
       /* =======================================================
          1️⃣ UPDATE SCALAR FIELDS
       ======================================================= */
+      const previousJob = employee.job;
       Object.assign(employee, scalarFields);
       await this.employeeRepository.save(employee);
+
+      // When the job/position title changes, re-embed it asynchronously.
+      // Fire-and-forget: don't block the profile update response.
+      if (
+        scalarFields.job !== undefined &&
+        scalarFields.job !== previousJob &&
+        scalarFields.job
+      ) {
+        this.embeddingService
+          .embedAsVector(scalarFields.job as string)
+          .then((vector) =>
+            this.employeeRepository.query(
+              `UPDATE employee SET "jobEmbedding" = $1::vector WHERE id = $2`,
+              [vector, employeeId],
+            ),
+          )
+          .catch((err: Error) =>
+            this.logger.warn(
+              `Failed to embed employee job title "${scalarFields.job as string}": ${err.message}`,
+            ),
+          );
+      }
 
       /* =======================================================
          2️⃣ SKILLS (M2M SAFE) by name
@@ -161,6 +185,22 @@ export class UpdateEmployeeInfoService {
               }),
             );
             finalIds.push(created.id);
+
+            // Generate and persist the semantic embedding asynchronously.
+            // Fire-and-forget: don't block the profile update response.
+            this.embeddingService
+              .embedAsVector(name)
+              .then((vector) =>
+                this.careerScopeRepository.query(
+                  `UPDATE career_scope SET embedding = $1::vector WHERE id = $2`,
+                  [vector, created.id],
+                ),
+              )
+              .catch((err: Error) =>
+                this.logger.warn(
+                  `Failed to embed career scope "${name}": ${err.message}`,
+                ),
+              );
           }
         }
 
@@ -198,7 +238,8 @@ export class UpdateEmployeeInfoService {
             });
 
             if (existing) {
-              const { id: _, ...updateData } = expDto;
+              const updateData = { ...expDto };
+              delete updateData.id;
               Object.assign(existing, updateData);
               await this.experienceRepository.save(existing);
             }
@@ -237,7 +278,8 @@ export class UpdateEmployeeInfoService {
             });
 
             if (existing) {
-              const { id: _, ...updateData } = eduDto;
+              const updateData = { ...eduDto };
+              delete updateData.id;
               Object.assign(existing, updateData);
               await this.educationRepository.save(existing);
             }
@@ -276,7 +318,8 @@ export class UpdateEmployeeInfoService {
             });
 
             if (existing) {
-              const { id: _, ...updateData } = socialDto;
+              const updateData = { ...socialDto };
+              delete updateData.id;
               Object.assign(existing, updateData);
               await this.socialRepository.save(existing);
             }
@@ -323,10 +366,10 @@ export class UpdateEmployeeInfoService {
       ======================================================= */
       await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
 
-      return {
+      return new UpdateEmployeeInfoResponseDTO({
         message: 'Employee information updated successfully',
         employee: new EmployeeResponseDTO(freshEmployee ?? employee),
-      };
+      });
     } catch (error) {
       // preserve intended RpcException status codes (404, etc.)
       if (error instanceof RpcException) throw error;

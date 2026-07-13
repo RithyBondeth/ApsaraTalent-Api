@@ -7,9 +7,19 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import * as path from 'path';
 import { Repository } from 'typeorm';
+import { IUploadEmployeeReferenceService } from '@app/contracts/interfaces/service/user-service.interface';
+import {
+  EmployeeIdDTO,
+  RemoveEmployeeCoverLetterResponseDTO,
+  RemoveEmployeeResumeResponseDTO,
+  UploadEmployeeCoverLetterDTO,
+  UploadEmployeeCoverLetterResponseDTO,
+  UploadEmployeeResumeDTO,
+  UploadEmployeeResumeResponseDTO,
+} from '@app/contracts/dtos/user';
 
 @Injectable()
-export class UploadEmployeeReferenceService {
+export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceService {
   constructor(
     @InjectRepository(Employee)
     private readonly employeeRepository: Repository<Employee>,
@@ -18,7 +28,10 @@ export class UploadEmployeeReferenceService {
     private readonly logger: PinoLogger,
   ) {}
 
-  async uploadEmployeeResume(employeeId: string, resume: Express.Multer.File) {
+  async uploadEmployeeResume(
+    uploadEmployeeResumeDTO: UploadEmployeeResumeDTO,
+  ): Promise<UploadEmployeeResumeResponseDTO> {
+    const { employeeId, resume } = uploadEmployeeResumeDTO;
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
@@ -55,7 +68,9 @@ export class UploadEmployeeReferenceService {
       // Cache Invalidation
       await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
 
-      return { message: "Employee's resume was successfully set." };
+      return new UploadEmployeeResumeResponseDTO({
+        message: "Employee's resume was successfully set.",
+      });
     } catch (error) {
       // Handle error
       this.logger.error(
@@ -69,7 +84,10 @@ export class UploadEmployeeReferenceService {
     }
   }
 
-  async removeEmployeeResume(employeeId: string) {
+  async removeEmployeeResume(
+    employeeIdDTO: EmployeeIdDTO,
+  ): Promise<RemoveEmployeeResumeResponseDTO> {
+    const { employeeId } = employeeIdDTO;
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
@@ -97,7 +115,9 @@ export class UploadEmployeeReferenceService {
       // Cache Invalidation
       await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
 
-      return { message: "Employee's resume was successfully deleted." };
+      return new RemoveEmployeeResumeResponseDTO({
+        message: "Employee's resume was successfully deleted.",
+      });
     } catch (error) {
       // Handle error
       this.logger.error(
@@ -114,9 +134,9 @@ export class UploadEmployeeReferenceService {
   }
 
   async uploadEmployeeCoverLetter(
-    employeeId: string,
-    coverLetter: Express.Multer.File,
-  ) {
+    uploadEmployeeCoverLetterDTO: UploadEmployeeCoverLetterDTO,
+  ): Promise<UploadEmployeeCoverLetterResponseDTO> {
+    const { employeeId, coverLetter } = uploadEmployeeCoverLetterDTO;
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
@@ -159,7 +179,9 @@ export class UploadEmployeeReferenceService {
       // Cache Invalidation
       await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
 
-      return { message: "Employee's cover letter was successfully set." };
+      return new UploadEmployeeCoverLetterResponseDTO({
+        message: "Employee's cover letter was successfully set.",
+      });
     } catch (error) {
       // Handle error
       this.logger.error(
@@ -175,7 +197,10 @@ export class UploadEmployeeReferenceService {
     }
   }
 
-  async removeEmployeeCoverLetter(employeeId: string) {
+  async removeEmployeeCoverLetter(
+    employeeIdDTO: EmployeeIdDTO,
+  ): Promise<RemoveEmployeeCoverLetterResponseDTO> {
+    const { employeeId } = employeeIdDTO;
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id: employeeId },
@@ -206,7 +231,9 @@ export class UploadEmployeeReferenceService {
       // Cache Invalidation
       await this.cacheInvalidationService.invalidateEmployeeCache(employeeId);
 
-      return { message: "Employee's cover letter was successfully deleted." };
+      return new RemoveEmployeeCoverLetterResponseDTO({
+        message: "Employee's cover letter was successfully deleted.",
+      });
     } catch (error) {
       // Handle error
       this.logger.error(

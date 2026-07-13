@@ -6,12 +6,12 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { PinoLogger } from 'nestjs-pino';
 import { MoreThan, Repository } from 'typeorm';
-import { SALT_ROUNDS } from 'utils/constants/password.constant';
-import { ResetPasswordResponseDTO } from '../dtos/reset-password-response.dto';
-import { ResetPasswordDTO } from '../dtos/reset-password.dto';
+import { SALT_ROUNDS } from '@app/contracts/constants/domain/password.constant';
+import { ResetPasswordDTO, ResetPasswordResponseDTO } from '@app/contracts';
+import { IResetPasswordService } from '@app/contracts/interfaces/service/auth-service.interface';
 
 @Injectable()
-export class ResetPasswordService {
+export class ResetPasswordService implements IResetPasswordService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly logger: PinoLogger,
@@ -59,9 +59,9 @@ export class ResetPasswordService {
       await this.userRepository.save(user);
 
       //Return message
-      return new ResetPasswordResponseDTO(
-        'You password was updated successfully',
-      );
+      return new ResetPasswordResponseDTO({
+        message: 'You password was updated successfully',
+      });
     } catch (error) {
       this.logger.error(
         (error as Error).message ||

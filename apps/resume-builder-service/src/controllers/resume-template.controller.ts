@@ -1,43 +1,55 @@
-import { IResumeTemplateController } from '@app/common/interfaces/resume-controller.interface';
-import { Controller } from '@nestjs/common';
+import { IResumeTemplateRpcController } from '@app/contracts/interfaces/controller/resume-builder-controller.interface';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { RESUME_BUILDER_SERVICE } from 'utils/constants/resume-builder-service.constant';
-import { CreateResumeTemplateDTO } from '../dtos/create-resume-template.dto';
-import { SearchTemplateDTO } from '../dtos/search-resume-template.dto';
-import { ResumeTemplateService } from '../services/resume-template.service';
+import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/service-actions/resume-builder-service.constant';
+import {
+  CreateResumeTemplateDTO,
+  CreateResumeTemplateResponseDTO,
+  ResumeTemplateResponseDTO,
+  SearchResumeTemplateDTO,
+  SearchResumeTemplateResponseDTO,
+} from '@app/contracts/dtos/resume/template';
+import {
+  I_RESUME_TEMPLATE_SERVICE,
+  IResumeTemplateService,
+} from '@app/contracts/interfaces/service/resume-builder-service.interface';
 
 @Controller()
-export class ResumeTemplateController implements IResumeTemplateController {
-  constructor(private readonly resumeTemplateService: ResumeTemplateService) {}
+export class ResumeTemplateController implements IResumeTemplateRpcController {
+  constructor(
+    @Inject(I_RESUME_TEMPLATE_SERVICE)
+    private readonly resumeTemplateService: IResumeTemplateService,
+  ) {}
 
   @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.FIND_ALL_RESUME_TEMPLATES)
-  async findAllResumeTemplate(): Promise<any> {
+  async findAllResumeTemplate(): Promise<ResumeTemplateResponseDTO[]> {
     return this.resumeTemplateService.findAllResumeTemplate();
   }
 
   @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.FIND_ONE_RESUME_TEMPLATE)
-  async findOneResumeTemplateById(@Payload() resumeId: string): Promise<any> {
+  async findOneResumeTemplateById(
+    @Payload() resumeId: string,
+  ): Promise<ResumeTemplateResponseDTO> {
     return this.resumeTemplateService.findOneResumeTemplate(resumeId);
   }
 
   @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.CREATE_RESUME_TEMPLATE)
   async createResumeTemplate(
-    @Payload()
-    payload: {
-      createResumeTemplateDTO: CreateResumeTemplateDTO;
-      image: Express.Multer.File;
-    },
-  ): Promise<any> {
+    @Payload('dto') createResumeTemplateDTO: CreateResumeTemplateDTO,
+    @Payload('image') image: Express.Multer.File,
+  ): Promise<CreateResumeTemplateResponseDTO> {
     return this.resumeTemplateService.createResumeTemplate(
-      payload.createResumeTemplateDTO,
-      payload.image,
+      createResumeTemplateDTO,
+      image,
     );
   }
 
   @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.SEARCH_RESUME_TEMPLATE)
   async searchResumeTemplate(
-    @Payload() searchTemplateDTO: SearchTemplateDTO,
-  ): Promise<any> {
-    return this.resumeTemplateService.searchResumeTemplate(searchTemplateDTO);
+    @Payload() searchResumeTemplateDTO: SearchResumeTemplateDTO,
+  ): Promise<SearchResumeTemplateResponseDTO[]> {
+    return this.resumeTemplateService.searchResumeTemplate(
+      searchResumeTemplateDTO,
+    );
   }
 }

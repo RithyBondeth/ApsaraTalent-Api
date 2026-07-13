@@ -5,20 +5,23 @@ import { Job } from '@app/common/database/entities/company/job.entity';
 import { Value } from '@app/common/database/entities/company/value.entity';
 import { Social } from '@app/common/database/entities/social.entity';
 import { User } from '@app/common/database/entities/user.entity';
+import { EmbeddingService } from '@app/common/embedding/embedding.service';
 import { RedisService } from '@app/common/redis/redis.service';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
-import { UpdateCompanyInfoDTO } from '../../dtos/company/update-company-info.dto';
 import {
-    CompanyResponseDTO,
-    JobPositionDTO
-} from '../../dtos/user-response.dto';
+  UpdateCompanyInfoRpcDTO,
+  CompanyResponseDTO,
+  UpdateCompanyInfoResponseDTO,
+  JobPositionResponseDTO,
+} from '@app/contracts/dtos/user';
+import { IUpdateCompanyInfoService } from '@app/contracts/interfaces/service/user-service.interface';
 
 @Injectable()
-export class UpdateCompanyInfoService {
+export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
   constructor(
     @InjectRepository(Company)
     private readonly companyRepository: Repository<Company>,
@@ -34,11 +37,13 @@ export class UpdateCompanyInfoService {
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly logger: PinoLogger,
     private readonly redisService: RedisService,
+    private readonly embeddingService: EmbeddingService,
   ) {}
+
   async updateCompanyInfo(
-    updateCompanyInfoDTO: UpdateCompanyInfoDTO,
-    companyId: string,
-  ): Promise<{ message: string; company: CompanyResponseDTO }> {
+    updateCompanyInfoRpcDTO: UpdateCompanyInfoRpcDTO,
+  ): Promise<UpdateCompanyInfoResponseDTO> {
+    const { companyId, updateCompanyInfoDTO } = updateCompanyInfoRpcDTO;
     try {
       const company = await this.companyRepository.findOne({
         where: { id: companyId },
@@ -195,17 +200,53 @@ export class UpdateCompanyInfoService {
             });
 
             if (existing) {
-              const { id: _, ...updateData } = jobDto;
+              const previousTitle = existing.title;
+              const updateData = { ...jobDto };
+              delete updateData.id;
               Object.assign(existing, updateData);
               await this.jobRepository.save(existing);
+
+              // Re-embed when title changes.
+              if (updateData.title && updateData.title !== previousTitle) {
+                this.embeddingService
+                  .embedAsVector(updateData.title as string)
+                  .then((vector) =>
+                    this.jobRepository.query(
+                      `UPDATE job SET "titleEmbedding" = $1::vector WHERE id = $2`,
+                      [vector, jobId],
+                    ),
+                  )
+                  .catch((err: Error) =>
+                    this.logger.warn(
+                      `Failed to embed job title "${updateData.title as string}": ${err.message}`,
+                    ),
+                  );
+              }
             }
           } else {
-            await this.jobRepository.save(
+            const created = (await this.jobRepository.save(
               this.jobRepository.create({
                 ...jobDto,
                 company,
               }),
-            );
+            )) as unknown as Job;
+
+            // Fire-and-forget: embed the new job title for semantic recommendation matching.
+            if (created.title) {
+              this.embeddingService
+                .embedAsVector(created.title)
+                .then((vector) =>
+                  this.jobRepository.query(
+                    `UPDATE job SET "titleEmbedding" = $1::vector WHERE id = $2`,
+                    [vector, created.id],
+                  ),
+                )
+                .catch((err: Error) =>
+                  this.logger.warn(
+                    `Failed to embed job title "${created.title}": ${err.message}`,
+                  ),
+                );
+            }
           }
         }
       }
@@ -236,6 +277,22 @@ export class UpdateCompanyInfoService {
               }),
             );
             finalIds.push(created.id);
+
+            // Generate and persist the semantic embedding asynchronously.
+            // Fire-and-forget: don't block the profile update response.
+            this.embeddingService
+              .embedAsVector(cs.name)
+              .then((vector) =>
+                this.careerScopeRepository.query(
+                  `UPDATE career_scope SET embedding = $1::vector WHERE id = $2`,
+                  [vector, created.id],
+                ),
+              )
+              .catch((err: Error) =>
+                this.logger.warn(
+                  `Failed to embed career scope "${cs.name}": ${err.message}`,
+                ),
+              );
           }
         }
 
@@ -268,7 +325,8 @@ export class UpdateCompanyInfoService {
             });
 
             if (existing) {
-              const { id: _, ...updateData } = socialDto;
+              const updateData = { ...socialDto };
+              delete updateData.id;
               Object.assign(existing, updateData);
               await this.socialRepository.save(existing);
             }
@@ -315,17 +373,22 @@ export class UpdateCompanyInfoService {
       );
       keysToDelete.push(this.redisService.generateListKey('user', {}));
 
-      await Promise.all(keysToDelete.map((k) => this.redisService.del(k)));
+      await Promise.all([
+        ...keysToDelete.map((k) => this.redisService.del(k)),
+        // Company edits can change job postings or fields that job search
+        // filters/sorts on (e.g. company location, size), so refresh those.
+        this.redisService.invalidateJobSearchCaches(),
+      ]);
 
-      return {
+      return new UpdateCompanyInfoResponseDTO({
         message: 'Company information updated successfully',
         company: new CompanyResponseDTO({
           ...(freshCompany ?? company),
           openPositions: (
             freshCompany?.openPositions ?? company.openPositions
-          )?.map((job) => new JobPositionDTO(job)),
+          )?.map((job) => new JobPositionResponseDTO(job)),
         }),
-      };
+      });
     } catch (error) {
       this.logger.error(
         (error as Error).message ||

@@ -1,13 +1,17 @@
-import { DatabaseModule, JwtModule, UploadfileModule } from '@app/common';
-import { User } from '@app/common/database/entities/user.entity';
+import { JwtModule, UploadfileModule } from '@app/common';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
-import { CompanyController } from './company.controller';
-import { EmployeeController } from './employee.controller';
-import { UserController } from './user.controller';
+import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
+import { CompanyController } from './controllers/company.controller';
+import { EmployeeController } from './controllers/employee.controller';
+import { ModerationController } from './controllers/moderation.controller';
+import { PublicUserController } from './controllers/public-user.controller';
+import { UserController } from './controllers/user.controller';
+import { UserAccessService } from './services/user-access.service';
+import { EmployeeProfileOwnerGuard } from './guards/employee-profile-owner.guard';
+import { CompanyProfileOwnerGuard } from './guards/company-profile-owner.guard';
+import { EmployeeDocumentAccessGuard } from './guards/employee-document-access.guard';
 
 @Module({
   imports: [
@@ -24,12 +28,21 @@ import { UserController } from './user.controller';
         inject: [ConfigService],
       },
     ]),
-    DatabaseModule,
     UploadfileModule,
     JwtModule,
-    TypeOrmModule.forFeature([User]),
   ],
-  controllers: [UserController, EmployeeController, CompanyController],
-  providers: [],
+  controllers: [
+    UserController,
+    EmployeeController,
+    CompanyController,
+    PublicUserController,
+    ModerationController,
+  ],
+  providers: [
+    UserAccessService,
+    EmployeeProfileOwnerGuard,
+    CompanyProfileOwnerGuard,
+    EmployeeDocumentAccessGuard,
+  ],
 })
 export class UserModule {}

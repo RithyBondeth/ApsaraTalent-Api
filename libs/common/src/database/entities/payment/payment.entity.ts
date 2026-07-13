@@ -1,10 +1,18 @@
 import {
-    Column,
-    CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Company } from '../company/company.entity';
 import { User } from '../user.entity';
-import { Currency, PaymentTransaction } from './payment-transaction.entity';
+import { Currency } from './payment-enums';
+import { PaymentTransaction } from './payment-transaction.entity';
 
 export enum PaymentStatus {
   PENDING = 'pending',
@@ -33,6 +41,10 @@ export class Payment {
 
   @Column({ name: 'md5_hash', length: 32, unique: true })
   md5Hash: string;
+
+  /** SHA-256 of the QR string — our own integrity check, separate from the Bakong-mandated MD5 */
+  @Column({ name: 'sha256_hash', length: 64, nullable: true })
+  sha256Hash: string;
 
   @Column({ name: 'qr_string', type: 'text', unique: true })
   qrString: string;

@@ -1,64 +1,138 @@
-import { IMatchingController } from '@app/common/interfaces/job-controller.interface';
-import { Controller } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { UserResponseDTO } from 'apps/user-service/src/dtos/user-response.dto';
-import { JOB_SERVICE } from 'utils/constants/job-service.constant';
-import { MatchDto } from '../dtos/match.dto';
-import { MatchingService } from '../services/matching.service';
+import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
+import {
+  MatchDTO,
+  MatchResponseDTO,
+  MatchCountResponseDTO,
+  FindCurrentMatchingResponseDTO,
+  FindCurrentLikeResponseDTO,
+  AiMatchExplanationDTO,
+  AiMatchExplanationResponseDTO,
+  AiInterviewPrepDTO,
+  AiInterviewPrepResponseDTO,
+  CompanyMatchingLookupDTO,
+  EmployeeMatchingLookupDTO,
+  MatchingAnalyticsDTO,
+  MatchingAnalyticsResponseDTO,
+} from '@app/contracts/dtos/job';
+import {
+  I_MATCHING_SERVICE,
+  IMatchingService,
+} from '@app/contracts/interfaces/service/job-service.interface';
+import { IMatchingRpcController } from '@app/contracts/interfaces/controller/job-controllers/matching-controller.interface';
+import {
+  AiMatchProfilesDTO,
+  AiMatchProfilesResponseDTO,
+} from '@app/contracts/dtos/job/matching/ai-match-profiles.dto';
+import {
+  UnMatchDTO,
+  UnMatchResposneDTO,
+} from '@app/contracts/dtos/job/matching/unmatch.dto';
 
 @Controller()
-export class MatchingController implements IMatchingController {
-  constructor(private readonly matchingService: MatchingService) {}
+export class MatchingController implements IMatchingRpcController {
+  constructor(
+    @Inject(I_MATCHING_SERVICE)
+    private readonly matchingService: IMatchingService,
+  ) {}
 
   @MessagePattern(JOB_SERVICE.ACTIONS.EMPLOYEE_LIKES)
-  async employeeLikes(@Payload() payload: MatchDto): Promise<any> {
-    return this.matchingService.employeeLikes(payload);
+  async employeeLikes(
+    @Payload() matchDTO: MatchDTO,
+  ): Promise<MatchResponseDTO> {
+    return this.matchingService.employeeLikes(matchDTO);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.COMPANY_LIKES)
-  async companyLikes(@Payload() payload: MatchDto): Promise<any> {
-    return this.matchingService.companyLikes(payload);
+  async companyLikes(@Payload() matchDTO: MatchDTO): Promise<MatchResponseDTO> {
+    return this.matchingService.companyLikes(matchDTO);
+  }
+
+  @MessagePattern(JOB_SERVICE.ACTIONS.UNMATCH)
+  async unmatch(
+    @Payload() unMatchDTO: UnMatchDTO,
+  ): Promise<UnMatchResposneDTO> {
+    return this.matchingService.unmatch(unMatchDTO);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_LIKED)
   async findCurrentEmployeeLiked(
-    @Payload() payload: { eid: string },
-  ): Promise<UserResponseDTO[]> {
-    return this.matchingService.findCurrentEmployeeLiked(payload.eid);
+    @Payload() employeeMatchLookupDTO: EmployeeMatchingLookupDTO,
+  ): Promise<FindCurrentLikeResponseDTO[]> {
+    return this.matchingService.findCurrentEmployeeLiked(
+      employeeMatchLookupDTO,
+    );
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_LIKED)
   async findCurrentCompanyLiked(
-    @Payload() payload: { cid: string },
-  ): Promise<UserResponseDTO[]> {
-    return this.matchingService.findCurrentCompanyLiked(payload.cid);
+    @Payload() companyMatchLookupDTO: CompanyMatchingLookupDTO,
+  ): Promise<FindCurrentLikeResponseDTO[]> {
+    return this.matchingService.findCurrentCompanyLiked(companyMatchLookupDTO);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_MATCHING)
   async findCurrentEmployeeMatching(
-    @Payload() payload: { eid: string },
-  ): Promise<any> {
-    return this.matchingService.findCurrentEmployeeMatching(payload.eid);
+    @Payload() employeeMatchLookupDTO: EmployeeMatchingLookupDTO,
+  ): Promise<FindCurrentMatchingResponseDTO[]> {
+    return this.matchingService.findCurrentEmployeeMatching(
+      employeeMatchLookupDTO,
+    );
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_MATCHING)
   async findCurrentCompanyMatching(
-    @Payload() payload: { cid: string },
-  ): Promise<any> {
-    return this.matchingService.findCurrentCompanyMatching(payload.cid);
+    @Payload() companyMatchLookupDTO: CompanyMatchingLookupDTO,
+  ): Promise<FindCurrentMatchingResponseDTO[]> {
+    return this.matchingService.findCurrentCompanyMatching(
+      companyMatchLookupDTO,
+    );
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_MATCHING_COUNT)
   async findCurrentEmployeeMatchingCount(
-    @Payload() payload: { eid: string },
-  ): Promise<any> {
-    return this.matchingService.findCurrentEmployeeMatchingCount(payload.eid);
+    @Payload() employeeMatchLookupDTO: EmployeeMatchingLookupDTO,
+  ): Promise<MatchCountResponseDTO> {
+    return this.matchingService.findCurrentEmployeeMatchingCount(
+      employeeMatchLookupDTO,
+    );
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_CURRENT_COMPANY_MATCHING_COUNT)
   async findCurrentCompanyMatchingCount(
-    @Payload() payload: { cid: string },
-  ): Promise<any> {
-    return this.matchingService.findCurrentCompanyMatchingCount(payload.cid);
+    @Payload() companyMatchLookupDTO: CompanyMatchingLookupDTO,
+  ): Promise<MatchCountResponseDTO> {
+    return this.matchingService.findCurrentCompanyMatchingCount(
+      companyMatchLookupDTO,
+    );
+  }
+
+  @MessagePattern(JOB_SERVICE.ACTIONS.GET_ANALYTICS)
+  async getMatchingAnalytics(
+    @Payload() matchingAnalyticsDTO: MatchingAnalyticsDTO,
+  ): Promise<MatchingAnalyticsResponseDTO> {
+    return this.matchingService.getMatchingAnalytics(matchingAnalyticsDTO);
+  }
+
+  @MessagePattern(JOB_SERVICE.ACTIONS.AI_MATCH_EXPLANATION)
+  async getAiMatchExplanation(
+    @Payload() aiMatchExplanationDTO: AiMatchExplanationDTO,
+  ): Promise<AiMatchExplanationResponseDTO> {
+    return this.matchingService.getAiMatchExplanation(aiMatchExplanationDTO);
+  }
+
+  @MessagePattern(JOB_SERVICE.ACTIONS.GET_AI_MATCH_PROFILES)
+  async getAiMatchProfiles(
+    @Payload() aiMatchProfilesDTO: AiMatchProfilesDTO,
+  ): Promise<AiMatchProfilesResponseDTO> {
+    return this.matchingService.getAiMatchProfiles(aiMatchProfilesDTO);
+  }
+
+  @MessagePattern(JOB_SERVICE.ACTIONS.AI_INTERVIEW_PREP)
+  async getAiInterviewPrep(
+    @Payload() aiInterviewPrepDTO: AiInterviewPrepDTO,
+  ): Promise<AiInterviewPrepResponseDTO> {
+    return this.matchingService.getAiInterviewPrep(aiInterviewPrepDTO);
   }
 }

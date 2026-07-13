@@ -1,14 +1,18 @@
 import {
-    Column,
-    CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../user.entity';
 import { Payment } from './payment.entity';
 
-export enum Currency {
-  KHR = 'KHR',
-  USD = 'USD',
-}
+export { Currency } from './payment-enums';
+import { Currency } from './payment-enums';
 
 export enum TransactionStatus {
   PENDING = 'pending',

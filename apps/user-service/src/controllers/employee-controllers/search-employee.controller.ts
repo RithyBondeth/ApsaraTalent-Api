@@ -1,19 +1,27 @@
-import { ISearchEmployeeController } from '@app/common/interfaces/employee-controller.interface';
-import { Controller } from '@nestjs/common';
+import { ISearchEmployeeRpcController } from '@app/contracts/interfaces/controller/user-controllers/employee-controller.interface';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
-import { SearchEmployeeDto } from '../../dtos/employee/search-employee.dto';
-import { EmployeeResponseDTO } from '../../dtos/user-response.dto';
-import { SearchEmployeeService } from '../../services/employee-services/search-employee.service';
+import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
+import {
+  SearchEmployeeDTO,
+  SearchEmployeeResult,
+} from '@app/contracts/dtos/user';
+import {
+  I_SEARCH_EMPLOYEE_SERVICE,
+  ISearchEmployeeService,
+} from '@app/contracts/interfaces/service/user-service.interface';
 
 @Controller()
-export class SearchEmployeeController implements ISearchEmployeeController {
-  constructor(private readonly searchEmployeeService: SearchEmployeeService) {}
+export class SearchEmployeeController implements ISearchEmployeeRpcController {
+  constructor(
+    @Inject(I_SEARCH_EMPLOYEE_SERVICE)
+    private readonly searchEmployeeService: ISearchEmployeeService,
+  ) {}
 
   @MessagePattern(USER_SERVICE.ACTIONS.SEARCH_EMPLOYEES)
   async searchEmployee(
-    @Payload() searchEmployeeQuery: SearchEmployeeDto,
-  ): Promise<EmployeeResponseDTO[]> {
-    return this.searchEmployeeService.searchEmployee(searchEmployeeQuery);
+    @Payload() searchEmployeeDTO: SearchEmployeeDTO,
+  ): Promise<SearchEmployeeResult> {
+    return this.searchEmployeeService.searchEmployee(searchEmployeeDTO);
   }
 }

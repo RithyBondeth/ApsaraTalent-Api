@@ -1,9 +1,9 @@
 import {
-    CreateDateColumn,
-    Entity,
-    ManyToOne,
-    PrimaryGeneratedColumn,
-    Unique
+  CreateDateColumn,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  Unique,
 } from 'typeorm';
 import { Company } from '../company/company.entity';
 import { Employee } from './employee.entity';
@@ -19,7 +19,7 @@ export class EmployeeFavoriteCompany {
   })
   employee: Employee;
 
-  @ManyToOne(() => Company, { eager: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => Company, { onDelete: 'CASCADE' })
   company: Company;
 
   @CreateDateColumn()

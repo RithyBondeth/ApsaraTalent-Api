@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import { diskStorage, StorageEngine } from 'multer';
 import * as path from 'path';
 
 @Injectable()
 export class UploadfileService {
+  private static readonly logger = new Logger(UploadfileService.name);
+
   constructor() {}
 
   static storageOptions = (folderName: string): StorageEngine => {
@@ -28,18 +30,19 @@ export class UploadfileService {
   };
   getUploadFile(folderName: string, file: Express.Multer.File): string {
     // Store a relative public path in DB so environments can move freely
-    // (localhost / staging / production) without hardcoded hostnames.
+    // (localhost / production) without hardcoded hostnames.
     return `/storage/${folderName}/${file.filename}`;
   }
 
   static deleteFile(filePath: string, fileType: string) {
     if (fs.existsSync(filePath)) {
       fs.unlink(filePath, (error) => {
-        if (error) console.log(`Failed to delete ${fileType}:`, error);
-        else console.log(`${fileType} Deleted Successfully`);
+        if (error)
+          this.logger.error(`Failed to delete ${fileType}: ${error.message}`);
+        else this.logger.log(`${fileType} Deleted Successfully`);
       });
     } else {
-      console.log(`${fileType} does not exist at path ${filePath}`);
+      this.logger.warn(`${fileType} does not exist at path ${filePath}`);
     }
   }
 }

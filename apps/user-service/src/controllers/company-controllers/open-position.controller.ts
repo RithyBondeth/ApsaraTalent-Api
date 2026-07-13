@@ -1,19 +1,27 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
-import { OpenPositionService } from '../../services/company-services/open-position.service';
+import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
+import { IOpenPositionRpcController } from '@app/contracts/interfaces/controller/user-controllers/company-controller.interface';
+import {
+  I_OPEN_POSITION_SERVICE,
+  IOpenPositionService,
+} from '@app/contracts/interfaces/service/user-service.interface';
+import {
+  RemoveOpenPositionDTO,
+  RemoveOpenPositionResponseDTO,
+} from '@app/contracts/dtos/user';
 
 @Controller()
-export class OpenPositionController {
-  constructor(private readonly openPositionService: OpenPositionService) {}
+export class OpenPositionController implements IOpenPositionRpcController {
+  constructor(
+    @Inject(I_OPEN_POSITION_SERVICE)
+    private readonly openPositionService: IOpenPositionService,
+  ) {}
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_OPEN_POSITION)
   async removeOpenPosition(
-    @Payload() payload: { companyId: string; opId: string },
-  ): Promise<any> {
-    return this.openPositionService.removeOpenPosition(
-      payload.companyId,
-      payload.opId,
-    );
+    @Payload() removeOpenPositionDTO: RemoveOpenPositionDTO,
+  ): Promise<RemoveOpenPositionResponseDTO> {
+    return this.openPositionService.removeOpenPosition(removeOpenPositionDTO);
   }
 }

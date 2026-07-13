@@ -7,12 +7,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as crypto from 'crypto';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
-import { checkEmail } from 'utils/functions/check-email';
-import { ForgotPasswordResponseDTO } from '../dtos/forgot-password-response.dto';
-import { ForgotPasswordDTO } from '../dtos/forgot-password.dto';
+import { checkEmail } from '@app/utils/functions/check-email';
+import { IForgotPasswordService } from '@app/contracts/interfaces/service/auth-service.interface';
+import { AUTH } from '@app/contracts/constants/domain/auth.constant';
+import { ForgotPasswordDTO, ForgotPasswordResponseDTO } from '@app/contracts';
 
 @Injectable()
-export class ForgotPasswordService {
+export class ForgotPasswordService implements IForgotPasswordService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly emailService: EmailService,
@@ -42,7 +43,7 @@ export class ForgotPasswordService {
 
       //Generate a reset password token and expiry date
       const resetToken = crypto.randomBytes(20).toString('hex');
-      const expireDateToken = new Date(Date.now() + 3600000); // 1 hour
+      const expireDateToken = new Date(Date.now() + AUTH.PASSWORD_RESET_EXPIRY);
 
       //Set a reset password token and expiry date
       user.resetPasswordToken = crypto
@@ -52,7 +53,10 @@ export class ForgotPasswordService {
       user.resetPasswordExpires = expireDateToken;
       await this.userRepository.save(user);
 
-      console.log('reset token: ', resetToken);
+      this.logger.debug(
+        { identifier: forgotPasswordDTO.identifier, isEmail },
+        'Reset password token generated successfully',
+      );
 
       if ((user.email && !user.phone) || (user.email && user.phone)) {
         //Send reset password token to user email address
@@ -62,18 +66,18 @@ export class ForgotPasswordService {
           text: `Hello, ${user.email}. Here is your reset password token: ${resetToken}.`,
         });
 
-        return new ForgotPasswordResponseDTO(
-          `Reset password token was sent successfully to ${user.email}`,
-        );
+        return new ForgotPasswordResponseDTO({
+          message: `Reset password token was sent successfully to ${user.email}`,
+        });
       }
 
       if (!user.email && user.phone) {
         //Send reset password token to user phone number
         await this.messageService.sendResetToken(user.phone, resetToken);
 
-        return new ForgotPasswordResponseDTO(
-          `Reset password token was sent successfully to ${user.phone}`,
-        );
+        return new ForgotPasswordResponseDTO({
+          message: `Reset password token was sent successfully to ${user.phone}`,
+        });
       }
     } catch (error) {
       this.logger.error((error as Error).message || 'Forgot password failed');

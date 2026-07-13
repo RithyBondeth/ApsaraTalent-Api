@@ -1,12 +1,10 @@
 import { JwtModule, ThrottlerModule } from '@app/common';
-import { User } from '@app/common/database/entities/user.entity';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PassportModule } from '@nestjs/passport';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
-import { AuthController } from './auth.controller';
+import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
+import { AuthController } from './basic/controllers/auth.controller';
 import { FacebookController } from './socials/controllers/facebook.controller';
 import { GithubController } from './socials/controllers/github.controller';
 import { GoogleController } from './socials/controllers/google.controller';
@@ -15,6 +13,9 @@ import { FacebookStrategy } from './socials/strategies/facebook.strategy';
 import { GitHubStrategy } from './socials/strategies/github.strategy';
 import { GoogleStrategy } from './socials/strategies/google.strategy';
 import { LinkedInStrategy } from './socials/strategies/linkedin.strategy';
+import { ResumeParseService } from './services/resume-parse.service';
+import { IceServersService } from './services/ice-servers.service';
+import { SocialAuthService } from './services/social-auth.service';
 
 @Module({
   imports: [
@@ -34,7 +35,6 @@ import { LinkedInStrategy } from './socials/strategies/linkedin.strategy';
     ThrottlerModule,
     PassportModule,
     JwtModule,
-    TypeOrmModule.forFeature([User]),
   ],
   controllers: [
     AuthController,
@@ -48,6 +48,9 @@ import { LinkedInStrategy } from './socials/strategies/linkedin.strategy';
     LinkedInStrategy,
     GitHubStrategy,
     FacebookStrategy,
+    ResumeParseService,
+    IceServersService,
+    SocialAuthService,
   ],
 })
 export class AuthModule {}

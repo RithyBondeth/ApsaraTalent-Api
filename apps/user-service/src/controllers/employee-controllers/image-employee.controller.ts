@@ -1,26 +1,38 @@
-import { IImageEmployeeController } from '@app/common/interfaces/employee-controller.interface';
-import { Controller } from '@nestjs/common';
+import { IImageEmployeeRpcController } from '@app/contracts/interfaces/controller/user-controllers/employee-controller.interface';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
-import { ImageEmployeeService } from '../../services/employee-services/image-employee.service';
+import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
+import {
+  I_IMAGE_EMPLOYEE_SERVICE,
+  IImageEmployeeService,
+} from '@app/contracts/interfaces/service/user-service.interface';
+import {
+  EmployeeIdDTO,
+  RemoveEmployeeAvatarResponseDTO,
+  UploadEmployeeAvatarDTO,
+  UploadEmployeeAvatarResponseDTO,
+} from '@app/contracts/dtos/user';
 
 @Controller()
-export class ImageEmployeeController implements IImageEmployeeController {
-  constructor(private readonly imageEmployeeService: ImageEmployeeService) {}
+export class ImageEmployeeController implements IImageEmployeeRpcController {
+  constructor(
+    @Inject(I_IMAGE_EMPLOYEE_SERVICE)
+    private readonly imageEmployeeService: IImageEmployeeService,
+  ) {}
 
   @MessagePattern(USER_SERVICE.ACTIONS.UPLOAD_EMPLOYEE_AVATAR)
   async uploadEmployeeAvatar(
-    @Payload() payload: { employeeId: string; avatar: Express.Multer.File },
-  ) {
-    console.log(payload.avatar);
+    @Payload() uploadEmployeeAvatarDTO: UploadEmployeeAvatarDTO,
+  ): Promise<UploadEmployeeAvatarResponseDTO> {
     return this.imageEmployeeService.uploadEmployeeAvatar(
-      payload.employeeId,
-      payload.avatar,
+      uploadEmployeeAvatarDTO,
     );
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_EMPLOYEE_AVATAR)
-  async removeEmployeeAvatar(@Payload() payload: { employeeId: string }) {
-    return this.imageEmployeeService.removeEmployeeAvatar(payload.employeeId);
+  async removeEmployeeAvatar(
+    @Payload() employeeIdDTO: EmployeeIdDTO,
+  ): Promise<RemoveEmployeeAvatarResponseDTO> {
+    return this.imageEmployeeService.removeEmployeeAvatar(employeeIdDTO);
   }
 }

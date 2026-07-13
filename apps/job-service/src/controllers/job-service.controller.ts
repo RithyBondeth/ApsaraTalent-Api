@@ -1,22 +1,34 @@
-import { IJobController } from '@app/common/interfaces/job-controller.interface';
-import { Controller } from '@nestjs/common';
+import { IJobRpcController } from '@app/contracts/interfaces/controller/job-controllers/job-controller.interface';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { JOB_SERVICE } from 'utils/constants/job-service.constant';
-import { JobResponseDTO } from '../dtos/job-response.dto';
-import { SearchJobDto } from '../dtos/job-search.dto';
-import { JobServiceService } from '../services/job-service.service';
+import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
+import {
+  JobResponseDTO,
+  SearchJobDTO,
+  SearchJobResult,
+} from '@app/contracts/dtos/job';
+import {
+  I_JOB_SERVICE_SERVICE,
+  IJobServiceService,
+} from '@app/contracts/interfaces/service/job-service.interface';
+import { PaginationDTO } from '@app/contracts';
 
 @Controller()
-export class JobServiceController implements IJobController {
-  constructor(private readonly jobServiceService: JobServiceService) {}
+export class JobController implements IJobRpcController {
+  constructor(
+    @Inject(I_JOB_SERVICE_SERVICE)
+    private readonly jobService: IJobServiceService,
+  ) {}
 
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_ALL_JOBS)
-  findAllJobs(): Promise<JobResponseDTO[]> {
-    return this.jobServiceService.findAllJobs();
+  findAllJobs(
+    @Payload() paginationDTO: PaginationDTO,
+  ): Promise<JobResponseDTO[]> {
+    return this.jobService.findAllJobs(paginationDTO);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.SEARCH_JOBS)
-  searchJobs(@Payload() searchJobDTO: SearchJobDto): Promise<JobResponseDTO[]> {
-    return this.jobServiceService.searchJobs(searchJobDTO);
+  searchJobs(@Payload() searchJobDTO: SearchJobDTO): Promise<SearchJobResult> {
+    return this.jobService.searchJobs(searchJobDTO);
   }
 }

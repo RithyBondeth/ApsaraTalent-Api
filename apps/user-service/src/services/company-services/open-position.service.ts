@@ -6,9 +6,14 @@ import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
+import {
+  RemoveOpenPositionDTO,
+  RemoveOpenPositionResponseDTO,
+} from '@app/contracts/dtos/user';
+import { IOpenPositionService } from '@app/contracts/interfaces/service/user-service.interface';
 
 @Injectable()
-export class OpenPositionService {
+export class OpenPositionService implements IOpenPositionService {
   constructor(
     private readonly logger: PinoLogger,
     @InjectRepository(Job) private readonly jobRepository: Repository<Job>,
@@ -16,7 +21,7 @@ export class OpenPositionService {
     private readonly redisService: RedisService,
   ) {}
 
-  private async invalidateCompanyCaches(companyId: string) {
+  private async invalidateCompanyCaches(companyId: string): Promise<void> {
     const users = await this.userRepository.find({
       where: { company: { id: companyId } },
       select: ['id'],
@@ -37,7 +42,10 @@ export class OpenPositionService {
     );
   }
 
-  async removeOpenPosition(companyId: string, opId: string): Promise<any> {
+  async removeOpenPosition(
+    removeOpenPositionDTO: RemoveOpenPositionDTO,
+  ): Promise<RemoveOpenPositionResponseDTO> {
+    const { companyId, opId } = removeOpenPositionDTO;
     try {
       const removedJob = await this.jobRepository.findOne({
         where: { id: opId, company: { id: companyId } },
@@ -53,11 +61,15 @@ export class OpenPositionService {
       await this.jobRepository.delete(opId);
 
       // Invalidate cache after deletion
-      await this.invalidateCompanyCaches(companyId);
+      await Promise.all([
+        this.invalidateCompanyCaches(companyId),
+        // A removed job must disappear from job search/list results too.
+        this.redisService.invalidateJobSearchCaches(),
+      ]);
 
-      return {
+      return new RemoveOpenPositionResponseDTO({
         message: `${removedJob.title} position was removed successfully.`,
-      };
+      });
     } catch (error) {
       // Handle error
       this.logger.error(

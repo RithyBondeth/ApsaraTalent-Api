@@ -1,22 +1,36 @@
-import { IBasicAuthLoginOTPController } from '@app/common/interfaces/auth-controller.interface';
-import { Controller } from '@nestjs/common';
+import { IBasicAuthLoginOTPRpcController } from '@app/contracts/interfaces/controller/auth-controller.interface';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
-import { LoginOtpDTO } from '../dtos/login-otp.dto';
-import { VerifyOtpDTO } from '../dtos/verify-otp.dto';
-import { LoginOTPService } from '../services/login-otp.service';
+import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
+import {
+  I_LOGIN_OTP_SERVICE,
+  ILoginOTPService,
+} from '@app/contracts/interfaces/service/auth-service.interface';
+import {
+  LoginOtpDTO,
+  LoginOtpResponseDTO,
+  VerifyOtpDTO,
+  VerifyOtpResponseDTO,
+} from '@app/contracts';
 
 @Controller()
-export class LoginOTPController implements IBasicAuthLoginOTPController {
-  constructor(private readonly loginOtpService: LoginOTPService) {}
+export class LoginOTPController implements IBasicAuthLoginOTPRpcController {
+  constructor(
+    @Inject(I_LOGIN_OTP_SERVICE)
+    private readonly loginOtpService: ILoginOTPService,
+  ) {}
 
   @MessagePattern(AUTH_SERVICE.ACTIONS.LOGIN_OTP)
-  async loginOtp(@Payload() loginOtpOTP: LoginOtpDTO): Promise<any> {
-    return this.loginOtpService.loginOtp(loginOtpOTP);
+  async loginOtp(
+    @Payload() loginOtpDTO: LoginOtpDTO,
+  ): Promise<LoginOtpResponseDTO> {
+    return this.loginOtpService.loginOtp(loginOtpDTO);
   }
 
   @MessagePattern(AUTH_SERVICE.ACTIONS.VERIFY_OTP)
-  async verifyOtp(@Payload() verifyOtpDTO: VerifyOtpDTO): Promise<any> {
+  async verifyOtp(
+    @Payload() verifyOtpDTO: VerifyOtpDTO,
+  ): Promise<VerifyOtpResponseDTO> {
     return this.loginOtpService.verifyOtp(verifyOtpDTO);
   }
 }

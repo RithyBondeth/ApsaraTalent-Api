@@ -1,12 +1,13 @@
 import {
-    CanActivate,
-    ExecutionContext,
-    HttpException,
-    HttpStatus,
-    Injectable
+  CanActivate,
+  ExecutionContext,
+  HttpException,
+  HttpStatus,
+  Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
+import { RATE_LIMIT_METADATA } from '../decorators/rate-limit.decorator';
 
 interface RateLimitStore {
   [key: string]: {
@@ -26,12 +27,17 @@ export class BakongRateLimitGuard implements CanActivate {
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const key = this.generateKey(request);
+    const configuredLimit = this.reflector.get<number>(
+      RATE_LIMIT_METADATA,
+      context.getHandler(),
+    );
 
-    const limit =
-      this.reflector.get<number>('rateLimit', context.getHandler()) ||
-      this.defaultLimit;
+    // Only explicitly decorated Bakong operations are rate limited. Applying
+    // an HTTP-oriented global guard to health RPCs breaks service readiness.
+    if (!configuredLimit) return true;
+
+    const key = this.generateKey(context);
+    const limit = configuredLimit || this.defaultLimit;
 
     const now = Date.now();
     const record = this.store[key];
@@ -61,8 +67,23 @@ export class BakongRateLimitGuard implements CanActivate {
     return true;
   }
 
-  private generateKey(request: any): string {
-    // Generate key based on IP or user ID
-    return request.ip || request.connection.remoteAddress || 'anonymous';
+  private generateKey(context: ExecutionContext): string {
+    if (context.getType() === 'http') {
+      const request = context.switchToHttp().getRequest();
+      return (
+        request?.user?.id ||
+        request?.ip ||
+        request?.connection?.remoteAddress ||
+        'http:anonymous'
+      );
+    }
+
+    const payload = context.switchToRpc().getData<Record<string, unknown>>();
+    return `rpc:${
+      payload?.userId ||
+      payload?.companyId ||
+      payload?.bakongAccountId ||
+      'anonymous'
+    }`;
   }
 }

@@ -2,49 +2,50 @@ import { User } from '@app/common/database/entities/user.entity';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
-import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
-import { USER_SERVICE } from 'utils/constants/user-service.constant';
-import { GoogleAuthDTO } from '../dtos/google-auth.dto';
+import { GoogleAuthDTO, GoogleLoginResponseDTO } from '@app/contracts';
+import { IGoogleAuthService } from '@app/contracts/interfaces/service/auth-service.interface';
+import { CacheCleanupService } from '../../shared/services/cache-cleanup.service';
 
 @Injectable()
-export class GoogleAuthService {
+export class GoogleAuthService implements IGoogleAuthService {
   constructor(
-    @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
+    private readonly cacheCleanupService: CacheCleanupService,
     private readonly logger: PinoLogger,
   ) {}
 
-  async googleLogin(googleData: GoogleAuthDTO) {
+  async googleLogin(
+    googleDataDTO: GoogleAuthDTO,
+  ): Promise<GoogleLoginResponseDTO> {
     try {
       // Find a user by email
       const user = await this.userRepository.findOne({
-        where: { email: googleData.email },
+        where: { email: googleDataDTO.email },
       });
 
       if (!user) {
         // If user does not exist, return data for frontend role selection
-        return {
+        return new GoogleLoginResponseDTO({
           message: 'Successfully Logged in with Google',
           newUser: true,
-          email: googleData.email,
-          firstname: googleData.firstName,
-          lastname: googleData.lastName,
-          picture: googleData.picture,
+          email: googleDataDTO.email,
+          firstname: googleDataDTO.firstName,
+          lastname: googleDataDTO.lastName,
+          picture: googleDataDTO.picture,
           accessToken: null,
           refreshToken: null,
           provider: 'google',
-        };
+        });
       }
 
       // Update user with googleId and login tracking if not already set
-      if (!user.googleId && googleData.id) {
-        user.googleId = googleData.id;
+      if (!user.googleId && googleDataDTO.id) {
+        user.googleId = googleDataDTO.id;
       }
       user.lastLoginMethod = ELoginMethod.GOOGLE;
       user.lastLoginAt = new Date();
@@ -62,15 +63,10 @@ export class GoogleAuthService {
         this.jwtService.generateRefreshToken(user.id),
       ]);
 
-      // Clear Cache in USER SERVICE
-      console.log('[AUTH] sending CLEAR_USER_CACHE from GOOGLE LOGIN', user.id);
-      await firstValueFrom(
-        this.userClient.send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, {
-          userId: user.id,
-        }),
-      );
+      // Clear Cache in USER SERVICE (non-blocking — must not prevent login)
+      this.cacheCleanupService.clearSafe(user.id, 'Google');
 
-      return {
+      return new GoogleLoginResponseDTO({
         message: 'Successfully Logged in with Google',
         newUser: false,
         email: null,
@@ -82,13 +78,13 @@ export class GoogleAuthService {
         lastLoginAt: user.lastLoginAt,
         accessToken,
         refreshToken,
-      };
+      });
     } catch (error) {
       this.logger.error('Google login error:', {
         error: (error as Error).message,
         stack: (error as Error).stack,
-        googleId: googleData.id,
-        email: googleData.email,
+        googleId: googleDataDTO.id,
+        email: googleDataDTO.email,
       });
       throw new UnauthorizedException('Failed to authenticate with Google');
     }

@@ -15,10 +15,10 @@ export class JobMatching {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Employee, { eager: true })
+  @ManyToOne(() => Employee)
   employee: Employee;
 
-  @ManyToOne(() => Company, { eager: true })
+  @ManyToOne(() => Company)
   company: Company;
 
   @Column({ default: false })
@@ -29,6 +29,9 @@ export class JobMatching {
 
   @Column({ default: false })
   isMatched: boolean;
+
+  @Column({ type: 'smallint', nullable: true })
+  skillScore: number | null;
 
   @CreateDateColumn()
   createdAt: Date;

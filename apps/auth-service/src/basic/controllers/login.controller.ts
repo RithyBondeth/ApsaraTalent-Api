@@ -1,17 +1,21 @@
-import { IBasicAuthLoginController } from '@app/common/interfaces/auth-controller.interface';
-import { Controller } from '@nestjs/common';
+import { IBasicAuthLoginRpcController } from '@app/contracts/interfaces/controller/auth-controller.interface';
+import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { AUTH_SERVICE } from 'utils/constants/auth-service.constant';
-import { LoginResponseDTO } from '../dtos/login-response.dto';
-import { LoginDTO } from '../dtos/login.dto';
-import { LoginService } from '../services/login.service';
+import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
+import {
+  I_LOGIN_SERVICE,
+  ILoginService,
+} from '@app/contracts/interfaces/service/auth-service.interface';
+import { LoginDTO, LoginResponseDTO } from '@app/contracts';
 
 @Controller()
-export class LoginController implements IBasicAuthLoginController {
-  constructor(private readonly loginService: LoginService) {}
+export class LoginController implements IBasicAuthLoginRpcController {
+  constructor(
+    @Inject(I_LOGIN_SERVICE) private readonly loginService: ILoginService,
+  ) {}
 
   @MessagePattern(AUTH_SERVICE.ACTIONS.LOGIN)
   async login(@Payload() loginDTO: LoginDTO): Promise<LoginResponseDTO> {
-    return await this.loginService.login(loginDTO);
+    return this.loginService.login(loginDTO);
   }
 }

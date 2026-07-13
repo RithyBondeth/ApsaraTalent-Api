@@ -1,21 +1,35 @@
 import { DatabaseModule, LoggerModule } from '@app/common';
 import { ConfigModule } from '@app/common/config';
+import { RedisModule } from '@app/common/redis/redis.module';
+import { MetricsModule } from '@app/common/metrics/metrics.module';
 import { Notification } from '@app/common/database/entities/notification.entity';
 import { User } from '@app/common/database/entities/user.entity';
 import { Module } from '@nestjs/common';
+import { TerminusModule } from '@nestjs/terminus';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { NotificationServiceController } from './notification-service.controller';
-import { NotificationServiceService } from './notification-service.service';
-import { PushNotificationService } from './push-notification.service';
+import { NotificationHealthController } from './health/health.controller';
+import { NotificationController } from './controllers/notification-service.controller';
+import { NotificationService } from './services/notification-service.service';
+import { PushNotificationService } from './services/push-notification.service';
+import { I_NOTIFICATION_SERVICE } from '@app/contracts/interfaces/service/notification-service.interface';
 
 @Module({
   imports: [
     ConfigModule,
+    MetricsModule,
     LoggerModule,
     DatabaseModule,
+    RedisModule,
+    TerminusModule,
     TypeOrmModule.forFeature([Notification, User]),
   ],
-  controllers: [NotificationServiceController],
-  providers: [NotificationServiceService, PushNotificationService],
+  controllers: [NotificationController, NotificationHealthController],
+  providers: [
+    {
+      provide: I_NOTIFICATION_SERVICE,
+      useClass: NotificationService,
+    },
+    PushNotificationService,
+  ],
 })
 export class NotificationServiceModule {}
