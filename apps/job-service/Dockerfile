@@ -8,9 +8,8 @@ COPY tsconfig*.json ./
 COPY apps/job-service ./apps/job-service
 COPY apps/user-service ./apps/user-service
 COPY libs ./libs
-COPY utils ./utils
 
-RUN npm ci --legacy-peer-deps
+RUN npm ci
 RUN npx nest build job-service
 
 # Stage 2: Production

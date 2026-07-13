@@ -7,9 +7,8 @@ COPY nest-cli.json webpack.config.js ./
 COPY tsconfig*.json ./
 COPY apps/chat-service ./apps/chat-service
 COPY libs ./libs
-COPY utils ./utils
 
-RUN npm ci --legacy-peer-deps
+RUN npm ci
 RUN npx nest build chat-service
 
 # Stage 2: Production
