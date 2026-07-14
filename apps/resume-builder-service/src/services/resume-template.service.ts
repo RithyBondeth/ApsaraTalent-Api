@@ -38,12 +38,6 @@ export class ResumeTemplateService implements IResumeTemplateService {
 
     try {
       const templates = await this.resumeTemplateRepository.find();
-      if (!templates || templates.length === 0)
-        throw new RpcException({
-          message: 'There are no templates available.',
-          statusCode: 404,
-        });
-
       const result = templates.map(
         (template) => new ResumeTemplateResponseDTO(template),
       );
@@ -110,15 +104,16 @@ export class ResumeTemplateService implements IResumeTemplateService {
   ): Promise<CreateResumeTemplateResponseDTO> {
     try {
       const template = this.resumeTemplateRepository.create({
+        templateKey: createResumeTemplateDTO.templateKey,
         title: createResumeTemplateDTO.title,
         description: createResumeTemplateDTO.description,
         price: Number(createResumeTemplateDTO.price) || 0,
-        isPremium: Boolean(createResumeTemplateDTO.isPremium) ?? false,
+        isPremium: createResumeTemplateDTO.isPremium ?? false,
       });
 
       if (image) {
         const imageUrl = this.uploadFileService.getUploadFile(
-          'template-images',
+          'resume-templates',
           image,
         );
         template.image = imageUrl;
@@ -133,6 +128,12 @@ export class ResumeTemplateService implements IResumeTemplateService {
         message: "Resume's template was successfully created.",
       });
     } catch (error) {
+      if ((error as { code?: string }).code === '23505') {
+        throw new RpcException({
+          message: 'A resume template with this key already exists.',
+          statusCode: 409,
+        });
+      }
       this.logger.error(
         (error as Error).message ||
           "An error occurred while creating the resume's template.",
@@ -166,7 +167,7 @@ export class ResumeTemplateService implements IResumeTemplateService {
       let whereUsed = false;
 
       if (searchResumeTemplateDTO.title) {
-        query.where('resume.title LIKE :title', {
+        query.where('resume.title ILIKE :title', {
           title: `%${searchResumeTemplateDTO.title}%`,
         });
         whereUsed = true;

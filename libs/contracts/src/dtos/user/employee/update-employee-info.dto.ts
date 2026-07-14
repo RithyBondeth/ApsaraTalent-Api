@@ -12,6 +12,7 @@ import {
   IsPositive,
   IsString,
   IsUrl,
+  MaxLength,
   ValidateNested,
 } from 'class-validator';
 
@@ -37,6 +38,11 @@ class ExperienceDTO {
   @IsString()
   @IsOptional()
   title?: string;
+
+  @IsString()
+  @MaxLength(100)
+  @IsOptional()
+  company?: string;
 
   @IsString()
   @IsOptional()

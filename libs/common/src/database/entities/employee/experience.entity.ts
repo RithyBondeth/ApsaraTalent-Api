@@ -14,6 +14,9 @@ export class Experience {
   @Column()
   title: string;
 
+  @Column({ nullable: true })
+  company: string;
+
   @Column()
   description: string;
 

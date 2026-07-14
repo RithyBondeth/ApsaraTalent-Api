@@ -28,6 +28,7 @@ import {
   SearchResumeTemplateResponseDTO,
 } from '@app/contracts/dtos/resume/template';
 import { rpcCall } from '../../utils/rpc-call';
+import { AdminGuard } from '@app/common/guards/admin.guard';
 
 @Controller('resume/template')
 @UseGuards(AuthGuard)
@@ -58,10 +59,11 @@ export class ResumeTemplateController implements IResumeTemplateController {
   }
 
   @Post('create')
+  @UseGuards(AdminGuard)
   @UseInterceptors(
     new UploadFileInterceptor(
       'image',
-      'template-images',
+      'resume-templates',
       ALLOWED_IMAGE_MIME_TYPES,
       MAX_IMAGE_SIZE_BYTES,
     ),
@@ -73,7 +75,7 @@ export class ResumeTemplateController implements IResumeTemplateController {
     return rpcCall<CreateResumeTemplateResponseDTO>(
       this.resumeBuilderClient,
       RESUME_BUILDER_SERVICE.ACTIONS.CREATE_RESUME_TEMPLATE,
-      { createResumeTemplateDTO, image },
+      { dto: createResumeTemplateDTO, image },
     );
   }
 

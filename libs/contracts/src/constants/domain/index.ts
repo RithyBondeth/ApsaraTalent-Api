@@ -6,3 +6,4 @@ export * from './notification.constant';
 export * from './password.constant';
 export * from './resume.constant';
 export * from './upload.constant';
+export * from './image.constant';
