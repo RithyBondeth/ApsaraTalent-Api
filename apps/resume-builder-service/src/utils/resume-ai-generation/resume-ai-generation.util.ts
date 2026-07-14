@@ -1,17 +1,17 @@
 import { BuildResumeDTO } from '@app/contracts/dtos/resume';
 
-type UnknownRecord = Record<string, unknown>;
-type ResumeDesign = NonNullable<BuildResumeDTO['design']>;
-type ResumeTemplate = BuildResumeDTO['template'];
+type TUnknownRecord = Record<string, unknown>;
+type TResumeDesign = NonNullable<BuildResumeDTO['design']>;
+type TResumeTemplate = BuildResumeDTO['template'];
 
-interface StylePreset {
-  layouts: readonly ResumeDesign['layout'][];
-  palettes: readonly ResumeDesign['palette'][];
-  typography: readonly ResumeDesign['typography'][];
-  densities?: readonly ResumeDesign['density'][];
+interface IStylePreset {
+  layouts: readonly TResumeDesign['layout'][];
+  palettes: readonly TResumeDesign['palette'][];
+  typography: readonly TResumeDesign['typography'][];
+  densities?: readonly TResumeDesign['density'][];
 }
 
-const STYLE_PRESETS: Record<ResumeTemplate, StylePreset> = {
+const STYLE_PRESETS: Record<TResumeTemplate, IStylePreset> = {
   modern: {
     layouts: ['two-column', 'right-sidebar', 'left-sidebar'],
     palettes: ['cobalt', 'ocean', 'graphite'],
@@ -82,11 +82,11 @@ function seededPick<T>(values: readonly T[], seed: number, salt: number): T {
 
 /** Ensure every successful generation has a varied, style-compatible layout. */
 export function buildFallbackResumeDesign(
-  template: ResumeTemplate,
+  template: TResumeTemplate,
   seed: number,
-): ResumeDesign {
+): TResumeDesign {
   const preset = STYLE_PRESETS[template];
-  const sidebarOptions: readonly ResumeDesign['sidebarSections'][] = [
+  const sidebarOptions: readonly TResumeDesign['sidebarSections'][] = [
     ['skills'],
     ['skills', 'education'],
     ['summary', 'skills'],
@@ -105,7 +105,7 @@ export function buildFallbackResumeDesign(
     avatarPlacement: seededPick(['start', 'center', 'end'], seed, 4),
     sidebarSections: [
       ...seededPick(sidebarOptions, seed, 5),
-    ] as ResumeDesign['sidebarSections'],
+    ] as TResumeDesign['sidebarSections'],
     palette: seededPick(preset.palettes, seed, 6),
     typography: seededPick(preset.typography, seed, 7),
     density: seededPick(
@@ -163,9 +163,9 @@ const SIDEBAR_SECTIONS = new Set<string>([
   'careerScopes',
 ]);
 
-function asRecord(value: unknown): UnknownRecord | null {
+function asRecord(value: unknown): TUnknownRecord | null {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
-    ? (value as UnknownRecord)
+    ? (value as TUnknownRecord)
     : null;
 }
 
@@ -324,7 +324,7 @@ export function buildResumeGenerationInput(
   return serialized;
 }
 
-export function parseGeneratedResumeContent(content: string): UnknownRecord {
+export function parseGeneratedResumeContent(content: string): TUnknownRecord {
   const parsed: unknown = JSON.parse(content);
   const result = asRecord(parsed);
   if (!result) throw new Error('AI returned an invalid resume structure');
@@ -337,9 +337,9 @@ export function parseGeneratedResumeContent(content: string): UnknownRecord {
  */
 export function mergeGeneratedResumeContent(
   trusted: BuildResumeDTO,
-  generated: UnknownRecord,
+  generated: TUnknownRecord,
 ): BuildResumeDTO {
-  const generatedExperience = new Map<number, UnknownRecord>();
+  const generatedExperience = new Map<number, TUnknownRecord>();
   if (Array.isArray(generated.experience)) {
     for (const value of generated.experience) {
       const item = asRecord(value);

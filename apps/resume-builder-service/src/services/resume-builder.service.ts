@@ -21,7 +21,7 @@ import {
 import { ImageService } from './image.service';
 import { PdfGeneratorService } from './pdf-generator.service';
 import { IResumeBuilderService } from '@app/contracts/interfaces/service/resume-builder-service.interface';
-import { buildResumeHtml } from '../utils/resume-html-template.util';
+import { buildResumeHtml } from '../utils/resume-html-import/resume-html-template.util';
 import { buildCoverLetterHtml } from '../utils/cover-letter-templates.util';
 import { buildInterviewPrepHtml } from '../utils/interview-prep-template.util';
 import { RESUME } from '@app/contracts/constants/domain/resume.constant';
@@ -30,11 +30,11 @@ import {
   buildFallbackResumeDesign,
   mergeGeneratedResumeContent,
   parseGeneratedResumeContent,
-} from '../utils/resume-ai-generation.util';
+} from '../utils/resume-ai-generation/resume-ai-generation.util';
 import {
   parseResumeFromTextOutput,
   RESUME_TEXT_IMPORT_JSON_SCHEMA,
-} from '../utils/resume-text-import.util';
+} from '../utils/resume-text-import/resume-text-import.util';
 
 @Injectable()
 export class ResumeBuilderService implements IResumeBuilderService {

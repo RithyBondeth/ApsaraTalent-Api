@@ -1,9 +1,9 @@
 import { BuildResumeDTO } from '@app/contracts/dtos/resume';
 
-type ResumeSection = NonNullable<BuildResumeDTO['sectionOrder']>[number];
-type ResumeTemplate = BuildResumeDTO['template'];
+type TResumeSection = NonNullable<BuildResumeDTO['sectionOrder']>[number];
+type TResumeTemplate = BuildResumeDTO['template'];
 
-interface TemplateTheme {
+interface ITemplateTheme {
   accent: string;
   accentSoft: string;
   background: string;
@@ -11,14 +11,14 @@ interface TemplateTheme {
   headerText: string;
   text: string;
   muted: string;
-  layout: ResumeDesign['layout'];
+  layout: TResumeDesign['layout'];
   radius: string;
   font: string;
 }
 
-type ResumeDesign = NonNullable<BuildResumeDTO['design']>;
+type TResumeDesign = NonNullable<BuildResumeDTO['design']>;
 
-interface ResolvedTemplateTheme extends TemplateTheme {
+interface IResolvedTemplateTheme extends ITemplateTheme {
   bodyFontSize: number;
   lineHeight: number;
   sidebarWidth: number;
@@ -30,20 +30,20 @@ interface ResolvedTemplateTheme extends TemplateTheme {
   experiencePadding: string;
   chipRadius: string;
   avatarRadius: string;
-  sectionStyle: ResumeDesign['sectionStyle'];
-  headerStyle: ResumeDesign['headerStyle'];
-  columnRatio: ResumeDesign['columnRatio'];
-  headerLayout: ResumeDesign['headerLayout'];
-  avatarPlacement: ResumeDesign['avatarPlacement'];
-  sidebarSections: ResumeDesign['sidebarSections'];
-  experienceStyle: ResumeDesign['experienceStyle'];
-  skillsStyle: ResumeDesign['skillsStyle'];
-  educationStyle: ResumeDesign['educationStyle'];
-  summaryStyle: ResumeDesign['summaryStyle'];
-  decoration: ResumeDesign['decoration'];
+  sectionStyle: TResumeDesign['sectionStyle'];
+  headerStyle: TResumeDesign['headerStyle'];
+  columnRatio: TResumeDesign['columnRatio'];
+  headerLayout: TResumeDesign['headerLayout'];
+  avatarPlacement: TResumeDesign['avatarPlacement'];
+  sidebarSections: TResumeDesign['sidebarSections'];
+  experienceStyle: TResumeDesign['experienceStyle'];
+  skillsStyle: TResumeDesign['skillsStyle'];
+  educationStyle: TResumeDesign['educationStyle'];
+  summaryStyle: TResumeDesign['summaryStyle'];
+  decoration: TResumeDesign['decoration'];
 }
 
-const DEFAULT_SECTION_ORDER: ResumeSection[] = [
+const DEFAULT_SECTION_ORDER: TResumeSection[] = [
   'summary',
   'experience',
   'skills',
@@ -51,7 +51,7 @@ const DEFAULT_SECTION_ORDER: ResumeSection[] = [
   'careerScopes',
 ];
 
-const THEMES: Record<ResumeTemplate, TemplateTheme> = {
+const THEMES: Record<TResumeTemplate, ITemplateTheme> = {
   modern: {
     accent: '#2563EB',
     accentSoft: '#DBEAFE',
@@ -199,7 +199,7 @@ const THEMES: Record<ResumeTemplate, TemplateTheme> = {
 };
 
 const DESIGN_PALETTES: Record<
-  ResumeDesign['palette'],
+  TResumeDesign['palette'],
   {
     accent: string;
     accentSoft: string;
@@ -293,7 +293,7 @@ const DESIGN_PALETTES: Record<
   },
 };
 
-const DESIGN_FONTS: Record<ResumeDesign['typography'], string> = {
+const DESIGN_FONTS: Record<TResumeDesign['typography'], string> = {
   sans: 'Arial, Helvetica, sans-serif',
   serif: "Georgia, 'Times New Roman', serif",
   geometric: "'Trebuchet MS', Arial, sans-serif",
@@ -302,9 +302,9 @@ const DESIGN_FONTS: Record<ResumeDesign['typography'], string> = {
 };
 
 const DESIGN_DENSITY: Record<
-  ResumeDesign['density'],
+  TResumeDesign['density'],
   Pick<
-    ResolvedTemplateTheme,
+    IResolvedTemplateTheme,
     | 'bodyFontSize'
     | 'lineHeight'
     | 'sidebarWidth'
@@ -351,9 +351,9 @@ const DESIGN_DENSITY: Record<
   },
 };
 
-function resolveTheme(dto: BuildResumeDTO): ResolvedTemplateTheme {
+function resolveTheme(dto: BuildResumeDTO): IResolvedTemplateTheme {
   const base = THEMES[dto.template] ?? THEMES.modern;
-  const defaults: ResolvedTemplateTheme = {
+  const defaults: IResolvedTemplateTheme = {
     ...base,
     bodyFontSize: 13,
     lineHeight: 1.5,
@@ -430,7 +430,7 @@ function resolveTheme(dto: BuildResumeDTO): ResolvedTemplateTheme {
   };
 }
 
-function headingCss(theme: ResolvedTemplateTheme): string {
+function headingCss(theme: IResolvedTemplateTheme): string {
   const base =
     'margin: 0 0 11px; font-size: 12px; text-transform: uppercase; letter-spacing: .09em;';
   if (theme.sectionStyle === 'bar') {
@@ -471,7 +471,7 @@ function monogram(name: string): string {
   return esc(initials || 'CV');
 }
 
-function renderSection(section: ResumeSection, dto: BuildResumeDTO): string {
+function renderSection(section: TResumeSection, dto: BuildResumeDTO): string {
   if (section === 'summary') {
     return dto.summary
       ? `<section class="summary summary-${dto.design?.summaryStyle ?? 'plain'}"><h2>Professional Summary</h2><p>${esc(dto.summary)}</p></section>`
@@ -546,7 +546,7 @@ export function buildResumeHtml(dto: BuildResumeDTO): string {
   const sectionOrder = dto.sectionOrder?.length
     ? dto.sectionOrder
     : DEFAULT_SECTION_ORDER;
-  const sidebarSections = new Set<ResumeSection>(theme.sidebarSections);
+  const sidebarSections = new Set<TResumeSection>(theme.sidebarSections);
   const renderedSections = sectionOrder.map((section) => ({
     section,
     html: renderSection(section, dto),
@@ -598,85 +598,85 @@ export function buildResumeHtml(dto: BuildResumeDTO): string {
     .join('');
 
   return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <style>
-    @page { size: A4; margin: 0; }
-    * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; background: ${theme.background}; }
-    body { font-family: ${theme.font}; color: ${theme.text}; font-size: ${theme.bodyFontSize}px; line-height: ${theme.lineHeight}; }
-    .resume { min-height: 1123px; background: ${theme.background}; }
-    .decoration-top-band { border-top: 12px solid ${theme.accent}; }
-    .decoration-side-band { border-left: 12px solid ${theme.accent}; }
-    .decoration-geometric .header { background-image: linear-gradient(135deg, transparent 68%, ${theme.accent} 68%, ${theme.accent} 78%, transparent 78%); }
-    .header { background: ${theme.headerBackground}; color: ${theme.headerText}; padding: ${theme.headerPadding}; ${theme.headerStyle === 'minimal' ? `border-bottom: 2px solid ${theme.accent};` : ''} }
-    .header-split, .header-compact { display: flex; align-items: center; gap: 22px; }
-    .header-stacked, .header-centered, .avatar-center { display: flex; flex-direction: column; align-items: flex-start; gap: 13px; }
-    .header-centered, .avatar-center { align-items: center; text-align: center; }
-    .header-split.avatar-end, .header-compact.avatar-end { flex-direction: row-reverse; text-align: right; }
-    .header-compact { padding-top: 20px; padding-bottom: 20px; }
-    .header-compact .avatar, .header-compact .monogram { width: ${Math.round(theme.avatarSize * 0.72)}px; height: ${Math.round(theme.avatarSize * 0.72)}px; }
-    .identity { min-width: 0; flex: 1; }
-    .resume-body { padding: ${theme.contentPadding}; min-width: 0; display: grid; gap: ${Math.max(18, theme.sectionGap)}px; align-items: start; }
-    .layout-single .resume-body { display: block; }
-    .layout-two-column .resume-body { grid-template-columns: ${columnGrid}; }
-    .layout-left-sidebar .resume-body { grid-template-columns: ${sidebarWidth}px minmax(0, 1fr); }
-    .layout-left-sidebar .secondary { grid-column: 1; grid-row: 1; }
-    .layout-left-sidebar .primary { grid-column: 2; grid-row: 1; }
-    .layout-right-sidebar .resume-body { grid-template-columns: minmax(0, 1fr) ${sidebarWidth}px; }
-    .secondary { min-width: 0; padding: ${theme.experiencePadding}; border-radius: ${theme.radius}; background: ${theme.accentSoft}; }
-    .layout-two-column .secondary { background: transparent; padding: 0; }
-    .primary { min-width: 0; }
-    .avatar, .monogram { width: ${theme.avatarSize}px; height: ${theme.avatarSize}px; border-radius: ${theme.avatarRadius}; margin: 0; border: 3px solid ${theme.accent}; }
-    .avatar { display: block; object-fit: cover; }
-    .monogram { display: flex; align-items: center; justify-content: center; background: ${theme.accent}; color: #fff; font-size: 28px; font-weight: 700; }
-    .name { font-size: ${theme.nameSize}px; font-weight: 800; line-height: 1.15; overflow-wrap: anywhere; }
-    .job { margin-top: 7px; color: ${theme.headerText}; opacity: .9; font-size: 14px; font-weight: 600; }
-    .contacts { margin-top: 13px; font-size: 11px; opacity: .9; overflow-wrap: anywhere; }
-    .header-split .contacts, .header-compact .contacts { display: flex; flex-wrap: wrap; gap: 3px 16px; }
-    .contact { margin-top: 5px; }
-    .meta { margin-top: 11px; font-size: 11px; font-weight: 700; }
-    section { margin: 0 0 ${theme.sectionGap}px; break-inside: avoid; }
-    h2 { ${headingCss(theme)} }
-    h3 { margin: 0; color: ${theme.text}; font-size: 14px; }
-    p { margin: 6px 0 0; white-space: pre-line; overflow-wrap: anywhere; }
-    .summary-highlight { padding: ${theme.experiencePadding}; border-radius: ${theme.radius}; background: ${theme.accentSoft}; }
-    .summary-quote { padding-left: 16px; border-left: 4px solid ${theme.accent}; font-style: italic; }
-    .experience { margin-bottom: ${Math.max(10, theme.sectionGap - 8)}px; break-inside: avoid; }
-    .experience-cards { padding: ${theme.experiencePadding}; border: 1px solid ${theme.accent}; border-radius: ${theme.radius}; background: ${theme.accentSoft}; }
-    .experience-timeline { padding: 3px 0 3px 14px; border-left: 3px solid ${theme.accent}; }
-    .experience-head { display: flex; justify-content: space-between; gap: 12px; }
-    .company, .dates { color: ${theme.muted}; font-size: 11px; }
-    .dates { white-space: nowrap; }
-    ul { margin: 7px 0 0 18px; padding: 0; }
-    li { margin: 3px 0; }
-    .chip { display: inline-block; margin: 3px 5px 3px 0; padding: 3px 9px; border: 1px solid ${theme.accent}; border-radius: ${theme.chipRadius}; color: ${theme.accent}; font-size: 11px; }
-    .skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 12px; }
-    .skill-item { padding: 4px 0; border-bottom: 1px solid ${theme.accent}; color: ${theme.text}; font-size: 11px; }
-    .skill-list { columns: 2; }
-    .education { margin: 6px 0; }
-    .education-cards { padding: 7px 9px; border: 1px solid ${theme.accent}; border-radius: ${theme.radius}; background: ${theme.accentSoft}; }
-    .education-timeline { padding-left: 10px; border-left: 3px solid ${theme.accent}; }
-    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-  </style>
-</head>
-<body>
-  <div class="resume layout-${layout} decoration-${theme.decoration}" data-design-palette="${esc(dto.design?.palette ?? 'template')}" data-design-density="${esc(dto.design?.density ?? 'balanced')}" data-design-sections="${esc(theme.sectionStyle)}" data-design-layout="${esc(layout)}">
-    <header class="header header-${theme.headerLayout} avatar-${theme.avatarPlacement}">
-      <div class="avatar-wrap">${picture ? `<img class="avatar" src="${picture}" alt="Profile">` : `<div class="monogram">${monogram(dto.personalInfo.fullName)}</div>`}</div>
-      <div class="identity">
-        <div class="name">${esc(dto.personalInfo.fullName)}</div>
-        ${dto.personalInfo.job ? `<div class="job">${esc(dto.personalInfo.job)}</div>` : ''}
-        <div class="contacts">${contactItems}${socials}</div>
-        <div class="meta">${dto.yearsOfExperience ? `${esc(dto.yearsOfExperience)} years experience` : ''}${dto.yearsOfExperience && dto.availability ? ' · ' : ''}${dto.availability ? `Available: ${esc(dto.availability)}` : ''}</div>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <style>
+      @page { size: A4; margin: 0; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; background: ${theme.background}; }
+      body { font-family: ${theme.font}; color: ${theme.text}; font-size: ${theme.bodyFontSize}px; line-height: ${theme.lineHeight}; }
+      .resume { min-height: 1123px; background: ${theme.background}; }
+      .decoration-top-band { border-top: 12px solid ${theme.accent}; }
+      .decoration-side-band { border-left: 12px solid ${theme.accent}; }
+      .decoration-geometric .header { background-image: linear-gradient(135deg, transparent 68%, ${theme.accent} 68%, ${theme.accent} 78%, transparent 78%); }
+      .header { background: ${theme.headerBackground}; color: ${theme.headerText}; padding: ${theme.headerPadding}; ${theme.headerStyle === 'minimal' ? `border-bottom: 2px solid ${theme.accent};` : ''} }
+      .header-split, .header-compact { display: flex; align-items: center; gap: 22px; }
+      .header-stacked, .header-centered, .avatar-center { display: flex; flex-direction: column; align-items: flex-start; gap: 13px; }
+      .header-centered, .avatar-center { align-items: center; text-align: center; }
+      .header-split.avatar-end, .header-compact.avatar-end { flex-direction: row-reverse; text-align: right; }
+      .header-compact { padding-top: 20px; padding-bottom: 20px; }
+      .header-compact .avatar, .header-compact .monogram { width: ${Math.round(theme.avatarSize * 0.72)}px; height: ${Math.round(theme.avatarSize * 0.72)}px; }
+      .identity { min-width: 0; flex: 1; }
+      .resume-body { padding: ${theme.contentPadding}; min-width: 0; display: grid; gap: ${Math.max(18, theme.sectionGap)}px; align-items: start; }
+      .layout-single .resume-body { display: block; }
+      .layout-two-column .resume-body { grid-template-columns: ${columnGrid}; }
+      .layout-left-sidebar .resume-body { grid-template-columns: ${sidebarWidth}px minmax(0, 1fr); }
+      .layout-left-sidebar .secondary { grid-column: 1; grid-row: 1; }
+      .layout-left-sidebar .primary { grid-column: 2; grid-row: 1; }
+      .layout-right-sidebar .resume-body { grid-template-columns: minmax(0, 1fr) ${sidebarWidth}px; }
+      .secondary { min-width: 0; padding: ${theme.experiencePadding}; border-radius: ${theme.radius}; background: ${theme.accentSoft}; }
+      .layout-two-column .secondary { background: transparent; padding: 0; }
+      .primary { min-width: 0; }
+      .avatar, .monogram { width: ${theme.avatarSize}px; height: ${theme.avatarSize}px; border-radius: ${theme.avatarRadius}; margin: 0; border: 3px solid ${theme.accent}; }
+      .avatar { display: block; object-fit: cover; }
+      .monogram { display: flex; align-items: center; justify-content: center; background: ${theme.accent}; color: #fff; font-size: 28px; font-weight: 700; }
+      .name { font-size: ${theme.nameSize}px; font-weight: 800; line-height: 1.15; overflow-wrap: anywhere; }
+      .job { margin-top: 7px; color: ${theme.headerText}; opacity: .9; font-size: 14px; font-weight: 600; }
+      .contacts { margin-top: 13px; font-size: 11px; opacity: .9; overflow-wrap: anywhere; }
+      .header-split .contacts, .header-compact .contacts { display: flex; flex-wrap: wrap; gap: 3px 16px; }
+      .contact { margin-top: 5px; }
+      .meta { margin-top: 11px; font-size: 11px; font-weight: 700; }
+      section { margin: 0 0 ${theme.sectionGap}px; break-inside: avoid; }
+      h2 { ${headingCss(theme)} }
+      h3 { margin: 0; color: ${theme.text}; font-size: 14px; }
+      p { margin: 6px 0 0; white-space: pre-line; overflow-wrap: anywhere; }
+      .summary-highlight { padding: ${theme.experiencePadding}; border-radius: ${theme.radius}; background: ${theme.accentSoft}; }
+      .summary-quote { padding-left: 16px; border-left: 4px solid ${theme.accent}; font-style: italic; }
+      .experience { margin-bottom: ${Math.max(10, theme.sectionGap - 8)}px; break-inside: avoid; }
+      .experience-cards { padding: ${theme.experiencePadding}; border: 1px solid ${theme.accent}; border-radius: ${theme.radius}; background: ${theme.accentSoft}; }
+      .experience-timeline { padding: 3px 0 3px 14px; border-left: 3px solid ${theme.accent}; }
+      .experience-head { display: flex; justify-content: space-between; gap: 12px; }
+      .company, .dates { color: ${theme.muted}; font-size: 11px; }
+      .dates { white-space: nowrap; }
+      ul { margin: 7px 0 0 18px; padding: 0; }
+      li { margin: 3px 0; }
+      .chip { display: inline-block; margin: 3px 5px 3px 0; padding: 3px 9px; border: 1px solid ${theme.accent}; border-radius: ${theme.chipRadius}; color: ${theme.accent}; font-size: 11px; }
+      .skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 12px; }
+      .skill-item { padding: 4px 0; border-bottom: 1px solid ${theme.accent}; color: ${theme.text}; font-size: 11px; }
+      .skill-list { columns: 2; }
+      .education { margin: 6px 0; }
+      .education-cards { padding: 7px 9px; border: 1px solid ${theme.accent}; border-radius: ${theme.radius}; background: ${theme.accentSoft}; }
+      .education-timeline { padding-left: 10px; border-left: 3px solid ${theme.accent}; }
+      @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+    </style>
+  </head>
+  <body>
+    <div class="resume layout-${layout} decoration-${theme.decoration}" data-design-palette="${esc(dto.design?.palette ?? 'template')}" data-design-density="${esc(dto.design?.density ?? 'balanced')}" data-design-sections="${esc(theme.sectionStyle)}" data-design-layout="${esc(layout)}">
+      <header class="header header-${theme.headerLayout} avatar-${theme.avatarPlacement}">
+        <div class="avatar-wrap">${picture ? `<img class="avatar" src="${picture}" alt="Profile">` : `<div class="monogram">${monogram(dto.personalInfo.fullName)}</div>`}</div>
+        <div class="identity">
+          <div class="name">${esc(dto.personalInfo.fullName)}</div>
+          ${dto.personalInfo.job ? `<div class="job">${esc(dto.personalInfo.job)}</div>` : ''}
+          <div class="contacts">${contactItems}${socials}</div>
+          <div class="meta">${dto.yearsOfExperience ? `${esc(dto.yearsOfExperience)} years experience` : ''}${dto.yearsOfExperience && dto.availability ? ' · ' : ''}${dto.availability ? `Available: ${esc(dto.availability)}` : ''}</div>
+        </div>
+      </header>
+      <div class="resume-body">
+        <main class="primary">${primaryHtml}</main>
+        ${secondaryHtml ? `<aside class="secondary">${secondaryHtml}</aside>` : ''}
       </div>
-    </header>
-    <div class="resume-body">
-      <main class="primary">${primaryHtml}</main>
-      ${secondaryHtml ? `<aside class="secondary">${secondaryHtml}</aside>` : ''}
     </div>
-  </div>
-</body>
-</html>`;
+  </body>
+  </html>`;
 }

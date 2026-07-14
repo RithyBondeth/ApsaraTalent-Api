@@ -2,9 +2,9 @@ import { BuildResumeDTO } from '@app/contracts/dtos/resume';
 import {
   buildFallbackResumeDesign,
   parseGeneratedResumeDesign,
-} from './resume-ai-generation.util';
+} from '../resume-ai-generation/resume-ai-generation.util';
 
-type UnknownRecord = Record<string, unknown>;
+type TUnknownRecord = Record<string, unknown>;
 
 const designProperties = {
   layout: {
@@ -164,9 +164,9 @@ export const RESUME_TEXT_IMPORT_JSON_SCHEMA: Record<string, unknown> = {
   ],
 };
 
-function asRecord(value: unknown): UnknownRecord | null {
+function asRecord(value: unknown): TUnknownRecord | null {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
-    ? (value as UnknownRecord)
+    ? (value as TUnknownRecord)
     : null;
 }
 
