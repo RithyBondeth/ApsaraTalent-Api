@@ -42,6 +42,8 @@ lerna-debug.log*
 .env.production
 !.env.example
 !.env.test
+.env.bak-redis-cloud
+.env.development.bak-redis-cloud
 
 # Storage directory
 storage/
