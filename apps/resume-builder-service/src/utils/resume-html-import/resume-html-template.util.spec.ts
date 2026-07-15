@@ -105,3 +105,100 @@ describe('buildResumeHtml', () => {
     expect(html).not.toContain('<style><script>');
   });
 });
+
+describe('custom accent color', () => {
+  const design: NonNullable<BuildResumeDTO['design']> = {
+    layout: 'left-sidebar',
+    columnRatio: 'balanced',
+    headerLayout: 'split',
+    avatarPlacement: 'start',
+    sidebarSections: ['skills'],
+    palette: 'cobalt',
+    typography: 'sans',
+    density: 'balanced',
+    headerStyle: 'solid',
+    sectionStyle: 'line',
+    cornerStyle: 'soft',
+    experienceStyle: 'plain',
+    skillsStyle: 'chips',
+    educationStyle: 'plain',
+    summaryStyle: 'plain',
+    decoration: 'none',
+  };
+
+  it('renders the user-picked accent and its derived family', () => {
+    const html = buildResumeHtml(
+      resume({ design: { ...design, customAccent: '#0ea5e9' } }),
+    );
+
+    // Accent itself plus a derived darker solid header (35% black shade)
+    expect(html).toContain('#0EA5E9');
+    expect(html).toContain('#096B97');
+    // Palette's own accent family no longer leaks through
+    expect(html).not.toContain('#2563EB');
+  });
+
+  it('falls back to the palette when the accent is not strict hex', () => {
+    const html = buildResumeHtml(
+      resume({
+        design: {
+          ...design,
+          customAccent: 'red;}</style><script>alert(1)</script>' as never,
+        },
+      }),
+    );
+
+    expect(html).toContain('#2563EB');
+    // The raw payload must never reach the stylesheet
+    expect(html).not.toContain('red;}');
+    expect(html).not.toContain('</style><script>');
+  });
+});
+
+describe('multi-page pagination', () => {
+  it('keeps entries and headings intact but lets sections flow across pages', () => {
+    const html = buildResumeHtml(resume());
+
+    // Individual entries never split across a page break...
+    expect(html).toContain('.experience { margin-bottom');
+    expect(html).toMatch(/\.experience \{[^}]*break-inside: avoid/);
+    expect(html).toMatch(/\.education \{[^}]*break-inside: avoid/);
+    // ...headings stay glued to the content that follows them...
+    expect(html).toMatch(/h2 \{[^}]*break-after: avoid/);
+    // ...but the section container itself is free to break when long.
+    expect(html).not.toMatch(/[^-]section \{[^}]*break-inside: avoid/);
+  });
+
+  it('paints the sidebar as a body background band that survives page breaks', () => {
+    const html = buildResumeHtml(
+      resume({
+        design: {
+          layout: 'left-sidebar',
+          columnRatio: 'balanced',
+          headerLayout: 'split',
+          avatarPlacement: 'start',
+          sidebarSections: ['skills'],
+          palette: 'cobalt',
+          typography: 'sans',
+          density: 'balanced',
+          headerStyle: 'solid',
+          sectionStyle: 'line',
+          cornerStyle: 'soft',
+          experienceStyle: 'plain',
+          skillsStyle: 'chips',
+          educationStyle: 'plain',
+          summaryStyle: 'plain',
+          decoration: 'none',
+        },
+      }),
+    );
+
+    // The colored band lives on the tall .resume-body (continues across pages),
+    // not on the sidebar grid cell (which would be sliced at the boundary).
+    expect(html).toMatch(
+      /\.layout-left-sidebar \.resume-body \{[^}]*linear-gradient\(to right/,
+    );
+    expect(html).toMatch(/\.resume \{[^}]*flex-direction: column/);
+    expect(html).toMatch(/\.resume-body \{[^}]*flex: 1 1 auto/);
+  });
+});

@@ -1,9 +1,11 @@
 import { BuildResumeDTO } from '@app/contracts/dtos/resume';
+import { RESUME_TEMPLATE_KEYS } from '@app/contracts/dtos/resume/generate-resume-from-text.dto';
 import {
   buildFallbackResumeDesign,
   buildResumeGenerationInput,
   mergeGeneratedResumeContent,
   parseGeneratedResumeContent,
+  parseGeneratedResumeDesign,
 } from './resume-ai-generation.util';
 
 function trustedResume(): BuildResumeDTO {
@@ -181,5 +183,37 @@ describe('resume AI generation boundaries', () => {
       first.layout,
     );
     expect(buildFallbackResumeDesign('dark', 123).palette).toBe('midnight');
+  });
+});
+
+describe('per-template fallback design spaces', () => {
+  it('produces only valid design values for every template', () => {
+    for (const template of RESUME_TEMPLATE_KEYS) {
+      for (let seed = 0; seed < 40; seed += 1) {
+        const design = buildFallbackResumeDesign(template, seed);
+        // Round-trip through the same validator used for AI output:
+        // every sampled value must be an allowed enum member.
+        expect(parseGeneratedResumeDesign(design)).toEqual(design);
+      }
+    }
+  });
+
+  it('varies the design across seeds for every template', () => {
+    for (const template of RESUME_TEMPLATE_KEYS) {
+      const signatures = new Set(
+        Array.from({ length: 60 }, (_, seed) =>
+          JSON.stringify(buildFallbackResumeDesign(template, seed)),
+        ),
+      );
+      expect(signatures.size).toBeGreaterThan(5);
+    }
+  });
+
+  it('keeps the timeline template on timeline experience styling', () => {
+    for (let seed = 0; seed < 40; seed += 1) {
+      expect(buildFallbackResumeDesign('timeline', seed).experienceStyle).toBe(
+        'timeline',
+      );
+    }
   });
 });

@@ -11,12 +11,17 @@ import {
   IsOptional,
   IsString,
   IsDefined,
+  Matches,
   MaxLength,
   ArrayMaxSize,
   ArrayMinSize,
   ArrayUnique,
   ValidateNested,
 } from 'class-validator';
+import {
+  RESUME_TEMPLATE_KEYS,
+  ResumeTemplateKey,
+} from './generate-resume-from-text.dto';
 
 export class PersonalInfoDTO {
   @IsString()
@@ -174,6 +179,13 @@ export class ResumeDesignDTO {
   @IsString()
   @IsIn(['none', 'top-band', 'side-band', 'geometric'])
   decoration: 'none' | 'top-band' | 'side-band' | 'geometric';
+
+  /** User-picked #RRGGBB accent override. Strict hex only — this value is
+   *  rendered into PDF HTML, so nothing looser may ever pass validation. */
+  @IsString()
+  @IsOptional()
+  @Matches(/^#[0-9A-Fa-f]{6}$/)
+  customAccent?: string;
 }
 
 export class BuildResumeDTO {
@@ -238,33 +250,8 @@ export class BuildResumeDTO {
   design?: ResumeDesignDTO;
 
   @IsString()
-  @IsIn([
-    'modern',
-    'classic',
-    'creative',
-    'minimalist',
-    'timeline',
-    'bold',
-    'compact',
-    'elegant',
-    'colorful',
-    'professional',
-    'corporate',
-    'dark',
-  ])
-  template:
-    | 'modern'
-    | 'classic'
-    | 'creative'
-    | 'minimalist'
-    | 'timeline'
-    | 'bold'
-    | 'compact'
-    | 'elegant'
-    | 'colorful'
-    | 'professional'
-    | 'corporate'
-    | 'dark';
+  @IsIn(RESUME_TEMPLATE_KEYS)
+  template: ResumeTemplateKey;
 }
 
 export class BuildResumeResponseDTO {

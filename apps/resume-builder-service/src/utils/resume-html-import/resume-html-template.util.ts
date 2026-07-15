@@ -196,6 +196,78 @@ const THEMES: Record<TResumeTemplate, ITemplateTheme> = {
     radius: '6px',
     font: "'Courier New', Courier, monospace",
   },
+  executive: {
+    accent: '#B45309',
+    accentSoft: '#FDE68A',
+    background: '#FFFFFF',
+    headerBackground: '#1C1917',
+    headerText: '#F5F5F4',
+    text: '#292524',
+    muted: '#78716C',
+    layout: 'right-sidebar',
+    radius: '0',
+    font: "Georgia, 'Times New Roman', serif",
+  },
+  tech: {
+    accent: '#10B981',
+    accentSoft: '#D1FAE5',
+    background: '#FFFFFF',
+    headerBackground: '#022C22',
+    headerText: '#ECFDF5',
+    text: '#1E293B',
+    muted: '#64748B',
+    layout: 'left-sidebar',
+    radius: '4px',
+    font: "'Courier New', Courier, monospace",
+  },
+  academic: {
+    accent: '#155E75',
+    accentSoft: '#CFFAFE',
+    background: '#FFFFFF',
+    headerBackground: '#FFFFFF',
+    headerText: '#164E63',
+    text: '#1E293B',
+    muted: '#64748B',
+    layout: 'single',
+    radius: '0',
+    font: "Georgia, 'Times New Roman', serif",
+  },
+  startup: {
+    accent: '#EA580C',
+    accentSoft: '#FFEDD5',
+    background: '#FFFFFF',
+    headerBackground: '#FFF7ED',
+    headerText: '#7C2D12',
+    text: '#431407',
+    muted: '#78716C',
+    layout: 'two-column',
+    radius: '14px',
+    font: "'Trebuchet MS', Verdana, sans-serif",
+  },
+  swiss: {
+    accent: '#DC2626',
+    accentSoft: '#FEE2E2',
+    background: '#FFFFFF',
+    headerBackground: '#FFFFFF',
+    headerText: '#111827',
+    text: '#111827',
+    muted: '#6B7280',
+    layout: 'single',
+    radius: '0',
+    font: 'Helvetica, Arial, sans-serif',
+  },
+  pastel: {
+    accent: '#BE185D',
+    accentSoft: '#FCE7F3',
+    background: '#FFFFFF',
+    headerBackground: '#FCE7F3',
+    headerText: '#831843',
+    text: '#4C1D3D',
+    muted: '#71717A',
+    layout: 'right-sidebar',
+    radius: '14px',
+    font: 'Verdana, Geneva, sans-serif',
+  },
 };
 
 const DESIGN_PALETTES: Record<
@@ -351,6 +423,70 @@ const DESIGN_DENSITY: Record<
   },
 };
 
+const CUSTOM_ACCENT_PATTERN = /^#[0-9A-Fa-f]{6}$/;
+
+function hexChannels(hex: string): [number, number, number] {
+  return [
+    parseInt(hex.slice(1, 3), 16),
+    parseInt(hex.slice(3, 5), 16),
+    parseInt(hex.slice(5, 7), 16),
+  ];
+}
+
+function mixHex(
+  hex: string,
+  target: [number, number, number],
+  weight: number,
+): string {
+  const source = hexChannels(hex);
+  return `#${source
+    .map((channel, index) =>
+      Math.max(
+        0,
+        Math.min(
+          255,
+          Math.round(channel * (1 - weight) + target[index] * weight),
+        ),
+      )
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')}`.toUpperCase();
+}
+
+function relativeLuminance(hex: string): number {
+  const [r, g, b] = hexChannels(hex).map((channel) => {
+    const c = channel / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrastRatio(a: string, b: string): number {
+  const la = relativeLuminance(a);
+  const lb = relativeLuminance(b);
+  const [light, dark] = la >= lb ? [la, lb] : [lb, la];
+  return (light + 0.05) / (dark + 0.05);
+}
+
+function deriveCustomAccentColors(customAccent: string): {
+  accent: string;
+  accentSoft: string;
+  header: string;
+  headerText: string;
+} {
+  const header = mixHex(customAccent, [0, 0, 0], 0.35);
+  return {
+    accent: customAccent.toUpperCase(),
+    accentSoft: mixHex(customAccent, [255, 255, 255], 0.85),
+    header,
+    headerText:
+      contrastRatio(header, '#FFFFFF') >= contrastRatio(header, '#1E293B')
+        ? '#FFFFFF'
+        : '#1E293B',
+  };
+}
+
 function resolveTheme(dto: BuildResumeDTO): IResolvedTemplateTheme {
   const base = THEMES[dto.template] ?? THEMES.modern;
   const defaults: IResolvedTemplateTheme = {
@@ -382,6 +518,17 @@ function resolveTheme(dto: BuildResumeDTO): IResolvedTemplateTheme {
 
   const palette = DESIGN_PALETTES[dto.design.palette];
   const density = DESIGN_DENSITY[dto.design.density];
+  // User-picked accent overrides the palette's accent family; text, muted and
+  // page background stay on the named palette for readability.
+  const custom =
+    dto.design.customAccent &&
+    CUSTOM_ACCENT_PATTERN.test(dto.design.customAccent)
+      ? deriveCustomAccentColors(dto.design.customAccent)
+      : null;
+  const accent = custom?.accent ?? palette.accent;
+  const accentSoft = custom?.accentSoft ?? palette.accentSoft;
+  const solidHeader = custom?.header ?? palette.header;
+  const solidHeaderText = custom?.headerText ?? palette.headerText;
   const radius =
     dto.design.cornerStyle === 'square'
       ? '0'
@@ -390,16 +537,16 @@ function resolveTheme(dto: BuildResumeDTO): IResolvedTemplateTheme {
         : '15px';
   const headerBackground =
     dto.design.headerStyle === 'solid'
-      ? palette.header
+      ? solidHeader
       : dto.design.headerStyle === 'soft'
-        ? palette.accentSoft
+        ? accentSoft
         : palette.background;
   const headerText =
-    dto.design.headerStyle === 'solid' ? palette.headerText : palette.text;
+    dto.design.headerStyle === 'solid' ? solidHeaderText : palette.text;
 
   return {
-    accent: palette.accent,
-    accentSoft: palette.accentSoft,
+    accent,
+    accentSoft,
     background: palette.background,
     headerBackground,
     headerText,
@@ -578,6 +725,10 @@ export function buildResumeHtml(dto: BuildResumeDTO): string {
       : theme.columnRatio === 'wide'
         ? '1.1fr 1fr'
         : '1.35fr 1fr';
+  const contentPadH =
+    parseInt(theme.contentPadding.split(' ')[1] ?? '34', 10) || 34;
+  const bodyGap = Math.max(18, theme.sectionGap);
+  const sidebarBand = contentPadH + sidebarWidth + Math.round(bodyGap / 2);
   const socials = dto.personalInfo.socials
     ? Object.entries(dto.personalInfo.socials)
         .filter(([, value]) => value)
@@ -606,7 +757,7 @@ export function buildResumeHtml(dto: BuildResumeDTO): string {
       * { box-sizing: border-box; }
       html, body { margin: 0; padding: 0; background: ${theme.background}; }
       body { font-family: ${theme.font}; color: ${theme.text}; font-size: ${theme.bodyFontSize}px; line-height: ${theme.lineHeight}; }
-      .resume { min-height: 1123px; background: ${theme.background}; }
+      .resume { min-height: 1123px; background: ${theme.background}; display: flex; flex-direction: column; }
       .decoration-top-band { border-top: 12px solid ${theme.accent}; }
       .decoration-side-band { border-left: 12px solid ${theme.accent}; }
       .decoration-geometric .header { background-image: linear-gradient(135deg, transparent 68%, ${theme.accent} 68%, ${theme.accent} 78%, transparent 78%); }
@@ -618,15 +769,14 @@ export function buildResumeHtml(dto: BuildResumeDTO): string {
       .header-compact { padding-top: 20px; padding-bottom: 20px; }
       .header-compact .avatar, .header-compact .monogram { width: ${Math.round(theme.avatarSize * 0.72)}px; height: ${Math.round(theme.avatarSize * 0.72)}px; }
       .identity { min-width: 0; flex: 1; }
-      .resume-body { padding: ${theme.contentPadding}; min-width: 0; display: grid; gap: ${Math.max(18, theme.sectionGap)}px; align-items: start; }
+      .resume-body { padding: ${theme.contentPadding}; min-width: 0; flex: 1 1 auto; display: grid; gap: ${bodyGap}px; align-items: start; }
       .layout-single .resume-body { display: block; }
       .layout-two-column .resume-body { grid-template-columns: ${columnGrid}; }
-      .layout-left-sidebar .resume-body { grid-template-columns: ${sidebarWidth}px minmax(0, 1fr); }
+      .layout-left-sidebar .resume-body { grid-template-columns: ${sidebarWidth}px minmax(0, 1fr); background: linear-gradient(to right, ${theme.accentSoft} ${sidebarBand}px, transparent ${sidebarBand}px); }
       .layout-left-sidebar .secondary { grid-column: 1; grid-row: 1; }
       .layout-left-sidebar .primary { grid-column: 2; grid-row: 1; }
-      .layout-right-sidebar .resume-body { grid-template-columns: minmax(0, 1fr) ${sidebarWidth}px; }
-      .secondary { min-width: 0; padding: ${theme.experiencePadding}; border-radius: ${theme.radius}; background: ${theme.accentSoft}; }
-      .layout-two-column .secondary { background: transparent; padding: 0; }
+      .layout-right-sidebar .resume-body { grid-template-columns: minmax(0, 1fr) ${sidebarWidth}px; background: linear-gradient(to left, ${theme.accentSoft} ${sidebarBand}px, transparent ${sidebarBand}px); }
+      .secondary { min-width: 0; }
       .primary { min-width: 0; }
       .avatar, .monogram { width: ${theme.avatarSize}px; height: ${theme.avatarSize}px; border-radius: ${theme.avatarRadius}; margin: 0; border: 3px solid ${theme.accent}; }
       .avatar { display: block; object-fit: cover; }
@@ -637,11 +787,15 @@ export function buildResumeHtml(dto: BuildResumeDTO): string {
       .header-split .contacts, .header-compact .contacts { display: flex; flex-wrap: wrap; gap: 3px 16px; }
       .contact { margin-top: 5px; }
       .meta { margin-top: 11px; font-size: 11px; font-weight: 700; }
-      section { margin: 0 0 ${theme.sectionGap}px; break-inside: avoid; }
-      h2 { ${headingCss(theme)} }
-      h3 { margin: 0; color: ${theme.text}; font-size: 14px; }
-      p { margin: 6px 0 0; white-space: pre-line; overflow-wrap: anywhere; }
-      .summary-highlight { padding: ${theme.experiencePadding}; border-radius: ${theme.radius}; background: ${theme.accentSoft}; }
+      .header { break-inside: avoid; }
+      /* A section may span pages when it is long, but its heading never sits
+         alone at the foot of a page, and individual entries never split. */
+      section { margin: 0 0 ${theme.sectionGap}px; }
+      h2 { ${headingCss(theme)} break-after: avoid; }
+      h3 { margin: 0; color: ${theme.text}; font-size: 14px; break-after: avoid; }
+      p { margin: 6px 0 0; white-space: pre-line; overflow-wrap: anywhere; orphans: 2; widows: 2; }
+      li { orphans: 2; widows: 2; }
+      .summary-highlight { padding: ${theme.experiencePadding}; border-radius: ${theme.radius}; background: ${theme.accentSoft}; break-inside: avoid; }
       .summary-quote { padding-left: 16px; border-left: 4px solid ${theme.accent}; font-style: italic; }
       .experience { margin-bottom: ${Math.max(10, theme.sectionGap - 8)}px; break-inside: avoid; }
       .experience-cards { padding: ${theme.experiencePadding}; border: 1px solid ${theme.accent}; border-radius: ${theme.radius}; background: ${theme.accentSoft}; }
@@ -655,8 +809,8 @@ export function buildResumeHtml(dto: BuildResumeDTO): string {
       .skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 12px; }
       .skill-item { padding: 4px 0; border-bottom: 1px solid ${theme.accent}; color: ${theme.text}; font-size: 11px; }
       .skill-list { columns: 2; }
-      .education { margin: 6px 0; }
-      .education-cards { padding: 7px 9px; border: 1px solid ${theme.accent}; border-radius: ${theme.radius}; background: ${theme.accentSoft}; }
+      .education { margin: 6px 0; break-inside: avoid; }
+      .education-cards { padding: 7px 9px; border: 1px solid ${theme.accent}; border-radius: ${theme.radius}; background: ${theme.accentSoft}; break-inside: avoid; }
       .education-timeline { padding-left: 10px; border-left: 3px solid ${theme.accent}; }
       @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
     </style>

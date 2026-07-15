@@ -9,23 +9,11 @@ import {
 } from 'class-validator';
 import { CoreResponseDTO } from '../../shared/core-response.dto';
 import { Transform, Type } from 'class-transformer';
+import { RESUME_TEMPLATE_KEYS } from '../generate-resume-from-text.dto';
 
 export class CreateResumeTemplateDTO {
   @IsString()
-  @IsIn([
-    'modern',
-    'classic',
-    'creative',
-    'minimalist',
-    'timeline',
-    'bold',
-    'compact',
-    'elegant',
-    'colorful',
-    'professional',
-    'corporate',
-    'dark',
-  ])
+  @IsIn(RESUME_TEMPLATE_KEYS)
   templateKey: string;
 
   @IsString()

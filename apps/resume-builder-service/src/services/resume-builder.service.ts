@@ -30,6 +30,7 @@ import {
   buildFallbackResumeDesign,
   mergeGeneratedResumeContent,
   parseGeneratedResumeContent,
+  RESUME_TEMPLATE_STYLE_HINTS,
 } from '../utils/resume-ai-generation/resume-ai-generation.util';
 import {
   parseResumeFromTextOutput,
@@ -112,7 +113,7 @@ Rules:
 - Keep descriptions to 1-3 sentences and achievements to 0-4 concise bullets per role.
 - Compose a fresh visual blueprint that fits selectedStyle. Choose the page structure, columns, header composition, avatar placement, secondary-column sections, section presentation, and decoration. Treat the variation seed as inspiration so repeated generations can differ.
 - Keep work experience in the primary column. sidebarSections may contain only summary, skills, education, or careerScopes, with no duplicates.
-- Style intent: modern is clean/geometric; classic is restrained/serif; creative is expressive; minimalist is sparse; timeline emphasizes structure; bold is high-contrast; compact is dense; elegant is refined/serif; colorful is vibrant; professional is conservative; corporate is formal; dark uses a midnight palette.
+- Style intent: ${RESUME_TEMPLATE_STYLE_HINTS}.
 - Use only the exact allowed design values shown in the JSON shape. Never return CSS, HTML, URLs, font names, or color values.
 - Return raw JSON only with no markdown or explanations.`,
           },
@@ -181,7 +182,7 @@ Rules:
 - Keep dates faithful to the source. Use "Present" only when the source clearly indicates the role is current.
 - Combine multiple education entries into one readable string separated by " | ".
 - Write in the primary language used by the candidate text unless it explicitly requests another language.
-- Create the visual design for the selected style. Modern is clean/geometric; classic is restrained/serif; creative is expressive; minimalist is sparse; timeline emphasizes chronology; bold is high-contrast; compact is dense; elegant is refined/serif; colorful is vibrant; professional is conservative; corporate is formal; dark uses a midnight palette.
+- Create the visual design for the selected style. Style intent: ${RESUME_TEMPLATE_STYLE_HINTS}.
 - Keep work experience in the primary column. sidebarSections may contain only summary, skills, education, or careerScopes and may not contain duplicates.
 - Return only the response required by the supplied JSON schema.`,
           },

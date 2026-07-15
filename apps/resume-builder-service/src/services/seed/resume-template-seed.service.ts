@@ -115,6 +115,60 @@ export const RESUME_TEMPLATE_SEEDS: Omit<ResumeTemplate, 'id' | 'createdAt'>[] =
       price: 0,
       isPremium: false,
     },
+    {
+      templateKey: 'executive',
+      title: 'Executive Suite',
+      description:
+        'Charcoal header with refined gold accents and serif typography. A commanding presence for directors, VPs, and senior leadership.',
+      image: '',
+      price: 0,
+      isPremium: false,
+    },
+    {
+      templateKey: 'tech',
+      title: 'Tech Stack',
+      description:
+        'Deep emerald, terminal-inspired sidebar with monospace type. Made for developers, DevOps, and engineering roles.',
+      image: '',
+      price: 0,
+      isPremium: false,
+    },
+    {
+      templateKey: 'academic',
+      title: 'Academic CV',
+      description:
+        'Understated single-column serif layout with generous spacing. Ideal for researchers, lecturers, and graduate applications.',
+      image: '',
+      price: 0,
+      isPremium: false,
+    },
+    {
+      templateKey: 'startup',
+      title: 'Startup Energy',
+      description:
+        'Warm orange two-column layout with rounded pills and playful geometry. For candidates joining fast-moving teams.',
+      image: '',
+      price: 0,
+      isPremium: false,
+    },
+    {
+      templateKey: 'swiss',
+      title: 'Swiss Precision',
+      description:
+        'Stark white grid with crisp red bars and geometric type, in the international typographic style. Structure and clarity above all.',
+      image: '',
+      price: 0,
+      isPremium: false,
+    },
+    {
+      templateKey: 'pastel',
+      title: 'Soft Pastel',
+      description:
+        'Gentle pink header, rounded corners, and airy spacing. A friendly, approachable look for people-facing roles.',
+      image: '',
+      price: 0,
+      isPremium: false,
+    },
   ];
 
 @Injectable()

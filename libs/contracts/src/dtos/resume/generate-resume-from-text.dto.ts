@@ -14,6 +14,12 @@ export const RESUME_TEMPLATE_KEYS = [
   'professional',
   'corporate',
   'dark',
+  'executive',
+  'tech',
+  'academic',
+  'startup',
+  'swiss',
+  'pastel',
 ] as const;
 
 export type ResumeTemplateKey = (typeof RESUME_TEMPLATE_KEYS)[number];
