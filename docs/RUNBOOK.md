@@ -14,7 +14,7 @@ empty database → row counts, index counts, the `migrations` table and a
 ## 1. Where the state actually lives
 
 | Store | Contains | Survives redeploy? | Backed up? |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | **Neon Postgres** | All application data, incl. `refreshToken` on `user` | Yes | Neon PITR (⚠️ retention unconfirmed) + manual `pg_dump` |
 | **Railway volume** on api-gateway, `/app/storage` | Uploaded resumes, cover letters, chat attachments, avatars, company images | Yes, if the volume is mounted | ❌ **NO** |
 | **Redis** | Cache, AI quota counters, rate-limit windows, Socket.IO adapter | No | Not needed — see below |
@@ -60,6 +60,7 @@ DATABASE_URL="<production-url>" ./scripts/backup-db.sh ./backups
 ```
 
 The script is read-only and safe. It:
+
 - strips Neon's `-pooler` suffix (see below),
 - prints the target host with credentials masked so you can catch a wrong target,
 - writes `backups/apsara-<UTC-timestamp>.dump` in `pg_dump` custom format,
@@ -73,7 +74,7 @@ The script is read-only and safe. It:
 > it sets session state and holds a consistent snapshot — so it can fail or
 > produce an inconsistent dump through a pooler. The script removes `-pooler`
 > automatically; if you run `pg_dump` by hand, remove it yourself.
-
+>
 > **`pg_dump` must be ≥ the server version.** Neon upgrades Postgres on their
 > schedule. If you see `server version mismatch`, use the Docker path (the
 > script already does) and bump `PG_IMAGE` in the script to match.
@@ -89,7 +90,7 @@ confirm (a) the current **history retention window** on your plan, and (b) that
 PITR is enabled for this project. Free/lower tiers have a short window. Write the
 actual number here:
 
-    Neon history retention: ____________  (checked by ________ on ____________)
+Neon history retention: ____________  (checked by ________ on ____________)
 
 ---
 
@@ -212,7 +213,7 @@ including why `down()` must never use `CONCURRENTLY`.
 ## 6. Incident quick reference
 
 | Symptom | First move |
-|---|---|
+| --- | --- |
 | Bad deploy, schema unchanged | Roll back the app (§4). Do not touch the DB. |
 | Bad deploy after an additive migration | Roll back the app only. Leave the migration. |
 | Bad data change (bad UPDATE/DELETE) | Neon PITR branch (§3 Option A). Do not `migration:revert`. |
