@@ -6,6 +6,7 @@ import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-serv
 import { CompanyController } from './controllers/company.controller';
 import { EmployeeController } from './controllers/employee.controller';
 import { ModerationController } from './controllers/moderation.controller';
+import { SupportController } from './controllers/support.controller';
 import { PublicUserController } from './controllers/public-user.controller';
 import { UserController } from './controllers/user.controller';
 import { UserAccessService } from './services/user-access.service';
@@ -37,6 +38,7 @@ import { EmployeeDocumentAccessGuard } from './guards/employee-document-access.g
     CompanyController,
     PublicUserController,
     ModerationController,
+    SupportController,
   ],
   providers: [
     UserAccessService,

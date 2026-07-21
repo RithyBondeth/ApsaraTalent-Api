@@ -70,10 +70,63 @@ jobs:
       - name: Build API Gateway
         run: npm run build
 
+  migrate:
+    name: Run DB Migrations
+    runs-on: ubuntu-latest
+    needs: [lint, test, build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Migrations run here rather than at application boot: eight services
+      # share one database, so booting them together would race eight concurrent
+      # migration runs against each other. Running once, before any service is
+      # redeployed, keeps it to a single ordered pass.
+      #
+      # NOTE: the very first run against the existing production database must be
+      # preceded by a one-off `npm run migration:baseline -- --apply` from a
+      # workstation — production already has all nine migrations applied by hand
+      # but has no migrations table recording it. See migrations/README.md.
+      # Fail loudly and legibly rather than letting TypeORM emit a cryptic
+      # connection error. This job intentionally BLOCKS the deploy: shipping code
+      # against an un-migrated schema is the exact failure this pipeline exists
+      # to prevent, so skipping when unconfigured would defeat the purpose.
+      - name: Verify DATABASE_URL secret is configured
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL repository secret is not set."
+            echo "Add it under Settings -> Secrets and variables -> Actions."
+            echo "Before the first run, baseline the existing production database:"
+            echo "  DATABASE_URL=<production-url> npm run migration:baseline -- --apply"
+            echo "See migrations/README.md for the full rollout procedure."
+            exit 1
+          fi
+
+      - name: Show migration status
+        run: npm run migration:show
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Apply pending migrations
+        run: npm run migration:run
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
   deploy:
     name: Deploy All Services
     runs-on: ubuntu-latest
-    needs: [lint, build]
+    needs: [lint, build, migrate]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4

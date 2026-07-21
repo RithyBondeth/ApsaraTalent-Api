@@ -6,6 +6,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AiStreamModule } from './ai-stream/ai-stream.module';
 import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './chat/chat.module';
+import { StorageHttpModule } from './storage/storage-http.module';
 import { HealthModule } from './health/health.module';
 import { JobModule } from './job/job.module';
 import { NotificationModule } from './notification/notification.module';
@@ -27,6 +28,7 @@ import { AiModule } from './ai/ai.module';
     AiModule,
     AuthModule,
     UploadfileModule,
+    StorageHttpModule,
     HealthModule,
     ResumeBuilderModule,
     UserModule,

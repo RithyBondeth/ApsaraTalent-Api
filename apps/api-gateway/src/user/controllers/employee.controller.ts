@@ -49,8 +49,8 @@ import { rpcCall } from '../../utils/rpc-call';
 import { EmployeeProfileOwnerGuard } from '../guards/employee-profile-owner.guard';
 import { EmployeeDocumentAccessGuard } from '../guards/employee-document-access.guard';
 import { Response } from 'express';
-import { access } from 'fs/promises';
-import { basename, resolve, sep } from 'path';
+import { basename } from 'path';
+import { serveStorageObject, StorageService } from '@app/common';
 import { EEmployeeDocumentType } from '@app/common/database/enums/employee-document-type.enum';
 
 @Controller('user/employee')
@@ -58,6 +58,7 @@ import { EEmployeeDocumentType } from '@app/common/database/enums/employee-docum
 export class EmployeeController implements IEmployeeController {
   constructor(
     @Inject(USER_SERVICE.NAME) private readonly userClient: ClientProxy,
+    private readonly storageService: StorageService,
   ) {}
 
   @Get('all')
@@ -111,25 +112,17 @@ export class EmployeeController implements IEmployeeController {
       throw new NotFoundException('Document not found');
     }
 
-    const documentRoot = resolve(process.cwd(), 'storage', folder);
-    const filePath = resolve(documentRoot, basename(storedPath));
-    if (!filePath.startsWith(`${documentRoot}${sep}`)) {
+    const filename = basename(storedPath);
+    const key = `${folder}/${filename}`;
+
+    if (!(await this.storageService.exists(key))) {
       throw new NotFoundException('Document not found');
     }
 
-    try {
-      await access(filePath);
-    } catch {
-      throw new NotFoundException('Document not found');
-    }
-
-    res.setHeader('Cache-Control', 'private, no-store');
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    res.setHeader(
-      'Content-Disposition',
-      `inline; filename*=UTF-8''${encodeURIComponent(basename(filePath))}`,
-    );
-    res.sendFile(filePath);
+    await serveStorageObject(res, this.storageService, key, {
+      cacheControl: 'private, no-store',
+      disposition: `inline; filename*=UTF-8''${encodeURIComponent(filename)}`,
+    });
   }
 
   @Patch('update-info/:employeeId')

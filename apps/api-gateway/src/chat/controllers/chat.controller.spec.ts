@@ -2,12 +2,20 @@ import { ForbiddenException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { of } from 'rxjs';
 import { ChatController } from './chat.controller';
+import { StorageService } from '@app/common';
 
 describe('ChatController attachment access', () => {
   const chatClient = {
     send: jest.fn(),
   } as unknown as ClientProxy;
-  const controller = new ChatController(chatClient);
+  // The attachment-access tests all assert on the authorization outcome, which
+  // is decided before storage is ever touched.
+  const storageService = {
+    exists: jest.fn().mockResolvedValue(true),
+    getUrl: jest.fn().mockResolvedValue(null),
+    isPublic: jest.fn().mockReturnValue(false),
+  } as unknown as StorageService;
+  const controller = new ChatController(chatClient, storageService);
 
   beforeEach(() => jest.clearAllMocks());
 

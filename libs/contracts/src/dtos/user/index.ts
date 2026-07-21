@@ -6,3 +6,4 @@ export * from './user-rpc.dto';
 export * from './company';
 export * from './employee';
 export * from './moderation/moderation.dto';
+export * from './support/support.dto';

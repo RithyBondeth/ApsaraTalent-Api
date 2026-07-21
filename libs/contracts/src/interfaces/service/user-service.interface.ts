@@ -69,6 +69,10 @@ import {
   BlockStatusResponseDTO,
   ReportUserResponseDTO,
 } from '../../dtos/user/moderation/moderation.dto';
+import {
+  ReportProblemDTO,
+  ReportProblemResponseDTO,
+} from '../../dtos/user/support/support.dto';
 
 export const I_UPDATE_EMPLOYEE_INFO_SERVICE = 'IUpdateEmployeeInfoService';
 export const I_IMAGE_EMPLOYEE_SERVICE = 'IImageEmployeeService';
@@ -84,6 +88,7 @@ export const I_OPEN_POSITION_SERVICE = 'IOpenPositionService';
 export const I_EXPERIENCE_AND_EDUCATION_SERVICE =
   'IExperienceAndEducationService';
 export const I_MODERATION_SERVICE = 'IModerationService';
+export const I_SUPPORT_SERVICE = 'ISupportService';
 
 export interface IUpdateEmployeeInfoService {
   updateEmployeeInfo(
@@ -229,4 +234,10 @@ export interface IModerationService {
     getHiddenProfileIdsDTO: GetHiddenProfileIdsDTO,
   ): Promise<string[]>;
   reportUser(reportUserDTO: ReportUserDTO): Promise<ReportUserResponseDTO>;
+}
+
+export interface ISupportService {
+  reportProblem(
+    reportProblemDTO: ReportProblemDTO,
+  ): Promise<ReportProblemResponseDTO>;
 }

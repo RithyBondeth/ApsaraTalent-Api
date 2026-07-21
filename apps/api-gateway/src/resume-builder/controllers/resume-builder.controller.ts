@@ -1,5 +1,6 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
 import { AiQuotaGuard } from '@app/common/throttler/guards/ai-quota.guard';
+import { AiQuotaAction } from '@app/common/throttler/decorators/ai-quota-action.decorator';
 import { IResumeBuilderController } from '@app/contracts/interfaces/controller/resume-builder-controller.interface';
 import {
   Body,
@@ -47,6 +48,7 @@ export class ResumeBuilderController implements IResumeBuilderController {
 
   @Post('generate')
   @UseGuards(AiQuotaGuard)
+  @AiQuotaAction('cvGeneration')
   @HttpCode(HttpStatus.OK)
   async generateResume(
     @Body() buildResumeDTO: BuildResumeDTO,
@@ -81,6 +83,7 @@ export class ResumeBuilderController implements IResumeBuilderController {
 
   @Post('generate-from-text')
   @UseGuards(AiQuotaGuard)
+  @AiQuotaAction('cvGeneration')
   @HttpCode(HttpStatus.OK)
   async generateResumeFromText(
     @Body() generateResumeFromTextDTO: GenerateResumeFromTextDTO,

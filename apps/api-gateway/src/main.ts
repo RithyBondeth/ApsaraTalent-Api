@@ -15,7 +15,11 @@ import { Logger } from 'nestjs-pino';
 import { join } from 'path';
 import { ApiGatewayModule } from './api-gateway.module';
 import { AUTH } from '@app/contracts/constants/domain/auth.constant';
-import { isOriginAllowed, parseAllowedOrigins } from '@app/common';
+import {
+  isOriginAllowed,
+  parseAllowedOrigins,
+  PUBLIC_STORAGE_FOLDERS,
+} from '@app/common';
 
 async function bootstrap() {
   const app =
@@ -102,20 +106,21 @@ async function bootstrap() {
 
   // Only non-sensitive visual assets are public. Resumes, cover letters, and
   // chat attachments are served by authenticated controller endpoints.
-  const publicStorageFolders = [
-    'employee-avatars',
-    'company-avatars',
-    'company-covers',
-    'company-images',
-    'resume-templates',
-  ];
-  for (const folder of publicStorageFolders) {
-    app.useStaticAssets(join(process.cwd(), 'storage', folder), {
-      prefix: `/storage/${folder}`,
-      setHeaders: (res) => {
-        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-      },
-    });
+  //
+  // With the object-store driver the local directories are empty, so mounting
+  // them would only add a pointless stat() to every request before falling
+  // through to PublicStorageController, which redirects to the bucket/CDN.
+  // Both paths answer the same /storage/<folder>/<file> URLs.
+  const storageDriver = configService.get<string>('storage.driver');
+  if (storageDriver !== 's3') {
+    for (const folder of PUBLIC_STORAGE_FOLDERS) {
+      app.useStaticAssets(join(process.cwd(), 'storage', folder), {
+        prefix: `/storage/${folder}`,
+        setHeaders: (res) => {
+          res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+        },
+      });
+    }
   }
 
   // =========================================================

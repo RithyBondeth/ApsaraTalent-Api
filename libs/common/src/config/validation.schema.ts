@@ -109,6 +109,7 @@ export const validationSchema = Joi.object({
   AI_RATE_LIMIT: Joi.number().integer().min(1).default(10),
   AI_RATE_LIMIT_WINDOW_MS: Joi.number().integer().min(1000).default(60000),
   AI_DAILY_QUOTA: Joi.number().integer().min(1).default(100),
+  AI_CV_DAILY_QUOTA: Joi.number().integer().min(1).default(3),
 
   // Error monitoring (Sentry) — blank/unset disables reporting
   SENTRY_DSN: Joi.string().allow('').optional(),
@@ -158,4 +159,40 @@ export const validationSchema = Joi.object({
     .min(1)
     .max(100)
     .default(50),
+
+  // File storage. The S3 credentials are only required when the S3 driver is
+  // selected, so local development needs no bucket at all — but once
+  // STORAGE_DRIVER=s3 the process refuses to boot with them missing rather than
+  // silently writing uploads to an ephemeral container disk.
+  STORAGE_DRIVER: Joi.string().valid('local', 's3').default('local'),
+  S3_BUCKET: Joi.string().when('STORAGE_DRIVER', {
+    is: 's3',
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  S3_REGION: Joi.string().when('STORAGE_DRIVER', {
+    is: 's3',
+    // R2 ignores region but the SDK still requires one; 'auto' is the
+    // conventional value there.
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  S3_ACCESS_KEY_ID: Joi.string().when('STORAGE_DRIVER', {
+    is: 's3',
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  S3_SECRET_ACCESS_KEY: Joi.string().when('STORAGE_DRIVER', {
+    is: 's3',
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  S3_ENDPOINT: Joi.string().uri().optional(),
+  S3_FORCE_PATH_STYLE: Joi.string().valid('true', 'false').default('false'),
+  S3_PUBLIC_BASE_URL: Joi.string().uri().optional(),
+  S3_SIGNED_URL_EXPIRY_SECONDS: Joi.number()
+    .integer()
+    .min(60)
+    .max(604800)
+    .default(900),
 });

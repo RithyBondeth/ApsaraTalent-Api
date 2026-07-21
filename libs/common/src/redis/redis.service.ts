@@ -82,36 +82,202 @@ export class RedisService {
   }
 
   /**
-   * Fixed-window rate counter used by the AI quota guard.
+   * Check-and-increment several fixed-window counters as ONE atomic operation.
    *
-   * The caller supplies a window-stamped key (e.g. ending in `:2026-06-19` or
-   * a numeric window index), so re-setting the value with a constant TTL on
-   * each call never extends the logical window — the key naturally rolls over
-   * when the stamp changes and the TTL just garbage-collects the old key.
+   * Every bucket is checked before any bucket is incremented, so a request
+   * that trips the last bucket does not burn a slot in the earlier ones. Runs
+   * as a Lua script, which Redis executes atomically — concurrent requests
+   * cannot both read the same pre-increment value and both be allowed (the
+   * read-modify-write this replaced let N parallel calls all slip through on
+   * a limit of 1).
    *
-   * Fails OPEN: if Redis is unreachable the request is allowed through, so an
-   * infra blip degrades cost-protection rather than taking AI features offline.
+   * Callers supply window-stamped keys (e.g. ending in `:2026-06-19` or a
+   * numeric window index), so the TTL only garbage-collects the old key — the
+   * logical window rolls over when the stamp changes.
    */
-  async hitRateLimit(
-    key: string,
-    limit: number,
-    ttlMs: number,
-  ): Promise<{ allowed: boolean; count: number; limit: number }> {
+  private static readonly RATE_LIMIT_SCRIPT = `
+    local n = #KEYS
+    for i = 1, n do
+      local current = tonumber(redis.call('GET', KEYS[i]) or '0')
+      if current >= tonumber(ARGV[i * 2 - 1]) then
+        return {0, i, current}
+      end
+    end
+    for i = 1, n do
+      local count = redis.call('INCR', KEYS[i])
+      if count == 1 then
+        redis.call('PEXPIRE', KEYS[i], ARGV[i * 2])
+      end
+    end
+    return {1, 0, 0}
+  `;
+
+  /**
+   * Resolve the underlying node-redis client from the Keyv store so we can run
+   * commands cache-manager does not expose (EVAL, INCR). Returns null for
+   * non-Redis stores (e.g. the in-memory store used by tests).
+   */
+  private resolveClient(): any | null {
     try {
-      const current = (await this.cacheManager.get<number>(key)) ?? 0;
-      if (current >= limit) {
-        return { allowed: false, count: current, limit };
-      }
-      await this.cacheManager.set(key, current + 1, ttlMs);
-      return { allowed: true, count: current + 1, limit };
+      const stores = this.cacheManager.stores as any;
+      const store = Array.isArray(stores) ? stores[0] : stores;
+      return (
+        store?.client ??
+        store?.store?.client ??
+        store?.getClient?.() ??
+        store?.store?.getClient?.() ??
+        (this.cacheManager as any).store?.getClient?.() ??
+        null
+      );
+    } catch {
+      return null;
+    }
+  }
+
+  private connecting: Promise<void> | null = null;
+
+  /**
+   * Return the raw client only once it can actually accept commands.
+   *
+   * KeyvRedis connects lazily — it dials Redis on its own first get/set, so a
+   * client fetched straight off the store is typically still closed. Issuing
+   * EVAL against it throws `The client is closed`, which would land in the
+   * fail-open catch and silently disable quota enforcement entirely. So we
+   * connect it ourselves and return null (→ degraded fallback) if we can't.
+   */
+  private async getReadyClient(): Promise<any | null> {
+    const client = this.resolveClient();
+    if (!client) return null;
+    if (client.isReady) return client;
+    if (typeof client.connect !== 'function') return null;
+
+    // node-redis rejects connect() on an already-opening socket, so concurrent
+    // callers share a single in-flight attempt.
+    if (!this.connecting) {
+      this.connecting = (async () => {
+        try {
+          if (!client.isOpen) await client.connect();
+        } finally {
+          this.connecting = null;
+        }
+      })();
+    }
+
+    try {
+      await this.connecting;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      this.logger.warn(
-        `Rate counter unavailable, allowing request: ${errorMessage}`,
-      );
-      return { allowed: true, count: 0, limit };
+      this.logger.warn(`Redis connect for counters failed: ${errorMessage}`);
+      return null;
     }
+
+    return client.isReady ? client : null;
+  }
+
+  /**
+   * Fails OPEN: if Redis is unreachable the request is allowed through, so an
+   * infra blip degrades cost-protection rather than taking AI features offline.
+   *
+   * `failedIndex` is the zero-based index of the bucket that rejected, so the
+   * caller can produce a message specific to the limit that was actually hit.
+   */
+  async hitRateLimits(
+    buckets: { key: string; limit: number; ttlMs: number }[],
+  ): Promise<{ allowed: boolean; failedIndex: number; count: number }> {
+    if (buckets.length === 0) {
+      return { allowed: true, failedIndex: -1, count: 0 };
+    }
+
+    try {
+      const client = await this.getReadyClient();
+
+      if (client && typeof client.eval === 'function') {
+        const result = (await client.eval(RedisService.RATE_LIMIT_SCRIPT, {
+          keys: buckets.map((bucket) => bucket.key),
+          arguments: buckets.flatMap((bucket) => [
+            String(bucket.limit),
+            String(bucket.ttlMs),
+          ]),
+        })) as [number, number, number];
+
+        const [allowed, failedPosition, count] = result;
+        return {
+          allowed: allowed === 1,
+          failedIndex: allowed === 1 ? -1 : failedPosition - 1,
+          count: Number(count),
+        };
+      }
+
+      // Non-Redis store (tests, local memory cache): fall back to a best-effort
+      // non-atomic check. Same semantics, just racy under concurrency.
+      return await this.hitRateLimitsFallback(buckets);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+
+      // Degrade to the cache-manager path before giving up: Keyv drives its own
+      // connection there, so it often still works when our raw client does not.
+      // Enforcing racily beats not enforcing at all.
+      try {
+        const degraded = await this.hitRateLimitsFallback(buckets);
+        this.logger.warn(
+          `Atomic rate counter failed (${errorMessage}); used non-atomic fallback`,
+        );
+        return degraded;
+      } catch {
+        this.logger.warn(
+          `Rate counter unavailable, allowing request: ${errorMessage}`,
+        );
+        return { allowed: true, failedIndex: -1, count: 0 };
+      }
+    }
+  }
+
+  private async hitRateLimitsFallback(
+    buckets: { key: string; limit: number; ttlMs: number }[],
+  ): Promise<{ allowed: boolean; failedIndex: number; count: number }> {
+    const counts = await Promise.all(
+      buckets.map(async (bucket) =>
+        this.normalizeCount(await this.cacheManager.get<number>(bucket.key)),
+      ),
+    );
+
+    const failedIndex = counts.findIndex(
+      (count, index) => count >= buckets[index].limit,
+    );
+    if (failedIndex !== -1) {
+      return { allowed: false, failedIndex, count: counts[failedIndex] };
+    }
+
+    await Promise.all(
+      buckets.map((bucket, index) =>
+        this.cacheManager.set(bucket.key, counts[index] + 1, bucket.ttlMs),
+      ),
+    );
+    return { allowed: true, failedIndex: -1, count: 0 };
+  }
+
+  /** Read a counter written by {@link hitRateLimits} without consuming it. */
+  async getCounter(key: string): Promise<number> {
+    try {
+      const client = await this.getReadyClient();
+      if (client && typeof client.get === 'function') {
+        return this.normalizeCount(await client.get(key));
+      }
+      return this.normalizeCount(await this.cacheManager.get<number>(key));
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.warn(`Rate counter read failed: ${errorMessage}`);
+      return 0;
+    }
+  }
+
+  /** INCR stores counters as strings; cache-manager stores them as numbers. */
+  private normalizeCount(value: unknown): number {
+    const count = Number(value ?? 0);
+    return Number.isFinite(count) && count > 0 ? count : 0;
   }
 
   // Delete keys matching a pattern

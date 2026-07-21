@@ -16,6 +16,7 @@ export * from './logger/logger.module';
 export * from './message/message.module';
 export * from './redis/redis.module';
 export * from './throttler/throttler.module';
+export * from './storage';
 export * from './uploadfile/uploadfile.module';
 export * from './utils/cors-origin.util';
 export * from './utils/string.util';

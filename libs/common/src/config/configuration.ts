@@ -33,11 +33,36 @@ export default () => ({
     user: process.env.EMAIL_USER,
     password: process.env.EMAIL_PASSWORD,
     from: process.env.EMAIL_FROM,
+    support: process.env.SUPPORT_EMAIL,
   },
 
   throttle: {
     ttl: Number(process.env.THROTTLE_TTL),
     limit: Number(process.env.THROTTLE_LIMIT),
+  },
+
+  storage: {
+    // 'local' keeps files on the container filesystem (the historical
+    // behaviour). 's3' targets any S3-compatible bucket: AWS S3, Cloudflare R2,
+    // Backblaze B2 or MinIO. Defaults to local so the switch is opt-in and a
+    // rollback is one environment variable.
+    driver: process.env.STORAGE_DRIVER === 's3' ? 's3' : 'local',
+    s3: {
+      bucket: process.env.S3_BUCKET,
+      region: process.env.S3_REGION,
+      accessKeyId: process.env.S3_ACCESS_KEY_ID,
+      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+      // Required for R2/MinIO/B2; omit for AWS S3.
+      endpoint: process.env.S3_ENDPOINT || undefined,
+      forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
+      // CDN or public bucket domain used for world-readable objects. Without
+      // it, public files fall back to presigned URLs — functional, but neither
+      // cacheable nor stable.
+      publicBaseUrl: process.env.S3_PUBLIC_BASE_URL || undefined,
+      signedUrlExpirySeconds: Number(
+        process.env.S3_SIGNED_URL_EXPIRY_SECONDS ?? 900,
+      ),
+    },
   },
 
   sms: {
@@ -155,6 +180,9 @@ export default () => ({
     rateLimit: Number(process.env.AI_RATE_LIMIT) || 10,
     rateLimitWindowMs: Number(process.env.AI_RATE_LIMIT_WINDOW_MS) || 60000,
     dailyQuota: Number(process.env.AI_DAILY_QUOTA) || 100,
+    // Per-action daily caps, applied on top of the global daily quota.
+    // CV generation is the most expensive AI call on the platform.
+    cvDailyQuota: Number(process.env.AI_CV_DAILY_QUOTA) || 3,
   },
 
   firebase: {
