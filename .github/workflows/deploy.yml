@@ -128,6 +128,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, build, migrate]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -136,38 +138,24 @@ jobs:
 
       - name: Deploy api-gateway
         run: railway up --service api-gateway --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
       - name: Deploy auth-service
         run: railway up --service auth-service --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
       - name: Deploy user-service
         run: railway up --service user-service --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
       - name: Deploy resume-builder-service
         run: railway up --service resume-builder-service --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
       - name: Deploy chat-service
         run: railway up --service chat-service --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
       - name: Deploy job-service
         run: railway up --service job-service --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
       - name: Deploy notification-service
         run: railway up --service notification-service --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
       # payment-service is excluded — PaymentModule is currently disabled in api-gateway.
       # To re-enable: uncomment PaymentModule in apps/api-gateway/src/api-gateway.module.ts

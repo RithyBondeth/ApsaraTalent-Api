@@ -5,7 +5,7 @@ are written through a **storage driver**, selected by the `STORAGE_DRIVER`
 environment variable:
 
 | Driver | Where files live | When to use |
-|---|---|---|
+| --- | --- | --- |
 | `local` (default) | `./storage` on the container filesystem | Local development |
 | `s3` | Any S3-compatible bucket — AWS S3, Cloudflare R2, Backblaze B2, MinIO | **Production** |
 
@@ -33,7 +33,7 @@ The database stores **relative** paths — `/storage/employee-avatars/pic.png` �
 and the web client resolves them at render time via `normalizeMediaUrl`. The
 storage key is simply that path minus the `/storage/` prefix:
 
-```
+```text
 database:  /storage/employee-avatars/pic.png
 S3 key:    employee-avatars/pic.png
 disk path: ./storage/employee-avatars/pic.png
@@ -55,7 +55,7 @@ The top-level folder decides this, in `storage.constants.ts`:
 ### How each is served
 
 | | Public | Private |
-|---|---|---|
+| --- | --- | --- |
 | Local driver | static middleware | authorized, then streamed |
 | S3 driver | **302** to the public/CDN URL | authorized, then **streamed** through the API |
 
@@ -135,7 +135,7 @@ Confirm a handful of avatars load anonymously and that a resume does **not**.
 Set on every API service in Railway (the gateway serves files; user-service
 deletes them):
 
-```
+```properties
 STORAGE_DRIVER=s3
 S3_BUCKET=...
 S3_REGION=...              # 'auto' for Cloudflare R2
@@ -176,7 +176,7 @@ docker run -d --name minio -p 9000:9000 \
   minio/minio:latest server /data
 ```
 
-```
+```properties
 STORAGE_DRIVER=s3
 S3_BUCKET=apsara-dev
 S3_REGION=us-east-1
@@ -193,7 +193,7 @@ bucket addressing by default.
 ## Code map
 
 | File | Role |
-|---|---|
+| --- | --- |
 | `libs/common/src/storage/storage.service.ts` | Entry point; owns path ⇄ key mapping |
 | `libs/common/src/storage/local-storage.driver.ts` | Filesystem driver (blocks path traversal) |
 | `libs/common/src/storage/s3-storage.driver.ts` | S3-compatible driver |
