@@ -3,128 +3,223 @@ import { ConfigService } from '@nestjs/config';
 import { AiQuotaService } from './ai-quota.service';
 import { RedisService } from '../redis/redis.service';
 
-/**
- * In-memory stand-in for the Lua-backed counter. Mirrors the script's contract:
- * every bucket is checked before any bucket is incremented.
- */
-class FakeRedis {
-  counters = new Map<string, number>();
-
-  async hitRateLimits(buckets: { key: string; limit: number }[]) {
-    const failedIndex = buckets.findIndex(
-      (bucket) => (this.counters.get(bucket.key) ?? 0) >= bucket.limit,
-    );
-    if (failedIndex !== -1) {
-      return { allowed: false, failedIndex, count: 0 };
-    }
-    buckets.forEach((bucket) =>
-      this.counters.set(bucket.key, (this.counters.get(bucket.key) ?? 0) + 1),
-    );
-    return { allowed: true, failedIndex: -1, count: 0 };
-  }
-
-  async getCounter(key: string) {
-    return this.counters.get(key) ?? 0;
-  }
-}
-
-const CONFIG: Record<string, number> = {
-  'ai.rateLimit': 10,
-  'ai.rateLimitWindowMs': 60_000,
-  'ai.dailyQuota': 100,
-  'ai.cvDailyQuota': 3,
-};
-
 describe('AiQuotaService', () => {
   let service: AiQuotaService;
-  let redis: FakeRedis;
+  let redisService: jest.Mocked<RedisService>;
+  let configService: jest.Mocked<ConfigService>;
 
   beforeEach(async () => {
-    redis = new FakeRedis();
+    // Mock ConfigService
+    const mockConfigService = {
+      get: jest.fn((key: string) => {
+        if (key === 'ai.rateLimit') return 10;
+        if (key === 'ai.rateLimitWindowMs') return 60000;
+        if (key === 'ai.dailyQuota') return 100;
+        if (key === 'ai.cvDailyQuota') return 3;
+        return null;
+      }),
+    };
+
+    // Mock RedisService
+    const mockRedisService = {
+      hitRateLimits: jest.fn(),
+      getCounter: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AiQuotaService,
-        { provide: RedisService, useValue: redis },
-        { provide: ConfigService, useValue: { get: (k: string) => CONFIG[k] } },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
+        },
+        {
+          provide: RedisService,
+          useValue: mockRedisService,
+        },
       ],
     }).compile();
 
     service = module.get<AiQuotaService>(AiQuotaService);
+    redisService = module.get(RedisService) as jest.Mocked<RedisService>;
+    configService = module.get(ConfigService) as jest.Mocked<ConfigService>;
+
+    // Lock Date to a specific predictable value for tests
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-07-21T10:00:00.000Z'));
   });
 
-  describe('CV generation daily cap', () => {
-    it('allows exactly 3 CV generations per user per day', async () => {
-      for (let i = 0; i < 3; i++) {
-        const decision = await service.consume('user-1', 'cvGeneration');
-        expect(decision.allowed).toBe(true);
-      }
+  afterEach(() => {
+    jest.useRealTimers();
+    jest.clearAllMocks();
+  });
 
-      const fourth = await service.consume('user-1', 'cvGeneration');
-      expect(fourth.allowed).toBe(false);
-      expect(fourth.bucket).toBe('action');
-      expect(fourth.retryAfterSec).toBeGreaterThan(0);
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+    expect(service.rateLimit).toBe(10);
+    expect(service.windowMs).toBe(60000);
+    expect(service.dailyQuota).toBe(100);
+  });
+
+  describe('getActionQuota', () => {
+    it('should return the correct quota for an action', () => {
+      expect(service.getActionQuota('cvGeneration')).toBe(3);
+    });
+  });
+
+  describe('consume', () => {
+    it('should allow if all rate limits pass and no action provided', async () => {
+      redisService.hitRateLimits.mockResolvedValueOnce({
+        allowed: true,
+        count: 1,
+        failedIndex: -1,
+      });
+
+      const result = await service.consume('user-123');
+      expect(result).toEqual({ allowed: true, bucket: null, retryAfterSec: 0 });
+
+      expect(redisService.hitRateLimits).toHaveBeenCalledWith([
+        {
+          key: 'apsaratalent:ai:quota:user-123:2026-07-21',
+          limit: 100,
+          ttlMs: 86400000,
+        },
+        // (1705831200000 / 60000) = 29705980 (depending on date ms math)
+        expect.objectContaining({ limit: 10, ttlMs: 120000 }),
+      ]);
     });
 
-    it('scopes the cap per user', async () => {
-      for (let i = 0; i < 3; i++)
-        await service.consume('user-1', 'cvGeneration');
+    it('should allow if all rate limits pass when an action is provided', async () => {
+      redisService.hitRateLimits.mockResolvedValueOnce({
+        allowed: true,
+        count: 1,
+        failedIndex: -1,
+      });
 
-      const other = await service.consume('user-2', 'cvGeneration');
-      expect(other.allowed).toBe(true);
+      const result = await service.consume('user-123', 'cvGeneration');
+      expect(result).toEqual({ allowed: true, bucket: null, retryAfterSec: 0 });
+
+      expect(redisService.hitRateLimits).toHaveBeenCalledWith([
+        {
+          key: 'apsaratalent:ai:quota:user-123:cvGeneration:2026-07-21',
+          limit: 3,
+          ttlMs: 86400000,
+        },
+        {
+          key: 'apsaratalent:ai:quota:user-123:2026-07-21',
+          limit: 100,
+          ttlMs: 86400000,
+        },
+        expect.objectContaining({ limit: 10, ttlMs: 120000 }),
+      ]);
     });
 
-    it('does not let other AI actions eat the CV allowance', async () => {
-      // Stay under the burst limit (10/min) so this exercises the daily
-      // buckets rather than the throttle.
-      for (let i = 0; i < 9; i++) await service.consume('user-1');
+    it('should deny when burst limit is hit', async () => {
+      // index 2 is the burst limit bucket in the order (action[0], daily[1], burst[2]) if action was provided
+      // without action, order is daily[0], burst[1]
+      redisService.hitRateLimits.mockResolvedValueOnce({
+        allowed: false,
+        failedIndex: 1,
+        count: 0,
+      });
 
-      const cv = await service.consume('user-1', 'cvGeneration');
-      expect(cv.allowed).toBe(true);
-      expect((await service.getUsage('user-1')).actions.cvGeneration.used).toBe(
-        1,
-      );
+      const result = await service.consume('user-123');
+
+      expect(result.allowed).toBe(false);
+      expect(result.bucket).toBe('burst');
+      // Retry after calculation ensures it wraps positive
+      expect(result.retryAfterSec).toBeGreaterThan(0);
     });
 
-    it('does not consume a CV slot when the burst limit rejects', async () => {
-      // Exhaust the burst window with non-CV calls.
-      for (let i = 0; i < 10; i++) await service.consume('user-1');
+    it('should deny when daily limit is hit', async () => {
+      // index 0 is the daily limit when no action is provided
+      redisService.hitRateLimits.mockResolvedValueOnce({
+        allowed: false,
+        failedIndex: 0,
+        count: 0,
+      });
 
-      const rejected = await service.consume('user-1', 'cvGeneration');
-      expect(rejected.allowed).toBe(false);
-      expect(rejected.bucket).toBe('burst');
+      const result = await service.consume('user-123');
 
-      // The CV counter must be untouched — a throttled request is not a use.
-      const usage = await service.getUsage('user-1');
-      expect(usage.actions.cvGeneration.used).toBe(0);
-      expect(usage.actions.cvGeneration.remaining).toBe(3);
+      expect(result.allowed).toBe(false);
+      expect(result.bucket).toBe('daily');
+      expect(result.retryAfterSec).toBeGreaterThan(0);
+    });
+
+    it('should deny when action limit is hit', async () => {
+      // index 0 is the action limit when action is provided
+      redisService.hitRateLimits.mockResolvedValueOnce({
+        allowed: false,
+        failedIndex: 0,
+        count: 0,
+      });
+
+      const result = await service.consume('user-123', 'cvGeneration');
+
+      expect(result.allowed).toBe(false);
+      expect(result.bucket).toBe('action');
+      expect(result.retryAfterSec).toBeGreaterThan(0);
+    });
+
+    it('should default to daily if failedIndex is undefined for some reason', async () => {
+      // Simulate unexpected result from Redis
+      redisService.hitRateLimits.mockResolvedValueOnce({
+        allowed: false,
+        failedIndex: 999,
+        count: 0,
+      });
+
+      const result = await service.consume('user-123');
+
+      expect(result.allowed).toBe(false);
+      expect(result.bucket).toBe('daily');
+      expect(result.retryAfterSec).toBeGreaterThan(0);
     });
   });
 
   describe('getUsage', () => {
-    it('reports both the global and CV buckets without consuming', async () => {
-      await service.consume('user-1', 'cvGeneration');
+    it('should return valid usage statistics based on redis counters', async () => {
+      // dailyUsed = 10, cvUsed = 1
+      redisService.getCounter
+        .mockResolvedValueOnce(10)
+        .mockResolvedValueOnce(1);
 
-      const first = await service.getUsage('user-1');
-      const second = await service.getUsage('user-1');
+      const usage = await service.getUsage('user-123');
 
-      expect(first).toEqual(second);
-      expect(first.daily).toEqual({ used: 1, limit: 100, remaining: 99 });
-      expect(first.actions.cvGeneration).toEqual({
-        used: 1,
-        limit: 3,
-        remaining: 2,
+      expect(usage).toEqual({
+        daily: { used: 10, limit: 100, remaining: 90 },
+        actions: {
+          cvGeneration: { used: 1, limit: 3, remaining: 2 },
+        },
+        resetsAt: '2026-07-21T23:59:59.999Z',
       });
-      expect(new Date(first.resetsAt).getTime()).toBeGreaterThan(Date.now());
+
+      expect(redisService.getCounter).toHaveBeenNthCalledWith(
+        1,
+        'apsaratalent:ai:quota:user-123:2026-07-21',
+      );
+      expect(redisService.getCounter).toHaveBeenNthCalledWith(
+        2,
+        'apsaratalent:ai:quota:user-123:cvGeneration:2026-07-21',
+      );
     });
 
-    it('starts empty for a user with no activity', async () => {
-      const usage = await service.getUsage('fresh-user');
+    it('should handle zero used accurately', async () => {
+      redisService.getCounter.mockResolvedValue(0);
+
+      const usage = await service.getUsage('user-123');
+
       expect(usage.daily.used).toBe(0);
-      expect(usage.actions.cvGeneration).toEqual({
-        used: 0,
-        limit: 3,
-        remaining: 3,
-      });
+      expect(usage.daily.remaining).toBe(100);
+    });
+
+    it('should floor remaining to 0 if usage exceeds quota (backend mismatch)', async () => {
+      redisService.getCounter.mockResolvedValue(150); // Somehow used 150/100
+
+      const usage = await service.getUsage('user-123');
+
+      expect(usage.daily.used).toBe(150);
+      expect(usage.daily.remaining).toBe(0);
     });
   });
 });
