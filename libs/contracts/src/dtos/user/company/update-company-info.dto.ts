@@ -5,6 +5,7 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsDate,
+  IsEmail,
   IsEnum,
   IsInt,
   IsNumber,
@@ -74,7 +75,7 @@ class JobDTO {
   @IsDate()
   @Type(() => Date)
   @IsOptional()
-  expireDate?: Date;
+  expireDate?: Date | null;
 }
 
 class BenefitDTO {
@@ -128,6 +129,10 @@ class SocialDTO {
 }
 
 export class UpdateCompanyInfoDTO {
+  @IsEmail()
+  @IsOptional()
+  email?: string;
+
   @IsString()
   @IsOptional()
   name?: string;
@@ -149,6 +154,10 @@ export class UpdateCompanyInfoDTO {
   @IsString()
   @IsOptional()
   location?: string;
+
+  @IsString()
+  @IsOptional()
+  phone?: string;
 
   @IsNumber()
   @Type(() => Number)
@@ -175,12 +184,19 @@ export class UpdateCompanyInfoDTO {
   valueIdsToDelete?: number[];
 
   @IsArray()
+  @IsString({ each: true })
   @IsOptional()
   careerScopeIdsToDelete?: string[];
 
   @IsArray()
+  @IsString({ each: true })
   @IsOptional()
   socialIdsToDelete?: string[];
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  jobIdsToDelete?: string[];
 
   @IsArray()
   @ValidateNested({ each: true })
@@ -208,11 +224,11 @@ export class UpdateCompanyInfoDTO {
 
   @IsUrl()
   @IsOptional()
-  websiteUrl?: string;
+  websiteUrl?: string | null;
 
   @IsEnum(ECompanyType)
   @IsOptional()
-  companyType?: ECompanyType;
+  companyType?: ECompanyType | null;
 }
 
 export class UpdateCompanyInfoResponseDTO {

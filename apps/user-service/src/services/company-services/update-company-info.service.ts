@@ -48,6 +48,7 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
       const company = await this.companyRepository.findOne({
         where: { id: companyId },
         relations: [
+          'user',
           'benefits',
           'values',
           'openPositions',
@@ -71,7 +72,10 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
         socials,
         benefitIdsToDelete,
         valueIdsToDelete,
+        careerScopeIdsToDelete,
         socialIdsToDelete,
+        jobIdsToDelete,
+        email,
         ...scalarFields
       } = updateCompanyInfoDTO as any;
 
@@ -80,6 +84,15 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
       ======================================================= */
       Object.assign(company, scalarFields);
       await this.companyRepository.save(company);
+
+      if (email !== undefined && company.user) {
+        const normalizedEmail = email.trim().toLowerCase();
+        if (normalizedEmail && normalizedEmail !== company.user.email) {
+          company.user.email = normalizedEmail;
+          company.user.isEmailVerified = false;
+          await this.userRepository.save(company.user);
+        }
+      }
 
       /* =======================================================
          2️⃣ BENEFITS (MANY-TO-MANY SAFE)
@@ -251,6 +264,16 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
         }
       }
 
+      if (Array.isArray(jobIdsToDelete) && jobIdsToDelete.length > 0) {
+        await this.jobRepository
+          .createQueryBuilder()
+          .delete()
+          .from(Job)
+          .where('id IN (:...ids)', { ids: jobIdsToDelete })
+          .andWhere('companyId = :companyId', { companyId })
+          .execute();
+      }
+
       /* =======================================================
          5️⃣ CAREER SCOPES (KEEP YOUR WORKING LOGIC)
       ======================================================= */
@@ -302,7 +325,10 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
 
         const toAdd = uniqueFinalIds.filter((id) => !currentIds.has(id));
         const toRemove = Array.from(currentIds).filter(
-          (id) => !finalSet.has(id),
+          (id) =>
+            !finalSet.has(id) ||
+            (Array.isArray(careerScopeIdsToDelete) &&
+              careerScopeIdsToDelete.includes(id)),
         );
 
         if (toAdd.length || toRemove.length) {
@@ -339,10 +365,16 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
             );
           }
         }
+      }
 
-        if (Array.isArray(socialIdsToDelete) && socialIdsToDelete.length > 0) {
-          await this.socialRepository.delete(socialIdsToDelete);
-        }
+      if (Array.isArray(socialIdsToDelete) && socialIdsToDelete.length > 0) {
+        await this.socialRepository
+          .createQueryBuilder()
+          .delete()
+          .from(Social)
+          .where('id IN (:...ids)', { ids: socialIdsToDelete })
+          .andWhere('companyId = :companyId', { companyId })
+          .execute();
       }
 
       /* =======================================================
@@ -351,6 +383,7 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
       const freshCompany = await this.companyRepository.findOne({
         where: { id: companyId },
         relations: [
+          'user',
           'benefits',
           'values',
           'openPositions',
@@ -384,12 +417,15 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
         message: 'Company information updated successfully',
         company: new CompanyResponseDTO({
           ...(freshCompany ?? company),
+          email: freshCompany?.user?.email ?? company.user?.email,
           openPositions: (
             freshCompany?.openPositions ?? company.openPositions
           )?.map((job) => new JobPositionResponseDTO(job)),
         }),
       });
     } catch (error) {
+      if (error instanceof RpcException) throw error;
+
       this.logger.error(
         (error as Error).message ||
           "An error occurred while updating the company's information.",
