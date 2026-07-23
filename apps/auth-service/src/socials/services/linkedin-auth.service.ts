@@ -47,8 +47,6 @@ export class LinkedInAuthService implements ILinkedInAuthService {
       }
       user.lastLoginMethod = ELoginMethod.LINKEDIN;
       user.lastLoginAt = new Date();
-      await this.users.save(user);
-
       const payload: IPayload = {
         id: user.id,
         info: user.email,
@@ -58,6 +56,9 @@ export class LinkedInAuthService implements ILinkedInAuthService {
         this.jwt.generateToken(payload),
         this.jwt.generateRefreshToken(user.id),
       ]);
+
+      user.refreshToken = refreshToken;
+      await this.users.save(user);
 
       // Clear Cache in USER SERVICE (non-blocking — must not prevent login)
       this.cacheCleanupService.clearSafe(user.id, 'LinkedIn');

@@ -46,8 +46,6 @@ export class GithubAuthService implements IGithubAuthService {
       }
       user.lastLoginMethod = ELoginMethod.GITHUB;
       user.lastLoginAt = new Date();
-      await this.userRepository.save(user);
-
       // Generate JWT Token
       const payload: IPayload = {
         id: user.id,
@@ -59,6 +57,9 @@ export class GithubAuthService implements IGithubAuthService {
         this.jwtService.generateToken(payload),
         this.jwtService.generateRefreshToken(user.id),
       ]);
+
+      user.refreshToken = refreshToken;
+      await this.userRepository.save(user);
 
       // Clear Cache in USER SERVICE (non-blocking — must not prevent login)
       this.cacheCleanupService.clearSafe(user.id, 'GitHub');

@@ -6,6 +6,7 @@ describe('JwtService token boundaries', () => {
   const nestJwtService = {
     signAsync: jest.fn(),
     verifyAsync: jest.fn(),
+    decode: jest.fn(),
   } as unknown as jest.Mocked<NestJwtService>;
   const service = new JwtService(nestJwtService, new ConfigService());
 
@@ -44,5 +45,61 @@ describe('JwtService token boundaries', () => {
     nestJwtService.verifyAsync.mockResolvedValue(payload);
 
     await expect(service.verifyToken('access-token')).resolves.toEqual(payload);
+  });
+
+  it('generates refresh and email tokens with configured lifetimes', async () => {
+    const config = {
+      get: jest.fn((key) => (key === 'jwt.refreshExpiresIn' ? '30d' : '15m')),
+    };
+    const configured = new JwtService(nestJwtService, config as any);
+    nestJwtService.signAsync.mockResolvedValue('signed-token');
+    await expect(configured.generateRefreshToken('user-1')).resolves.toBe(
+      'signed-token',
+    );
+    expect(nestJwtService.signAsync).toHaveBeenCalledWith(
+      { id: 'user-1', type: 'refresh' },
+      { expiresIn: '30d' },
+    );
+    await configured.generateEmailVerificationToken('person@example.com');
+    expect(nestJwtService.signAsync).toHaveBeenLastCalledWith(
+      { email: 'person@example.com', type: 'email-verification' },
+      { expiresIn: '15m' },
+    );
+  });
+
+  it('accepts only correctly typed refresh and email-verification tokens', async () => {
+    nestJwtService.verifyAsync
+      .mockResolvedValueOnce({ id: 'user-1', type: 'refresh' })
+      .mockResolvedValueOnce({
+        email: 'person@example.com',
+        type: 'email-verification',
+      })
+      .mockResolvedValueOnce({ type: 'access' })
+      .mockResolvedValueOnce({ type: 'access' });
+    await expect(service.verifyRefreshToken('refresh')).resolves.toEqual(
+      expect.objectContaining({ type: 'refresh' }),
+    );
+    await expect(service.verifyEmailToken('email')).resolves.toEqual(
+      expect.objectContaining({ type: 'email-verification' }),
+    );
+    await expect(service.verifyRefreshToken('access')).rejects.toThrow(
+      'Invalid token type',
+    );
+    await expect(service.verifyEmailToken('access')).rejects.toThrow(
+      'Invalid token type',
+    );
+  });
+
+  it('decodes payloads and rejects undecodable tokens', () => {
+    nestJwtService.decode.mockReturnValueOnce({
+      id: 'user-1',
+      role: 'employee',
+    } as any);
+    expect(service.decodeToken('token')).toEqual({
+      id: 'user-1',
+      role: 'employee',
+    });
+    nestJwtService.decode.mockReturnValueOnce(null);
+    expect(() => service.decodeToken('bad')).toThrow('Failed to decode token');
   });
 });

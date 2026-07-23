@@ -72,6 +72,7 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
         message: "Employee's resume was successfully set.",
       });
     } catch (error) {
+      if (error instanceof RpcException) throw error;
       // Handle error
       this.logger.error(
         (error as Error).message ||
@@ -119,6 +120,7 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
         message: "Employee's resume was successfully deleted.",
       });
     } catch (error) {
+      if (error instanceof RpcException) throw error;
       // Handle error
       this.logger.error(
         (error as Error).message ||
@@ -183,6 +185,7 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
         message: "Employee's cover letter was successfully set.",
       });
     } catch (error) {
+      if (error instanceof RpcException) throw error;
       // Handle error
       this.logger.error(
         (error as Error).message ||
@@ -235,6 +238,7 @@ export class UploadEmployeeReferenceService implements IUploadEmployeeReferenceS
         message: "Employee's cover letter was successfully deleted.",
       });
     } catch (error) {
+      if (error instanceof RpcException) throw error;
       // Handle error
       this.logger.error(
         (error as Error).message ||

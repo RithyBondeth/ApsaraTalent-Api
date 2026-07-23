@@ -299,6 +299,7 @@ export class UserService implements IUserService, OnModuleInit {
         message: 'Push notification token updated successfully',
       });
     } catch (error) {
+      if (error instanceof RpcException) throw error;
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to update push token: ${errorMessage}`);

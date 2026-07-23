@@ -1,0 +1,295 @@
+import 'reflect-metadata';
+import { InterviewStatus } from '@app/contracts/dtos/job';
+import { RpcException } from '@nestjs/microservices';
+import { InterviewService } from './interview.service';
+
+describe('InterviewService', () => {
+  const interviews = {
+    findOne: jest.fn(),
+    find: jest.fn(),
+    create: jest.fn((data) => data),
+    save: jest.fn(),
+  };
+  const employees = { findOne: jest.fn() };
+  const companies = { findOne: jest.fn() };
+  const matches = { findOne: jest.fn() };
+  const notifications = { emit: jest.fn() };
+  const logger = { error: jest.fn() };
+  const service = new InterviewService(
+    interviews as any,
+    employees as any,
+    companies as any,
+    matches as any,
+    notifications as any,
+    logger as any,
+  );
+
+  const createDto = {
+    employeeId: 'employee-1',
+    companyId: 'company-1',
+    title: 'Technical interview',
+    description: 'Discuss the role',
+    scheduledAt: '2026-08-01T03:00:00.000Z',
+    durationMinutes: 45,
+    location: 'Office',
+    meetingLink: undefined,
+    createdBy: 'company' as const,
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    interviews.save.mockImplementation(async (value) => ({
+      id: 'interview-1',
+      ...value,
+    }));
+  });
+
+  async function expectRpc(
+    promise: Promise<unknown>,
+    statusCode: number,
+    message: string,
+  ) {
+    const error = (await promise.catch((caught) => caught)) as RpcException;
+    expect(error).toBeInstanceOf(RpcException);
+    expect(error.getError()).toEqual({ statusCode, message });
+  }
+
+  it('allows only companies to schedule interviews', async () => {
+    await expectRpc(
+      service.createInterview({ ...createDto, createdBy: 'employee' }),
+      403,
+      'Only companies can schedule interviews.',
+    );
+    expect(matches.findOne).not.toHaveBeenCalled();
+  });
+
+  it('requires an active match before scheduling', async () => {
+    matches.findOne.mockResolvedValue(null);
+    await expectRpc(
+      service.createInterview(createDto),
+      403,
+      'You can only schedule interviews with matches.',
+    );
+  });
+
+  it('requires both participant profiles', async () => {
+    matches.findOne.mockResolvedValue({ id: 'match-1' });
+    employees.findOne.mockResolvedValue(null);
+    companies.findOne.mockResolvedValue({ id: 'company-1' });
+    await expectRpc(
+      service.createInterview(createDto),
+      404,
+      'Employee or Company not found.',
+    );
+  });
+
+  it('schedules an interview and notifies the employee', async () => {
+    const employee = {
+      id: 'employee-1',
+      username: 'Applicant',
+      user: { id: 'employee-user' },
+    };
+    const company = {
+      id: 'company-1',
+      name: 'Apsara',
+      user: { id: 'company-user' },
+    };
+    matches.findOne.mockResolvedValue({ id: 'match-1' });
+    employees.findOne.mockResolvedValue(employee);
+    companies.findOne.mockResolvedValue(company);
+
+    const result = await service.createInterview(createDto);
+
+    expect(interviews.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        employee,
+        company,
+        status: 'pending',
+        scheduledAt: new Date(createDto.scheduledAt),
+      }),
+    );
+    expect(notifications.emit).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        userId: 'employee-user',
+        type: 'interview',
+        sendPush: true,
+      }),
+    );
+    expect(result.notifyUserId).toBe('employee-user');
+  });
+
+  it('does not emit when the employee has no linked user', async () => {
+    matches.findOne.mockResolvedValue({ id: 'match-1' });
+    employees.findOne.mockResolvedValue({
+      id: 'employee-1',
+      username: 'Applicant',
+    });
+    companies.findOne.mockResolvedValue({
+      id: 'company-1',
+      name: 'Apsara',
+      user: { id: 'company-user' },
+    });
+
+    const result = await service.createInterview(createDto);
+    expect(notifications.emit).not.toHaveBeenCalled();
+    expect(result.notifyUserId).toBeNull();
+  });
+
+  it('lists employee interviews chronologically', async () => {
+    interviews.find.mockResolvedValue([{ id: 'interview-1' }]);
+    const result = await service.getInterviewsByEmployee({
+      employeeId: 'employee-1',
+    });
+    expect(interviews.find).toHaveBeenCalledWith({
+      where: { employee: { id: 'employee-1' } },
+      relations: ['employee', 'company'],
+      order: { scheduledAt: 'ASC' },
+    });
+    expect(result).toHaveLength(1);
+  });
+
+  it('lists company interviews chronologically', async () => {
+    interviews.find.mockResolvedValue([{ id: 'interview-1' }]);
+    await service.getInterviewsByCompany({ companyId: 'company-1' });
+    expect(interviews.find).toHaveBeenCalledWith({
+      where: { company: { id: 'company-1' } },
+      relations: ['employee', 'company'],
+      order: { scheduledAt: 'ASC' },
+    });
+  });
+
+  it('rejects a status update for a missing interview', async () => {
+    interviews.findOne.mockResolvedValue(null);
+    await expectRpc(
+      service.updateInterviewStatus({
+        interviewId: 'missing',
+        requestUserId: 'employee-user',
+        status: InterviewStatus.ACCEPTED,
+      }),
+      404,
+      'Interview not found.',
+    );
+  });
+
+  function existingInterview(
+    status: InterviewStatus = InterviewStatus.PENDING,
+  ) {
+    return {
+      id: 'interview-1',
+      title: 'Technical interview',
+      status,
+      employee: {
+        id: 'employee-1',
+        username: 'Applicant',
+        user: { id: 'employee-user' },
+      },
+      company: {
+        id: 'company-1',
+        name: 'Apsara',
+        user: { id: 'company-user' },
+      },
+    };
+  }
+
+  it('blocks a user who is not an interview participant', async () => {
+    interviews.findOne.mockResolvedValue(existingInterview());
+    await expectRpc(
+      service.updateInterviewStatus({
+        interviewId: 'interview-1',
+        requestUserId: 'outsider',
+        status: InterviewStatus.ACCEPTED,
+      }),
+      403,
+      'You are not involved in this interview.',
+    );
+  });
+
+  it('allows employees only to accept or decline', async () => {
+    interviews.findOne.mockResolvedValue(existingInterview());
+    await expectRpc(
+      service.updateInterviewStatus({
+        interviewId: 'interview-1',
+        requestUserId: 'employee-user',
+        status: InterviewStatus.CANCELLED,
+      }),
+      403,
+      'Employees can only accept or decline interviews.',
+    );
+  });
+
+  it('allows companies only to cancel or complete', async () => {
+    interviews.findOne.mockResolvedValue(existingInterview());
+    await expectRpc(
+      service.updateInterviewStatus({
+        interviewId: 'interview-1',
+        requestUserId: 'company-user',
+        status: InterviewStatus.ACCEPTED,
+      }),
+      403,
+      'Companies can only cancel or complete interviews.',
+    );
+  });
+
+  it('rejects invalid status transitions', async () => {
+    interviews.findOne.mockResolvedValue(
+      existingInterview(InterviewStatus.DECLINED),
+    );
+    await expectRpc(
+      service.updateInterviewStatus({
+        interviewId: 'interview-1',
+        requestUserId: 'company-user',
+        status: InterviewStatus.COMPLETED,
+      }),
+      400,
+      'Cannot transition from "declined" to "completed".',
+    );
+  });
+
+  it('saves an employee acceptance and notifies the company', async () => {
+    const interview = existingInterview();
+    interviews.findOne.mockResolvedValue(interview);
+
+    const result = await service.updateInterviewStatus({
+      interviewId: 'interview-1',
+      requestUserId: 'employee-user',
+      status: InterviewStatus.ACCEPTED,
+    });
+
+    expect(interview.status).toBe(InterviewStatus.ACCEPTED);
+    expect(notifications.emit).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        userId: 'company-user',
+        data: expect.objectContaining({ status: InterviewStatus.ACCEPTED }),
+      }),
+    );
+    expect(result.notifyUserId).toBe('company-user');
+  });
+
+  it('saves a company cancellation and notifies the employee', async () => {
+    const interview = existingInterview();
+    interviews.findOne.mockResolvedValue(interview);
+
+    const result = await service.updateInterviewStatus({
+      interviewId: 'interview-1',
+      requestUserId: 'company-user',
+      status: InterviewStatus.CANCELLED,
+    });
+
+    expect(notifications.emit).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ userId: 'employee-user' }),
+    );
+    expect(result.notifyUserId).toBe('employee-user');
+  });
+
+  it('wraps list failures as internal RPC errors', async () => {
+    interviews.find.mockRejectedValue(new Error('database unavailable'));
+    await expectRpc(
+      service.getInterviewsByEmployee({ employeeId: 'employee-1' }),
+      500,
+      'database unavailable',
+    );
+  });
+});

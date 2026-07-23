@@ -73,6 +73,7 @@ export class ImageEmployeeService implements IImageEmployeeService {
         message: "Employee's avatar was successfully set.",
       });
     } catch (error) {
+      if (error instanceof RpcException) throw error;
       // Handle error
       this.logger.error(
         (error as Error).message ||
@@ -121,6 +122,7 @@ export class ImageEmployeeService implements IImageEmployeeService {
         message: "Employee's avatar was successfully deleted.",
       });
     } catch (error) {
+      if (error instanceof RpcException) throw error;
       // Handle error
       this.logger.error(
         (error as Error).message ||

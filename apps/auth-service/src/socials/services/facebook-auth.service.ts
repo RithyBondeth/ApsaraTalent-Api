@@ -49,8 +49,6 @@ export class FacebookAuthService implements IFacebookAuthService {
       }
       user.lastLoginMethod = ELoginMethod.FACEBOOK;
       user.lastLoginAt = new Date();
-      await this.userRepository.save(user);
-
       // Generate JWT tokens
       const payload: IPayload = {
         id: user.id,
@@ -62,6 +60,9 @@ export class FacebookAuthService implements IFacebookAuthService {
         this.jwtService.generateToken(payload),
         this.jwtService.generateRefreshToken(user.id),
       ]);
+
+      user.refreshToken = refreshToken;
+      await this.userRepository.save(user);
 
       // Clear Cache in USER SERVICE (non-blocking — must not prevent login)
       this.cacheCleanupService.clearSafe(user.id, 'Facebook');

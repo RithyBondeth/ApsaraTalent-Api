@@ -136,6 +136,7 @@ export class InterviewService implements IInterviewService {
       return response;
     } catch (error: any) {
       this.logger.error(error?.message || error);
+      if (error instanceof RpcException) throw error;
       throw new RpcException({
         message:
           error?.message || 'An error occurred while creating the interview.',
@@ -158,6 +159,7 @@ export class InterviewService implements IInterviewService {
       );
     } catch (error: any) {
       this.logger.error(error?.message || error);
+      if (error instanceof RpcException) throw error;
       throw new RpcException({
         message:
           error?.message || 'An error occurred while fetching interviews.',
@@ -294,6 +296,7 @@ export class InterviewService implements IInterviewService {
       return response;
     } catch (error: any) {
       this.logger.error(error?.message || error);
+      if (error instanceof RpcException) throw error;
       throw new RpcException({
         message:
           error?.message ||

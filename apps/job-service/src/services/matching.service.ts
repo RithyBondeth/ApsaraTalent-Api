@@ -230,6 +230,7 @@ export class MatchingService implements IMatchingService {
       return new MatchResponseDTO({ ...saved, notificationTargets });
     } catch (error: any) {
       this.logger.error(error?.message || error);
+      if (error instanceof RpcException) throw error;
       throw new RpcException({
         message: error?.message || 'An error occurred while liking.',
         statusCode: 500,
@@ -274,6 +275,7 @@ export class MatchingService implements IMatchingService {
       });
     } catch (error: any) {
       this.logger.error(error?.message || error);
+      if (error instanceof RpcException) throw error;
       throw new RpcException({
         message: error?.message || 'An error occurred while unmatching.',
         statusCode: error?.statusCode || 500,
@@ -438,6 +440,7 @@ export class MatchingService implements IMatchingService {
       return new MatchResponseDTO({ ...saved, notificationTargets });
     } catch (error: any) {
       this.logger.error(error?.message || error);
+      if (error instanceof RpcException) throw error;
       throw new RpcException({
         message: error?.message || 'An error occurred while liking.',
         statusCode: 500,

@@ -24,6 +24,13 @@ function cookieHeader(response: request.Response): string {
   return cookies.map((value) => value.split(';', 1)[0]).join('; ');
 }
 
+function cookieValue(response: request.Response, name: string): string {
+  const cookie = cookieHeader(response)
+    .split('; ')
+    .find((value) => value.startsWith(`${name}=`));
+  return decodeURIComponent(cookie?.slice(name.length + 1) ?? '');
+}
+
 function expectSecureAuthBoundary(response: request.Response): void {
   const values = response.headers['set-cookie'];
   const cookies = Array.isArray(values) ? values : values ? [values] : [];
@@ -460,6 +467,22 @@ describe('isolated API system', () => {
       .send({ identifier: phone, password })
       .expect(200);
     expectSecureAuthBoundary(login);
+
+    // Refresh credentials are signed JWTs too, but must never authorize normal
+    // API requests as access tokens.
+    await request(baseUrl)
+      .get('/user/current-user')
+      .set('Authorization', `Bearer ${cookieValue(login, 'refresh-token')}`)
+      .expect(401);
+
+    // A browser carrying auth cookies must not be able to mutate state from an
+    // untrusted website, even though CORS would hide the response body.
+    await request(baseUrl)
+      .post('/auth/logout')
+      .set('Cookie', cookieHeader(login))
+      .set('Origin', 'https://attacker.example')
+      .set('Sec-Fetch-Site', 'cross-site')
+      .expect(403);
 
     const refreshed = await request(baseUrl)
       .post('/auth/refresh')

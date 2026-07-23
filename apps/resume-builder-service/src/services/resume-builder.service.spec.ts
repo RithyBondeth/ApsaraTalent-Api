@@ -1,0 +1,282 @@
+import 'reflect-metadata';
+import { RpcException } from '@nestjs/microservices';
+import { ResumeBuilderService } from './resume-builder.service';
+
+const mockCreate = jest.fn();
+jest.mock('openai', () =>
+  jest.fn().mockImplementation(() => ({
+    chat: { completions: { create: mockCreate } },
+  })),
+);
+
+describe('ResumeBuilderService', () => {
+  const config = {
+    get: jest.fn((key) => (key === 'openai.model' ? 'gpt-test' : 'key')),
+  };
+  const images = { optimizeProfilePicture: jest.fn() };
+  const pdf = { generate: jest.fn() };
+  const logger = { setContext: jest.fn(), error: jest.fn() };
+  const service = new ResumeBuilderService(
+    config as any,
+    images as any,
+    pdf as any,
+    logger as any,
+  );
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    pdf.generate.mockResolvedValue(Buffer.from('pdf'));
+  });
+
+  it('optimizes a profile picture before rendering a PDF resume', async () => {
+    images.optimizeProfilePicture.mockResolvedValue('data:image/optimized');
+    const dto = {
+      template: 'classic',
+      personalInfo: {
+        fullName: 'Sok Dara',
+        email: 'sok@example.com',
+        profilePicture: 'data:image/original',
+      },
+      experience: [],
+      skills: [],
+      education: '',
+    } as any;
+    const result = await service.buildResume(dto);
+    expect(images.optimizeProfilePicture).toHaveBeenCalledWith(
+      'data:image/original',
+    );
+    expect(dto.personalInfo.profilePicture).toBe('data:image/optimized');
+    expect(pdf.generate).toHaveBeenCalledWith(
+      expect.stringContaining('Sok Dara'),
+    );
+    expect(result).toEqual(
+      expect.objectContaining({
+        filename: 'resume.pdf',
+        mimeType: 'application/pdf',
+        data: Buffer.from('pdf').toString('base64'),
+      }),
+    );
+  });
+
+  it('wraps PDF renderer failures in an RPC exception', async () => {
+    pdf.generate.mockRejectedValue(new Error('renderer unavailable'));
+    const error = (await service
+      .buildResume({
+        template: 'classic',
+        personalInfo: {
+          fullName: 'Sok Dara',
+          email: 'sok@example.com',
+          phone: '',
+          location: '',
+        },
+        summary: '',
+        experience: [],
+        skills: [],
+        education: '',
+        careerScopes: [],
+      } as any)
+      .catch((caught) => caught)) as RpcException;
+    expect(error).toBeInstanceOf(RpcException);
+    expect(error.getError()).toBe('renderer unavailable');
+  });
+
+  it('generates and trims an AI cover letter', async () => {
+    mockCreate.mockResolvedValue({
+      choices: [{ message: { content: '  Dear Hiring Team,\nHello  ' } }],
+    });
+    const result = await service.generateCoverLetter({
+      employeeName: 'Sok',
+      companyName: 'Apsara',
+      openPositions: ['Engineer'],
+      employeeSkills: ['TypeScript'],
+    } as any);
+    expect(result.coverLetter).toBe('Dear Hiring Team,\nHello');
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ model: 'gpt-test' }),
+    );
+  });
+
+  it('parses optimization JSON and strips inline images from the AI prompt', async () => {
+    mockCreate.mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              overallFeedback: 'Good',
+              suggestedSkills: ['Docker'],
+            }),
+          },
+        },
+      ],
+    });
+    const result = await service.optimizeResume({
+      personalInfo: { profilePicture: 'data:image/png;base64,secret' },
+    } as any);
+    expect(result.overallFeedback).toBe('Good');
+    const prompt = mockCreate.mock.calls[0][0].messages[1].content;
+    expect(prompt).not.toContain('base64,secret');
+  });
+
+  it('escapes cover-letter HTML and creates a safe filename', async () => {
+    const result = await service.generateCoverLetterPdf({
+      style: 'classic',
+      employeeName: 'Sok Dara',
+      employeeJob: 'Engineer',
+      companyName: 'Apsara & Co.',
+      companyIndustry: 'Technology',
+      coverLetterText: '<script>alert("x")</script>\n\nThank you',
+    } as any);
+    const html = pdf.generate.mock.calls[0][0];
+    expect(html).not.toContain('<script>');
+    expect(html).toContain('&lt;script&gt;');
+    expect(result.filename).toBe('cover-letter-sok-dara-apsara-co.pdf');
+  });
+
+  it('renders interview preparation to a named PDF', async () => {
+    const result = await service.generateInterviewPrepPdf({
+      interviewTitle: 'Technical Round',
+      companyName: 'Apsara Talent',
+      companyIndustry: 'Technology',
+      questions: [],
+    } as any);
+    expect(result.filename).toBe('interview-prep-apsara-talent.pdf');
+    expect(result.mimeType).toBe('application/pdf');
+  });
+
+  it('propagates AI provider failures through RPC boundaries', async () => {
+    mockCreate.mockRejectedValue(new Error('OpenAI unavailable'));
+    const error = (await service
+      .generateCoverLetter({
+        employeeName: 'Sok',
+        companyName: 'Apsara',
+        openPositions: [],
+        employeeSkills: [],
+      } as any)
+      .catch((caught) => caught)) as RpcException;
+    expect(error).toBeInstanceOf(RpcException);
+    expect(error.getError()).toBe('OpenAI unavailable');
+  });
+
+  it('generates resume prose while preserving trusted identity fields', async () => {
+    mockCreate.mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              summary: 'Experienced backend engineer.',
+              experience: [
+                {
+                  index: 0,
+                  description: 'Built reliable services.',
+                  achievements: ['Improved quality'],
+                },
+              ],
+              skills: ['Docker'],
+              education: 'BSc Computer Science',
+            }),
+          },
+        },
+      ],
+    });
+    const result = await service.generateResume({
+      template: 'classic',
+      personalInfo: { fullName: 'Sok Dara', email: 'sok@example.com' },
+      summary: '',
+      experience: [
+        {
+          company: 'Apsara',
+          position: 'Developer',
+          startDate: '2024',
+          endDate: null,
+          description: '',
+          achievements: [],
+        },
+      ],
+      skills: ['TypeScript'],
+      education: '',
+    } as any);
+    expect(result.personalInfo.fullName).toBe('Sok Dara');
+    expect(result.summary).toBe('Experienced backend engineer.');
+    expect(result.skills).toEqual(
+      expect.arrayContaining(['TypeScript', 'Docker']),
+    );
+    expect(result.design).toBeDefined();
+  });
+
+  it('rejects empty AI resume responses', async () => {
+    mockCreate.mockResolvedValue({ choices: [{ message: { content: ' ' } }] });
+    const error = (await service
+      .generateResume({
+        template: 'classic',
+        personalInfo: { fullName: 'Sok', email: 'sok@example.com' },
+        experience: [],
+        skills: [],
+        education: '',
+      } as any)
+      .catch((value) => value)) as RpcException;
+    expect(error.getError()).toBe('AI returned an empty resume');
+  });
+
+  it('imports a structured resume from pasted text', async () => {
+    mockCreate.mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              personalInfo: { fullName: 'Sok Dara', email: 'sok@example.com' },
+              summary: 'Backend engineer',
+              experience: [],
+              skills: ['TypeScript'],
+              education: 'RUPP',
+              careerScopes: ['Software'],
+            }),
+          },
+        },
+      ],
+    });
+    const result = await service.generateResumeFromText({
+      sourceText: 'Sok Dara, backend engineer with TypeScript experience',
+      template: 'modern',
+    } as any);
+    expect(result.personalInfo).toEqual(
+      expect.objectContaining({
+        fullName: 'Sok Dara',
+        email: 'sok@example.com',
+      }),
+    );
+    expect(result.template).toBe('modern');
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        response_format: expect.objectContaining({ type: 'json_schema' }),
+      }),
+    );
+  });
+
+  it('maps AI text-import refusals to a stable RPC error', async () => {
+    mockCreate.mockResolvedValue({
+      choices: [{ message: { refusal: 'policy' } }],
+    });
+    const error = (await service
+      .generateResumeFromText({
+        sourceText: 'text',
+        template: 'classic',
+      } as any)
+      .catch((value) => value)) as RpcException;
+    expect(error.getError()).toBe('AI could not process this text');
+  });
+
+  it('polishes and trims an existing cover letter', async () => {
+    mockCreate.mockResolvedValue({
+      choices: [
+        { message: { content: '  Polished cover letter\nSecond paragraph  ' } },
+      ],
+    });
+    await expect(
+      service.polishCoverLetter({ coverLetterText: 'Original letter' }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        coverLetter: 'Polished cover letter\nSecond paragraph',
+      }),
+    );
+  });
+});

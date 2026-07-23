@@ -6,6 +6,7 @@ export function extractChatToken(client: Socket): string | null {
     if (!value) return null;
     const trimmed = value.trim();
     if (!trimmed) return null;
+    if (trimmed.toLowerCase() === 'bearer') return null;
     if (trimmed.toLowerCase().startsWith('bearer ')) {
       const bearerToken = trimmed.slice(7).trim();
       return bearerToken || null;

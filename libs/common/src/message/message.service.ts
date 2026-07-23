@@ -6,10 +6,12 @@ import { EmailService } from '../email/email.service';
 @Injectable()
 export class MessageService {
   private twilioClient: Twilio.Twilio;
-  private emailService: EmailService;
   private readonly logger: Logger = new Logger(MessageService.name);
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly emailService: EmailService,
+  ) {
     this.twilioClient = Twilio(
       this.configService.get<string>('sms.twilio.accountSid'),
       this.configService.get<string>('sms.twilio.authToken'),

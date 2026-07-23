@@ -76,6 +76,7 @@ export class OpenPositionService implements IOpenPositionService {
         (error as Error).message ||
           "An error occurred while removing the company's open positions.",
       );
+      if (error instanceof RpcException) throw error;
       throw new RpcException({
         message:
           "An error occurred while removing the company's open positions.",

@@ -47,6 +47,7 @@ export class JobService implements IJobServiceService {
       });
       const result = jobs.map((job) => new JobResponseDTO(job));
       await this.redisService.set(cacheKey, result, JOB.JOB_LIST_TTL);
+      return result;
     } catch (error) {
       this.logger.error(
         (error as Error).message || 'An error occurred while fetching the job',

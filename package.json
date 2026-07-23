@@ -176,7 +176,7 @@
     "ts-node": "^10.9.1",
     "ts-proto": "^2.7.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.0.0",
+    "typescript": "5.9.3",
     "webpack": "^5.105.2",
     "webpack-cli": "^6.0.1"
   },
@@ -188,7 +188,6 @@
     "multer": "$multer",
     "protobufjs": "7.6.5",
     "fast-xml-parser": "5.10.1",
-    "glob": "10.5.0",
     "tar": "7.5.19",
     "websocket-driver": "0.7.5"
   },
@@ -209,16 +208,17 @@
     "coverageDirectory": "./coverage",
     "coverageThreshold": {
       "global": {
-        "branches": 2,
-        "functions": 2,
-        "lines": 20,
-        "statements": 20
+        "branches": 15,
+        "functions": 14,
+        "lines": 30,
+        "statements": 30
       }
     },
     "testEnvironment": "node",
     "roots": [
       "<rootDir>/apps/",
-      "<rootDir>/libs/"
+      "<rootDir>/libs/",
+      "<rootDir>/migrations/"
     ],
     "moduleNameMapper": {
       "^@app/common(|/.*)$": "<rootDir>/libs/common/src/$1",

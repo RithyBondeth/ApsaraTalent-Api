@@ -45,6 +45,15 @@ jobs:
       - name: Run automated tests
         run: npm run test:cov -- --runInBand
 
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-coverage
+          path: coverage/
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Run isolated end-to-end tests
         run: npm run test:e2e
 
