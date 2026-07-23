@@ -6,7 +6,6 @@ import { RedisService } from '../redis/redis.service';
 describe('AiQuotaService', () => {
   let service: AiQuotaService;
   let redisService: jest.Mocked<RedisService>;
-  let configService: jest.Mocked<ConfigService>;
 
   beforeEach(async () => {
     // Mock ConfigService
@@ -42,7 +41,6 @@ describe('AiQuotaService', () => {
 
     service = module.get<AiQuotaService>(AiQuotaService);
     redisService = module.get(RedisService) as jest.Mocked<RedisService>;
-    configService = module.get(ConfigService) as jest.Mocked<ConfigService>;
 
     // Lock Date to a specific predictable value for tests
     jest.useFakeTimers();

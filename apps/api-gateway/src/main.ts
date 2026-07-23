@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { ValidationPipe } from '@nestjs/common';
+import { ForbiddenException, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { RpcToHttpExceptionFilter } from './utils/rpc-to-http-exception.filter';
 import helmet from 'helmet';
@@ -17,6 +17,7 @@ import { ApiGatewayModule } from './api-gateway.module';
 import { AUTH } from '@app/contracts/constants/domain/auth.constant';
 import {
   isOriginAllowed,
+  isCsrfSafeRequest,
   parseAllowedOrigins,
   PUBLIC_STORAGE_FOLDERS,
 } from '@app/common';
@@ -56,6 +57,22 @@ async function bootstrap() {
   // Parse cookies attached to client requests
   app.use(cookieParser());
 
+  const allowedOrigins = parseAllowedOrigins(
+    configService.get<string>('frontend.origin'),
+    process.env.ALLOWED_ORIGINS,
+  );
+
+  // Browsers automatically attach auth cookies, so state-changing requests
+  // using them must originate from the configured frontend. Bearer-only mobile
+  // and server clients remain unaffected.
+  app.use((req: any, _res: any, next: any) => {
+    if (!isCsrfSafeRequest(req, allowedOrigins)) {
+      next(new ForbiddenException('Untrusted request origin'));
+      return;
+    }
+    next();
+  });
+
   // Handle Express sessions securely
   app.use(
     session({
@@ -78,10 +95,6 @@ async function bootstrap() {
   // 3. CORS CONFIGURATION
   // =========================================================
 
-  const allowedOrigins = parseAllowedOrigins(
-    configService.get<string>('frontend.origin'),
-    process.env.ALLOWED_ORIGINS,
-  );
   const allowAllCors = process.env.CORS_ALLOW_ALL === 'true';
 
   app.enableCors({

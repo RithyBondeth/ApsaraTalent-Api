@@ -13,7 +13,10 @@ export class JwtService {
   ) {}
 
   async generateToken(payload: IPayload): Promise<string> {
-    const token = await this.jwtService.signAsync(payload);
+    const token = await this.jwtService.signAsync({
+      ...payload,
+      type: 'access',
+    });
     return token;
   }
 
@@ -37,7 +40,9 @@ export class JwtService {
 
   async verifyToken(token: string): Promise<any> {
     try {
-      return this.jwtService.verifyAsync(token);
+      const decoded = await this.jwtService.verifyAsync(token);
+      if (decoded.type !== 'access') throw new Error('Invalid token type');
+      return decoded;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
