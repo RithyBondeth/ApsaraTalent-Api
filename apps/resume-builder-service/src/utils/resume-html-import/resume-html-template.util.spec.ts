@@ -104,6 +104,52 @@ describe('buildResumeHtml', () => {
     expect(html).not.toMatch(/https?:\/\//);
     expect(html).not.toContain('<style><script>');
   });
+
+  it('renders social profiles as safe, compact links without visible raw URLs', () => {
+    const html = buildResumeHtml(
+      resume({
+        personalInfo: {
+          fullName: 'Bondeth',
+          email: 'bondeth@example.com',
+          socials: {
+            facebook: 'https://web.facebook.com/?_rdc=1&_rdr#',
+            linkedinUrl: 'linkedin.com/in/bondeth',
+            unsafe: 'javascript:alert(1)',
+          },
+        },
+      }),
+    );
+
+    expect(html).toContain('href="https://web.facebook.com/?_rdc=1&amp;_rdr#"');
+    expect(html).toContain('href="https://linkedin.com/in/bondeth"');
+    expect(html).toContain('<span>Facebook</span>');
+    expect(html).toContain('<span>LinkedIn</span>');
+    expect(html).not.toContain('facebook:</strong>');
+    expect(html).not.toContain('javascript:alert(1)');
+  });
+
+  it('matches the preview contact row and compact experience metadata', () => {
+    const html = buildResumeHtml(
+      resume({
+        personalInfo: {
+          fullName: 'Bondeth',
+          email: 'bondeth@example.com',
+          phone: '085872582',
+          location: 'Phnom Penh',
+          age: 24,
+        },
+        yearsOfExperience: '3 - 5 years',
+        availability: 'Full Time',
+      }),
+    );
+
+    expect(html).toContain('class="identity-row"');
+    expect(html).toContain('class="contacts"');
+    expect(html).toContain('Age: 24');
+    expect(html).toContain('3 - 5 years exp. · Available: Full Time');
+    expect(html).not.toContain('years years experience');
+    expect(html).toMatch(/\.contacts \{[^}]*display: flex/);
+  });
 });
 
 describe('custom accent color', () => {
@@ -169,7 +215,7 @@ describe('multi-page pagination', () => {
     expect(html).not.toMatch(/[^-]section \{[^}]*break-inside: avoid/);
   });
 
-  it('paints the sidebar as a body background band that survives page breaks', () => {
+  it('keeps the body columns visually consistent with the editor preview', () => {
     const html = buildResumeHtml(
       resume({
         design: {
@@ -193,10 +239,8 @@ describe('multi-page pagination', () => {
       }),
     );
 
-    // The colored band lives on the tall .resume-body (continues across pages),
-    // not on the sidebar grid cell (which would be sliced at the boundary).
-    expect(html).toMatch(
-      /\.layout-left-sidebar \.resume-body \{[^}]*linear-gradient\(to right/,
+    expect(html).not.toMatch(
+      /\.layout-left-sidebar \.resume-body \{[^}]*linear-gradient/,
     );
     expect(html).toMatch(/\.resume \{[^}]*flex-direction: column/);
     expect(html).toMatch(/\.resume-body \{[^}]*flex: 1 1 auto/);

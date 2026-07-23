@@ -578,8 +578,7 @@ function resolveTheme(dto: BuildResumeDTO): IResolvedTemplateTheme {
 }
 
 function headingCss(theme: IResolvedTemplateTheme): string {
-  const base =
-    'margin: 0 0 11px; font-size: 12px; text-transform: uppercase; letter-spacing: .09em;';
+  const base = `margin: ${Math.max(12, theme.sectionGap - 6)}px 0 8px; padding-bottom: 3px; font-size: 10px; text-transform: uppercase; letter-spacing: .1em;`;
   if (theme.sectionStyle === 'bar') {
     return `${base} padding: 6px 9px; color: ${theme.background}; background: ${theme.accent}; border-radius: ${theme.radius};`;
   }
@@ -587,9 +586,9 @@ function headingCss(theme: IResolvedTemplateTheme): string {
     return `${base} display: inline-block; padding: 5px 11px; color: ${theme.accent}; background: ${theme.accentSoft}; border-radius: ${theme.chipRadius};`;
   }
   if (theme.sectionStyle === 'plain') {
-    return `${base} padding-bottom: 3px; color: ${theme.accent};`;
+    return `${base} color: ${theme.accent};`;
   }
-  return `${base} padding-bottom: 5px; color: ${theme.accent}; border-bottom: 2px solid ${theme.accentSoft};`;
+  return `${base} color: ${theme.accent}; border-bottom: 1.5px solid ${theme.accentSoft};`;
 }
 
 function esc(value: unknown): string {
@@ -599,6 +598,75 @@ function esc(value: unknown): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+const SOCIAL_PLATFORM_LABELS: Record<string, string> = {
+  behance: 'Behance',
+  dribbble: 'Dribbble',
+  facebook: 'Facebook',
+  github: 'GitHub',
+  instagram: 'Instagram',
+  linkedin: 'LinkedIn',
+  portfolio: 'Portfolio',
+  telegram: 'Telegram',
+  tiktok: 'TikTok',
+  twitter: 'X',
+  website: 'Website',
+  x: 'X',
+  youtube: 'YouTube',
+};
+
+function formatSocialPlatformLabel(platform: string): string {
+  const cleanedPlatform = platform
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s*(?:url|link)\s*$/i, '')
+    .trim();
+  const normalizedPlatform = cleanedPlatform.replace(/\s+/g, '').toLowerCase();
+
+  if (SOCIAL_PLATFORM_LABELS[normalizedPlatform]) {
+    return SOCIAL_PLATFORM_LABELS[normalizedPlatform];
+  }
+
+  return (
+    cleanedPlatform
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ') || 'Website'
+  );
+}
+
+function normalizeSocialLinkUrl(value: string): string | null {
+  const trimmedValue = value.trim();
+  if (!trimmedValue) return null;
+
+  let candidate = trimmedValue;
+  if (candidate.startsWith('//')) {
+    candidate = `https:${candidate}`;
+  } else if (!/^https?:\/\//i.test(candidate)) {
+    if (/^[a-z][a-z\d+.-]*:/i.test(candidate)) return null;
+    candidate = `https://${candidate}`;
+  }
+
+  try {
+    const parsedUrl = new URL(candidate);
+    return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:'
+      ? candidate
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function formatYearsExperience(value: string): string {
+  const trimmedValue = value.trim();
+  if (!trimmedValue) return '';
+  if (/\b(?:experience|exp\.?)\s*$/i.test(trimmedValue)) return trimmedValue;
+  if (/\b(?:years?|yrs?\.?)\s*$/i.test(trimmedValue)) {
+    return `${trimmedValue} exp.`;
+  }
+  return `${trimmedValue} yrs exp.`;
 }
 
 function dataImage(value?: string): string | null {
@@ -632,7 +700,7 @@ function renderSection(section: TResumeSection, dto: BuildResumeDTO): string {
         const dates = [experience.startDate, experience.endDate]
           .filter(Boolean)
           .map(esc)
-          .join(' – ');
+          .join(' - ');
         const achievements = experience.achievements
           ?.filter(Boolean)
           .map((item) => `<li>${esc(item)}</li>`)
@@ -725,28 +793,33 @@ export function buildResumeHtml(dto: BuildResumeDTO): string {
       : theme.columnRatio === 'wide'
         ? '1.1fr 1fr'
         : '1.35fr 1fr';
-  const contentPadH =
-    parseInt(theme.contentPadding.split(' ')[1] ?? '34', 10) || 34;
   const bodyGap = Math.max(18, theme.sectionGap);
-  const sidebarBand = contentPadH + sidebarWidth + Math.round(bodyGap / 2);
   const socials = dto.personalInfo.socials
     ? Object.entries(dto.personalInfo.socials)
-        .filter(([, value]) => value)
-        .map(
-          ([platform, value]) =>
-            `<div class="contact"><strong>${esc(platform)}:</strong> ${esc(value)}</div>`,
-        )
+        .map(([platform, value]) => {
+          const href = normalizeSocialLinkUrl(value);
+          if (!href) return '';
+          return `<a class="social-link" href="${esc(href)}"><span>${esc(formatSocialPlatformLabel(platform))}</span><span class="social-arrow" aria-hidden="true">&#8599;</span></a>`;
+        })
+        .filter(Boolean)
         .join('')
     : '';
   const contactItems = [
-    dto.personalInfo.email,
-    dto.personalInfo.phone,
-    dto.personalInfo.location,
-    dto.personalInfo.age ? `${dto.personalInfo.age} years old` : '',
+    ['&#9993;', dto.personalInfo.email],
+    ['&#9742;', dto.personalInfo.phone],
+    ['&#128205;', dto.personalInfo.location],
+    ['&#127874;', dto.personalInfo.age ? `Age: ${dto.personalInfo.age}` : ''],
   ]
-    .filter(Boolean)
-    .map((item) => `<div class="contact">${esc(item)}</div>`)
+    .filter(([, value]) => Boolean(value))
+    .map(
+      ([icon, value]) =>
+        `<span class="contact"><span class="contact-icon" aria-hidden="true">${icon}</span><span>${esc(value)}</span></span>`,
+    )
     .join('');
+  const metaItems = [
+    dto.yearsOfExperience ? formatYearsExperience(dto.yearsOfExperience) : '',
+    dto.availability ? `Available: ${dto.availability}` : '',
+  ].filter(Boolean);
 
   return `<!DOCTYPE html>
   <html lang="en">
@@ -761,55 +834,67 @@ export function buildResumeHtml(dto: BuildResumeDTO): string {
       .decoration-top-band { border-top: 12px solid ${theme.accent}; }
       .decoration-side-band { border-left: 12px solid ${theme.accent}; }
       .decoration-geometric .header { background-image: linear-gradient(135deg, transparent 68%, ${theme.accent} 68%, ${theme.accent} 78%, transparent 78%); }
-      .header { background: ${theme.headerBackground}; color: ${theme.headerText}; padding: ${theme.headerPadding}; ${theme.headerStyle === 'minimal' ? `border-bottom: 2px solid ${theme.accent};` : ''} }
-      .header-split, .header-compact { display: flex; align-items: center; gap: 22px; }
-      .header-stacked, .header-centered, .avatar-center { display: flex; flex-direction: column; align-items: flex-start; gap: 13px; }
-      .header-centered, .avatar-center { align-items: center; text-align: center; }
-      .header-split.avatar-end, .header-compact.avatar-end { flex-direction: row-reverse; text-align: right; }
+      .header { background: ${theme.headerBackground}; color: ${theme.headerText}; padding: ${theme.headerPadding}; text-align: left; ${theme.layout === 'single' ? `border-bottom: 3px solid ${theme.accent};` : theme.headerStyle === 'minimal' ? `border-bottom: 2px solid ${theme.accent};` : ''} }
+      .identity-row { display: flex; align-items: center; gap: 18px; margin-bottom: 6px; }
+      .header-stacked .identity-row, .header-centered .identity-row, .avatar-center .identity-row { flex-direction: column; align-items: flex-start; }
+      .header-centered, .avatar-center { text-align: center; }
+      .header-centered .identity-row, .avatar-center .identity-row { align-items: center; }
+      .header.avatar-end { text-align: right; }
+      .header-stacked.avatar-end .identity-row { align-items: flex-end; }
+      .header-split.avatar-end .identity-row, .header-compact.avatar-end .identity-row { flex-direction: row-reverse; }
       .header-compact { padding-top: 20px; padding-bottom: 20px; }
+      .header-compact .identity-row { gap: 12px; }
       .header-compact .avatar, .header-compact .monogram { width: ${Math.round(theme.avatarSize * 0.72)}px; height: ${Math.round(theme.avatarSize * 0.72)}px; }
       .identity { min-width: 0; flex: 1; }
       .resume-body { padding: ${theme.contentPadding}; min-width: 0; flex: 1 1 auto; display: grid; gap: ${bodyGap}px; align-items: start; }
       .layout-single .resume-body { display: block; }
       .layout-two-column .resume-body { grid-template-columns: ${columnGrid}; }
-      .layout-left-sidebar .resume-body { grid-template-columns: ${sidebarWidth}px minmax(0, 1fr); background: linear-gradient(to right, ${theme.accentSoft} ${sidebarBand}px, transparent ${sidebarBand}px); }
+      .layout-left-sidebar .resume-body { grid-template-columns: ${sidebarWidth}px minmax(0, 1fr); }
       .layout-left-sidebar .secondary { grid-column: 1; grid-row: 1; }
       .layout-left-sidebar .primary { grid-column: 2; grid-row: 1; }
-      .layout-right-sidebar .resume-body { grid-template-columns: minmax(0, 1fr) ${sidebarWidth}px; background: linear-gradient(to left, ${theme.accentSoft} ${sidebarBand}px, transparent ${sidebarBand}px); }
+      .layout-right-sidebar .resume-body { grid-template-columns: minmax(0, 1fr) ${sidebarWidth}px; }
       .secondary { min-width: 0; }
       .primary { min-width: 0; }
       .avatar, .monogram { width: ${theme.avatarSize}px; height: ${theme.avatarSize}px; border-radius: ${theme.avatarRadius}; margin: 0; border: 3px solid ${theme.accent}; }
       .avatar { display: block; object-fit: cover; }
       .monogram { display: flex; align-items: center; justify-content: center; background: ${theme.accent}; color: #fff; font-size: 28px; font-weight: 700; }
-      .name { font-size: ${theme.nameSize}px; font-weight: 800; line-height: 1.15; overflow-wrap: anywhere; }
-      .job { margin-top: 7px; color: ${theme.headerText}; opacity: .9; font-size: 14px; font-weight: 600; }
-      .contacts { margin-top: 13px; font-size: 11px; opacity: .9; overflow-wrap: anywhere; }
-      .header-split .contacts, .header-compact .contacts { display: flex; flex-wrap: wrap; gap: 3px 16px; }
-      .contact { margin-top: 5px; }
-      .meta { margin-top: 11px; font-size: 11px; font-weight: 700; }
+      .name { font-size: ${theme.nameSize}px; font-weight: 700; line-height: 1.15; letter-spacing: -.3px; overflow-wrap: anywhere; }
+      .job { margin-top: 2px; color: ${theme.layout === 'single' ? theme.accent : theme.headerText}; font-size: 13px; font-weight: 500; }
+      .contacts { margin-top: 6px; display: flex; flex-wrap: wrap; justify-content: flex-start; font-size: 11px; overflow-wrap: anywhere; }
+      .contact { display: inline-flex; align-items: baseline; margin-right: 14px; }
+      .contact-icon { margin-right: 4px; }
+      .meta { margin-top: 4px; font-size: 11px; }
+      .socials { margin-top: 6px; display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 4px 12px; }
+      .social-link { display: inline-flex; align-items: center; gap: 3px; color: ${theme.headerText}; font-size: 11px; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+      .social-arrow { font-size: 9px; }
+      .header-centered .contacts, .header-centered .socials, .avatar-center .contacts, .avatar-center .socials { justify-content: center; }
+      .header.avatar-end .contacts, .header.avatar-end .socials { justify-content: flex-end; }
       .header { break-inside: avoid; }
       /* A section may span pages when it is long, but its heading never sits
          alone at the foot of a page, and individual entries never split. */
-      section { margin: 0 0 ${theme.sectionGap}px; }
+      section { margin: 0; }
       h2 { ${headingCss(theme)} break-after: avoid; }
-      h3 { margin: 0; color: ${theme.text}; font-size: 14px; break-after: avoid; }
-      p { margin: 6px 0 0; white-space: pre-line; overflow-wrap: anywhere; orphans: 2; widows: 2; }
+      h3 { margin: 0; color: ${theme.text}; font-size: 13px; font-weight: 600; break-after: avoid; }
+      p { white-space: pre-line; overflow-wrap: anywhere; orphans: 2; widows: 2; }
+      .summary p { margin: 0; color: ${theme.text}; font-size: 12px; line-height: ${theme.lineHeight}; }
       li { orphans: 2; widows: 2; }
       .summary-highlight { padding: ${theme.experiencePadding}; border-radius: ${theme.radius}; background: ${theme.accentSoft}; break-inside: avoid; }
       .summary-quote { padding-left: 16px; border-left: 4px solid ${theme.accent}; font-style: italic; }
       .experience { margin-bottom: ${Math.max(10, theme.sectionGap - 8)}px; break-inside: avoid; }
       .experience-cards { padding: ${theme.experiencePadding}; border: 1px solid ${theme.accent}; border-radius: ${theme.radius}; background: ${theme.accentSoft}; }
       .experience-timeline { padding: 3px 0 3px 14px; border-left: 3px solid ${theme.accent}; }
-      .experience-head { display: flex; justify-content: space-between; gap: 12px; }
-      .company, .dates { color: ${theme.muted}; font-size: 11px; }
-      .dates { white-space: nowrap; }
-      ul { margin: 7px 0 0 18px; padding: 0; }
-      li { margin: 3px 0; }
-      .chip { display: inline-block; margin: 3px 5px 3px 0; padding: 3px 9px; border: 1px solid ${theme.accent}; border-radius: ${theme.chipRadius}; color: ${theme.accent}; font-size: 11px; }
+      .experience-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+      .company { margin-top: 1px; color: ${theme.muted}; font-size: 12px; }
+      .dates { margin-left: 8px; flex-shrink: 0; color: ${theme.muted}; font-size: 11px; white-space: nowrap; }
+      .experience p { margin: 4px 0 0; color: ${theme.text}; font-size: 12px; line-height: 1.55; }
+      ul { margin: 4px 0 0 16px; padding: 0; }
+      li { margin: 0 0 2px; font-size: 12px; }
+      .chip { display: inline-block; margin: 2px 3px; padding: 2px 8px; border: 1px solid ${theme.accent}; border-radius: ${theme.chipRadius}; background: ${theme.skillsStyle === 'chips' ? theme.accentSoft : 'transparent'}; color: ${theme.accent}; font-size: 11px; }
       .skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 12px; }
       .skill-item { padding: 4px 0; border-bottom: 1px solid ${theme.accent}; color: ${theme.text}; font-size: 11px; }
-      .skill-list { columns: 2; }
-      .education { margin: 6px 0; break-inside: avoid; }
+      .skill-list { display: block; }
+      .skill-list li { margin: 1px 0; }
+      .education { margin: 0 0 6px; color: ${theme.text}; font-size: 12px; break-inside: avoid; }
       .education-cards { padding: 7px 9px; border: 1px solid ${theme.accent}; border-radius: ${theme.radius}; background: ${theme.accentSoft}; break-inside: avoid; }
       .education-timeline { padding-left: 10px; border-left: 3px solid ${theme.accent}; }
       @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
@@ -818,13 +903,16 @@ export function buildResumeHtml(dto: BuildResumeDTO): string {
   <body>
     <div class="resume layout-${layout} decoration-${theme.decoration}" data-design-palette="${esc(dto.design?.palette ?? 'template')}" data-design-density="${esc(dto.design?.density ?? 'balanced')}" data-design-sections="${esc(theme.sectionStyle)}" data-design-layout="${esc(layout)}">
       <header class="header header-${theme.headerLayout} avatar-${theme.avatarPlacement}">
-        <div class="avatar-wrap">${picture ? `<img class="avatar" src="${picture}" alt="Profile">` : `<div class="monogram">${monogram(dto.personalInfo.fullName)}</div>`}</div>
-        <div class="identity">
-          <div class="name">${esc(dto.personalInfo.fullName)}</div>
-          ${dto.personalInfo.job ? `<div class="job">${esc(dto.personalInfo.job)}</div>` : ''}
-          <div class="contacts">${contactItems}${socials}</div>
-          <div class="meta">${dto.yearsOfExperience ? `${esc(dto.yearsOfExperience)} years experience` : ''}${dto.yearsOfExperience && dto.availability ? ' · ' : ''}${dto.availability ? `Available: ${esc(dto.availability)}` : ''}</div>
+        <div class="identity-row">
+          <div class="avatar-wrap">${picture ? `<img class="avatar" src="${picture}" alt="Profile">` : `<div class="monogram">${monogram(dto.personalInfo.fullName)}</div>`}</div>
+          <div class="identity">
+            <div class="name">${esc(dto.personalInfo.fullName)}</div>
+            ${dto.personalInfo.job ? `<div class="job">${esc(dto.personalInfo.job)}</div>` : ''}
+          </div>
         </div>
+        ${contactItems ? `<div class="contacts">${contactItems}</div>` : ''}
+        ${metaItems.length ? `<div class="meta">${esc(metaItems.join(' · '))}</div>` : ''}
+        ${socials ? `<div class="socials">${socials}</div>` : ''}
       </header>
       <div class="resume-body">
         <main class="primary">${primaryHtml}</main>
