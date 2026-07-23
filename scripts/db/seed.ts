@@ -8,7 +8,7 @@
 import 'reflect-metadata';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
-import { DataSource, In } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { CareerScope } from '@app/common/database/entities/career-scope.entity';
 import { Benefit } from '@app/common/database/entities/company/benefit.entity';
 import { Company } from '@app/common/database/entities/company/company.entity';
@@ -31,7 +31,7 @@ import { Interview } from '@app/common/database/entities/interview.entity';
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
 import { EGender } from '@app/common/database/enums/gender.enum';
 
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 // ─── Seed Data ────────────────────────────────────────────────────────────────
 
@@ -61,7 +61,10 @@ const SKILLS_DATA = [
   { name: 'Accounting', description: 'Financial record keeping' },
   { name: 'UI/UX Design', description: 'User interface and experience design' },
   { name: 'Figma', description: 'Design and prototyping tool' },
-  { name: 'Project Management', description: 'Planning and executing projects' },
+  {
+    name: 'Project Management',
+    description: 'Planning and executing projects',
+  },
   { name: 'Agile', description: 'Iterative project methodology' },
   { name: 'SQL', description: 'Relational database query language' },
   { name: 'Photoshop', description: 'Adobe image editing software' },
@@ -69,38 +72,6 @@ const SKILLS_DATA = [
   { name: 'Customer Service', description: 'Client support and relations' },
   { name: 'Excel', description: 'Microsoft spreadsheet software' },
   { name: 'Communication', description: 'Verbal and written communication' },
-];
-
-const BENEFITS = [
-  'Health Insurance',
-  'Annual Bonus',
-  'Flexible Hours',
-  'Remote Work',
-  'Training & Development',
-  'Meal Allowance',
-  'Transportation Allowance',
-  'Annual Leave (18 days)',
-  'Life Insurance',
-  'Stock Options',
-];
-
-const VALUES = [
-  'Innovation',
-  'Integrity',
-  'Teamwork',
-  'Customer First',
-  'Diversity & Inclusion',
-  'Sustainability',
-  'Excellence',
-  'Growth Mindset',
-];
-
-const CAMBODIAN_LOCATIONS = [
-  'Phnom Penh',
-  'Siem Reap',
-  'Battambang',
-  'Sihanoukville',
-  'Kampong Cham',
 ];
 
 const EMPLOYEES_DATA = [
@@ -168,7 +139,8 @@ const EMPLOYEES_DATA = [
     experiences: [
       {
         title: 'Software Engineer',
-        description: 'Built REST APIs and microservices for e-commerce platforms.',
+        description:
+          'Built REST APIs and microservices for e-commerce platforms.',
         startDate: new Date('2018-01-01'),
         endDate: new Date('2021-12-31'),
       },
@@ -244,7 +216,8 @@ const EMPLOYEES_DATA = [
       },
       {
         title: 'Senior Financial Analyst',
-        description: 'Led financial planning and analysis for regional operations.',
+        description:
+          'Led financial planning and analysis for regional operations.',
         startDate: new Date('2020-09-01'),
         endDate: null,
       },
@@ -303,7 +276,12 @@ const EMPLOYEES_DATA = [
     description:
       'HR professional focused on talent acquisition and employee engagement. Experienced in full-cycle recruitment.',
     careerScopes: ['Human Resources', 'Operations & Management'],
-    skills: ['Communication', 'Customer Service', 'Excel', 'Project Management'],
+    skills: [
+      'Communication',
+      'Customer Service',
+      'Excel',
+      'Project Management',
+    ],
     educations: [
       {
         school: 'Royal University of Law and Economics',
@@ -390,7 +368,8 @@ const EMPLOYEES_DATA = [
       },
       {
         title: 'DevOps Engineer',
-        description: 'Built and maintained CI/CD pipelines and Kubernetes clusters.',
+        description:
+          'Built and maintained CI/CD pipelines and Kubernetes clusters.',
         startDate: new Date('2019-07-01'),
         endDate: null,
       },
@@ -422,7 +401,8 @@ const EMPLOYEES_DATA = [
     experiences: [
       {
         title: 'Content Creator Intern',
-        description: 'Created blog posts and social media content for a tourism brand.',
+        description:
+          'Created blog posts and social media content for a tourism brand.',
         startDate: new Date('2023-06-01'),
         endDate: null,
       },
@@ -454,7 +434,8 @@ const EMPLOYEES_DATA = [
     experiences: [
       {
         title: 'Project Coordinator',
-        description: 'Coordinated IT infrastructure projects for the banking sector.',
+        description:
+          'Coordinated IT infrastructure projects for the banking sector.',
         startDate: new Date('2015-09-01'),
         endDate: new Date('2019-08-31'),
       },
@@ -512,7 +493,11 @@ const EMPLOYEES_DATA = [
     email: 'bunthoeun.or@seed.dev',
     description:
       'Software architect with a decade of experience designing enterprise-grade distributed systems for Southeast Asian markets.',
-    careerScopes: ['Software Development', 'Engineering & Technology', 'Operations & Management'],
+    careerScopes: [
+      'Software Development',
+      'Engineering & Technology',
+      'Operations & Management',
+    ],
     skills: ['TypeScript', 'Python', 'SQL', 'Agile', 'Project Management'],
     educations: [
       {
@@ -530,7 +515,8 @@ const EMPLOYEES_DATA = [
       },
       {
         title: 'Software Architect',
-        description: 'Designed microservices architecture for a fintech platform serving 500K+ users.',
+        description:
+          'Designed microservices architecture for a fintech platform serving 500K+ users.',
         startDate: new Date('2019-03-01'),
         endDate: null,
       },
@@ -583,7 +569,12 @@ const EMPLOYEES_DATA = [
     description:
       'Healthcare consultant with expertise in hospital operations, health policy, and digital health transformation across Cambodia.',
     careerScopes: ['Healthcare', 'Operations & Management'],
-    skills: ['Communication', 'Project Management', 'Excel', 'Customer Service'],
+    skills: [
+      'Communication',
+      'Project Management',
+      'Excel',
+      'Customer Service',
+    ],
     educations: [
       {
         school: 'University of Health Sciences',
@@ -600,7 +591,8 @@ const EMPLOYEES_DATA = [
       },
       {
         title: 'Healthcare Consultant',
-        description: 'Advised hospitals on operational efficiency and digitization.',
+        description:
+          'Advised hospitals on operational efficiency and digitization.',
         startDate: new Date('2018-08-01'),
         endDate: null,
       },
@@ -632,13 +624,15 @@ const EMPLOYEES_DATA = [
     experiences: [
       {
         title: 'Corporate Trainer',
-        description: 'Delivered soft-skills and technical training for banking staff.',
+        description:
+          'Delivered soft-skills and technical training for banking staff.',
         startDate: new Date('2017-01-01'),
         endDate: new Date('2020-12-31'),
       },
       {
         title: 'Training & Development Specialist',
-        description: 'Designed e-learning programs for a multinational company.',
+        description:
+          'Designed e-learning programs for a multinational company.',
         startDate: new Date('2021-01-01'),
         endDate: null,
       },
@@ -656,9 +650,18 @@ const COMPANIES_DATA = [
     companySize: 250,
     foundedYear: 2008,
     description:
-      'Cambodia\'s leading digital media and technology company, operating gaming, entertainment, and payment platforms.',
-    careerScopes: ['Software Development', 'Marketing & Advertising', 'Design & Creative'],
-    benefits: ['Health Insurance', 'Annual Bonus', 'Training & Development', 'Flexible Hours'],
+      "Cambodia's leading digital media and technology company, operating gaming, entertainment, and payment platforms.",
+    careerScopes: [
+      'Software Development',
+      'Marketing & Advertising',
+      'Design & Creative',
+    ],
+    benefits: [
+      'Health Insurance',
+      'Annual Bonus',
+      'Training & Development',
+      'Flexible Hours',
+    ],
     values: ['Innovation', 'Teamwork', 'Growth Mindset'],
     jobs: [
       {
@@ -672,7 +675,8 @@ const COMPANIES_DATA = [
       },
       {
         title: 'Digital Marketing Manager',
-        description: 'Lead digital marketing campaigns across social and search channels.',
+        description:
+          'Lead digital marketing campaigns across social and search channels.',
         type: 'Full-time',
         experienceRequired: '3+ years',
         educationRequired: "Bachelor's degree",
@@ -690,14 +694,24 @@ const COMPANIES_DATA = [
     companySize: 500,
     foundedYear: 2008,
     description:
-      'Wing Bank is Cambodia\'s first fully licensed digital bank, serving millions of customers with mobile-first financial services.',
-    careerScopes: ['Finance & Accounting', 'Software Development', 'Operations & Management'],
-    benefits: ['Health Insurance', 'Annual Bonus', 'Life Insurance', 'Annual Leave (18 days)'],
+      "Wing Bank is Cambodia's first fully licensed digital bank, serving millions of customers with mobile-first financial services.",
+    careerScopes: [
+      'Finance & Accounting',
+      'Software Development',
+      'Operations & Management',
+    ],
+    benefits: [
+      'Health Insurance',
+      'Annual Bonus',
+      'Life Insurance',
+      'Annual Leave (18 days)',
+    ],
     values: ['Integrity', 'Customer First', 'Excellence'],
     jobs: [
       {
         title: 'Senior Financial Analyst',
-        description: 'Conduct financial modeling and investment analysis for new products.',
+        description:
+          'Conduct financial modeling and investment analysis for new products.',
         type: 'Full-time',
         experienceRequired: '4+ years',
         educationRequired: "Master's degree",
@@ -706,7 +720,8 @@ const COMPANIES_DATA = [
       },
       {
         title: 'Backend Developer',
-        description: 'Develop APIs and microservices for our mobile banking platform.',
+        description:
+          'Develop APIs and microservices for our mobile banking platform.',
         type: 'Full-time',
         experienceRequired: '3+ years',
         educationRequired: "Bachelor's degree",
@@ -724,9 +739,19 @@ const COMPANIES_DATA = [
     companySize: 1200,
     foundedYear: 1996,
     description:
-      'Cellcard is one of Cambodia\'s leading mobile operators, providing nationwide 4G/5G connectivity and digital services.',
-    careerScopes: ['Engineering & Technology', 'Sales & Business Development', 'Marketing & Advertising'],
-    benefits: ['Health Insurance', 'Transportation Allowance', 'Meal Allowance', 'Annual Bonus', 'Training & Development'],
+      "Cellcard is one of Cambodia's leading mobile operators, providing nationwide 4G/5G connectivity and digital services.",
+    careerScopes: [
+      'Engineering & Technology',
+      'Sales & Business Development',
+      'Marketing & Advertising',
+    ],
+    benefits: [
+      'Health Insurance',
+      'Transportation Allowance',
+      'Meal Allowance',
+      'Annual Bonus',
+      'Training & Development',
+    ],
     values: ['Innovation', 'Customer First', 'Teamwork'],
     jobs: [
       {
@@ -740,7 +765,8 @@ const COMPANIES_DATA = [
       },
       {
         title: 'B2B Sales Executive',
-        description: 'Grow enterprise accounts and drive corporate solutions revenue.',
+        description:
+          'Grow enterprise accounts and drive corporate solutions revenue.',
         type: 'Full-time',
         experienceRequired: '2+ years',
         educationRequired: "Bachelor's degree",
@@ -758,14 +784,25 @@ const COMPANIES_DATA = [
     companySize: 800,
     foundedYear: 1996,
     description:
-      'Smart Axiata is Cambodia\'s #1 mobile operator providing 4G and Smart Broadband services to over 8 million subscribers.',
-    careerScopes: ['Software Development', 'Engineering & Technology', 'Marketing & Advertising'],
-    benefits: ['Health Insurance', 'Annual Bonus', 'Stock Options', 'Remote Work', 'Flexible Hours'],
+      "Smart Axiata is Cambodia's #1 mobile operator providing 4G and Smart Broadband services to over 8 million subscribers.",
+    careerScopes: [
+      'Software Development',
+      'Engineering & Technology',
+      'Marketing & Advertising',
+    ],
+    benefits: [
+      'Health Insurance',
+      'Annual Bonus',
+      'Stock Options',
+      'Remote Work',
+      'Flexible Hours',
+    ],
     values: ['Innovation', 'Excellence', 'Diversity & Inclusion'],
     jobs: [
       {
         title: 'Full Stack Developer',
-        description: 'Build internal platforms and customer-facing digital products.',
+        description:
+          'Build internal platforms and customer-facing digital products.',
         type: 'Full-time',
         experienceRequired: '3+ years',
         educationRequired: "Bachelor's degree",
@@ -783,14 +820,25 @@ const COMPANIES_DATA = [
     companySize: 3000,
     foundedYear: 1993,
     description:
-      'ACLEDA Bank is Cambodia\'s largest commercial bank, with a nationwide branch network serving individuals and SMEs.',
-    careerScopes: ['Finance & Accounting', 'Operations & Management', 'Human Resources'],
-    benefits: ['Health Insurance', 'Annual Bonus', 'Life Insurance', 'Annual Leave (18 days)', 'Training & Development'],
+      "ACLEDA Bank is Cambodia's largest commercial bank, with a nationwide branch network serving individuals and SMEs.",
+    careerScopes: [
+      'Finance & Accounting',
+      'Operations & Management',
+      'Human Resources',
+    ],
+    benefits: [
+      'Health Insurance',
+      'Annual Bonus',
+      'Life Insurance',
+      'Annual Leave (18 days)',
+      'Training & Development',
+    ],
     values: ['Integrity', 'Customer First', 'Excellence', 'Teamwork'],
     jobs: [
       {
         title: 'Accountant',
-        description: 'Manage financial records and produce reports per IFRS standards.',
+        description:
+          'Manage financial records and produce reports per IFRS standards.',
         type: 'Full-time',
         experienceRequired: '2+ years',
         educationRequired: "Bachelor's degree",
@@ -799,7 +847,8 @@ const COMPANIES_DATA = [
       },
       {
         title: 'HR Business Partner',
-        description: 'Support talent acquisition and organizational development.',
+        description:
+          'Support talent acquisition and organizational development.',
         type: 'Full-time',
         experienceRequired: '3+ years',
         educationRequired: "Bachelor's degree",
@@ -818,17 +867,28 @@ const COMPANIES_DATA = [
     foundedYear: 2010,
     description:
       'Boutique consulting firm specializing in market entry, strategy, and digital transformation for companies operating across the Mekong region.',
-    careerScopes: ['Operations & Management', 'Finance & Accounting', 'Sales & Business Development'],
-    benefits: ['Flexible Hours', 'Remote Work', 'Annual Bonus', 'Training & Development'],
+    careerScopes: [
+      'Operations & Management',
+      'Finance & Accounting',
+      'Sales & Business Development',
+    ],
+    benefits: [
+      'Flexible Hours',
+      'Remote Work',
+      'Annual Bonus',
+      'Training & Development',
+    ],
     values: ['Innovation', 'Growth Mindset', 'Integrity'],
     jobs: [
       {
         title: 'Business Analyst',
-        description: 'Work with clients on strategy, market research, and process improvement.',
+        description:
+          'Work with clients on strategy, market research, and process improvement.',
         type: 'Full-time',
         experienceRequired: '2+ years',
         educationRequired: "Bachelor's degree",
-        skillsRequired: 'Financial Analysis,Excel,Communication,Project Management',
+        skillsRequired:
+          'Financial Analysis,Excel,Communication,Project Management',
         salary: '$700 - $1,300/month',
       },
     ],
@@ -849,7 +909,8 @@ const COMPANIES_DATA = [
     jobs: [
       {
         title: 'UI/UX Designer',
-        description: 'Design intuitive experiences for our hospitality and tourism clients.',
+        description:
+          'Design intuitive experiences for our hospitality and tourism clients.',
         type: 'Full-time',
         experienceRequired: '1+ years',
         educationRequired: "Bachelor's degree",
@@ -858,7 +919,8 @@ const COMPANIES_DATA = [
       },
       {
         title: 'Graphic Designer',
-        description: 'Create visual assets for brand campaigns and social media.',
+        description:
+          'Create visual assets for brand campaigns and social media.',
         type: 'Full-time',
         experienceRequired: '1+ years',
         educationRequired: "Bachelor's degree",
@@ -876,9 +938,14 @@ const COMPANIES_DATA = [
     companySize: 150,
     foundedYear: 2012,
     description:
-      'Cambodia\'s fastest-growing healthcare network operating clinics and telemedicine services across urban and rural provinces.',
+      "Cambodia's fastest-growing healthcare network operating clinics and telemedicine services across urban and rural provinces.",
     careerScopes: ['Healthcare', 'Operations & Management', 'Human Resources'],
-    benefits: ['Health Insurance', 'Life Insurance', 'Annual Leave (18 days)', 'Training & Development'],
+    benefits: [
+      'Health Insurance',
+      'Life Insurance',
+      'Annual Leave (18 days)',
+      'Training & Development',
+    ],
     values: ['Customer First', 'Integrity', 'Teamwork'],
     jobs: [
       {
@@ -902,13 +969,23 @@ const COMPANIES_DATA = [
     foundedYear: 2014,
     description:
       'EdTech platform delivering vocational training and online courses to Cambodian youth in partnership with NGOs and government agencies.',
-    careerScopes: ['Education & Training', 'Marketing & Advertising', 'Software Development'],
-    benefits: ['Flexible Hours', 'Remote Work', 'Training & Development', 'Meal Allowance'],
+    careerScopes: [
+      'Education & Training',
+      'Marketing & Advertising',
+      'Software Development',
+    ],
+    benefits: [
+      'Flexible Hours',
+      'Remote Work',
+      'Training & Development',
+      'Meal Allowance',
+    ],
     values: ['Diversity & Inclusion', 'Growth Mindset', 'Sustainability'],
     jobs: [
       {
         title: 'Instructional Designer',
-        description: 'Create engaging online learning modules for vocational programs.',
+        description:
+          'Create engaging online learning modules for vocational programs.',
         type: 'Full-time',
         experienceRequired: '2+ years',
         educationRequired: "Bachelor's degree",
@@ -936,13 +1013,23 @@ const COMPANIES_DATA = [
     foundedYear: 2006,
     description:
       'Phnom Penh Special Economic Zone is a premier industrial park hosting 100+ international manufacturing companies and logistics operators.',
-    careerScopes: ['Operations & Management', 'Human Resources', 'Sales & Business Development'],
-    benefits: ['Health Insurance', 'Transportation Allowance', 'Meal Allowance', 'Annual Bonus'],
+    careerScopes: [
+      'Operations & Management',
+      'Human Resources',
+      'Sales & Business Development',
+    ],
+    benefits: [
+      'Health Insurance',
+      'Transportation Allowance',
+      'Meal Allowance',
+      'Annual Bonus',
+    ],
     values: ['Excellence', 'Teamwork', 'Customer First'],
     jobs: [
       {
         title: 'Supply Chain Coordinator',
-        description: 'Coordinate logistics and inventory across our industrial zone operations.',
+        description:
+          'Coordinate logistics and inventory across our industrial zone operations.',
         type: 'Full-time',
         experienceRequired: '2+ years',
         educationRequired: "Bachelor's degree",
@@ -990,17 +1077,30 @@ async function main() {
       : false,
     synchronize: false,
     entities: [
-      User, Employee, Company, Social, Chat, JobMatching, Notification,
-      CareerScope, Education, Experience, Skill, Benefit, Job, Value,
-      Image, ResumeTemplate, CompanyFavoriteEmployee, EmployeeFavoriteCompany,
+      User,
+      Employee,
+      Company,
+      Social,
+      Chat,
+      JobMatching,
+      Notification,
+      CareerScope,
+      Education,
+      Experience,
+      Skill,
+      Benefit,
+      Job,
+      Value,
+      Image,
+      ResumeTemplate,
+      CompanyFavoriteEmployee,
+      EmployeeFavoriteCompany,
       Interview,
     ],
   });
 
   await dataSource.initialize();
   console.log('✅ Connected\n');
-
-  const manager = dataSource.manager;
 
   // ── 1. Seed shared lookup data ─────────────────────────────────────────────
   console.log('📂 Seeding career scopes...');
@@ -1014,7 +1114,12 @@ async function main() {
   console.log('🛠  Seeding skills...');
   const skillMap = new Map<string, Skill>();
   for (const s of SKILLS_DATA) {
-    const skill = await findOrCreate(dataSource, Skill, { name: s.name } as any, { description: s.description } as any);
+    const skill = await findOrCreate(
+      dataSource,
+      Skill,
+      { name: s.name } as any,
+      { description: s.description } as any,
+    );
     skillMap.set(s.name, skill);
   }
   console.log(`   ✓ ${SKILLS_DATA.length} skills ready\n`);
