@@ -58,6 +58,10 @@ export class RedisService {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Cache GET error: ${errorMessage}`);
+      // A cache read failure is a cache miss: return the declared `null` and
+      // let the caller fall through to its source of truth. Previously this
+      // fell off the end as `undefined`, contradicting the signature.
+      return null;
     }
   }
 

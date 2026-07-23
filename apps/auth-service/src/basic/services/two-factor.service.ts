@@ -2,6 +2,7 @@ import { User } from '@app/common/database/entities/user.entity';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
+import { hashRefreshToken } from '@app/common/jwt/refresh-token-hash.util';
 import {
   TwoFactorDisableDTO,
   TwoFactorDisableResponseDTO,
@@ -12,7 +13,6 @@ import {
   TwoFactorVerifyLoginDTO,
   TwoFactorVerifyLoginResponseDTO,
 } from '@app/contracts/dtos/auth';
-import { UserResponseDTO } from '@app/contracts/dtos/shared/user.dto';
 import { ITwoFactorService } from '@app/contracts/interfaces/service/auth-service.interface';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -21,6 +21,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { RpcException } from '@nestjs/microservices';
 import { Repository } from 'typeorm';
 import { CacheCleanupService } from '../../shared/services/cache-cleanup.service';
+import { toUserResponseDTO } from '@app/common/utils/to-user-response.util';
 
 @Injectable()
 export class TwoFactorService implements ITwoFactorService {
@@ -185,7 +186,7 @@ export class TwoFactorService implements ITwoFactorService {
         this.jwtService.generateRefreshToken(user.id),
       ]);
 
-      user.refreshToken = refreshToken;
+      user.refreshToken = hashRefreshToken(refreshToken);
       user.lastLoginMethod = ELoginMethod.EMAIL_PASSWORD;
       user.lastLoginAt = new Date();
       await this.userRepository.save(user);
@@ -195,8 +196,7 @@ export class TwoFactorService implements ITwoFactorService {
         message: 'Successfully logged in',
         accessToken,
         refreshToken,
-        user: new UserResponseDTO({
-          ...user,
+        user: toUserResponseDTO(user, {
           employee: undefined,
           company: undefined,
         }),

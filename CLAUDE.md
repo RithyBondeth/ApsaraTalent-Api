@@ -23,7 +23,6 @@ npm run start:dev:users    # User Service
 npm run start:dev:resume   # Resume Builder Service
 npm run start:dev:chat     # Chat Service
 npm run start:dev:job      # Job Service
-npm run start:dev:payment  # Payment Service
 
 # Start individual services in production mode
 npm run start:api
@@ -32,8 +31,16 @@ npm run start:users
 npm run start:resume
 npm run start:chat
 npm run start:job
-npm run start:payment
 ```
+
+### All services at once (zsh + tmux)
+```bash
+./scripts/dev/run-dev.sh
+```
+Starts every service (gateway + all microservices) in its own tmux window
+inside one `apsara-backend` session — `tmux attach -t apsara-backend` to
+reattach, `Ctrl-b w` to switch windows. Requires `zsh` and `tmux`; re-running
+it kills and restarts the whole session.
 
 ### Testing
 ```bash
@@ -70,7 +77,6 @@ The application follows a microservices architecture with the following services
 - **Job Service** (`apps/job-service`): Handles job postings and job matching algorithms
 - **Resume Builder Service** (`apps/resume-builder-service`): Manages resume creation and templates
 - **Chat Service** (`apps/chat-service`): Real-time messaging between users
-- **Payment Service** (`apps/payment-service`): Handles payment processing and billing
 
 ### Shared Libraries
 - **Common Library** (`libs/common`): Shared utilities, database entities, guards, interceptors, and services used across all microservices
@@ -108,7 +114,6 @@ All services use environment variables for host and port configuration:
 - `services.resume.host` / `services.resume.port`: Resume Service configuration
 - `services.chat.host` / `services.chat.port`: Chat Service configuration
 - `services.job.host` / `services.job.port`: Job Service configuration
-- `services.payment.host` / `services.payment.port`: Payment Service configuration
 
 ### Database and Core Configuration
 - `DATABASE_URL`: PostgreSQL connection string

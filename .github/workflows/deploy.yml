@@ -9,6 +9,44 @@ on:
       - main
 
 jobs:
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # A real .env was committed once before and its credentials are still in
+      # this repository's history. This gate makes the same mistake fail the
+      # build instead of reaching the remote a second time.
+      - name: Reject committed environment files
+        run: |
+          tracked=$(git ls-files | grep -E '(^|/)\.env' | grep -vE '\.env\.example$|\.env\.test$|test/e2e/e2e\.env$' || true)
+          if [ -n "$tracked" ]; then
+            echo "::error::Environment files must never be committed:"
+            echo "$tracked"
+            exit 1
+          fi
+
+      - name: Reject credential-shaped literals
+        run: |
+          # Long random-looking assignments to secret-named variables, well-known
+          # key prefixes, and connection strings with an embedded password
+          # (postgres://user:pass@host — a real DATABASE_URL was once committed
+          # this way in a root-level debug script that this glob used to miss).
+          # Scoped to source and config, not lockfiles.
+          if git grep -nIE \
+            -e 'sk-[A-Za-z0-9]{20,}' \
+            -e 'AKIA[0-9A-Z]{16}' \
+            -e 'SG\.[A-Za-z0-9_-]{20,}' \
+            -e '-----BEGIN [A-Z ]*PRIVATE KEY-----' \
+            -e '(SECRET|PASSWORD|TOKEN|API_KEY)[A-Z_]*\s*[:=]\s*["'"'"']?[A-Za-z0-9/+_-]{24,}' \
+            -e '(postgres(ql)?|mysql|mongodb(\+srv)?|redis|rediss|amqps?)://[^\s"'"'"']+:[^\s"'"'"']+@' \
+            -- 'apps/**' 'libs/**' 'scripts/**' 'migrations/**' 'test/**' '*.ts' '*.js' '*.mjs' '*.json' '*.yml' '*.toml' \
+            ':!*.spec.ts' ':!package-lock.json' ':!test/e2e/e2e.env'; then
+            echo "::error::Possible hard-coded credential above. Move it to an environment variable."
+            exit 1
+          fi
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -75,6 +113,11 @@ jobs:
 
       - name: Typecheck (all services)
         run: npx tsc --noEmit -p tsconfig.json
+
+      # Existing strictNullChecks debt is tolerated; new debt is not, and any
+      # new possibly-null dereference fails outright.
+      - name: Strict-null ratchet
+        run: npm run typecheck:strict
 
       - name: Build API Gateway
         run: npm run build
@@ -165,7 +208,3 @@ jobs:
 
       - name: Deploy notification-service
         run: railway up --service notification-service --detach
-
-      # payment-service is excluded — PaymentModule is currently disabled in api-gateway.
-      # To re-enable: uncomment PaymentModule in apps/api-gateway/src/api-gateway.module.ts
-      # then add a deploy step for payment-service here.

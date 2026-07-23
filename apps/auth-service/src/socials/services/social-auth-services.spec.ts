@@ -1,4 +1,5 @@
 import { UnauthorizedException } from '@nestjs/common';
+import { hashRefreshToken } from '@app/common/jwt/refresh-token-hash.util';
 import { FacebookAuthService } from './facebook-auth.service';
 import { GithubAuthService } from './github-auth.service';
 import { GoogleAuthService } from './google-auth.service';
@@ -125,7 +126,7 @@ describe('social authentication services', () => {
       const result = await (p.service[p.login] as any)(p.data);
 
       expect(user[p.idField]).toBe(p.data.id);
-      expect(user.refreshToken).toBe('refresh');
+      expect(user.refreshToken).toBe(hashRefreshToken('refresh'));
       expect(repository.save).toHaveBeenCalledWith(user);
       expect(jwt.generateToken).toHaveBeenCalledWith({
         id: 'u1',

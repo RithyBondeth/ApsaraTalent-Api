@@ -3,7 +3,7 @@ import { DataSource } from 'typeorm';
 
 /**
  * Standalone DataSource used ONLY by the TypeORM CLI (migration:run / :revert /
- * :show) and by scripts/baseline-migrations.ts.
+ * :show) and by scripts/db/baseline-migrations.ts.
  *
  * It deliberately does not import the Nest ConfigModule or the entity list:
  * migrations must be able to run against a database without booting the app,

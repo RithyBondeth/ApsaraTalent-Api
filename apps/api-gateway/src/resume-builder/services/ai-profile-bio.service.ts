@@ -42,9 +42,11 @@ export class AiProfileBioService implements IAiProfileBioService {
         `Experience: ${refineProfileBioDTO.experience}`,
       refineProfileBioDTO.availability &&
         `Availability: ${refineProfileBioDTO.availability}`,
-      refineProfileBioDTO.skills?.length &&
+      refineProfileBioDTO.skills &&
+        refineProfileBioDTO.skills.length > 0 &&
         `Skills: ${refineProfileBioDTO.skills.join(', ')}`,
-      refineProfileBioDTO.careerScopes?.length &&
+      refineProfileBioDTO.careerScopes &&
+        refineProfileBioDTO.careerScopes.length > 0 &&
         `Career interests: ${refineProfileBioDTO.careerScopes.join(', ')}`,
     ]);
 
@@ -69,7 +71,8 @@ export class AiProfileBioService implements IAiProfileBioService {
     const context = this.buildContext([
       refineProfileBioDTO.skills?.slice(0, 8).length &&
         `Skills: ${refineProfileBioDTO.skills!.slice(0, 8).join(', ')}`,
-      refineProfileBioDTO.careerScopes?.length &&
+      refineProfileBioDTO.careerScopes &&
+        refineProfileBioDTO.careerScopes.length > 0 &&
         `Career interests: ${refineProfileBioDTO.careerScopes.join(', ')}`,
     ]);
 
@@ -91,11 +94,14 @@ export class AiProfileBioService implements IAiProfileBioService {
         `Company: ${refineProfileBioDTO.companyName}`,
       refineProfileBioDTO.industry &&
         `Industry: ${refineProfileBioDTO.industry}`,
-      refineProfileBioDTO.openPositions?.length &&
+      refineProfileBioDTO.openPositions &&
+        refineProfileBioDTO.openPositions.length > 0 &&
         `Open positions: ${refineProfileBioDTO.openPositions.slice(0, 5).join(', ')}`,
-      refineProfileBioDTO.benefits?.length &&
+      refineProfileBioDTO.benefits &&
+        refineProfileBioDTO.benefits.length > 0 &&
         `Benefits: ${refineProfileBioDTO.benefits.slice(0, 5).join(', ')}`,
-      refineProfileBioDTO.values?.length &&
+      refineProfileBioDTO.values &&
+        refineProfileBioDTO.values.length > 0 &&
         `Values: ${refineProfileBioDTO.values.slice(0, 5).join(', ')}`,
     ]);
 

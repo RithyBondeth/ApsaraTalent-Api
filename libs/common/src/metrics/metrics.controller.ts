@@ -5,6 +5,7 @@ import {
   Res,
   UnauthorizedException,
 } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { getMetrics } from './metrics';
 
@@ -18,6 +19,9 @@ import { getMetrics } from './metrics';
  * Optionally protected: set METRICS_TOKEN and scrape with
  * `Authorization: Bearer <token>` (or `?token=`). Left open when unset (dev).
  */
+// Prometheus scrapes on a fixed interval from a fixed address; a rate limit
+// here would only ever produce gaps in the monitoring data.
+@SkipThrottle()
 @Controller('metrics')
 export class MetricsController {
   @Get()

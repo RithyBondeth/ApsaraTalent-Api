@@ -7,7 +7,7 @@
 # someone is looking at it.
 #
 # Usage:
-#   DATABASE_URL="postgresql://..." ./scripts/backup-db.sh [output-directory]
+#   DATABASE_URL="postgresql://..." ./scripts/db/backup-db.sh [output-directory]
 #
 # Requires either a local pg_dump, or Docker (the script falls back to running
 # pg_dump inside the same Postgres image used for e2e tests). The fallback also

@@ -1,7 +1,9 @@
 #!/bin/zsh
 
 SESSION="apsara-backend"
-PROJECT_DIR="/Users/bondeth/Projects/Apsara Talent/apsaratalent-api"
+# Resolve the repo root from this script's own location (scripts/..) instead
+# of a hardcoded personal path, so it works from any clone/machine.
+PROJECT_DIR="$(cd "$(dirname "${0:A}")/.." && pwd)"
 
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 export NVM_DIR="$HOME/.nvm"

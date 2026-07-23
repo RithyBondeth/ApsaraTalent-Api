@@ -5,7 +5,6 @@ import { AuthHealthController } from '../../../../auth-service/src/health/health
 import { ChatHealthController } from '../../../../chat-service/src/health/health.controller';
 import { JobHealthController } from '../../../../job-service/src/health/health.controller';
 import { NotificationHealthController } from '../../../../notification-service/src/health/health.controller';
-import { PaymentHealthController } from '../../../../payment-service/src/health/health.controller';
 import { ResumeHealthController } from '../../../../resume-builder-service/src/health/health.controller';
 import { UserHealthController } from '../../../../user-service/src/health/health.controller';
 
@@ -35,8 +34,6 @@ describe('Health controllers', () => {
         'services.user.port': 3002,
         'services.notification.host': 'notification-host',
         'services.notification.port': 3007,
-        'bakong.developerToken': 'token',
-        'bakong.apiBaseUrl': 'https://bakong.example.com',
       };
       return values[key];
     }),
@@ -57,7 +54,8 @@ describe('Health controllers', () => {
     });
     expect(database.pingCheck).toHaveBeenCalledTimes(2);
     expect(redis.pingCheck).toHaveBeenCalledTimes(2);
-    expect(internal.pingCheck).toHaveBeenCalledTimes(14);
+    // 6 INTERNAL_SERVICES x 2 readiness routes (checkHealth + checkReadiness).
+    expect(internal.pingCheck).toHaveBeenCalledTimes(12);
   });
 
   it('returns a stable gateway liveness response', () => {
@@ -119,20 +117,6 @@ describe('Health controllers', () => {
         options: { host: 'notification-host', port: 3007 },
       }),
     );
-  });
-
-  it('checks payment configuration and shared database readiness', async () => {
-    const configHealth = { check: jest.fn().mockReturnValue({ status: 'up' }) };
-    await new PaymentHealthController(
-      health as any,
-      database as any,
-      configHealth as any,
-      config as any,
-    ).checkHealth();
-    expect(configHealth.check).toHaveBeenCalledWith('bakong_config', {
-      developerToken: 'token',
-      apiBaseUrl: 'https://bakong.example.com',
-    });
   });
 
   it('checks database and Redis for resume and user services', async () => {

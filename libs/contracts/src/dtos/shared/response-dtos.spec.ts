@@ -4,12 +4,6 @@ import {
   AiMatchProfilesResponseDTO,
 } from '../job/matching/ai-match-profiles.dto';
 import {
-  KhqrInfoResponseDTO,
-  Md5HashResponseDTO,
-  PaymentInfoResponseDTO,
-  QrImageResponseDTO,
-} from '../payment/payment-utilities.dto';
-import {
   CareerScopesResponseDTO,
   CompanyResponseDTO,
   EducationResponseDTO,
@@ -24,7 +18,7 @@ import {
 } from './user.dto';
 
 describe('shared response DTO mappings', () => {
-  it('assigns simple profile and payment response values', () => {
+  it('assigns simple profile response values', () => {
     const cases = [
       [SkillResponseDTO, { name: 'TypeScript' }],
       [ExperienceResponseDTO, { title: 'Engineer' }],
@@ -33,10 +27,6 @@ describe('shared response DTO mappings', () => {
       [ImageResponseDTO, { image: '/image.png' }],
       [ValuesAndBenefitsResponseDTO, { label: 'Remote' }],
       [CareerScopesResponseDTO, { name: 'Software' }],
-      [QrImageResponseDTO, { image: 'data', format: 'base64' }],
-      [Md5HashResponseDTO, { md5Hash: 'abc' }],
-      [PaymentInfoResponseDTO, { status: 'paid' }],
-      [KhqrInfoResponseDTO, { merchant: 'Apsara' }],
       [AiMatchProfilesDTO, { eid: 'employee-1', cid: 'company-1' }],
       [
         AiMatchProfilesResponseDTO,

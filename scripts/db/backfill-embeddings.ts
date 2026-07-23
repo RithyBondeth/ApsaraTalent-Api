@@ -18,8 +18,8 @@ import { DataSource } from 'typeorm';
 import OpenAI from 'openai';
 
 // Load .env — try root first, fall back to libs/.env (mirrors seed.ts pattern)
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
-dotenv.config({ path: path.resolve(__dirname, '../libs/.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../libs/.env') });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

@@ -13,7 +13,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
-import { validationSchema } from '../libs/common/src/config/validation.schema';
+import { validationSchema } from '../../libs/common/src/config/validation.schema';
 
 const files = process.argv.slice(2);
 if (files.length === 0) files.push('.env');

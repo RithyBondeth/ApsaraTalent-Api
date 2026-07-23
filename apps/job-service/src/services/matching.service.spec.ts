@@ -1,37 +1,23 @@
 import 'reflect-metadata';
-import { RpcException } from '@nestjs/microservices';
 import { MatchingService } from './matching.service';
+import { createMatchingFixtures, expectRpc } from './matching-test-fixtures';
 
 describe('MatchingService', () => {
-  const matching = {
-    findOne: jest.fn(),
-    find: jest.fn(),
-    count: jest.fn(),
-    create: jest.fn((data) => data),
-    save: jest.fn(),
-    delete: jest.fn(),
-    createQueryBuilder: jest.fn(),
-  };
-  const employees = { findOne: jest.fn() };
-  const companies = { findOne: jest.fn() };
-  const employeeFavorites = { delete: jest.fn(), count: jest.fn() };
-  const companyFavorites = { delete: jest.fn(), count: jest.fn() };
-  const interviews = { delete: jest.fn() };
-  const email = { sendEmail: jest.fn() };
-  const logger = { error: jest.fn(), warn: jest.fn() };
-  const redis = {
-    invalidateMatchingCaches: jest.fn(),
-    del: jest.fn(),
-    get: jest.fn(),
-    set: jest.fn(),
-    generateMatchingKey: jest.fn((kind, id) => `${kind}:${id}`),
-    generateEmployeeFavoritesKey: jest.fn(() => 'employee-favorites'),
-    generateEmployeeFavoriteCountKey: jest.fn(() => 'employee-favorite-count'),
-    generateCompanyFavoritesKey: jest.fn(() => 'company-favorites'),
-    generateCompanyFavoriteCountKey: jest.fn(() => 'company-favorite-count'),
-  };
-  const config = { get: jest.fn(() => 'test-key') };
-  const notifications = { emit: jest.fn() };
+  const {
+    matching,
+    employees,
+    companies,
+    employeeFavorites,
+    companyFavorites,
+    interviews,
+    email,
+    logger,
+    redis,
+    notifications,
+    employee,
+    company,
+  } = createMatchingFixtures();
+
   const service = new MatchingService(
     matching as any,
     employees as any,
@@ -42,24 +28,8 @@ describe('MatchingService', () => {
     email as any,
     logger as any,
     redis as any,
-    config as any,
     notifications as any,
   );
-
-  const employee = {
-    id: 'employee-1',
-    username: 'Applicant',
-    avatar: 'employee.png',
-    user: { id: 'employee-user', email: 'employee@example.com' },
-    skills: [{ name: 'TypeScript' }, { name: 'Node.js' }],
-  };
-  const company = {
-    id: 'company-1',
-    name: 'Apsara',
-    avatar: 'company.png',
-    user: { id: 'company-user', email: 'company@example.com' },
-    openPositions: [{ skillsRequired: 'TypeScript, PostgreSQL' }],
-  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -70,16 +40,6 @@ describe('MatchingService', () => {
     }));
     email.sendEmail.mockResolvedValue(undefined);
   });
-
-  async function expectRpc(
-    promise: Promise<unknown>,
-    statusCode: number,
-    message: string,
-  ) {
-    const error = (await promise.catch((caught) => caught)) as RpcException;
-    expect(error).toBeInstanceOf(RpcException);
-    expect(error.getError()).toEqual({ statusCode, message });
-  }
 
   it('rejects a like when either profile is missing', async () => {
     employees.findOne.mockResolvedValue(null);
@@ -235,40 +195,6 @@ describe('MatchingService', () => {
     expect(redis.set).toHaveBeenCalled();
   });
 
-  it('returns normalized profiles for AI matching', async () => {
-    employees.findOne.mockResolvedValue({
-      ...employee,
-      job: 'Engineer',
-      educations: [{ degree: 'BSc', school: 'RUPP' }],
-      experiences: [{ title: 'Developer' }],
-      careerScopes: [{ name: 'Software' }],
-    });
-    companies.findOne.mockResolvedValue({
-      ...company,
-      industry: 'Technology',
-      careerScopes: [{ name: 'Software' }],
-    });
-
-    const result = await service.getAiMatchProfiles({
-      eid: 'employee-1',
-      cid: 'company-1',
-    });
-    expect(result.employeeProfile.skills).toEqual(['TypeScript', 'Node.js']);
-    expect(result.companyProfile.openPositions[0]).toEqual(
-      expect.objectContaining({ skillsRequired: 'TypeScript, PostgreSQL' }),
-    );
-  });
-
-  it('rejects AI profile generation for missing records', async () => {
-    employees.findOne.mockResolvedValue(employee);
-    companies.findOne.mockResolvedValue(null);
-    await expectRpc(
-      service.getAiMatchProfiles({ eid: 'employee-1', cid: 'company-1' }),
-      404,
-      'Employee or Company not found.',
-    );
-  });
-
   it('maps and caches employee and company likes', async () => {
     matching.find
       .mockResolvedValueOnce([{ company }])
@@ -314,61 +240,6 @@ describe('MatchingService', () => {
     );
   });
 
-  it('builds real-time analytics for an employee', async () => {
-    matching.count
-      .mockResolvedValueOnce(10)
-      .mockResolvedValueOnce(8)
-      .mockResolvedValueOnce(4);
-    employeeFavorites.count.mockResolvedValueOnce(3);
-
-    function activityBuilder(rows: any[]) {
-      const qb: any = {};
-      for (const method of [
-        'select',
-        'where',
-        'andWhere',
-        'groupBy',
-        'orderBy',
-      ]) {
-        qb[method] = jest.fn(() => qb);
-      }
-      qb.getRawMany = jest.fn().mockResolvedValue(rows);
-      return qb;
-    }
-    const today = new Date();
-    const day = `${today.getUTCFullYear()}-${String(today.getUTCMonth() + 1).padStart(2, '0')}-${String(today.getUTCDate()).padStart(2, '0')}`;
-    const month = day.slice(0, 7);
-    matching.createQueryBuilder
-      .mockReturnValueOnce(
-        activityBuilder([{ day, likes: '2', received: '1', matches: '1' }]),
-      )
-      .mockReturnValueOnce(
-        activityBuilder([{ month, likes: '5', received: '3', matches: '2' }]),
-      );
-    matching.find.mockResolvedValueOnce([
-      { id: 'match-1', company, createdAt: new Date('2026-01-01') },
-    ]);
-
-    const result = await service.getMatchingAnalytics({
-      role: 'employee',
-      userId: 'employee-1',
-    });
-    expect(result).toEqual(
-      expect.objectContaining({
-        totalLikesGiven: 10,
-        totalLikesReceived: 8,
-        totalMatches: 4,
-        totalFavorites: 3,
-        matchRate: 40,
-      }),
-    );
-    expect(result.weeklyActivity).toHaveLength(7);
-    expect(result.monthlyActivity).toHaveLength(12);
-    expect(result.recentMatches[0]).toEqual(
-      expect.objectContaining({ name: 'Apsara' }),
-    );
-  });
-
   it('computes skill scores for exact, partial, and unavailable data', () => {
     const compute = (service as any).computeSkillScore.bind(service);
     expect(compute(employee, company)).toBe(50);
@@ -380,106 +251,6 @@ describe('MatchingService', () => {
         openPositions: [{ skillsRequired: 'Node.js' }],
       }),
     ).toBe(100);
-  });
-
-  it('returns cached AI explanations without loading profiles', async () => {
-    const cached = { score: 90, verdict: 'Strong Match' };
-    redis.get.mockResolvedValueOnce(cached);
-    await expect(
-      service.getAiMatchExplanation({ eid: 'employee-1', cid: 'company-1' }),
-    ).resolves.toBe(cached);
-    expect(employees.findOne).not.toHaveBeenCalled();
-  });
-
-  it('generates, normalizes, and caches an AI match explanation', async () => {
-    employees.findOne.mockResolvedValue({
-      ...employee,
-      job: 'Engineer',
-      careerScopes: [{ name: 'Software' }],
-      educations: [{ degree: 'BSc', school: 'RUPP' }],
-      experiences: [{ title: 'Developer' }],
-    });
-    companies.findOne.mockResolvedValue({
-      ...company,
-      careerScopes: [{ name: 'Software' }],
-      benefits: [],
-      values: [],
-    });
-    const create = jest.fn().mockResolvedValue({
-      choices: [
-        {
-          message: {
-            content: JSON.stringify({
-              score: 88,
-              verdict: 'Strong Match',
-              explanation: 'Relevant experience.',
-              strengths: ['TypeScript'],
-              gaps: ['PostgreSQL'],
-            }),
-          },
-        },
-      ],
-    });
-    (service as any).openAI = { chat: { completions: { create } } };
-    const result = await service.getAiMatchExplanation({
-      eid: 'employee-1',
-      cid: 'company-1',
-    });
-    expect(result).toEqual(
-      expect.objectContaining({ score: 88, verdict: 'Strong Match' }),
-    );
-    expect(create).toHaveBeenCalledWith(
-      expect.objectContaining({ response_format: { type: 'json_object' } }),
-    );
-    expect(redis.set).toHaveBeenCalled();
-  });
-
-  it('generates interview preparation tailored to the requested round', async () => {
-    employees.findOne.mockResolvedValue({
-      ...employee,
-      job: 'Engineer',
-      careerScopes: [],
-      educations: [],
-      experiences: [],
-    });
-    companies.findOne.mockResolvedValue({
-      ...company,
-      values: [{ label: 'Growth' }],
-      careerScopes: [],
-    });
-    const create = jest.fn().mockResolvedValue({
-      choices: [
-        {
-          message: {
-            content: JSON.stringify({
-              questions: [
-                {
-                  question: 'Explain event loops.',
-                  questionKm: 'ពន្យល់ event loop។',
-                  category: 'Technical',
-                  tip: 'Use an example.',
-                  tipKm: 'ប្រើឧទាហរណ៍។',
-                },
-              ],
-            }),
-          },
-        },
-      ],
-    });
-    (service as any).openAI = { chat: { completions: { create } } };
-    const result = await service.getAiInterviewPrep({
-      eid: 'employee-1',
-      cid: 'company-1',
-      interviewTitle: 'Technical Round',
-    });
-    expect(result.questions).toHaveLength(1);
-    expect(result.questions[0]).toEqual(
-      expect.objectContaining({ category: 'Technical' }),
-    );
-    expect(redis.generateMatchingKey).toHaveBeenCalledWith(
-      'ai-interview-prep:employee-1:technical-round',
-      'company-1',
-    );
   });
 
   it('wraps employee-like, company-like, and unmatch persistence failures', async () => {
@@ -547,85 +318,6 @@ describe('MatchingService', () => {
     await expectRpc((service as any)[method](dto), 500, message);
   });
 
-  it('wraps analytics and company-count database failures', async () => {
-    matching.count.mockRejectedValueOnce(new Error('analytics failed'));
-    await expectRpc(
-      service.getMatchingAnalytics({ role: 'employee', userId: 'employee-1' }),
-      500,
-      'analytics failed',
-    );
-    matching.count.mockRejectedValueOnce(new Error('company count failed'));
-    await expectRpc(
-      service.findCurrentCompanyMatchingCount({ cid: 'company-1' }),
-      500,
-      'company count failed',
-    );
-  });
-
-  it('contains missing profiles and malformed AI explanation output', async () => {
-    employees.findOne.mockResolvedValueOnce(null);
-    companies.findOne.mockResolvedValueOnce(company);
-    const missing = await service
-      .getAiMatchExplanation({ eid: 'missing', cid: 'company-1' })
-      .catch((error) => error as RpcException);
-    expect(missing).toBeInstanceOf(RpcException);
-
-    employees.findOne.mockResolvedValue(employee);
-    companies.findOne.mockResolvedValue(company);
-    (service as any).openAI = {
-      chat: {
-        completions: {
-          create: jest.fn().mockResolvedValue({
-            choices: [{ message: { content: 'not-json' } }],
-          }),
-        },
-      },
-    };
-    const malformed = await service
-      .getAiMatchExplanation({ eid: 'employee-1', cid: 'company-1' })
-      .catch((error) => error as RpcException);
-    expect(malformed).toBeInstanceOf(RpcException);
-    expect(logger.error).toHaveBeenCalledWith(
-      expect.objectContaining({ err: expect.any(SyntaxError) }),
-      'AI match explanation failed',
-    );
-  });
-
-  it('contains missing profiles and malformed AI interview-prep output', async () => {
-    employees.findOne.mockResolvedValueOnce(employee);
-    companies.findOne.mockResolvedValueOnce(null);
-    await expect(
-      service.getAiInterviewPrep({
-        eid: 'employee-1',
-        cid: 'missing',
-        interviewTitle: 'Round',
-      }),
-    ).rejects.toBeInstanceOf(RpcException);
-
-    employees.findOne.mockResolvedValue(employee);
-    companies.findOne.mockResolvedValue(company);
-    (service as any).openAI = {
-      chat: {
-        completions: {
-          create: jest.fn().mockResolvedValue({
-            choices: [{ message: { content: '{broken' } }],
-          }),
-        },
-      },
-    };
-    await expect(
-      service.getAiInterviewPrep({
-        eid: 'employee-1',
-        cid: 'company-1',
-        interviewTitle: 'Round',
-      }),
-    ).rejects.toBeInstanceOf(RpcException);
-    expect(logger.error).toHaveBeenCalledWith(
-      expect.objectContaining({ err: expect.any(SyntaxError) }),
-      'AI interview prep failed',
-    );
-  });
-
   it('contains email failures after reciprocal matches', async () => {
     employees.findOne.mockResolvedValue(employee);
     companies.findOne.mockResolvedValue(company);
@@ -658,108 +350,6 @@ describe('MatchingService', () => {
     );
   });
 
-  it('serializes complete interview-preparation profiles', async () => {
-    employees.findOne.mockResolvedValue({
-      ...employee,
-      job: 'Engineer',
-      yearsOfExperience: '4 years',
-      description: 'Backend systems',
-      careerScopes: [{ name: 'Software' }],
-      educations: [{ degree: 'BSc', school: 'RUPP', year: '2024' }],
-      experiences: [
-        {
-          title: 'Developer',
-          description: 'Built APIs',
-          startDate: '2023',
-          endDate: null,
-        },
-      ],
-    });
-    companies.findOne.mockResolvedValue({
-      ...company,
-      industry: 'Technology',
-      description: 'Hiring engineers',
-      values: [{ label: 'Growth' }],
-      careerScopes: [{ name: 'Software' }],
-      openPositions: [
-        {
-          title: 'Backend Engineer',
-          skillsRequired: 'TypeScript',
-          experienceRequired: '3 years',
-          type: 'full-time',
-        },
-      ],
-    });
-    const create = jest.fn().mockResolvedValue({
-      choices: [{ message: { content: JSON.stringify({ questions: [] }) } }],
-    });
-    (service as any).openAI = { chat: { completions: { create } } };
-    await service.getAiInterviewPrep({
-      eid: 'employee-1',
-      cid: 'company-1',
-      interviewTitle: 'Technical',
-    });
-    const prompt = create.mock.calls[0][0].messages[1].content;
-    expect(prompt).toContain('RUPP');
-    expect(prompt).toContain('Built APIs');
-    expect(prompt).toContain('Backend Engineer');
-    expect(prompt).toContain('Software');
-  });
-
-  it('formats recent company-side matches with employee fallbacks', async () => {
-    matching.find.mockResolvedValue([
-      {
-        id: 'match-1',
-        employee: { firstname: 'Sok', avatar: null },
-        createdAt: new Date('2026-01-01'),
-      },
-    ]);
-    await expect(
-      (service as any).getRecentMatches('company-1', 'company', false),
-    ).resolves.toEqual([
-      expect.objectContaining({ name: 'Sok', avatar: null }),
-    ]);
-  });
-
-  it('builds zero-filled company analytics and unknown recent identities', async () => {
-    matching.count.mockResolvedValue(0);
-    companyFavorites.count.mockResolvedValue(0);
-    const activityBuilder = () => {
-      const qb: any = {};
-      for (const method of [
-        'select',
-        'where',
-        'andWhere',
-        'groupBy',
-        'orderBy',
-      ]) {
-        qb[method] = jest.fn(() => qb);
-      }
-      qb.getRawMany = jest.fn().mockResolvedValue([]);
-      return qb;
-    };
-    matching.createQueryBuilder
-      .mockReturnValueOnce(activityBuilder())
-      .mockReturnValueOnce(activityBuilder());
-    matching.find.mockResolvedValueOnce([
-      { id: 'match-1', employee: null, createdAt: new Date('2026-01-01') },
-    ]);
-
-    const result = await service.getMatchingAnalytics({
-      role: 'company',
-      userId: 'company-1',
-    });
-    expect(result.matchRate).toBe(0);
-    expect(result.weeklyActivity).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ likes: 0, received: 0, matches: 0 }),
-      ]),
-    );
-    expect(result.recentMatches[0]).toEqual(
-      expect.objectContaining({ name: 'Unknown', avatar: null }),
-    );
-  });
-
   it('covers ignored and empty skill requirements', () => {
     const compute = (service as any).computeSkillScore.bind(service);
     expect(
@@ -774,63 +364,12 @@ describe('MatchingService', () => {
     ).toBe(0);
   });
 
-  it('uses safe defaults for incomplete AI responses', async () => {
-    employees.findOne.mockResolvedValue(employee);
-    companies.findOne.mockResolvedValue(company);
-    const create = jest
-      .fn()
-      .mockResolvedValueOnce({ choices: [] })
-      .mockResolvedValueOnce({
-        choices: [
-          { message: { content: JSON.stringify({ questions: [{}] }) } },
-        ],
-      });
-    (service as any).openAI = { chat: { completions: { create } } };
-
-    await expect(
-      service.getAiMatchExplanation({ eid: 'employee-1', cid: 'company-1' }),
-    ).resolves.toEqual(
-      expect.objectContaining({
-        score: 0,
-        verdict: 'Unknown',
-        strengths: [],
-        gaps: [],
-      }),
+  it('wraps company-count database failures', async () => {
+    matching.count.mockRejectedValueOnce(new Error('company count failed'));
+    await expectRpc(
+      service.findCurrentCompanyMatchingCount({ cid: 'company-1' }),
+      500,
+      'company count failed',
     );
-    await expect(
-      service.getAiInterviewPrep({
-        eid: 'employee-1',
-        cid: 'company-1',
-      }),
-    ).resolves.toEqual(
-      expect.objectContaining({
-        questions: [
-          {
-            question: '',
-            questionKm: '',
-            category: 'General',
-            tip: '',
-            tipKm: '',
-          },
-        ],
-      }),
-    );
-  });
-
-  it('uses stable messages for non-Error AI failures', async () => {
-    employees.findOne.mockResolvedValue(employee);
-    companies.findOne.mockResolvedValue(company);
-    (service as any).openAI = {
-      chat: { completions: { create: jest.fn().mockRejectedValue('offline') } },
-    };
-    const explanation = (await service
-      .getAiMatchExplanation({ eid: 'employee-1', cid: 'company-1' })
-      .catch((error) => error)) as RpcException;
-    expect(explanation.getError()).toBe('AI match explanation failed');
-
-    const prep = (await service
-      .getAiInterviewPrep({ eid: 'employee-1', cid: 'company-1' })
-      .catch((error) => error)) as RpcException;
-    expect(prep.getError()).toBe('AI interview prep failed');
   });
 });

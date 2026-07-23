@@ -19,7 +19,7 @@
  * instead, so the SQL actually executes.
  */
 import 'dotenv/config';
-import { AppDataSource } from '../data-source';
+import { AppDataSource } from '../../data-source';
 
 const MIGRATIONS_TABLE = 'migrations';
 

@@ -34,11 +34,15 @@ import { ApplicationService } from './services/application.service';
 import { InterviewService } from './services/interview.service';
 import { JobService } from './services/job-service.service';
 import { MatchingService } from './services/matching.service';
+import { MatchingAnalyticsService } from './services/matching-analytics.service';
+import { MatchingAiService } from './services/matching-ai.service';
 import {
   I_APPLICATION_SERVICE,
   I_INTERVIEW_SERVICE,
   I_JOB_SERVICE_SERVICE,
   I_MATCHING_SERVICE,
+  I_MATCHING_ANALYTICS_SERVICE,
+  I_MATCHING_AI_SERVICE,
 } from '@app/contracts/interfaces/service/job-service.interface';
 
 @Module({
@@ -87,6 +91,11 @@ import {
   providers: [
     { provide: I_JOB_SERVICE_SERVICE, useClass: JobService },
     { provide: I_MATCHING_SERVICE, useClass: MatchingService },
+    {
+      provide: I_MATCHING_ANALYTICS_SERVICE,
+      useClass: MatchingAnalyticsService,
+    },
+    { provide: I_MATCHING_AI_SERVICE, useClass: MatchingAiService },
     { provide: I_INTERVIEW_SERVICE, useClass: InterviewService },
     { provide: I_APPLICATION_SERVICE, useClass: ApplicationService },
     RedisCacheHealthIndicator,

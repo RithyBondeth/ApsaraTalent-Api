@@ -10,8 +10,8 @@
  * When the count reaches zero, delete this script and set strictNullChecks in
  * tsconfig.json for real.
  *
- *   node scripts/strict-null-ratchet.mjs           # check against the baseline
- *   node scripts/strict-null-ratchet.mjs --update  # lower the baseline
+ *   node scripts/ci/strict-null-ratchet.mjs           # check against the baseline
+ *   node scripts/ci/strict-null-ratchet.mjs --update  # lower the baseline
  *
  * strictPropertyInitialization stays off: TypeORM entities and DTO classes are
  * populated by the ORM and by Object.assign, so it flags ~876 declarations that
@@ -57,7 +57,7 @@ if (process.argv.includes('--update')) {
 if (count > baseline) {
   console.error(
     `\n✗ strictNullChecks errors rose from ${baseline} to ${count}.\n` +
-      `  Fix the new ones, or run: node scripts/strict-null-ratchet.mjs --update\n`,
+      `  Fix the new ones, or run: node scripts/ci/strict-null-ratchet.mjs --update\n`,
   );
   const shown = errors.slice(0, 20);
   for (const line of shown) console.error(`    ${line}`);
@@ -67,7 +67,7 @@ if (count > baseline) {
 if (count < baseline) {
   console.log(
     `✓ ${count} strictNullChecks errors — down from ${baseline}.\n` +
-      `  Lower the bar: node scripts/strict-null-ratchet.mjs --update`,
+      `  Lower the bar: node scripts/ci/strict-null-ratchet.mjs --update`,
   );
 } else {
   console.log(`✓ ${count} strictNullChecks errors — holding at the baseline.`);

@@ -52,38 +52,38 @@ export class User {
   phone: string;
 
   @Column({ nullable: true })
-  otpCode: string;
+  otpCode: string | null;
 
   @Column({ nullable: true })
-  otpCodeExpires: Date;
+  otpCodeExpires: Date | null;
 
   @Column({ nullable: true }) // For push notifications services
-  pushNotificationToken: string;
+  pushNotificationToken: string | null;
 
   @Column({ default: false })
   profileCompleted: boolean;
 
   // Auth related fields
   @Column({ nullable: true })
-  resetPasswordToken: string;
+  resetPasswordToken: string | null;
 
   @Column({ nullable: true })
-  resetPasswordExpires: Date;
+  resetPasswordExpires: Date | null;
 
   @Column({ nullable: true })
-  refreshToken: string;
+  refreshToken: string | null;
 
   @Column({ default: false })
   isEmailVerified: boolean;
 
   @Column({ nullable: true })
-  emailVerificationToken: string;
+  emailVerificationToken: string | null;
 
   @Column({ default: false })
   isTwoFactorEnabled: boolean;
 
   @Column({ nullable: true })
-  twoFactorSecret: string;
+  twoFactorSecret: string | null;
 
   // Social login fields
   @Column({ nullable: true })

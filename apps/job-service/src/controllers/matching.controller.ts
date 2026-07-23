@@ -18,7 +18,11 @@ import {
 } from '@app/contracts/dtos/job';
 import {
   I_MATCHING_SERVICE,
+  I_MATCHING_ANALYTICS_SERVICE,
+  I_MATCHING_AI_SERVICE,
   IMatchingService,
+  IMatchingAnalyticsService,
+  IMatchingAiService,
 } from '@app/contracts/interfaces/service/job-service.interface';
 import { IMatchingRpcController } from '@app/contracts/interfaces/controller/job-controllers/matching-controller.interface';
 import {
@@ -35,6 +39,10 @@ export class MatchingController implements IMatchingRpcController {
   constructor(
     @Inject(I_MATCHING_SERVICE)
     private readonly matchingService: IMatchingService,
+    @Inject(I_MATCHING_ANALYTICS_SERVICE)
+    private readonly analyticsService: IMatchingAnalyticsService,
+    @Inject(I_MATCHING_AI_SERVICE)
+    private readonly aiService: IMatchingAiService,
   ) {}
 
   @MessagePattern(JOB_SERVICE.ACTIONS.EMPLOYEE_LIKES)
@@ -112,27 +120,27 @@ export class MatchingController implements IMatchingRpcController {
   async getMatchingAnalytics(
     @Payload() matchingAnalyticsDTO: MatchingAnalyticsDTO,
   ): Promise<MatchingAnalyticsResponseDTO> {
-    return this.matchingService.getMatchingAnalytics(matchingAnalyticsDTO);
+    return this.analyticsService.getMatchingAnalytics(matchingAnalyticsDTO);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.AI_MATCH_EXPLANATION)
   async getAiMatchExplanation(
     @Payload() aiMatchExplanationDTO: AiMatchExplanationDTO,
   ): Promise<AiMatchExplanationResponseDTO> {
-    return this.matchingService.getAiMatchExplanation(aiMatchExplanationDTO);
+    return this.aiService.getAiMatchExplanation(aiMatchExplanationDTO);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.GET_AI_MATCH_PROFILES)
   async getAiMatchProfiles(
     @Payload() aiMatchProfilesDTO: AiMatchProfilesDTO,
   ): Promise<AiMatchProfilesResponseDTO> {
-    return this.matchingService.getAiMatchProfiles(aiMatchProfilesDTO);
+    return this.aiService.getAiMatchProfiles(aiMatchProfilesDTO);
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.AI_INTERVIEW_PREP)
   async getAiInterviewPrep(
     @Payload() aiInterviewPrepDTO: AiInterviewPrepDTO,
   ): Promise<AiInterviewPrepResponseDTO> {
-    return this.matchingService.getAiInterviewPrep(aiInterviewPrepDTO);
+    return this.aiService.getAiInterviewPrep(aiInterviewPrepDTO);
   }
 }

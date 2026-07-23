@@ -18,7 +18,6 @@ describe('InternalServiceHealthIndicator', () => {
       client as any,
       client as any,
       client as any,
-      client as any,
     );
 
   beforeEach(() => jest.clearAllMocks());

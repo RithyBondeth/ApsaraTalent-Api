@@ -31,11 +31,24 @@ export const isCsrfSafeRequest = (
   }
 
   // Modern browsers identify cross-site requests even when privacy settings
-  // suppress Origin. Requests with neither header are non-browser clients and
-  // remain compatible; they should authenticate with Bearer tokens.
+  // suppress Origin.
   const rawFetchSite = request.headers?.['sec-fetch-site'];
   const fetchSite = Array.isArray(rawFetchSite)
     ? rawFetchSite[0]
     : rawFetchSite;
-  return fetchSite !== 'cross-site';
+  if (fetchSite) return fetchSite !== 'cross-site';
+
+  // Neither header present. This used to be allowed on the assumption that
+  // such requests are non-browser clients — but "no headers" is also exactly
+  // what a forged request looks like, and in production the auth cookie is
+  // SameSite=None (the web app is on a different site than the API), so the
+  // browser attaches it cross-site and this function is the only thing
+  // standing between an attacker's page and a state change.
+  //
+  // Every browser that omits Origin on a cross-site write also sends
+  // Sec-Fetch-Site, so denying here costs real browsers nothing. Non-browser
+  // clients should present a Bearer token instead of a cookie; those never
+  // reach this branch. ALLOW_HEADERLESS_COOKIE_WRITES=true restores the old
+  // behaviour if some legacy client turns out to depend on it.
+  return process.env.ALLOW_HEADERLESS_COOKIE_WRITES === 'true';
 };

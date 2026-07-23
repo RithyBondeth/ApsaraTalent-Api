@@ -55,8 +55,6 @@ export const validationSchema = Joi.object({
 
   JOB_SERVICE_PORT: Joi.number().port(),
   JOB_SERVICE_HOST: Joi.string(),
-  PAYMENT_SERVICE_PORT: Joi.number().port(),
-  PAYMENT_SERVICE_HOST: Joi.string(),
 
   NOTIFICATION_SERVICE_PORT: Joi.number().port(),
   NOTIFICATION_SERVICE_HOST: Joi.string(),
@@ -120,45 +118,6 @@ export const validationSchema = Joi.object({
 
   // Firebase (Push Notifications)
   FIREBASE_SERVICE_ACCOUNT: Joi.string().optional(),
-
-  // Bakong KHQR Configuration
-  BAKONG_DEVELOPER_TOKEN: Joi.string(),
-  BAKONG_API_BASE_URL: Joi.string().uri(),
-  BAKONG_API_TIMEOUT: Joi.number()
-    .integer()
-    .min(5000)
-    .max(120000)
-    .default(30000),
-  BAKONG_RATE_LIMIT_REQUESTS: Joi.number()
-    .integer()
-    .min(1)
-    .max(1000)
-    .default(100),
-  BAKONG_RATE_LIMIT_WINDOW_MS: Joi.number()
-    .integer()
-    .min(1000)
-    .max(3600000)
-    .default(60000),
-  BAKONG_QR_IMAGE_DEFAULT_WIDTH: Joi.number()
-    .integer()
-    .min(100)
-    .max(2000)
-    .default(300),
-  BAKONG_QR_IMAGE_MAX_WIDTH: Joi.number()
-    .integer()
-    .min(300)
-    .max(5000)
-    .default(1000),
-  BAKONG_QR_EXPIRATION_MAX_MINUTES: Joi.number()
-    .integer()
-    .min(1)
-    .max(525600)
-    .default(10080),
-  BAKONG_BULK_PAYMENT_MAX_HASHES: Joi.number()
-    .integer()
-    .min(1)
-    .max(100)
-    .default(50),
 
   // File storage. The S3 credentials are only required when the S3 driver is
   // selected, so local development needs no bucket at all — but once

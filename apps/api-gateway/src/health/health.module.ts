@@ -12,7 +12,6 @@ import {
   CHAT_SERVICE,
   JOB_SERVICE,
   NOTIFICATION_SERVICE,
-  PAYMENT_SERVICE,
   RESUME_BUILDER_SERVICE,
   USER_SERVICE,
 } from '@app/contracts/constants';
@@ -76,17 +75,6 @@ import { InternalServiceHealthIndicator } from './indicators/internal-service.he
           options: {
             host: configService.get<string>('services.job.host'),
             port: configService.get<number>('services.job.port'),
-          },
-        }),
-        inject: [ConfigService],
-      },
-      {
-        name: PAYMENT_SERVICE.NAME,
-        useFactory: (configService: ConfigService) => ({
-          transport: Transport.TCP,
-          options: {
-            host: configService.get<string>('services.payment.host'),
-            port: configService.get<number>('services.payment.port'),
           },
         }),
         inject: [ConfigService],

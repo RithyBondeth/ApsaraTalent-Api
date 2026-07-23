@@ -10,7 +10,6 @@
 # resume-service  | apsaratalent-api        | apps/resume-builder-service/Dockerfile
 # chat-service    | apsaratalent-api        | apps/chat-service/Dockerfile
 # job-service     | apsaratalent-api        | apps/job-service/Dockerfile
-# payment-service | apsaratalent-api        | apps/payment-service/Dockerfile
 # notification    | apsaratalent-api        | apps/notification-service/Dockerfile
 #
 # All services share the same environment variables (set in Railway project settings).
@@ -37,7 +36,6 @@ builder = "dockerfile"
 # - resume-service  -> apps/resume-builder-service/Dockerfile
 # - chat-service    -> apps/chat-service/Dockerfile
 # - job-service     -> apps/job-service/Dockerfile
-# - payment-service -> apps/payment-service/Dockerfile
 # - notification    -> apps/notification-service/Dockerfile
 
 [deploy]

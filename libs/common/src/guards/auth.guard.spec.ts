@@ -51,13 +51,42 @@ describe('AuthGuard', () => {
 
     await guard.canActivate(context(request));
 
-    expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 'u1' } });
+    expect(repository.findOne).toHaveBeenCalledWith({
+      where: { id: 'u1' },
+      select: expect.arrayContaining(['id', 'role']),
+    });
     expect(redis.set).toHaveBeenCalledWith(
       'apsaratalent:auth:session:u1',
       user,
       120000,
     );
     expect(request).toHaveProperty('user', user);
+  });
+
+  it('never selects credential columns into the request or the cache', async () => {
+    // request.user is handed to every controller and mirrored into Redis. If
+    // the query widens to the full row, one `return req.user` leaks the bcrypt
+    // hash, the TOTP secret and both reset tokens for that account.
+    jwt.verifyToken.mockResolvedValue({ id: 'u1', type: 'access' });
+    redis.get.mockResolvedValue(null);
+    repository.findOne.mockResolvedValue({ id: 'u1', role: 'employee' });
+
+    await guard.canActivate(
+      context({ cookies: {}, headers: { authorization: 'Bearer access' } }),
+    );
+
+    const { select } = repository.findOne.mock.calls[0][0];
+    expect(select).toBeDefined();
+    for (const secret of [
+      'password',
+      'twoFactorSecret',
+      'otpCode',
+      'resetPasswordToken',
+      'refreshToken',
+      'emailVerificationToken',
+    ]) {
+      expect(select).not.toContain(secret);
+    }
   });
 
   it('rejects a token for a deleted user', async () => {

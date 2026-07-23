@@ -1,4 +1,5 @@
 import { RpcException } from '@nestjs/microservices';
+import { hashRefreshToken } from '@app/common/jwt/refresh-token-hash.util';
 import { LoginOTPService } from './login-otp.service';
 
 describe('LoginOTPService', () => {
@@ -118,7 +119,7 @@ describe('LoginOTPService', () => {
       expect.objectContaining({
         otpCode: null,
         otpCodeExpires: null,
-        refreshToken: 'refresh',
+        refreshToken: hashRefreshToken('refresh'),
         lastLoginAt: expect.any(Date),
       }),
     );

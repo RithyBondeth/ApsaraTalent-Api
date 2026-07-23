@@ -7,7 +7,6 @@ import {
   HEALTH_PATTERN,
   JOB_SERVICE,
   NOTIFICATION_SERVICE,
-  PAYMENT_SERVICE,
   RESUME_BUILDER_SERVICE,
   USER_SERVICE,
 } from '@app/contracts/constants';
@@ -30,7 +29,6 @@ export class InternalServiceHealthIndicator implements IInternalServiceHealthInd
     @Inject(RESUME_BUILDER_SERVICE.NAME) resumeClient: ClientProxy,
     @Inject(CHAT_SERVICE.NAME) chatClient: ClientProxy,
     @Inject(JOB_SERVICE.NAME) jobClient: ClientProxy,
-    @Inject(PAYMENT_SERVICE.NAME) paymentClient: ClientProxy,
     @Inject(NOTIFICATION_SERVICE.NAME) notificationClient: ClientProxy,
   ) {
     this.clients = {
@@ -39,7 +37,6 @@ export class InternalServiceHealthIndicator implements IInternalServiceHealthInd
       [RESUME_BUILDER_SERVICE.NAME]: resumeClient,
       [CHAT_SERVICE.NAME]: chatClient,
       [JOB_SERVICE.NAME]: jobClient,
-      [PAYMENT_SERVICE.NAME]: paymentClient,
       [NOTIFICATION_SERVICE.NAME]: notificationClient,
     };
   }

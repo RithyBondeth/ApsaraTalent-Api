@@ -1,4 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import {
   HealthCheck,
   HealthCheckResult,
@@ -10,7 +11,6 @@ import {
   CHAT_SERVICE,
   JOB_SERVICE,
   NOTIFICATION_SERVICE,
-  PAYMENT_SERVICE,
   RESUME_BUILDER_SERVICE,
   USER_SERVICE,
 } from '@app/contracts/constants';
@@ -28,10 +28,10 @@ const INTERNAL_SERVICES = [
   RESUME_BUILDER_SERVICE.NAME,
   CHAT_SERVICE.NAME,
   JOB_SERVICE.NAME,
-  PAYMENT_SERVICE.NAME,
   NOTIFICATION_SERVICE.NAME,
 ] as const;
 
+@SkipThrottle()
 @Controller('health')
 export class HealthController implements IHealthController {
   constructor(

@@ -176,14 +176,16 @@ describe('RedisService', () => {
       expect(await service.get('missing')).toBeNull();
     });
 
-    it('swallows errors and returns undefined', async () => {
+    it('reports a failed read as a cache miss, matching its signature', () => {
+      // Declared as Promise<T | null>; it used to fall off the end as
+      // undefined. Callers treat both as "miss", but the contract now holds.
       cacheManager.get.mockRejectedValue(new Error('Redis down'));
-      await expect(service.get('key')).resolves.toBeUndefined();
+      return expect(service.get('key')).resolves.toBeNull();
     });
 
     it('handles non-Error exceptions', async () => {
       cacheManager.get.mockRejectedValue('string error');
-      await expect(service.get('key')).resolves.toBeUndefined();
+      await expect(service.get('key')).resolves.toBeNull();
     });
   });
 

@@ -18,6 +18,25 @@ import { RedisService } from '../redis/redis.service';
 // Short TTL: users banned/deleted stop working within 2 minutes without DB hit on every request
 const AUTH_CACHE_TTL_MS = 2 * 60 * 1000;
 
+/**
+ * The only columns an authenticated request ever needs.
+ *
+ * Loading the whole row put the bcrypt hash, twoFactorSecret, otpCode,
+ * resetPasswordToken and refreshToken on `request.user` and into Redis. Nothing
+ * returned them, but a single `return req.user` in any future handler would
+ * have leaked every credential on the account. Selecting explicitly makes that
+ * mistake impossible rather than merely unlikely.
+ */
+const AUTH_USER_FIELDS = [
+  'id',
+  'role',
+  'email',
+  'profileCompleted',
+  'isEmailVerified',
+] as const satisfies readonly (keyof User)[];
+
+export type AuthenticatedUser = Pick<User, (typeof AUTH_USER_FIELDS)[number]>;
+
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
@@ -52,7 +71,7 @@ export class AuthGuard implements CanActivate {
     const cacheKey = `apsaratalent:auth:session:${payload.id}`;
 
     if (this.redisService) {
-      const cached = await this.redisService.get<User>(cacheKey);
+      const cached = await this.redisService.get<AuthenticatedUser>(cacheKey);
       if (cached) {
         request.user = cached;
         this.identifyForSentry(cached);
@@ -60,9 +79,12 @@ export class AuthGuard implements CanActivate {
       }
     }
 
-    let user: User | null;
+    let user: AuthenticatedUser | undefined;
     try {
-      user = await this.userRepository.findOne({ where: { id: payload.id } });
+      user = await this.userRepository.findOne({
+        where: { id: payload.id },
+        select: [...AUTH_USER_FIELDS],
+      });
     } catch {
       throw new InternalServerErrorException(
         'Authentication service unavailable',
@@ -84,7 +106,7 @@ export class AuthGuard implements CanActivate {
 
   // Attach the user to Sentry's request-isolated scope so errors show who was
   // affected. Only id + role — never email/name, to keep PII out of Sentry.
-  private identifyForSentry(user: User): void {
+  private identifyForSentry(user: AuthenticatedUser): void {
     Sentry.setUser({ id: user.id, role: user.role });
   }
 }

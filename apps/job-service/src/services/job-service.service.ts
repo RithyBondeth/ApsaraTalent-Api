@@ -270,7 +270,7 @@ export class JobService implements IJobServiceService {
       let finalTotal = total;
       let isUsingFallback = false;
 
-      if (jobs.length === 0 && careerScopes?.length > 0 && page === 1) {
+      if (jobs.length === 0 && (careerScopes?.length ?? 0) > 0 && page === 1) {
         const fallbackQuery = buildQuery(false);
         fallbackQuery.skip(0).take(pageSize);
         const [fbJobs, fbTotal] = await fallbackQuery.getManyAndCount();

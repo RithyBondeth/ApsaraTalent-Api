@@ -27,7 +27,6 @@ Stop with `docker compose -f monitoring/docker-compose.yml down` (add `-v` to wi
 | resume-builder-service | `:9103` |
 | chat-service | `:9104` |
 | job-service | `:9105` |
-| payment-service | `:9106` |
 | notification-service | `:9107` |
 
 Metrics ports come from `services.<svc>.metricsPort` in

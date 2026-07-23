@@ -58,7 +58,9 @@ export class ForgotPasswordService implements IForgotPasswordService {
         'Reset password token generated successfully',
       );
 
-      if ((user.email && !user.phone) || (user.email && user.phone)) {
+      // Email wins when the account has both. (The previous condition,
+      // `(email && !phone) || (email && phone)`, reduces to just `email`.)
+      if (user.email) {
         //Send reset password token to user email address
         await this.emailService.sendEmail({
           to: user.email,
@@ -71,7 +73,7 @@ export class ForgotPasswordService implements IForgotPasswordService {
         });
       }
 
-      if (!user.email && user.phone) {
+      if (user.phone) {
         //Send reset password token to user phone number
         await this.messageService.sendResetToken(user.phone, resetToken);
 
@@ -79,6 +81,12 @@ export class ForgotPasswordService implements IForgotPasswordService {
           message: `Reset password token was sent successfully to ${user.phone}`,
         });
       }
+
+      throw new RpcException({
+        message:
+          'This account has no email address or phone number to send a reset token to',
+        statusCode: 422,
+      });
     } catch (error) {
       this.logger.error((error as Error).message || 'Forgot password failed');
       if (error instanceof RpcException) throw error;

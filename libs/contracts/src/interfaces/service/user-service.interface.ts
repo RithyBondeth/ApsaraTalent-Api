@@ -84,6 +84,8 @@ export const I_UPLOAD_EMPLOYEE_REFERENCE_SERVICE =
   'IUploadEmployeeReferenceService';
 export const I_SEARCH_EMPLOYEE_SERVICE = 'ISearchEmployeeService';
 export const I_USER_SERVICE = 'IUserService';
+export const I_FAVORITES_SERVICE = 'IFavoritesService';
+export const I_RECOMMENDATIONS_SERVICE = 'IRecommendationsService';
 export const I_OPEN_POSITION_SERVICE = 'IOpenPositionService';
 export const I_EXPERIENCE_AND_EDUCATION_SERVICE =
   'IExperienceAndEducationService';
@@ -173,6 +175,10 @@ export interface IUserService {
     updatePushNotificationTokenDTO: UpdatePushNotificationTokenDTO,
   ): Promise<UpdatePushNotificationTokenResponseDTO>;
   findAllCareerScopes(): Promise<CareerScopesResponseDTO[]>;
+  clearCurrentUserCache(userIdDTO: UserIdDTO): Promise<void>;
+}
+
+export interface IFavoritesService {
   employeeFavoriteCompany(
     employeeCompanyFavoriteDTO: EmployeeCompanyFavoriteDTO,
   ): Promise<EmployeeFavoriteCompanyResponseDTO>;
@@ -197,7 +203,9 @@ export interface IUserService {
   countEmployeeFavorite(
     employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
   ): Promise<FavoriteCountResponseDTO>;
-  clearCurrentUserCache(userIdDTO: UserIdDTO): Promise<void>;
+}
+
+export interface IRecommendationsService {
   getEmployeeRecommendations(
     employeeRecommendationsDTO: EmployeeRecommendationsDTO,
   ): Promise<CompanyResponseDTO[]>;

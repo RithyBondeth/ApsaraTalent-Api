@@ -1,3 +1,43 @@
+const DEFAULT_THROTTLE_TTL_MS = 60_000;
+// Strict budget, for credential-handling routes (login, OTP, reset, refresh).
+const DEFAULT_STRICT_THROTTLE_LIMIT = 5;
+// Blanket budget applied to every gateway route. Generous enough that normal
+// browsing never trips it, low enough to blunt scraping and upload floods.
+const DEFAULT_GLOBAL_THROTTLE_LIMIT = 300;
+
+/**
+ * Resolve the throttler window in milliseconds.
+ *
+ * THROTTLE_TTL_MS is authoritative when set. Otherwise the legacy THROTTLE_TTL
+ * is interpreted as seconds — values that small can only have been meant as
+ * seconds, since a sub-second window is never a real rate limit.
+ */
+export const resolveThrottleTtlMs = (): number => {
+  const explicitMs = Number(process.env.THROTTLE_TTL_MS);
+  if (Number.isFinite(explicitMs) && explicitMs > 0) return explicitMs;
+
+  const legacySeconds = Number(process.env.THROTTLE_TTL);
+  if (Number.isFinite(legacySeconds) && legacySeconds > 0) {
+    // Anything at or above 1000 was already written in milliseconds.
+    return legacySeconds >= 1000 ? legacySeconds : legacySeconds * 1000;
+  }
+
+  return DEFAULT_THROTTLE_TTL_MS;
+};
+
+const positiveOr = (raw: string | undefined, fallback: number): number => {
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+/** Per-window budget for credential routes. THROTTLE_LIMIT has always meant this. */
+export const resolveStrictThrottleLimit = (): number =>
+  positiveOr(process.env.THROTTLE_LIMIT, DEFAULT_STRICT_THROTTLE_LIMIT);
+
+/** Per-window budget for everything else. */
+export const resolveGlobalThrottleLimit = (): number =>
+  positiveOr(process.env.THROTTLE_GLOBAL_LIMIT, DEFAULT_GLOBAL_THROTTLE_LIMIT);
+
 export default () => ({
   nodeEnv: process.env.NODE_ENV,
 
@@ -37,8 +77,16 @@ export default () => ({
   },
 
   throttle: {
-    ttl: Number(process.env.THROTTLE_TTL),
-    limit: Number(process.env.THROTTLE_LIMIT),
+    // @nestjs/throttler v5+ takes `ttl` in MILLISECONDS. The historical
+    // THROTTLE_TTL was written in seconds ("60"), which silently produced a
+    // 60ms window — i.e. no rate limiting at all. Prefer the explicit
+    // THROTTLE_TTL_MS; fall back to the legacy seconds value so existing
+    // deployments keep working without an env change.
+    ttl: resolveThrottleTtlMs(),
+    // The global guard runs on every route, so it cannot use the strict
+    // credential budget — 5 requests/minute would make the app unusable.
+    limit: resolveGlobalThrottleLimit(),
+    strictLimit: resolveStrictThrottleLimit(),
   },
 
   storage: {
@@ -106,12 +154,6 @@ export default () => ({
       host: process.env.JOB_SERVICE_HOST,
       port: Number(process.env.JOB_SERVICE_PORT),
       metricsPort: Number(process.env.JOB_SERVICE_METRICS_PORT) || 9105,
-    },
-
-    payment: {
-      host: process.env.PAYMENT_SERVICE_HOST,
-      port: Number(process.env.PAYMENT_SERVICE_PORT),
-      metricsPort: Number(process.env.PAYMENT_SERVICE_METRICS_PORT) || 9106,
     },
 
     notification: {
@@ -187,23 +229,5 @@ export default () => ({
 
   firebase: {
     serviceAccount: process.env.FIREBASE_SERVICE_ACCOUNT,
-  },
-
-  bakong: {
-    developerToken: process.env.BAKONG_DEVELOPER_TOKEN,
-    apiBaseUrl: process.env.BAKONG_API_BASE_URL,
-    apiTimeout: Number(process.env.BAKONG_API_TIMEOUT),
-
-    rateLimitRequests: Number(process.env.BAKONG_RATE_LIMIT_REQUESTS),
-    rateLimitWindowMs: Number(process.env.BAKONG_RATE_LIMIT_WINDOW_MS),
-
-    qrImageDefaultWidth: Number(process.env.BAKONG_QR_IMAGE_DEFAULT_WIDTH),
-    qrImageMaxWidth: Number(process.env.BAKONG_QR_IMAGE_MAX_WIDTH),
-
-    qrExpirationMaxMinutes: Number(
-      process.env.BAKONG_QR_EXPIRATION_MAX_MINUTES,
-    ),
-
-    bulkPaymentMaxHashes: Number(process.env.BAKONG_BULK_PAYMENT_MAX_HASHES),
   },
 });

@@ -201,7 +201,7 @@ bucket addressing by default.
 | `libs/common/src/storage/serve-storage-object.ts` | Redirect-vs-stream policy |
 | `libs/common/src/storage/storage.registry.ts` | Static handle for multer (which cannot use DI) |
 | `apps/api-gateway/src/storage/controllers/public-storage.controller.ts` | Serves `/storage/<folder>/<path>` |
-| `scripts/migrate-storage-to-s3.ts` | Volume → bucket copy |
+| `scripts/db/migrate-storage-to-s3.ts` | Volume → bucket copy |
 
 ### Gotcha: multer and dependency injection
 

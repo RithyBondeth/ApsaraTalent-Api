@@ -27,7 +27,7 @@ import {
   isPublicStorageFolder,
   LocalStorageDriver,
   S3StorageDriver,
-} from '../libs/common/src/storage';
+} from '../../libs/common/src/storage';
 
 interface Args {
   apply: boolean;

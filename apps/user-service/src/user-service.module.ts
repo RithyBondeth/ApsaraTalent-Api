@@ -61,6 +61,8 @@ import { UploadEmployeeReferenceService } from './services/employee-services/upl
 import { ModerationService } from './services/moderation/moderation.service';
 import { SupportService } from './services/support/support.service';
 import { UserService } from './services/user.service';
+import { FavoritesService } from './services/favorites.service';
+import { RecommendationsService } from './services/recommendations.service';
 import {
   I_UPDATE_EMPLOYEE_INFO_SERVICE,
   I_IMAGE_EMPLOYEE_SERVICE,
@@ -71,6 +73,8 @@ import {
   I_UPLOAD_EMPLOYEE_REFERENCE_SERVICE,
   I_SEARCH_EMPLOYEE_SERVICE,
   I_USER_SERVICE,
+  I_FAVORITES_SERVICE,
+  I_RECOMMENDATIONS_SERVICE,
   I_OPEN_POSITION_SERVICE,
   I_EXPERIENCE_AND_EDUCATION_SERVICE,
   I_MODERATION_SERVICE,
@@ -154,6 +158,11 @@ import {
     },
     { provide: I_SEARCH_EMPLOYEE_SERVICE, useClass: SearchEmployeeService },
     { provide: I_USER_SERVICE, useClass: UserService },
+    { provide: I_FAVORITES_SERVICE, useClass: FavoritesService },
+    {
+      provide: I_RECOMMENDATIONS_SERVICE,
+      useClass: RecommendationsService,
+    },
     { provide: I_OPEN_POSITION_SERVICE, useClass: OpenPositionService },
     {
       provide: I_EXPERIENCE_AND_EDUCATION_SERVICE,

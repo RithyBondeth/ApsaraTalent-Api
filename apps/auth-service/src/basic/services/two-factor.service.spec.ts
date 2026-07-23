@@ -1,4 +1,5 @@
 import { RpcException } from '@nestjs/microservices';
+import { hashRefreshToken } from '@app/common/jwt/refresh-token-hash.util';
 import * as otplib from 'otplib';
 import { TwoFactorService } from './two-factor.service';
 
@@ -157,7 +158,7 @@ describe('TwoFactorService', () => {
     );
     expect(user).toEqual(
       expect.objectContaining({
-        refreshToken: 'refresh',
+        refreshToken: hashRefreshToken('refresh'),
         lastLoginAt: expect.any(Date),
       }),
     );

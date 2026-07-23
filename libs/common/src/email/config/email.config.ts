@@ -4,8 +4,10 @@ import { IEmailConfigOptions } from '../interfaces/email-config.interface';
 export const emailConfig = async (
   configService: ConfigService,
 ): Promise<IEmailConfigOptions> => ({
-  host: configService.get<string>('email.host'),
-  port: configService.get<number>('email.port'),
+  // These keys are .required() in validation.schema.ts, so getOrThrow states
+  // that guarantee at the use site rather than re-typing it as optional.
+  host: configService.getOrThrow<string>('email.host'),
+  port: configService.getOrThrow<number>('email.port'),
   secure: false, // false for TLS - port 587
   transportOptions: {
     tls: {
@@ -14,8 +16,8 @@ export const emailConfig = async (
     },
   },
   auth: {
-    user: configService.get<string>('email.user'),
-    pass: configService.get<string>('email.password'),
+    user: configService.getOrThrow<string>('email.user'),
+    pass: configService.getOrThrow<string>('email.password'),
   },
-  defaultFrom: configService.get<string>('email.from'),
+  defaultFrom: configService.getOrThrow<string>('email.from'),
 });

@@ -5,17 +5,21 @@ jest.mock('nodemailer', () => ({ createTransport: jest.fn() }));
 
 describe('EmailService', () => {
   const sendMail = jest.fn();
+  const values: Record<string, string | number> = {
+    'email.host': 'smtp.example.com',
+    'email.port': 587,
+    'email.user': 'user',
+    'email.password': 'password',
+    'email.from': 'noreply@example.com',
+  };
+  // emailConfig uses getOrThrow for these — they are .required() in the Joi
+  // schema, so the config is asserting a guarantee that already holds.
   const config = {
-    get: jest.fn(
-      (key: string) =>
-        ({
-          'email.host': 'smtp.example.com',
-          'email.port': 587,
-          'email.user': 'user',
-          'email.password': 'password',
-          'email.from': 'noreply@example.com',
-        })[key],
-    ),
+    get: jest.fn((key: string) => values[key]),
+    getOrThrow: jest.fn((key: string) => {
+      if (!(key in values)) throw new Error(`Missing config key: ${key}`);
+      return values[key];
+    }),
   };
   const logger = { info: jest.fn(), error: jest.fn() };
 

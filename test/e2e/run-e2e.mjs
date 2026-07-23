@@ -243,7 +243,6 @@ try {
       'resume-builder-service',
       'chat-service',
       'job-service',
-      'payment-service',
       'notification-service',
     ];
     for (const service of services) {
@@ -260,7 +259,6 @@ try {
     ['chat-service', env.CHAT_SERVICE_METRICS_PORT],
     ['notification-service', env.NOTIFICATION_SERVICE_METRICS_PORT],
     ['job-service', env.JOB_SERVICE_METRICS_PORT],
-    ['payment-service', env.PAYMENT_SERVICE_METRICS_PORT],
   ];
   for (const [service, metricsPort] of workers) {
     const child = startService(service, env, false);

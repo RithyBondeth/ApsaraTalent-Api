@@ -1,6 +1,6 @@
 import { IBasicAuthController } from '@app/contracts/interfaces/controller/auth-controller.interface';
 import { ThrottlerGuard } from '@app/common/throttler/guards/throttler.guard';
-import { Throttle } from '@nestjs/throttler';
+import { StrictThrottle } from '@app/common/throttler/decorators/strict-throttle.decorator';
 import { AuthGuard } from '@app/common/guards/auth.guard';
 import {
   BadRequestException,
@@ -71,6 +71,7 @@ export class AuthController implements IBasicAuthController {
   @Post('register-company')
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(ThrottlerGuard)
+  @StrictThrottle()
   async registerCompany(
     @Body() companyRegisterDTO: CompanyRegisterDTO,
     @Res({ passthrough: true }) res: Response,
@@ -93,6 +94,7 @@ export class AuthController implements IBasicAuthController {
   @Post('register-employee')
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(ThrottlerGuard)
+  @StrictThrottle()
   async registerEmployee(
     @Body() employeeRegisterDTO: EmployeeRegisterDTO,
     @Res({ passthrough: true }) res: Response,
@@ -115,6 +117,7 @@ export class AuthController implements IBasicAuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
+  @StrictThrottle()
   async login(
     @Body() loginDTO: LoginDTO,
     @Res({ passthrough: true }) res: Response,
@@ -147,6 +150,7 @@ export class AuthController implements IBasicAuthController {
   @Post('login-otp')
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
+  @StrictThrottle()
   async loginOtp(
     @Body() loginOtpDTO: LoginOtpDTO,
   ): Promise<LoginOtpResponseDTO> {
@@ -160,6 +164,7 @@ export class AuthController implements IBasicAuthController {
   @Post('verify-otp')
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
+  @StrictThrottle()
   async verifyOtp(
     @Body() verifyOtpDTO: VerifyOtpDTO,
     @Res({ passthrough: true }) res: Response,
@@ -183,6 +188,7 @@ export class AuthController implements IBasicAuthController {
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
+  @StrictThrottle()
   async forgotPassword(
     @Body() forgotPasswordDTO: ForgotPasswordDTO,
   ): Promise<ForgotPasswordResponseDTO> {
@@ -196,6 +202,7 @@ export class AuthController implements IBasicAuthController {
   @Post('reset-password/:token')
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
+  @StrictThrottle()
   async resetPassword(
     @Body() resetPasswordDTO: ResetPasswordDTO,
     @Param('token') token: string,
@@ -211,6 +218,7 @@ export class AuthController implements IBasicAuthController {
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
+  @StrictThrottle()
   async refreshToken(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -245,6 +253,7 @@ export class AuthController implements IBasicAuthController {
   @Post('verify-email/:emailVerificationToken')
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
+  @StrictThrottle()
   async verifyEmail(
     @Param('emailVerificationToken') emailVerificationToken: VerifyEmailDTO,
   ): Promise<VerifyEmailResponseDTO> {
@@ -306,6 +315,7 @@ export class AuthController implements IBasicAuthController {
   @Post('2fa/verify-login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
+  @StrictThrottle()
   async twoFactorVerifyLogin(
     @Body() twoFactorVerifyLoginDTO: TwoFactorVerifyLoginDTO,
     @Res({ passthrough: true }) res: Response,
@@ -329,7 +339,7 @@ export class AuthController implements IBasicAuthController {
   @Post('parse-resume')
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @StrictThrottle()
   @UseInterceptors(
     FileInterceptor('resume', {
       storage: memoryStorage(),

@@ -1,4 +1,5 @@
 import { RpcException } from '@nestjs/microservices';
+import { hashRefreshToken } from '@app/common/jwt/refresh-token-hash.util';
 import * as bcrypt from 'bcrypt';
 import { LoginService } from './login.service';
 
@@ -121,7 +122,7 @@ describe('LoginService', () => {
     });
     expect(user).toEqual(
       expect.objectContaining({
-        refreshToken: 'refresh',
+        refreshToken: hashRefreshToken('refresh'),
         lastLoginAt: expect.any(Date),
       }),
     );

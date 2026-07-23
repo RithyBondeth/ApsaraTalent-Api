@@ -56,7 +56,7 @@ capability being merged is not the same as the risk being closed.
 ### Routine / before any risky change
 
 ```bash
-DATABASE_URL="<production-url>" ./scripts/backup-db.sh ./backups
+DATABASE_URL="<production-url>" ./scripts/db/backup-db.sh ./backups
 ```
 
 The script is read-only and safe. It:
@@ -242,5 +242,5 @@ they are handled.
    Neon branch and record how long it took.
 4. **No staging environment.** CI deploys straight to production, so every
    rollback here is a production action.
-5. **Backups are manual.** `scripts/backup-db.sh` must be run by a person. At
+5. **Backups are manual.** `scripts/db/backup-db.sh` must be run by a person. At
    minimum, run it before any migration or risky deploy; better, schedule it.

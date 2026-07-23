@@ -58,28 +58,50 @@ describe('Job-service RPC controllers', () => {
     }
   });
 
-  it('delegates every matching operation', async () => {
-    const methods = [
-      'employeeLikes',
-      'companyLikes',
-      'unmatch',
-      'findCurrentEmployeeLiked',
-      'findCurrentCompanyLiked',
-      'findCurrentEmployeeMatching',
-      'findCurrentCompanyMatching',
-      'findCurrentEmployeeMatchingCount',
-      'findCurrentCompanyMatchingCount',
-      'getMatchingAnalytics',
-      'getAiMatchExplanation',
-      'getAiMatchProfiles',
-      'getAiInterviewPrep',
-    ];
-    const service = mockService(methods);
-    const controller = new MatchingController(service as any);
-    for (const method of methods) {
-      const dto = { id: 'value' } as any;
-      await (controller as any)[method](dto);
-      expect(service[method]).toHaveBeenCalledWith(dto);
+  it('delegates every matching operation to the owning service', async () => {
+    // MatchingService was split three ways; the owner column is what keeps a
+    // delegation from silently landing on the wrong collaborator.
+    const owners = {
+      matching: [
+        'employeeLikes',
+        'companyLikes',
+        'unmatch',
+        'findCurrentEmployeeLiked',
+        'findCurrentCompanyLiked',
+        'findCurrentEmployeeMatching',
+        'findCurrentCompanyMatching',
+        'findCurrentEmployeeMatchingCount',
+        'findCurrentCompanyMatchingCount',
+      ],
+      analytics: ['getMatchingAnalytics'],
+      ai: ['getAiMatchExplanation', 'getAiMatchProfiles', 'getAiInterviewPrep'],
+    };
+    const services = {
+      matching: mockService(owners.matching),
+      analytics: mockService(owners.analytics),
+      ai: mockService(owners.ai),
+    };
+    const controller = new MatchingController(
+      services.matching as any,
+      services.analytics as any,
+      services.ai as any,
+    );
+
+    for (const [owner, methods] of Object.entries(owners)) {
+      for (const method of methods) {
+        const dto = { id: 'value' } as any;
+        await (controller as any)[method](dto);
+        expect(
+          services[owner as keyof typeof services][method],
+        ).toHaveBeenCalledWith(dto);
+
+        for (const other of Object.keys(services) as Array<
+          keyof typeof services
+        >) {
+          if (other === owner) continue;
+          expect(services[other][method]).toBeUndefined();
+        }
+      }
     }
   });
 });

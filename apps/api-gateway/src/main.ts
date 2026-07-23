@@ -32,6 +32,14 @@ async function bootstrap() {
   // 1. GLOBAL CONFIGURATION
   // =========================================================
 
+  // The gateway always sits behind a reverse proxy (Railway edge, or a local
+  // tunnel in dev). Without this, req.ip is the proxy's address for every
+  // request — collapsing all rate-limit buckets into one and making client IPs
+  // useless in logs. '1' trusts exactly one hop: the proxy directly in front.
+  // Do not raise it; each extra hop is one more X-Forwarded-For entry a client
+  // can forge.
+  app.set('trust proxy', 1);
+
   // Convert RPC errors from microservices into proper HTTP responses.
   // Must be registered before ValidationPipe so it catches all unhandled errors.
   app.useGlobalFilters(new RpcToHttpExceptionFilter());
@@ -73,10 +81,26 @@ async function bootstrap() {
     next();
   });
 
+  // A predictable session secret lets anyone forge a session cookie, so a
+  // missing one must stop the boot rather than silently degrade to a value
+  // that is published in this repository's history.
+  const sessionSecret = configService.get<string>('session.secret');
+  if (!sessionSecret) {
+    if (isProduction) {
+      throw new Error(
+        'SESSION_SECRET is required in production. Refusing to start with a default secret.',
+      );
+    }
+
+    console.warn(
+      '[bootstrap] SESSION_SECRET is unset — using an insecure development default.',
+    );
+  }
+
   // Handle Express sessions securely
   app.use(
     session({
-      secret: configService.get<string>('session.secret') || 'default-secret',
+      secret: sessionSecret || 'insecure-development-secret',
       resave: false,
       saveUninitialized: false, // Don't create session until stored
       cookie: {
@@ -140,15 +164,22 @@ async function bootstrap() {
   // 5. SWAGGER API DOCUMENTATION
   // =========================================================
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('ApsaraTalent API')
-    .setDescription('Microservices-based Talent recruitment platform API')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
+  // Published only outside production. In production the spec is a complete
+  // map of every route, DTO shape and auth requirement — free reconnaissance.
+  // Set ENABLE_SWAGGER=true to expose it temporarily on a deployed instance.
+  const swaggerEnabled = !isProduction || process.env.ENABLE_SWAGGER === 'true';
 
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('docs', app, document);
+  if (swaggerEnabled) {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('ApsaraTalent API')
+      .setDescription('Microservices-based Talent recruitment platform API')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('docs', app, document);
+  }
 
   // =========================================================
   // 6. LOGGER & BOOTSTRAP
