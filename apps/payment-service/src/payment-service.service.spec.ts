@@ -342,4 +342,83 @@ describe('PaymentService Bakong boundary', () => {
       }),
     );
   });
+
+  it('rejects malformed individual and merchant QR responses', async () => {
+    const service = createService();
+    post.mockResolvedValueOnce({ data: null }).mockResolvedValueOnce({});
+
+    await expect(
+      service.generateIndividualKhqrDTO({ merchantName: 'Sok' } as any),
+    ).rejects.toBeInstanceOf(BakongQRGenerationException);
+    await expect(
+      service.generateMerchantKhqrDTO({ merchantName: 'Shop' } as any),
+    ).rejects.toBeInstanceOf(BakongQRGenerationException);
+  });
+
+  it('uses safe defaults for malformed verification and deep-link responses', async () => {
+    const service = createService();
+    post.mockResolvedValueOnce({}).mockResolvedValueOnce({ data: null });
+
+    await expect(service.verifyKhqr({ qrString: 'qr' })).resolves.toEqual(
+      expect.objectContaining({ success: false, isValid: false }),
+    );
+    await expect(
+      service.generateDeepLink({ qrString: 'qr' } as any),
+    ).rejects.toBeInstanceOf(BakongQRGenerationException);
+  });
+
+  it('rejects malformed decoded and single-status responses', async () => {
+    const service = createService();
+    post.mockResolvedValueOnce({ data: null });
+    await expect(service.decodeKhqr({ qrString: 'qr' })).rejects.toBeInstanceOf(
+      BakongQRValidationException,
+    );
+
+    payments.findOne.mockResolvedValueOnce({
+      id: 'payment-1',
+      status: PaymentStatus.PENDING,
+      transactions: [],
+    });
+    post.mockResolvedValueOnce({});
+    await expect(
+      service.checkPaymentStatus({ md5Hash: '1234567890' }),
+    ).rejects.toBeInstanceOf(BakongPaymentNotFoundException);
+  });
+
+  it('rejects malformed bulk responses and missing payment arrays', async () => {
+    const service = createService();
+    post.mockResolvedValueOnce({ data: null });
+    await expect(
+      service.checkPaymentBulkStatus({ md5Hashes: ['a'] }),
+    ).rejects.toBeInstanceOf(BakongApiConnectionException);
+
+    post.mockResolvedValueOnce({ data: { response_code: '00' } });
+    await expect(
+      service.checkPaymentBulkStatus({ md5Hashes: ['a'] }),
+    ).rejects.toBeInstanceOf(BakongApiConnectionException);
+  });
+
+  it('maps persistence failures after a paid response to the API exception', async () => {
+    const service = createService();
+    payments.findOne.mockResolvedValue({
+      id: 'payment-1',
+      status: PaymentStatus.PENDING,
+      transactions: [],
+    });
+    payments.save.mockRejectedValueOnce(new Error('database unavailable'));
+    post.mockResolvedValue({
+      data: {
+        response_code: '00',
+        payment_data: { status: 'paid', transaction_id: 'tx-1' },
+      },
+    });
+
+    await expect(
+      service.checkPaymentStatus({ md5Hash: '1234567890' }),
+    ).rejects.toBeInstanceOf(BakongApiConnectionException);
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ err: expect.any(Error) }),
+      'Failed to update payment status',
+    );
+  });
 });

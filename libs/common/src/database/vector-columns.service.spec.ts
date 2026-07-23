@@ -11,6 +11,7 @@ describe('VectorColumnsService', () => {
   );
 
   beforeEach(() => {
+    jest.restoreAllMocks();
     jest.clearAllMocks();
     embedding.embedAsVector.mockResolvedValue('[0.1,0.2]');
   });
@@ -100,6 +101,85 @@ describe('VectorColumnsService', () => {
     await expect(service.onApplicationBootstrap()).resolves.toBeUndefined();
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('database unavailable'),
+    );
+  });
+
+  it('runs all bootstrap restorations and contains background re-embedding failure', async () => {
+    dataSource.query.mockImplementation(async (sql: string) => {
+      if (sql.includes('information_schema.columns'))
+        return [{ udt_name: 'vector' }];
+      return undefined;
+    });
+    jest
+      .spyOn(service as any, 'reembedNullRows')
+      .mockRejectedValueOnce(new Error('background provider down'));
+    await service.onApplicationBootstrap();
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    expect(dataSource.query).toHaveBeenCalledWith(
+      'CREATE EXTENSION IF NOT EXISTS vector',
+    );
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Background re-embedding failed: background provider down',
+    );
+  });
+
+  it('uses the restore-specific warning after recreating a column', async () => {
+    dataSource.query.mockImplementation(async (sql: string) => {
+      if (sql.includes('information_schema.columns')) return [];
+      return undefined;
+    });
+    jest
+      .spyOn(service as any, 'reembedNullRows')
+      .mockRejectedValueOnce(new Error('restore embedding failed'));
+    await service.onApplicationBootstrap();
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Re-embedding after restore failed: restore embedding failed',
+    );
+  });
+
+  it('returns early when each embedding table has no null rows', async () => {
+    dataSource.query.mockResolvedValue([]);
+    await (service as any).reembedCareerScopes();
+    await (service as any).reembedEmployeeJobs();
+    await (service as any).reembedJobTitles();
+    expect(embedding.embedAsVector).not.toHaveBeenCalled();
+  });
+
+  it('contains individual employee-job and job-title embedding failures', async () => {
+    dataSource.query
+      .mockResolvedValueOnce([{ id: 'employee-1', job: 'Developer' }])
+      .mockResolvedValueOnce([{ id: 'job-1', title: 'Engineer' }]);
+    embedding.embedAsVector.mockRejectedValue(new Error('dimension mismatch'));
+    await (service as any).reembedEmployeeJobs();
+    await (service as any).reembedJobTitles();
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Failed to embed employee job "Developer": dimension mismatch',
+    );
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Failed to embed job title "Engineer": dimension mismatch',
+    );
+  });
+
+  it('reports each rejected embedding group independently', async () => {
+    jest
+      .spyOn(service as any, 'reembedCareerScopes')
+      .mockRejectedValueOnce(new Error('scope failure'));
+    jest
+      .spyOn(service as any, 'reembedEmployeeJobs')
+      .mockRejectedValueOnce(new Error('employee failure'));
+    jest
+      .spyOn(service as any, 'reembedJobTitles')
+      .mockRejectedValueOnce(new Error('job failure'));
+    await (service as any).reembedNullRows();
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Re-embed failed for career_scope.embedding: scope failure',
+    );
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Re-embed failed for employee.jobEmbedding: employee failure',
+    );
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Re-embed failed for job.titleEmbedding: job failure',
     );
   });
 });

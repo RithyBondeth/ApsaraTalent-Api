@@ -292,4 +292,94 @@ describe('InterviewService', () => {
       'database unavailable',
     );
   });
+
+  it('uses the default duration when zero is supplied', async () => {
+    matches.findOne.mockResolvedValue({ id: 'match-1' });
+    employees.findOne.mockResolvedValue({
+      id: 'employee-1',
+      firstname: 'Sok',
+      user: { id: 'employee-user' },
+    });
+    companies.findOne.mockResolvedValue({
+      id: 'company-1',
+      name: 'Apsara',
+      user: { id: 'company-user' },
+    });
+    await service.createInterview({ ...createDto, durationMinutes: 0 });
+    expect(interviews.create).toHaveBeenCalledWith(
+      expect.objectContaining({ durationMinutes: expect.any(Number) }),
+    );
+  });
+
+  it('wraps create failures with supplied and fallback messages', async () => {
+    matches.findOne.mockRejectedValueOnce({
+      message: 'query failed',
+      statusCode: 503,
+    });
+    await expectRpc(service.createInterview(createDto), 503, 'query failed');
+
+    matches.findOne.mockRejectedValueOnce(null);
+    await expectRpc(
+      service.createInterview(createDto),
+      500,
+      'An error occurred while creating the interview.',
+    );
+  });
+
+  it('wraps company-list failures with supplied and fallback messages', async () => {
+    interviews.find.mockRejectedValueOnce(new Error('company query failed'));
+    await expectRpc(
+      service.getInterviewsByCompany({ companyId: 'company-1' }),
+      500,
+      'company query failed',
+    );
+    interviews.find.mockRejectedValueOnce(null);
+    await expectRpc(
+      service.getInterviewsByCompany({ companyId: 'company-1' }),
+      500,
+      'An error occurred while fetching interviews.',
+    );
+  });
+
+  it('returns null and skips notification when the other user is absent', async () => {
+    const interview = existingInterview();
+    interview.company.user = undefined as any;
+    interviews.findOne.mockResolvedValue(interview);
+    const result = await service.updateInterviewStatus({
+      interviewId: 'interview-1',
+      requestUserId: 'employee-user',
+      status: InterviewStatus.ACCEPTED,
+    });
+    expect(result.notifyUserId).toBeNull();
+    expect(notifications.emit).not.toHaveBeenCalled();
+  });
+
+  it('wraps status persistence failures with supplied and fallback messages', async () => {
+    interviews.findOne.mockResolvedValue(existingInterview());
+    interviews.save.mockRejectedValueOnce({
+      message: 'write failed',
+      statusCode: 503,
+    });
+    await expectRpc(
+      service.updateInterviewStatus({
+        interviewId: 'interview-1',
+        requestUserId: 'employee-user',
+        status: InterviewStatus.ACCEPTED,
+      }),
+      503,
+      'write failed',
+    );
+
+    interviews.findOne.mockResolvedValue(existingInterview());
+    interviews.save.mockRejectedValueOnce(null);
+    await expectRpc(
+      service.updateInterviewStatus({
+        interviewId: 'interview-1',
+        requestUserId: 'employee-user',
+        status: InterviewStatus.ACCEPTED,
+      }),
+      500,
+      'An error occurred while updating interview status.',
+    );
+  });
 });

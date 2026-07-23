@@ -416,6 +416,7 @@ describe('UserService', () => {
   it('covers recommendation input helpers and block lookup', async () => {
     const internal = service as any;
     expect(internal.clampRecoLimit(undefined)).toBe(10);
+    expect(internal.clampRecoLimit(-4)).toBe(10);
     expect(internal.clampRecoLimit(80)).toBe(50);
     expect(internal.clampRecoLimit(2.9)).toBe(2);
     expect(internal.vectorCentroid([])).toBeNull();
@@ -425,7 +426,13 @@ describe('UserService', () => {
     expect(internal.normalizeDegree('Master of Science')).toBeGreaterThan(
       internal.normalizeDegree('Bachelor degree'),
     );
+    expect(internal.normalizeDegree('Associate diploma')).toBe(2);
+    expect(internal.normalizeDegree('High school certificate')).toBe(1);
+    expect(internal.normalizeDegree('Professional certificate')).toBe(0);
+    expect(internal.normalizeDegree(null)).toBe(0);
     expect(internal.extractYears('at least 4 years')).toBe(4);
+    expect(internal.extractYears('')).toBe(0);
+    expect(internal.extractYears('experienced')).toBe(0);
     expect(
       internal.extractKeywords('The senior TypeScript platform engineer'),
     ).toEqual(
@@ -489,33 +496,35 @@ describe('UserService', () => {
     const employee = {
       id: 'employee-1',
       skills: [{ name: 'TypeScript' }],
-      careerScopes: [{ id: 'scope-1' }],
+      careerScopes: [{ id: 'scope-1', embedding: '[1,0]' }],
       educations: [{ degree: 'Bachelor' }],
       job: 'Backend Developer',
       yearsOfExperience: '3 years',
       description: 'Scalable TypeScript services',
       location: 'Phnom Penh',
-      jobEmbedding: null,
+      jobEmbedding: '[1,0]',
     };
     const company = {
       id: 'company-1',
       name: 'Apsara',
       location: 'Phnom Penh',
-      careerScopes: [{ id: 'scope-1' }],
+      careerScopes: [{ id: 'scope-1', embedding: '[1,0]' }],
       openPositions: [
         {
           id: 'job-1',
           title: 'Backend Developer',
           description: 'Build scalable TypeScript services',
           skillsRequired: 'TypeScript, PostgreSQL',
-          educationRequired: 'Bachelor',
-          experienceRequired: '2 years',
+          educationRequired: 'Master',
+          experienceRequired: '4 years',
+          titleEmbedding: '[1,0]',
         },
       ],
     };
     const builders = [
       recommendationBuilder({ one: { id: 'employee-user', employee } }),
       recommendationBuilder({ raw: [{ userId: 'company-user' }] }),
+      recommendationBuilder({ raw: [] }),
       recommendationBuilder({
         many: [
           { id: 'company-user', company: { ...company, openPositions: [] } },
@@ -540,13 +549,21 @@ describe('UserService', () => {
       .mockReturnValueOnce(builders[1])
       .mockReturnValueOnce(builders[2])
       .mockReturnValueOnce(builders[3])
-      .mockReturnValueOnce(builders[4]);
-    const liked = recommendationBuilder({ raw: [] });
+      .mockReturnValueOnce(builders[4])
+      .mockReturnValueOnce(builders[5]);
+    jest
+      .spyOn(service as any, 'nearestScopeIds')
+      .mockResolvedValue(['scope-1']);
+    users.query.mockResolvedValueOnce([]);
+    const liked = recommendationBuilder({
+      raw: [{ companyId: 'liked-company' }, { companyId: null }],
+    });
     (matches as any).createQueryBuilder = jest.fn(() => liked);
 
     const result = await service.getEmployeeRecommendations({
       employeeId: 'employee-1',
       limit: 5,
+      requesterId: 'employee-user',
     });
     expect(result).toHaveLength(1);
     expect(result[0]).toEqual(
@@ -563,15 +580,15 @@ describe('UserService', () => {
     const company = {
       id: 'company-1',
       location: 'Phnom Penh',
-      careerScopes: [{ id: 'scope-1' }],
+      careerScopes: [{ id: 'scope-1', embedding: '[1,0]' }],
       openPositions: [
         {
           title: 'Backend Developer',
           description: 'Build scalable TypeScript services',
           skillsRequired: 'TypeScript, PostgreSQL',
-          educationRequired: 'Bachelor',
-          experienceRequired: '2 years',
-          titleEmbedding: null,
+          educationRequired: 'Master',
+          experienceRequired: '4 years',
+          titleEmbedding: '[1,0]',
         },
       ],
     };
@@ -582,11 +599,12 @@ describe('UserService', () => {
       location: 'Phnom Penh',
       yearsOfExperience: '3 years',
       availability: 'available',
-      jobEmbedding: null,
+      jobEmbedding: '[1,0]',
     };
     const builders = [
       recommendationBuilder({ one: { id: 'company-user', company } }),
       recommendationBuilder({ raw: [{ userId: 'employee-user' }] }),
+      recommendationBuilder({ raw: [] }),
       recommendationBuilder({
         many: [{ id: 'employee-user', employee: { ...baseEmployee } }],
       }),
@@ -631,13 +649,20 @@ describe('UserService', () => {
     ];
     for (const builder of builders)
       users.createQueryBuilder.mockReturnValueOnce(builder);
+    jest
+      .spyOn(service as any, 'nearestScopeIds')
+      .mockResolvedValue(['scope-1']);
+    users.query.mockResolvedValueOnce([]);
     (matches as any).createQueryBuilder = jest.fn(() =>
-      recommendationBuilder({ raw: [] }),
+      recommendationBuilder({
+        raw: [{ employeeId: 'liked-employee' }, { employeeId: null }],
+      }),
     );
 
     const result = await service.getCompanyRecommendations({
       companyId: 'company-1',
       limit: 5,
+      requesterId: 'company-user',
     });
     expect(result).toHaveLength(1);
     expect(result[0]).toEqual(
@@ -647,6 +672,221 @@ describe('UserService', () => {
       }),
     );
     expect(redis.set).toHaveBeenCalledWith('users', result, expect.any(Number));
+  });
+
+  it('caches an empty unrelated employee recommendation page', async () => {
+    const emptyEmployee = {
+      id: 'employee-1',
+      skills: [],
+      careerScopes: [],
+      educations: [],
+      job: '',
+      yearsOfExperience: '',
+      description: '',
+      location: '',
+      jobEmbedding: null,
+    };
+    const unrelatedCompany = {
+      id: 'company-1',
+      location: '',
+      careerScopes: [],
+      openPositions: [
+        {
+          title: '',
+          description: '',
+          skillsRequired: '',
+          educationRequired: '',
+          experienceRequired: '',
+          titleEmbedding: null,
+        },
+      ],
+    };
+    const builders = [
+      recommendationBuilder({ one: { employee: emptyEmployee } }),
+      recommendationBuilder({ raw: [{ userId: 'company-user' }] }),
+      recommendationBuilder({
+        many: [
+          {
+            id: 'company-user',
+            company: { ...unrelatedCompany, openPositions: [] },
+          },
+        ],
+      }),
+      recommendationBuilder({
+        many: [{ id: 'company-user', company: unrelatedCompany }],
+      }),
+    ];
+    for (const builder of builders) {
+      users.createQueryBuilder.mockReturnValueOnce(builder);
+    }
+    (matches as any).createQueryBuilder = jest.fn(() =>
+      recommendationBuilder({ raw: [] }),
+    );
+
+    await expect(
+      service.getEmployeeRecommendations({ employeeId: 'employee-1' }),
+    ).resolves.toEqual([]);
+    expect(redis.set).toHaveBeenCalledWith('users', [], expect.any(Number));
+  });
+
+  it('does not cache empty recommendations for a requester with blocks', async () => {
+    users.query.mockResolvedValueOnce([{ '?column?': 1 }]);
+    users.createQueryBuilder
+      .mockReturnValueOnce(
+        recommendationBuilder({
+          one: {
+            company: {
+              id: 'company-1',
+              careerScopes: [],
+              openPositions: [],
+            },
+          },
+        }),
+      )
+      .mockReturnValueOnce(recommendationBuilder({ raw: [] }));
+    (matches as any).createQueryBuilder = jest.fn(() =>
+      recommendationBuilder({ raw: [] }),
+    );
+
+    await expect(
+      service.getCompanyRecommendations({
+        companyId: 'company-1',
+        requesterId: 'company-user',
+      }),
+    ).resolves.toEqual([]);
+    expect(redis.get).not.toHaveBeenCalled();
+    expect(redis.set).not.toHaveBeenCalled();
+  });
+
+  it('uses keyword title scoring when employee embeddings are unavailable', async () => {
+    const employee = {
+      id: 'employee-1',
+      skills: [{ name: 'TypeScript' }],
+      careerScopes: [{ id: 'scope-1' }],
+      educations: [],
+      job: 'Backend Developer',
+      yearsOfExperience: '',
+      description: '',
+      location: '',
+      jobEmbedding: null,
+    };
+    const company = {
+      id: 'company-1',
+      careerScopes: [{ id: 'scope-1' }],
+      openPositions: [
+        {
+          title: 'Backend Engineer',
+          description: 'Developer platform',
+          skillsRequired: 'TypeScript',
+          educationRequired: '',
+          experienceRequired: '',
+          titleEmbedding: null,
+        },
+      ],
+    };
+    const builders = [
+      recommendationBuilder({ one: { employee } }),
+      recommendationBuilder({ raw: [{ userId: 'company-user' }] }),
+      recommendationBuilder({
+        many: [
+          { id: 'company-user', company: { ...company, openPositions: [] } },
+        ],
+      }),
+      recommendationBuilder({ many: [{ id: 'company-user', company }] }),
+      recommendationBuilder({
+        many: [
+          {
+            company: { id: 'company-1', benefits: [], values: [] },
+          },
+        ],
+      }),
+    ];
+    for (const builder of builders) {
+      users.createQueryBuilder.mockReturnValueOnce(builder);
+    }
+    (matches as any).createQueryBuilder = jest.fn(() =>
+      recommendationBuilder({ raw: [] }),
+    );
+
+    await expect(
+      service.getEmployeeRecommendations({ employeeId: 'employee-1' }),
+    ).resolves.toHaveLength(1);
+  });
+
+  it('uses employee job and experience keywords without job embeddings', async () => {
+    const company = {
+      id: 'company-1',
+      careerScopes: [{ id: 'scope-1' }],
+      openPositions: [
+        {
+          title: 'Backend Developer',
+          description: 'TypeScript platform',
+          skillsRequired: 'TypeScript',
+          educationRequired: '',
+          experienceRequired: '',
+          titleEmbedding: null,
+        },
+      ],
+    };
+    const employee = {
+      id: 'employee-1',
+      job: 'Backend Developer',
+      description: 'TypeScript platform',
+      location: '',
+      yearsOfExperience: '',
+      availability: 'available',
+      jobEmbedding: null,
+    };
+    const builders = [
+      recommendationBuilder({ one: { company } }),
+      recommendationBuilder({ raw: [{ userId: 'employee-user' }] }),
+      recommendationBuilder({ many: [{ id: 'employee-user', employee }] }),
+      recommendationBuilder({
+        many: [
+          {
+            id: 'employee-user',
+            employee: { id: 'employee-1', careerScopes: [{ id: 'scope-1' }] },
+          },
+        ],
+      }),
+      recommendationBuilder({
+        many: [
+          {
+            id: 'employee-user',
+            employee: { id: 'employee-1', skills: [{ name: 'TypeScript' }] },
+          },
+        ],
+      }),
+      recommendationBuilder({
+        many: [
+          {
+            id: 'employee-user',
+            employee: {
+              id: 'employee-1',
+              experiences: [{ title: 'Platform Engineer' }],
+            },
+          },
+        ],
+      }),
+      recommendationBuilder({
+        many: [
+          {
+            id: 'employee-user',
+            employee: { id: 'employee-1', educations: [] },
+          },
+        ],
+      }),
+    ];
+    for (const builder of builders) {
+      users.createQueryBuilder.mockReturnValueOnce(builder);
+    }
+    (matches as any).createQueryBuilder = jest.fn(() =>
+      recommendationBuilder({ raw: [] }),
+    );
+
+    await expect(
+      service.getCompanyRecommendations({ companyId: 'company-1' }),
+    ).resolves.toHaveLength(1);
   });
 
   it('uses recommendation caches and contains recommendation-query failures', async () => {
@@ -680,6 +920,158 @@ describe('UserService', () => {
     await expect(service.onModuleInit()).resolves.toBeUndefined();
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Redis down'),
+    );
+  });
+
+  it('wraps empty and failed user-list queries without leaking internals', async () => {
+    users.createQueryBuilder.mockReturnValueOnce(queryBuilder([]));
+    const empty = (await service
+      .findAllUsers({})
+      .catch((error) => error)) as RpcException;
+    expect(empty.getError()).toEqual({
+      statusCode: 500,
+      message: 'There are no users available',
+    });
+
+    users.createQueryBuilder.mockImplementationOnce(() => {
+      throw 'unexpected failure';
+    });
+    const malformed = (await service
+      .findAllUsers({})
+      .catch((error) => error)) as RpcException;
+    expect(malformed.getError()).toEqual({
+      statusCode: 500,
+      message: 'An error occurred while finding all the users.',
+    });
+  });
+
+  it('wraps push-token storage errors including non-Error failures', async () => {
+    users.update.mockRejectedValueOnce(new Error('update failed'));
+    const failed = (await service
+      .updatePushNotificationToken({ userId: 'user-1', token: 'token' })
+      .catch((error) => error)) as RpcException;
+    expect(failed.getError()).toEqual({
+      statusCode: 500,
+      message: 'update failed',
+    });
+
+    users.update.mockRejectedValueOnce('unknown');
+    const unknown = (await service
+      .updatePushNotificationToken({ userId: 'user-1', token: 'token' })
+      .catch((error) => error)) as RpcException;
+    expect(unknown.getError()).toEqual({
+      statusCode: 500,
+      message: 'Unknown error',
+    });
+  });
+
+  it('preserves company duplicate favorites and wraps both unfavorite failures', async () => {
+    companyFavorites.findOne.mockResolvedValueOnce({ id: 'existing' });
+    const duplicate = (await service
+      .companyFavoriteEmployee({ cid: 'company-1', eid: 'employee-1' })
+      .catch((error) => error)) as RpcException;
+    expect(duplicate.getError()).toEqual({
+      statusCode: 400,
+      message: 'Already favorited',
+    });
+
+    employeeFavorites.findOne.mockResolvedValueOnce({ id: 'ef-1' });
+    employeeFavorites.remove.mockRejectedValueOnce(
+      new Error('employee remove failed'),
+    );
+    const employeeRemove = (await service
+      .employeeUnfavoriteCompany({
+        eid: 'employee-1',
+        cid: 'company-1',
+        favoriteId: 'ef-1',
+      })
+      .catch((error) => error)) as RpcException;
+    expect(employeeRemove.getError()).toEqual({
+      statusCode: 500,
+      message: 'employee remove failed',
+    });
+
+    companyFavorites.findOne.mockResolvedValueOnce({ id: 'cf-1' });
+    companyFavorites.remove.mockRejectedValueOnce(
+      new Error('company remove failed'),
+    );
+    const companyRemove = (await service
+      .companyUnfavoriteEmployee({
+        cid: 'company-1',
+        eid: 'employee-1',
+        favoriteId: 'cf-1',
+      })
+      .catch((error) => error)) as RpcException;
+    expect(companyRemove.getError()).toEqual({
+      statusCode: 500,
+      message: 'company remove failed',
+    });
+  });
+
+  it('wraps favorite list, scope, and count database failures', async () => {
+    employeeFavorites.find.mockRejectedValueOnce(
+      new Error('employee list failed'),
+    );
+    const employeeList = (await service
+      .findAllEmployeeFavorites({ eid: 'employee-1' })
+      .catch((error) => error)) as RpcException;
+    expect(employeeList.getError()).toEqual({
+      statusCode: 500,
+      message: 'employee list failed',
+    });
+
+    companyFavorites.find.mockRejectedValueOnce(
+      new Error('company list failed'),
+    );
+    const companyList = (await service
+      .findAllCompanyFavorites({ cid: 'company-1' })
+      .catch((error) => error)) as RpcException;
+    expect(companyList.getError()).toEqual({
+      statusCode: 500,
+      message: 'company list failed',
+    });
+
+    scopes.find.mockRejectedValueOnce(new Error('scope list failed'));
+    const scopeList = (await service
+      .findAllCareerScopes()
+      .catch((error) => error)) as RpcException;
+    expect(scopeList.getError()).toEqual({
+      statusCode: 500,
+      message: 'scope list failed',
+    });
+
+    companyFavorites.count.mockRejectedValueOnce(
+      new Error('company count failed'),
+    );
+    const companyCount = (await service
+      .countCompanyFavorite({ cid: 'company-1' })
+      .catch((error) => error)) as RpcException;
+    expect(companyCount.getError()).toEqual({
+      statusCode: 500,
+      message: 'company count failed',
+    });
+
+    employeeFavorites.count.mockRejectedValueOnce(
+      new Error('employee count failed'),
+    );
+    const employeeCount = (await service
+      .countEmployeeFavorite({ eid: 'employee-1' })
+      .catch((error) => error)) as RpcException;
+    expect(employeeCount.getError()).toEqual({
+      statusCode: 500,
+      message: 'employee count failed',
+    });
+  });
+
+  it('contains company recommendation-query failures', async () => {
+    users.createQueryBuilder.mockImplementationOnce(() => {
+      throw new Error('company recommendation database failed');
+    });
+    await expect(
+      service.getCompanyRecommendations({ companyId: 'company-1' }),
+    ).resolves.toEqual([]);
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('company recommendation database failed'),
     );
   });
 });

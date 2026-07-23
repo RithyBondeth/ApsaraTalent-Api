@@ -363,4 +363,130 @@ describe('ChatService', () => {
     await expect(service.getRecentChats('bad-id')).resolves.toEqual([]);
     expect(chats.createQueryBuilder).not.toHaveBeenCalled();
   });
+
+  it('wraps identity-resolution and partner lookup failures', async () => {
+    (resolveUserId as jest.Mock).mockRejectedValueOnce(new Error('missing'));
+    const unresolved = (await service
+      .createOrGetChat({ senderId: 'bad', receiverId: 'receiver' })
+      .catch((error) => error)) as RpcException;
+    expect(unresolved.getError()).toEqual({
+      message: 'Could not resolve user ID from: bad',
+      statusCode: 404,
+    });
+
+    users.findOne.mockResolvedValueOnce(null);
+    const missingPartner = (await service
+      .createOrGetChat({ senderId: 'sender', receiverId: 'receiver' })
+      .catch((error) => error)) as RpcException;
+    expect(missingPartner.getError()).toEqual({
+      message: 'Failed to create chat: Partner user not found',
+      statusCode: 500,
+    });
+  });
+
+  it('handles a message disappearing after it is saved', async () => {
+    chats.save.mockResolvedValueOnce({ id: 'message-1' });
+    chats.findOne.mockResolvedValueOnce(null);
+    const error = (await service
+      .createMessage({
+        senderId: 'sender',
+        receiverId: 'receiver',
+        content: 'Hello',
+      })
+      .catch((caught) => caught)) as RpcException;
+    expect(error.getError()).toEqual({
+      message: 'Failed to create message: Failed to retrieve saved message',
+      statusCode: 500,
+    });
+  });
+
+  it('rejects empty, oversized, missing, and deleted message edits', async () => {
+    await expect(
+      service.editMessage({
+        requesterId: 'sender',
+        messageId: 'message-1',
+        newContent: '   ',
+      }),
+    ).rejects.toBeInstanceOf(RpcException);
+    await expect(
+      service.editMessage({
+        requesterId: 'sender',
+        messageId: 'message-1',
+        newContent: 'x'.repeat(5001),
+      }),
+    ).rejects.toBeInstanceOf(RpcException);
+
+    chats.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce({
+      sender: { id: 'sender' },
+      receiver: { id: 'receiver' },
+      isDeleted: true,
+    });
+    await expect(
+      service.editMessage({
+        requesterId: 'sender',
+        messageId: 'missing',
+        newContent: 'valid',
+      }),
+    ).rejects.toBeInstanceOf(RpcException);
+    const deleted = (await service
+      .editMessage({
+        requesterId: 'sender',
+        messageId: 'message-1',
+        newContent: 'valid',
+      })
+      .catch((error) => error)) as RpcException;
+    expect(deleted.getError()).toEqual({
+      message: 'Cannot edit a deleted message',
+      statusCode: 400,
+    });
+  });
+
+  it('rejects missing and unauthorized message deletions', async () => {
+    chats.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce({
+      sender: { id: 'owner' },
+      receiver: { id: 'receiver' },
+    });
+    await expect(
+      service.deleteMessage({ requesterId: 'sender', messageId: 'missing' }),
+    ).rejects.toBeInstanceOf(RpcException);
+    const unauthorized = (await service
+      .deleteMessage({ requesterId: 'sender', messageId: 'message-1' })
+      .catch((error) => error)) as RpcException;
+    expect(unauthorized.getError()).toEqual({
+      message: 'Not authorized to delete this message',
+      statusCode: 403,
+    });
+  });
+
+  it('waits for both concurrent user lookups and rejects an absent result', async () => {
+    const getUser = jest
+      .spyOn(service, 'getUserByIdForChat')
+      .mockResolvedValueOnce(null as any)
+      .mockResolvedValueOnce({ id: 'receiver' } as any);
+    const error = (await service
+      .validateChatUsers({ senderId: 'sender', receiverId: 'receiver' })
+      .catch((caught) => caught)) as RpcException;
+    expect(getUser).toHaveBeenCalledTimes(2);
+    expect(error.getError()).toEqual({
+      message: 'One or both users not found',
+      statusCode: 400,
+    });
+  });
+
+  it('builds every legacy and canonical history direction', async () => {
+    (resolveUserId as jest.Mock)
+      .mockResolvedValueOnce('canonical-1')
+      .mockResolvedValueOnce('canonical-2');
+    chats.find.mockResolvedValueOnce([]);
+    userClient.send.mockReturnValueOnce(of({ id: 'canonical-2' }));
+
+    await service.getChatHistory({
+      userId1: 'legacy-1',
+      userId2: 'legacy-2',
+    });
+    expect(chats.find).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.any(Array) }),
+    );
+    expect(chats.find.mock.calls.at(-1)?.[0].where).toHaveLength(8);
+  });
 });

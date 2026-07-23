@@ -135,6 +135,26 @@ describe('chat support services', () => {
       );
     });
 
+    it('covers missing, email, username, and default profile fallbacks', async () => {
+      users.send
+        .mockReturnValueOnce(of(null))
+        .mockReturnValueOnce(of({ employee: { username: 'Alias' } }))
+        .mockReturnValueOnce(of({ employee: {}, email: 'person@example.com' }))
+        .mockReturnValueOnce(of({}));
+      await expect(service.getCallerProfile('missing')).resolves.toEqual(
+        expect.objectContaining({ name: 'Unknown' }),
+      );
+      await expect(service.getCallerProfile('alias')).resolves.toEqual(
+        expect.objectContaining({ name: 'Alias' }),
+      );
+      await expect(service.getCallerProfile('email')).resolves.toEqual(
+        expect.objectContaining({ name: 'person@example.com' }),
+      );
+      await expect(service.getCallerProfile('unknown')).resolves.toEqual(
+        expect.objectContaining({ name: 'Unknown' }),
+      );
+    });
+
     it('creates an in-app notification and suppresses push for online receivers', async () => {
       users.send.mockReturnValue(of({ employee: { username: 'Sender' } }));
       sockets.isOnline.mockReturnValue(true);
@@ -178,6 +198,22 @@ describe('chat support services', () => {
       ).resolves.toBeUndefined();
     });
 
+    it('does not emit a websocket event when persistence returns no id', async () => {
+      users.send.mockReturnValue(of({ company: { name: 'Sender' } }));
+      sockets.isOnline.mockReturnValue(false);
+      notifications.send.mockReturnValue(of({}));
+      await service.notifyChatMessage(server, {
+        senderId: 'sender',
+        receiverId: 'receiver',
+        messageType: 'document',
+        content: '',
+        hasAttachment: true,
+        attachmentFilename: 'resume.pdf',
+        messageId: 'message-1',
+      });
+      expect(emit).not.toHaveBeenCalled();
+    });
+
     it.each([
       ['missed', 'Missed call'],
       ['declined', 'Call declined'],
@@ -204,6 +240,17 @@ describe('chat support services', () => {
         CHAT_WEBSOCKET_EVENTS.NEW_MESSAGE,
         expect.objectContaining({ isMe: true }),
       );
+    });
+
+    it('contains malformed call-log failures', async () => {
+      chat.send.mockReturnValue(throwError(() => 'offline'));
+      await expect(
+        service.emitCallLogMessage(server, {
+          senderId: 'sender',
+          receiverId: 'receiver',
+          content: 'Call failed',
+        }),
+      ).resolves.toBeUndefined();
     });
   });
 });

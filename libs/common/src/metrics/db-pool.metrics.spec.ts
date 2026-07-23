@@ -7,7 +7,10 @@ jest.mock('prom-client', () => ({
 }));
 
 describe('DbPoolMetrics', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (register.getSingleMetric as jest.Mock).mockReturnValue(undefined);
+  });
 
   it('warns and returns when the pg pool is unavailable', () => {
     const service = new DbPoolMetrics({ driver: {}, options: {} } as any);
@@ -62,5 +65,48 @@ describe('DbPoolMetrics', () => {
     jest.spyOn((service as any).logger, 'log').mockImplementation();
     service.onModuleInit();
     expect(Gauge).not.toHaveBeenCalled();
+  });
+
+  it('uses zero for unavailable counters and datasource max fallbacks', () => {
+    const pool = {
+      totalCount: null,
+      idleCount: null,
+      waitingCount: null,
+      options: {},
+    };
+    const service = new DbPoolMetrics({
+      driver: { master: pool },
+      options: { extra: { max: '7' } },
+    } as any);
+    jest.spyOn((service as any).logger, 'log').mockImplementation();
+    service.onModuleInit();
+    const values = (Gauge as unknown as jest.Mock).mock.calls.map(
+      ([options]) => {
+        const target = { set: jest.fn() };
+        options.collect.call(target);
+        return target.set.mock.calls[0][0];
+      },
+    );
+    expect(values).toEqual([0, 0, 0, 7]);
+  });
+
+  it('uses zero when no maximum is configured', () => {
+    const service = new DbPoolMetrics({
+      driver: {
+        master: {
+          totalCount: 1,
+          idleCount: 0,
+          waitingCount: 0,
+          options: {},
+        },
+      },
+      options: {},
+    } as any);
+    jest.spyOn((service as any).logger, 'log').mockImplementation();
+    service.onModuleInit();
+    const maxGauge = (Gauge as unknown as jest.Mock).mock.calls[3][0];
+    const target = { set: jest.fn() };
+    maxGauge.collect.call(target);
+    expect(target.set).toHaveBeenCalledWith(0);
   });
 });

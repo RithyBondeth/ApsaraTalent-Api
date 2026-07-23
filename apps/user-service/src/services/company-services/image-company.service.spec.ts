@@ -177,4 +177,86 @@ describe('ImageCompanyService', () => {
       'database unavailable',
     );
   });
+
+  it.each([
+    ['removeCompanyAvatar', { companyId: 'missing' }],
+    ['removeCompanyCover', { companyId: 'missing' }],
+  ])('preserves missing-company errors from %s', async (method, dto) => {
+    companies.findOne.mockResolvedValue(null);
+    await expectRpc(
+      (service as any)[method](dto),
+      404,
+      'There is no company with this ID',
+    );
+  });
+
+  it('cleans up an orphan cover upload', async () => {
+    companies.findOne.mockResolvedValue(null);
+    await expectRpc(
+      service.uploadCompanyCover({ companyId: 'missing', cover: file }),
+      404,
+      'There is no company with this ID',
+    );
+    expect(UploadfileService.deleteFile).toHaveBeenCalledWith(
+      expect.stringContaining('storage/company-covers/new.png'),
+      'Cover Image',
+    );
+  });
+
+  it.each([
+    [
+      'removeCompanyAvatar',
+      { companyId: 'company-1' },
+      { id: 'company-1', avatar: '/avatars/a.png' },
+    ],
+    [
+      'uploadCompanyCover',
+      { companyId: 'company-1', cover: file },
+      { id: 'company-1' },
+    ],
+    [
+      'removeCompanyCover',
+      { companyId: 'company-1' },
+      { id: 'company-1', cover: '/covers/c.png' },
+    ],
+  ])(
+    'wraps image replacement/removal failures from %s',
+    async (method, dto, company) => {
+      companies.findOne.mockResolvedValue(company);
+      companies.save.mockRejectedValueOnce(new Error('write failed'));
+      await expectRpc((service as any)[method](dto), 500, 'write failed');
+    },
+  );
+
+  it('wraps gallery persistence, deletion, and cache invalidation failures', async () => {
+    companies.findOne.mockResolvedValue({ id: 'company-1' });
+    images.save.mockRejectedValueOnce(new Error('gallery write failed'));
+    await expectRpc(
+      service.uploadCompanyImages({ companyId: 'company-1', images: [file] }),
+      500,
+      'gallery write failed',
+    );
+
+    images.findOne.mockResolvedValueOnce({
+      id: 'image-1',
+      image: '/images/x.png',
+    });
+    images.delete.mockRejectedValueOnce(new Error('delete failed'));
+    await expectRpc(
+      service.removeCompanyImage({
+        companyId: 'company-1',
+        imageId: 'image-1',
+      }),
+      500,
+      'delete failed',
+    );
+
+    companies.findOne.mockResolvedValueOnce({ id: 'company-1' });
+    users.find.mockRejectedValueOnce(new Error('cache lookup failed'));
+    await expectRpc(
+      service.uploadCompanyAvatar({ companyId: 'company-1', avatar: file }),
+      500,
+      'cache lookup failed',
+    );
+  });
 });

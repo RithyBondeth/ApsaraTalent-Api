@@ -63,4 +63,23 @@ describe('InternalServiceHealthIndicator', () => {
     );
     expect(down).toHaveBeenLastCalledWith({ message: 'Health RPC failed' });
   });
+
+  it('reports unknown status and falls back from details to info or response', async () => {
+    client.send
+      .mockReturnValueOnce(of(null))
+      .mockReturnValueOnce(of({ status: 'ok', info: { redis: 'up' } }))
+      .mockReturnValueOnce(of({ status: 'ok', custom: 'ready' }));
+    await expect(create().pingCheck(AUTH_SERVICE.NAME)).rejects.toBeInstanceOf(
+      HealthCheckError,
+    );
+    expect(down).toHaveBeenLastCalledWith({
+      message: 'Unexpected health status: unknown',
+    });
+    await expect(create().pingCheck(AUTH_SERVICE.NAME)).resolves.toMatchObject({
+      details: { redis: 'up' },
+    });
+    await expect(create().pingCheck(AUTH_SERVICE.NAME)).resolves.toMatchObject({
+      details: { status: 'ok', custom: 'ready' },
+    });
+  });
 });

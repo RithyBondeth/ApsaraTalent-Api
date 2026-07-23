@@ -90,4 +90,20 @@ describe('EmailService', () => {
       }),
     ).rejects.toThrow('SMTP unavailable');
   });
+
+  it('normalizes non-Error SMTP failures', async () => {
+    const service = await createService();
+    sendMail.mockRejectedValue('offline');
+    await expect(
+      service.sendEmail({
+        to: 'person@example.com',
+        subject: 'Hello',
+        text: 'Hello',
+      }),
+    ).rejects.toThrow('Unknown error');
+    expect(logger.error).toHaveBeenCalledWith(
+      'Failed to send email: ',
+      'Unknown error',
+    );
+  });
 });

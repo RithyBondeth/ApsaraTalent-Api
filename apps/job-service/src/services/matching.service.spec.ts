@@ -481,4 +481,356 @@ describe('MatchingService', () => {
       'company-1',
     );
   });
+
+  it('wraps employee-like, company-like, and unmatch persistence failures', async () => {
+    employees.findOne.mockResolvedValue(employee);
+    companies.findOne.mockResolvedValue(company);
+    matching.findOne.mockResolvedValue(null);
+    matching.save.mockRejectedValueOnce(new Error('employee like failed'));
+    await expectRpc(
+      service.employeeLikes({ eid: 'employee-1', cid: 'company-1' }),
+      500,
+      'employee like failed',
+    );
+
+    matching.save.mockRejectedValueOnce(new Error('company like failed'));
+    await expectRpc(
+      service.companyLikes({ eid: 'employee-1', cid: 'company-1' }),
+      500,
+      'company like failed',
+    );
+
+    matching.findOne.mockResolvedValueOnce({ id: 'match-1' });
+    matching.delete.mockRejectedValueOnce(
+      Object.assign(new Error('delete failed'), { statusCode: 503 }),
+    );
+    await expectRpc(
+      service.unmatch({ eid: 'employee-1', cid: 'company-1' }),
+      503,
+      'delete failed',
+    );
+  });
+
+  it('preserves missing-profile errors for company likes', async () => {
+    employees.findOne.mockResolvedValue(employee);
+    companies.findOne.mockResolvedValue(null);
+    await expectRpc(
+      service.companyLikes({ eid: 'employee-1', cid: 'missing' }),
+      404,
+      'Employee or Company not found.',
+    );
+  });
+
+  it.each([
+    [
+      'findCurrentEmployeeLiked',
+      { eid: 'employee-1' },
+      'Employee Liked not found',
+    ],
+    [
+      'findCurrentCompanyLiked',
+      { cid: 'company-1' },
+      'Company Liked not found',
+    ],
+    [
+      'findCurrentEmployeeMatching',
+      { eid: 'employee-1' },
+      'There is no matching.',
+    ],
+    [
+      'findCurrentCompanyMatching',
+      { cid: 'company-1' },
+      'There is no matching.',
+    ],
+  ])('contains null repository results in %s', async (method, dto, message) => {
+    matching.find.mockResolvedValueOnce(null);
+    await expectRpc((service as any)[method](dto), 500, message);
+  });
+
+  it('wraps analytics and company-count database failures', async () => {
+    matching.count.mockRejectedValueOnce(new Error('analytics failed'));
+    await expectRpc(
+      service.getMatchingAnalytics({ role: 'employee', userId: 'employee-1' }),
+      500,
+      'analytics failed',
+    );
+    matching.count.mockRejectedValueOnce(new Error('company count failed'));
+    await expectRpc(
+      service.findCurrentCompanyMatchingCount({ cid: 'company-1' }),
+      500,
+      'company count failed',
+    );
+  });
+
+  it('contains missing profiles and malformed AI explanation output', async () => {
+    employees.findOne.mockResolvedValueOnce(null);
+    companies.findOne.mockResolvedValueOnce(company);
+    const missing = await service
+      .getAiMatchExplanation({ eid: 'missing', cid: 'company-1' })
+      .catch((error) => error as RpcException);
+    expect(missing).toBeInstanceOf(RpcException);
+
+    employees.findOne.mockResolvedValue(employee);
+    companies.findOne.mockResolvedValue(company);
+    (service as any).openAI = {
+      chat: {
+        completions: {
+          create: jest.fn().mockResolvedValue({
+            choices: [{ message: { content: 'not-json' } }],
+          }),
+        },
+      },
+    };
+    const malformed = await service
+      .getAiMatchExplanation({ eid: 'employee-1', cid: 'company-1' })
+      .catch((error) => error as RpcException);
+    expect(malformed).toBeInstanceOf(RpcException);
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ err: expect.any(SyntaxError) }),
+      'AI match explanation failed',
+    );
+  });
+
+  it('contains missing profiles and malformed AI interview-prep output', async () => {
+    employees.findOne.mockResolvedValueOnce(employee);
+    companies.findOne.mockResolvedValueOnce(null);
+    await expect(
+      service.getAiInterviewPrep({
+        eid: 'employee-1',
+        cid: 'missing',
+        interviewTitle: 'Round',
+      }),
+    ).rejects.toBeInstanceOf(RpcException);
+
+    employees.findOne.mockResolvedValue(employee);
+    companies.findOne.mockResolvedValue(company);
+    (service as any).openAI = {
+      chat: {
+        completions: {
+          create: jest.fn().mockResolvedValue({
+            choices: [{ message: { content: '{broken' } }],
+          }),
+        },
+      },
+    };
+    await expect(
+      service.getAiInterviewPrep({
+        eid: 'employee-1',
+        cid: 'company-1',
+        interviewTitle: 'Round',
+      }),
+    ).rejects.toBeInstanceOf(RpcException);
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ err: expect.any(SyntaxError) }),
+      'AI interview prep failed',
+    );
+  });
+
+  it('contains email failures after reciprocal matches', async () => {
+    employees.findOne.mockResolvedValue(employee);
+    companies.findOne.mockResolvedValue(company);
+    matching.findOne.mockResolvedValue({
+      employee,
+      company,
+      employeeLiked: false,
+      companyLiked: true,
+      isMatched: false,
+    });
+    email.sendEmail.mockRejectedValueOnce(new Error('SMTP down'));
+    await service.employeeLikes({ eid: 'employee-1', cid: 'company-1' });
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Failed to send match notification: SMTP down',
+    );
+
+    matching.findOne.mockResolvedValue({
+      employee,
+      company,
+      employeeLiked: true,
+      companyLiked: false,
+      isMatched: false,
+    });
+    email.sendEmail.mockRejectedValueOnce('offline');
+    await service.companyLikes({ eid: 'employee-1', cid: 'company-1' });
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Failed to send match notification: offline',
+    );
+  });
+
+  it('serializes complete interview-preparation profiles', async () => {
+    employees.findOne.mockResolvedValue({
+      ...employee,
+      job: 'Engineer',
+      yearsOfExperience: '4 years',
+      description: 'Backend systems',
+      careerScopes: [{ name: 'Software' }],
+      educations: [{ degree: 'BSc', school: 'RUPP', year: '2024' }],
+      experiences: [
+        {
+          title: 'Developer',
+          description: 'Built APIs',
+          startDate: '2023',
+          endDate: null,
+        },
+      ],
+    });
+    companies.findOne.mockResolvedValue({
+      ...company,
+      industry: 'Technology',
+      description: 'Hiring engineers',
+      values: [{ label: 'Growth' }],
+      careerScopes: [{ name: 'Software' }],
+      openPositions: [
+        {
+          title: 'Backend Engineer',
+          skillsRequired: 'TypeScript',
+          experienceRequired: '3 years',
+          type: 'full-time',
+        },
+      ],
+    });
+    const create = jest.fn().mockResolvedValue({
+      choices: [{ message: { content: JSON.stringify({ questions: [] }) } }],
+    });
+    (service as any).openAI = { chat: { completions: { create } } };
+    await service.getAiInterviewPrep({
+      eid: 'employee-1',
+      cid: 'company-1',
+      interviewTitle: 'Technical',
+    });
+    const prompt = create.mock.calls[0][0].messages[1].content;
+    expect(prompt).toContain('RUPP');
+    expect(prompt).toContain('Built APIs');
+    expect(prompt).toContain('Backend Engineer');
+    expect(prompt).toContain('Software');
+  });
+
+  it('formats recent company-side matches with employee fallbacks', async () => {
+    matching.find.mockResolvedValue([
+      {
+        id: 'match-1',
+        employee: { firstname: 'Sok', avatar: null },
+        createdAt: new Date('2026-01-01'),
+      },
+    ]);
+    await expect(
+      (service as any).getRecentMatches('company-1', 'company', false),
+    ).resolves.toEqual([
+      expect.objectContaining({ name: 'Sok', avatar: null }),
+    ]);
+  });
+
+  it('builds zero-filled company analytics and unknown recent identities', async () => {
+    matching.count.mockResolvedValue(0);
+    companyFavorites.count.mockResolvedValue(0);
+    const activityBuilder = () => {
+      const qb: any = {};
+      for (const method of [
+        'select',
+        'where',
+        'andWhere',
+        'groupBy',
+        'orderBy',
+      ]) {
+        qb[method] = jest.fn(() => qb);
+      }
+      qb.getRawMany = jest.fn().mockResolvedValue([]);
+      return qb;
+    };
+    matching.createQueryBuilder
+      .mockReturnValueOnce(activityBuilder())
+      .mockReturnValueOnce(activityBuilder());
+    matching.find.mockResolvedValueOnce([
+      { id: 'match-1', employee: null, createdAt: new Date('2026-01-01') },
+    ]);
+
+    const result = await service.getMatchingAnalytics({
+      role: 'company',
+      userId: 'company-1',
+    });
+    expect(result.matchRate).toBe(0);
+    expect(result.weeklyActivity).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ likes: 0, received: 0, matches: 0 }),
+      ]),
+    );
+    expect(result.recentMatches[0]).toEqual(
+      expect.objectContaining({ name: 'Unknown', avatar: null }),
+    );
+  });
+
+  it('covers ignored and empty skill requirements', () => {
+    const compute = (service as any).computeSkillScore.bind(service);
+    expect(
+      compute(employee, {
+        ...company,
+        openPositions: [
+          { skillsRequired: null },
+          { skillsRequired: ' , ' },
+          { skillsRequired: 'Rust' },
+        ],
+      }),
+    ).toBe(0);
+  });
+
+  it('uses safe defaults for incomplete AI responses', async () => {
+    employees.findOne.mockResolvedValue(employee);
+    companies.findOne.mockResolvedValue(company);
+    const create = jest
+      .fn()
+      .mockResolvedValueOnce({ choices: [] })
+      .mockResolvedValueOnce({
+        choices: [
+          { message: { content: JSON.stringify({ questions: [{}] }) } },
+        ],
+      });
+    (service as any).openAI = { chat: { completions: { create } } };
+
+    await expect(
+      service.getAiMatchExplanation({ eid: 'employee-1', cid: 'company-1' }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        score: 0,
+        verdict: 'Unknown',
+        strengths: [],
+        gaps: [],
+      }),
+    );
+    await expect(
+      service.getAiInterviewPrep({
+        eid: 'employee-1',
+        cid: 'company-1',
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        questions: [
+          {
+            question: '',
+            questionKm: '',
+            category: 'General',
+            tip: '',
+            tipKm: '',
+          },
+        ],
+      }),
+    );
+  });
+
+  it('uses stable messages for non-Error AI failures', async () => {
+    employees.findOne.mockResolvedValue(employee);
+    companies.findOne.mockResolvedValue(company);
+    (service as any).openAI = {
+      chat: { completions: { create: jest.fn().mockRejectedValue('offline') } },
+    };
+    const explanation = (await service
+      .getAiMatchExplanation({ eid: 'employee-1', cid: 'company-1' })
+      .catch((error) => error)) as RpcException;
+    expect(explanation.getError()).toBe('AI match explanation failed');
+
+    const prep = (await service
+      .getAiInterviewPrep({ eid: 'employee-1', cid: 'company-1' })
+      .catch((error) => error)) as RpcException;
+    expect(prep.getError()).toBe('AI interview prep failed');
+  });
 });

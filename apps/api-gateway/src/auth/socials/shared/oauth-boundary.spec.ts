@@ -66,6 +66,39 @@ describe('OAuth HTTP boundary', () => {
   );
 
   it.each(guards)(
+    '%s guard persists only explicit string remember choices',
+    async (_name, guard) => {
+      const parent = Object.getPrototypeOf(Object.getPrototypeOf(guard));
+      const activate = jest
+        .spyOn(parent, 'canActivate')
+        .mockResolvedValue(true);
+      for (const [remember, expected] of [
+        ['true', true],
+        ['false', false],
+      ] as const) {
+        const req = request({ query: { remember }, session: {} });
+        const context = {
+          switchToHttp: () => ({ getRequest: () => req }),
+        } as any;
+        await expect(guard.canActivate(context)).resolves.toBe(true);
+        expect(req.session.remember).toBe(expected);
+      }
+
+      const req = request({
+        query: { remember: ['true'] },
+        session: { remember: 'unchanged' },
+      });
+      const context = {
+        switchToHttp: () => ({ getRequest: () => req }),
+      } as any;
+      await guard.canActivate(context);
+      expect(req.session.remember).toBe('unchanged');
+      expect(activate).toHaveBeenCalledTimes(3);
+      activate.mockRestore();
+    },
+  );
+
+  it.each(guards)(
     '%s guard returns users and rejects empty authentication',
     (name, guard) => {
       const user = { id: 'provider-user' };
@@ -73,6 +106,9 @@ describe('OAuth HTTP boundary', () => {
       expect(() =>
         guard.handleRequest(null, null, { message: 'denied' }),
       ).toThrow(new UnauthorizedException('denied'));
+      expect(() => guard.handleRequest(null, null)).toThrow(
+        UnauthorizedException,
+      );
       const providerError = new Error(`${name} provider failed`);
       expect(() => guard.handleRequest(providerError, null)).toThrow(
         providerError,

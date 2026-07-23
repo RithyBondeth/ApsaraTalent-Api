@@ -185,4 +185,85 @@ describe('JobService', () => {
     });
     await expectInternalError(service.searchJobs({}));
   });
+
+  it('applies every supported search filter and safe sort fallback', async () => {
+    redis.get.mockResolvedValue(null);
+    const qb = queryBuilder([[], 0]);
+    repository.createQueryBuilder.mockReturnValue(qb);
+    await service.searchJobs({
+      companySizeMin: 10,
+      companySizeMax: 500,
+      postedDateFrom: '2026-01-01',
+      postedDateTo: '2026-12-31',
+      salaryMin: 1000,
+      salaryMax: 3000,
+      jobType: ['Full-time', 'Remote'],
+      experienceLevel: 'Senior',
+      educationRequired: ['Bachelor', 'Master'],
+      sortBy: 'companySize',
+      sortOrder: 'sideways' as any,
+    });
+    expect(qb.andWhere).toHaveBeenCalledWith(
+      'company.companySize BETWEEN :csMin AND :csMax',
+      { csMin: 10, csMax: 500 },
+    );
+    expect(qb.andWhere).toHaveBeenCalledWith(
+      'job.createdAt BETWEEN :from AND :to',
+      expect.objectContaining({ from: expect.any(Date), to: expect.any(Date) }),
+    );
+    expect(qb.andWhere).toHaveBeenCalledWith(
+      expect.stringContaining('job.salaryMin IS NOT NULL'),
+      { salaryMin: 1000, salaryMax: 3000 },
+    );
+    expect(qb.andWhere).toHaveBeenCalledWith(
+      'job.experienceRequired = :experienceLevel',
+      { experienceLevel: 'Senior' },
+    );
+    expect(qb.orderBy).toHaveBeenCalledWith('company.companySize', 'DESC');
+
+    const brackets = qb.andWhere.mock.calls
+      .map(([value]) => value)
+      .filter((value) => value && typeof value.whereFactory === 'function');
+    expect(brackets).toHaveLength(2);
+    const inner = { where: jest.fn(), orWhere: jest.fn() };
+    brackets.forEach((value) => value.whereFactory(inner));
+    expect(inner.where).toHaveBeenCalledTimes(2);
+    expect(inner.orWhere).toHaveBeenCalledTimes(2);
+  });
+
+  it('uses open-ended defaults for partial size, date, and salary filters', async () => {
+    redis.get.mockResolvedValue(null);
+    const qb = queryBuilder([[], 0]);
+    repository.createQueryBuilder.mockReturnValue(qb);
+    await service.searchJobs({
+      companySizeMax: 20,
+      postedDateTo: '2026-12-31',
+      salaryMax: 2500,
+      sortBy: 'invalid',
+      sortOrder: 'ASC',
+    });
+    expect(qb.andWhere).toHaveBeenCalledWith(
+      'company.companySize BETWEEN :csMin AND :csMax',
+      { csMin: 0, csMax: 20 },
+    );
+    expect(qb.orderBy).toHaveBeenCalledWith('job.createdAt', 'ASC');
+    expect(qb.andWhere).toHaveBeenCalledWith(
+      expect.stringContaining('job.salaryMin IS NOT NULL'),
+      { salaryMin: 0, salaryMax: 2500 },
+    );
+  });
+
+  it('uses a stable fallback message for malformed database failures', async () => {
+    redis.get.mockResolvedValue(null);
+    repository.createQueryBuilder.mockImplementationOnce(() => {
+      throw 'database failure';
+    });
+    const error = (await service
+      .searchJobs({})
+      .catch((caught) => caught)) as RpcException;
+    expect(error.getError()).toEqual({ statusCode: 500, message: undefined });
+    expect(logger.error).toHaveBeenCalledWith(
+      'An error occurred while searching for jobs',
+    );
+  });
 });

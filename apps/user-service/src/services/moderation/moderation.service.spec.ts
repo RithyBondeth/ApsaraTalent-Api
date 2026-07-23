@@ -215,4 +215,97 @@ describe('ModerationService', () => {
       'An error occurred while checking block status.',
     );
   });
+
+  it('wraps block persistence and feed invalidation failures', async () => {
+    blocks.findOne.mockRejectedValueOnce(new Error('block lookup failed'));
+    await expectRpc(
+      service.blockUser({ blockerId: 'user-1', blockedId: 'user-2' }),
+      500,
+      'An error occurred while blocking the user.',
+    );
+
+    blocks.findOne.mockResolvedValueOnce(null);
+    blocks.save.mockResolvedValueOnce({ id: 'block-1' });
+    redis.delPattern.mockRejectedValueOnce(new Error('cache failed'));
+    await expectRpc(
+      service.blockUser({ blockerId: 'user-1', blockedId: 'user-2' }),
+      500,
+      'An error occurred while blocking the user.',
+    );
+  });
+
+  it('does not invalidate feeds when unblock removes no rows', async () => {
+    const qb: any = {};
+    qb.delete = jest.fn(() => qb);
+    qb.where = jest.fn(() => qb);
+    qb.execute = jest.fn().mockResolvedValue({ affected: 0 });
+    blocks.createQueryBuilder.mockReturnValue(qb);
+    await service.unblockUser({ blockerId: 'user-1', blockedId: 'user-2' });
+    expect(redis.delPattern).not.toHaveBeenCalled();
+  });
+
+  it('wraps unblock and blocked-list failures', async () => {
+    blocks.createQueryBuilder.mockImplementationOnce(() => {
+      throw new Error('delete failed');
+    });
+    await expectRpc(
+      service.unblockUser({ blockerId: 'user-1', blockedId: 'user-2' }),
+      500,
+      'An error occurred while unblocking the user.',
+    );
+
+    blocks.find.mockRejectedValueOnce(new Error('list failed'));
+    await expectRpc(
+      service.listBlockedUsers({ blockerId: 'user-1' }),
+      500,
+      'An error occurred while loading blocked users.',
+    );
+  });
+
+  it('formats company and unknown blocked identities', async () => {
+    blocks.find.mockResolvedValue([
+      {
+        blocked: {
+          id: 'company-user',
+          role: 'company',
+          company: { id: 'company-1', name: 'Apsara', avatar: 'logo.png' },
+        },
+      },
+      { blocked: { id: 'unknown', role: 'employee' } },
+    ]);
+    const result = await service.listBlockedUsers({ blockerId: 'user-1' });
+    expect(result[0]).toEqual(
+      expect.objectContaining({ name: 'Apsara', avatar: 'logo.png' }),
+    );
+    expect(result[1]).toEqual(expect.objectContaining({ name: 'Unknown' }));
+  });
+
+  it('rejects a missing report target and wraps report persistence failures', async () => {
+    (resolveUserId as jest.Mock)
+      .mockResolvedValueOnce('user-1')
+      .mockRejectedValueOnce(new Error('missing'));
+    await expectRpc(
+      service.reportUser({
+        reporterId: 'user-1',
+        reportedId: 'missing',
+        reason: EReportReason.SPAM,
+      }),
+      404,
+      'The user you are trying to report does not exist.',
+    );
+
+    reports.save.mockRejectedValueOnce(new Error('report failed'));
+    await expectRpc(
+      service.reportUser({
+        reporterId: 'user-1',
+        reportedId: 'user-2',
+        reason: EReportReason.SPAM,
+      }),
+      500,
+      'An error occurred while submitting the report.',
+    );
+    expect(reports.create).toHaveBeenLastCalledWith(
+      expect.objectContaining({ details: null }),
+    );
+  });
 });

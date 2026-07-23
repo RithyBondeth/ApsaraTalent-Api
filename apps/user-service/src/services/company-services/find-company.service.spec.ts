@@ -94,4 +94,65 @@ describe('FindCompanyService', () => {
       message: 'database unavailable',
     });
   });
+
+  it('wraps list failures and null repository results', async () => {
+    companies.find.mockResolvedValueOnce(null);
+    const empty = (await service
+      .findAll({})
+      .catch((error) => error)) as RpcException;
+    expect(empty.getError()).toEqual({
+      statusCode: 500,
+      message: 'There are no companies available.',
+    });
+    companies.find.mockRejectedValueOnce(new Error('list failed'));
+    const failed = (await service
+      .findAll({})
+      .catch((error) => error)) as RpcException;
+    expect(failed.getError()).toEqual({
+      statusCode: 500,
+      message: 'list failed',
+    });
+  });
+
+  it('returns cached counts and company details', async () => {
+    redis.get.mockResolvedValueOnce({ totalCompanies: 4 });
+    await expect(service.countAllCompanies()).resolves.toEqual({
+      totalCompanies: 4,
+    });
+    redis.get.mockResolvedValueOnce({ id: 'company-1' });
+    await expect(
+      service.findOneById({ companyId: 'company-1' }),
+    ).resolves.toEqual({
+      id: 'company-1',
+    });
+  });
+
+  it('hides a missing target owner and allows the owner without block lookup', async () => {
+    users.findOne.mockResolvedValueOnce(null);
+    await expect(
+      service.findOneById({ companyId: 'company-1', requesterId: 'requester' }),
+    ).rejects.toBeInstanceOf(RpcException);
+    users.findOne
+      .mockResolvedValueOnce({ id: 'requester' })
+      .mockResolvedValueOnce({
+        email: 'owner@example.com',
+        company: { id: 'company-1' },
+      });
+    await service.findOneById({
+      companyId: 'company-1',
+      requesterId: 'requester',
+    });
+    expect(blocks.exists).not.toHaveBeenCalled();
+  });
+
+  it('wraps company-detail database failures', async () => {
+    users.findOne.mockRejectedValueOnce(new Error('detail failed'));
+    const error = (await service
+      .findOneById({ companyId: 'company-1' })
+      .catch((caught) => caught)) as RpcException;
+    expect(error.getError()).toEqual({
+      statusCode: 500,
+      message: 'detail failed',
+    });
+  });
 });

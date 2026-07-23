@@ -232,4 +232,81 @@ describe('ApplicationService', () => {
       'database unavailable',
     );
   });
+
+  it('stores a missing cover letter as null', async () => {
+    employees.findOne.mockResolvedValue({ id: 'employee-1' });
+    jobs.findOne.mockResolvedValue({ id: 'job-1', title: 'Engineer' });
+    applications.findOne.mockResolvedValue(null);
+    await service.applyApplication('user-1', { jobId: 'job-1' });
+    expect(applications.create).toHaveBeenCalledWith(
+      expect.objectContaining({ coverLetterNote: null }),
+    );
+  });
+
+  it('handles missing employee and database failures in my applications', async () => {
+    employees.findOne.mockResolvedValueOnce(null);
+    await expectRpc(
+      service.getMyApplications('user-1'),
+      404,
+      'Employee not found',
+    );
+    employees.findOne.mockRejectedValueOnce(new Error('lookup failed'));
+    await expectRpc(service.getMyApplications('user-1'), 500, 'lookup failed');
+  });
+
+  it('wraps job-application lookup failures', async () => {
+    jobs.findOne.mockRejectedValueOnce(new Error('job lookup failed'));
+    await expectRpc(
+      service.getJobApplications('job-1', 'company-1'),
+      500,
+      'job lookup failed',
+    );
+  });
+
+  it('wraps application status persistence failures', async () => {
+    applications.findOne.mockResolvedValue({
+      id: 'application-1',
+      job: { company: { id: 'company-1' } },
+    });
+    applications.save.mockRejectedValueOnce(new Error('status write failed'));
+    await expectRpc(
+      service.updateApplicationStatus('company-1', {
+        applicationId: 'application-1',
+        status: EApplicationStatus.SHORTLISTED,
+      }),
+      500,
+      'status write failed',
+    );
+  });
+
+  it('rejects withdrawal for missing employee or missing application', async () => {
+    employees.findOne.mockResolvedValueOnce(null);
+    await expectRpc(
+      service.withdrawApplication('user-1', 'application-1'),
+      404,
+      'Employee not found',
+    );
+
+    employees.findOne.mockResolvedValueOnce({ id: 'employee-1' });
+    applications.findOne.mockResolvedValueOnce(null);
+    await expectRpc(
+      service.withdrawApplication('user-1', 'missing'),
+      404,
+      'Application not found or access denied',
+    );
+  });
+
+  it('wraps withdrawal delete failures', async () => {
+    employees.findOne.mockResolvedValue({ id: 'employee-1' });
+    applications.findOne.mockResolvedValue({
+      id: 'application-1',
+      status: EApplicationStatus.PENDING,
+    });
+    applications.delete.mockRejectedValueOnce(new Error('delete failed'));
+    await expectRpc(
+      service.withdrawApplication('user-1', 'application-1'),
+      500,
+      'delete failed',
+    );
+  });
 });

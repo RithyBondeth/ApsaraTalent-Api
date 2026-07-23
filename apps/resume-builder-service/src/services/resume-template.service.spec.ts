@@ -30,6 +30,8 @@ describe('ResumeTemplateService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     redis.get.mockResolvedValue(null);
+    repository.save.mockReset().mockResolvedValue({});
+    redis.invalidateTemplateCaches.mockReset().mockResolvedValue(undefined);
   });
 
   async function expectRpc(
@@ -153,6 +155,96 @@ describe('ResumeTemplateService', () => {
       service.findAllResumeTemplate(),
       500,
       'database unavailable',
+    );
+  });
+
+  it('loads and caches one template and wraps detail database failures', async () => {
+    repository.findOne.mockResolvedValueOnce({
+      id: 'template-1',
+      title: 'Classic',
+    });
+    await expect(
+      service.findOneResumeTemplate('template-1'),
+    ).resolves.toMatchObject({
+      id: 'template-1',
+      title: 'Classic',
+    });
+    expect(redis.set).toHaveBeenCalledWith(
+      'template:template-1',
+      expect.anything(),
+      expect.any(Number),
+    );
+
+    repository.findOne.mockRejectedValueOnce(new Error('detail failed'));
+    await expectRpc(
+      service.findOneResumeTemplate('template-2'),
+      500,
+      'detail failed',
+    );
+  });
+
+  it('creates a free non-premium template without an image', async () => {
+    repository.save.mockResolvedValue({});
+    await service.createResumeTemplate(
+      { templateKey: 'free', title: 'Free', price: 'invalid' as any } as any,
+      undefined as any,
+    );
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ price: 0, isPremium: false }),
+    );
+    expect(uploads.getUploadFile).not.toHaveBeenCalled();
+  });
+
+  it('wraps image storage, repository, and cache invalidation failures', async () => {
+    uploads.getUploadFile.mockImplementationOnce(() => {
+      throw new Error('storage failed');
+    });
+    await expectRpc(
+      service.createResumeTemplate(
+        { templateKey: 'x', title: 'X' } as any,
+        { filename: 'x.png' } as any,
+      ),
+      500,
+      'storage failed',
+    );
+
+    redis.invalidateTemplateCaches.mockRejectedValueOnce(
+      new Error('cache failed'),
+    );
+    await expectRpc(
+      service.createResumeTemplate(
+        { templateKey: 'y', title: 'Y' } as any,
+        undefined as any,
+      ),
+      500,
+      'cache failed',
+    );
+  });
+
+  it('returns cached searches and supports premium-only searches', async () => {
+    redis.get.mockResolvedValueOnce([{ id: 'cached' }]);
+    await expect(
+      service.searchResumeTemplate({ title: '', isPremium: true }),
+    ).resolves.toEqual([{ id: 'cached' }]);
+    expect(repository.createQueryBuilder).not.toHaveBeenCalled();
+
+    redis.get.mockResolvedValueOnce(null);
+    const query = queryBuilder([{ id: 'template-1', isPremium: false }]);
+    repository.createQueryBuilder.mockReturnValue(query);
+    await service.searchResumeTemplate({ title: '', isPremium: false });
+    expect(query.where).toHaveBeenCalledWith('resume.isPremium = :isPremium', {
+      isPremium: false,
+    });
+  });
+
+  it('wraps unexpected search database failures', async () => {
+    repository.createQueryBuilder.mockImplementationOnce(() => {
+      throw new Error('search failed');
+    });
+    await expectRpc(
+      service.searchResumeTemplate({ title: 'x', isPremium: false }),
+      500,
+      'search failed',
     );
   });
 });

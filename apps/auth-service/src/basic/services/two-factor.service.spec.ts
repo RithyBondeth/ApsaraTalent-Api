@@ -172,4 +172,58 @@ describe('TwoFactorService', () => {
       'database unavailable',
     );
   });
+
+  it('rejects invalid disable and login-verification codes', async () => {
+    repository.findOne.mockResolvedValue({
+      id: 'u1',
+      twoFactorSecret: 'secret',
+      isTwoFactorEnabled: true,
+    });
+    (otplib.verify as jest.Mock).mockReturnValue(false);
+    await expectRpcFailure(
+      service.twoFactorDisable({ userId: 'u1', otp: 'bad' }),
+      401,
+      'Invalid code. Please try again.',
+    );
+    await expectRpcFailure(
+      service.twoFactorVerifyLogin({ userId: 'u1', otp: 'bad' }),
+      401,
+      'Invalid code. Please try again.',
+    );
+  });
+
+  it('requires enabled 2FA before login verification', async () => {
+    repository.findOne.mockResolvedValue({
+      id: 'u1',
+      twoFactorSecret: 'secret',
+    });
+    await expectRpcFailure(
+      service.twoFactorVerifyLogin({ userId: 'u1', otp: '123456' }),
+      400,
+      '2FA is not enabled on this account',
+    );
+  });
+
+  it.each([
+    ['twoFactorSetup', { userId: 'u1' }],
+    ['twoFactorEnable', { userId: 'u1', otp: '123456' }],
+    ['twoFactorDisable', { userId: 'u1', otp: '123456' }],
+    ['twoFactorVerifyLogin', { userId: 'u1', otp: '123456' }],
+  ])('wraps storage failure in %s', async (method, dto) => {
+    const user = {
+      id: 'u1',
+      email: 'person@example.com',
+      role: 'employee',
+      twoFactorSecret: 'secret',
+      isTwoFactorEnabled: true,
+    };
+    repository.findOne.mockResolvedValue(user);
+    repository.save.mockRejectedValueOnce(new Error('write failed'));
+    (otplib.generateSecret as jest.Mock).mockReturnValue('secret');
+    (otplib.generateURI as jest.Mock).mockReturnValue('otpauth://uri');
+    (otplib.verify as jest.Mock).mockReturnValue(true);
+    jwt.generateToken.mockResolvedValue('access');
+    jwt.generateRefreshToken.mockResolvedValue('refresh');
+    await expectRpcFailure((service as any)[method](dto), 500, 'write failed');
+  });
 });

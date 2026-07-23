@@ -157,4 +157,73 @@ describe('employee file services', () => {
       "An error occurred while uploading the employee's resume.",
     );
   });
+
+  it('cleans up orphan cover letters for missing employees', async () => {
+    repository.findOne.mockResolvedValue(null);
+    await expectRpc(
+      referenceService.uploadEmployeeCoverLetter({
+        employeeId: 'missing',
+        coverLetter: file,
+      }),
+      404,
+      'There is no employee with this ID.',
+    );
+    expect(UploadfileService.deleteFile).toHaveBeenCalledWith(
+      expect.stringContaining('storage/cover-letters/new-file.pdf'),
+      'Cover Letter File',
+    );
+  });
+
+  it.each([
+    ['removeEmployeeResume', { employeeId: 'missing' }],
+    ['removeEmployeeCoverLetter', { employeeId: 'missing' }],
+  ])('preserves missing-employee errors from %s', async (method, dto) => {
+    repository.findOne.mockResolvedValue(null);
+    await expectRpc(
+      (referenceService as any)[method](dto),
+      404,
+      'There is no employee with this ID.',
+    );
+  });
+
+  it.each([
+    [
+      'removeEmployeeResume',
+      { employeeId: 'employee-1' },
+      { id: 'employee-1', resume: '/resumes/old.pdf' },
+    ],
+    [
+      'uploadEmployeeCoverLetter',
+      { employeeId: 'employee-1', coverLetter: file },
+      { id: 'employee-1' },
+    ],
+    [
+      'removeEmployeeCoverLetter',
+      { employeeId: 'employee-1' },
+      { id: 'employee-1', coverLetter: '/cover-letters/old.pdf' },
+    ],
+  ])('wraps database/cache failure from %s', async (method, dto, employee) => {
+    repository.findOne.mockResolvedValue(employee);
+    repository.save.mockRejectedValueOnce(new Error('write failed'));
+    await expectRpc(
+      (referenceService as any)[method](dto),
+      500,
+      'write failed',
+    );
+  });
+
+  it('wraps cache invalidation failure after a document write', async () => {
+    repository.findOne.mockResolvedValue({ id: 'employee-1' });
+    cache.invalidateEmployeeCache.mockRejectedValueOnce(
+      new Error('cache down'),
+    );
+    await expectRpc(
+      referenceService.uploadEmployeeCoverLetter({
+        employeeId: 'employee-1',
+        coverLetter: file,
+      }),
+      500,
+      'cache down',
+    );
+  });
 });

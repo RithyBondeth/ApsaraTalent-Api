@@ -279,4 +279,107 @@ describe('ResumeBuilderService', () => {
       }),
     );
   });
+
+  it('returns safe empty optimization fields for an empty provider payload', async () => {
+    mockCreate.mockResolvedValue({ choices: [] });
+    await expect(service.optimizeResume({} as any)).resolves.toEqual(
+      expect.objectContaining({
+        overallFeedback: '',
+        suggestedSummary: '',
+        experienceSuggestions: [],
+        suggestedSkills: [],
+      }),
+    );
+  });
+
+  it('returns empty text when cover-letter providers omit content', async () => {
+    mockCreate.mockResolvedValueOnce({ choices: [] }).mockResolvedValueOnce({
+      choices: [{ message: {} }],
+    });
+    await expect(
+      service.generateCoverLetter({
+        employeeName: 'Sok',
+        companyName: 'Apsara',
+        openPositions: [],
+        employeeSkills: [],
+      } as any),
+    ).resolves.toEqual(expect.objectContaining({ coverLetter: '' }));
+    await expect(
+      service.polishCoverLetter({ coverLetterText: 'Original' }),
+    ).resolves.toEqual(expect.objectContaining({ coverLetter: '' }));
+  });
+
+  it.each([
+    ['generateResume', 'Failed to generate resume with AI'],
+    ['generateResumeFromText', 'Failed to generate resume from pasted text'],
+    ['buildResume', 'Resume generation failed'],
+    ['optimizeResume', 'Resume optimization failed'],
+    ['generateCoverLetter', 'Cover letter generation failed'],
+    ['polishCoverLetter', 'Cover letter polish failed'],
+  ])(
+    'uses the fallback message for non-Error %s failures',
+    async (method, message) => {
+      if (method === 'buildResume') {
+        pdf.generate.mockRejectedValueOnce('offline');
+      } else {
+        mockCreate.mockRejectedValueOnce('offline');
+      }
+      const args: Record<string, any> = {
+        generateResume: {
+          template: 'classic',
+          personalInfo: { fullName: 'Sok', email: 'sok@example.com' },
+          experience: [],
+          skills: [],
+          education: '',
+        },
+        generateResumeFromText: { sourceText: 'Sok', template: 'classic' },
+        buildResume: {
+          template: 'classic',
+          personalInfo: { fullName: 'Sok', email: 'sok@example.com' },
+        },
+        optimizeResume: {},
+        generateCoverLetter: {
+          employeeName: 'Sok',
+          companyName: 'Apsara',
+          openPositions: [],
+          employeeSkills: [],
+        },
+        polishCoverLetter: { coverLetterText: 'Original' },
+      };
+      const error = (await (service as any)
+        [method](args[method])
+        .catch((caught) => caught)) as RpcException;
+      expect(error.getError()).toBe(message);
+    },
+  );
+
+  it.each([
+    ['generateCoverLetterPdf', 'Cover letter PDF generation failed'],
+    ['generateInterviewPrepPdf', 'Interview prep PDF generation failed'],
+  ])(
+    'uses the PDF fallback for non-Error %s failures',
+    async (method, message) => {
+      pdf.generate.mockRejectedValueOnce('offline');
+      const dto =
+        method === 'generateCoverLetterPdf'
+          ? {
+              style: 'classic',
+              employeeName: 'Sok',
+              employeeJob: 'Engineer',
+              companyName: 'Apsara',
+              companyIndustry: 'Tech',
+              coverLetterText: 'Hello',
+            }
+          : {
+              interviewTitle: 'Interview',
+              companyName: 'Apsara',
+              companyIndustry: 'Tech',
+              questions: [],
+            };
+      const error = (await (service as any)
+        [method](dto)
+        .catch((caught) => caught)) as RpcException;
+      expect(error.getError()).toBe(message);
+    },
+  );
 });
