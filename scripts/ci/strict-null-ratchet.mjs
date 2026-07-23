@@ -32,6 +32,20 @@ try {
 const errors = output.split('\n').filter((line) => / error TS\d+:/.test(line));
 const count = errors.length;
 
+const CONFIG_ERROR_CODES = /\bTS5\d{3}\b/;
+const configErrors = errors.filter((line) => CONFIG_ERROR_CODES.test(line));
+
+if (configErrors.length > 0) {
+  console.error(
+    '\n✗ tsc failed to parse its configuration — this is not a type-check result:\n',
+  );
+  for (const line of configErrors) console.error(`    ${line}`);
+  console.error(
+    '\n  Fix tsconfig.strict.json (or tsconfig.json, which it extends) and re-run.\n',
+  );
+  process.exit(1);
+}
+
 const CRASH_CODES = /TS18047|TS18048|TS18049|TS2366/;
 const crashes = errors.filter((line) => CRASH_CODES.test(line));
 
