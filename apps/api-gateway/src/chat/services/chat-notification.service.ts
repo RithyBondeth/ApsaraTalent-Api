@@ -109,7 +109,7 @@ export class ChatNotificationService implements IChatNotificationService {
     }
   }
 
-  resolveCallEndContent(reason: string): string {
+  resolveCallEndContent(reason?: string): string {
     const normalized = (reason || 'ended').toLowerCase();
     if (normalized === 'missed') return 'Missed call';
     if (normalized === 'declined') return 'Call declined';

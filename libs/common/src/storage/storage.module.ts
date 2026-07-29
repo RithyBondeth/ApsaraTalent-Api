@@ -61,9 +61,9 @@ import { StorageService } from './storage.service';
             'storage.s3.forcePathStyle',
           ),
           publicBaseUrl: configService.get<string>('storage.s3.publicBaseUrl'),
-          signedUrlExpirySeconds: configService.get<number>(
-            'storage.s3.signedUrlExpirySeconds',
-          ),
+          signedUrlExpirySeconds:
+            configService.get<number>('storage.s3.signedUrlExpirySeconds') ??
+            900,
         });
       },
     },

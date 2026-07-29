@@ -69,7 +69,7 @@ export class AiProfileBioService implements IAiProfileBioService {
     refineProfileBioDTO: RefineProfileBioDTO,
   ): OpenAI.Chat.ChatCompletionMessageParam[] {
     const context = this.buildContext([
-      refineProfileBioDTO.skills?.slice(0, 8).length &&
+      (refineProfileBioDTO.skills?.slice(0, 8).length ?? 0) > 0 &&
         `Skills: ${refineProfileBioDTO.skills!.slice(0, 8).join(', ')}`,
       refineProfileBioDTO.careerScopes &&
         refineProfileBioDTO.careerScopes.length > 0 &&
