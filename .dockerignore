@@ -10,7 +10,7 @@ dist
 coverage
 .nyc_output
 *.log
-/storage/
+storage/**
 uploads/
 .vscode
 .cursor
