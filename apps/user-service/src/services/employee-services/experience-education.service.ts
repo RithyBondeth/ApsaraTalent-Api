@@ -55,6 +55,7 @@ export class ExperienceAndEducationService implements IExperienceAndEducationSer
         (error as Error).message ||
           "An error occurred while removing the employee's experience",
       );
+      if (error instanceof RpcException) throw error;
       throw new RpcException({
         message: "An error occurred while removing the employee's experience",
         statusCode: 500,
@@ -92,6 +93,7 @@ export class ExperienceAndEducationService implements IExperienceAndEducationSer
         (error as Error).message ||
           "An error occurred while removing the employee's education",
       );
+      if (error instanceof RpcException) throw error;
       throw new RpcException({
         message: "An error occurred while removing the employee's education",
         statusCode: 500,

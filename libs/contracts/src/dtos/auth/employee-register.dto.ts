@@ -15,6 +15,7 @@ import {
   IsString,
   IsStrongPassword,
   IsUrl,
+  MaxLength,
   ValidateNested,
 } from 'class-validator';
 import { LoginResponseDTO } from './login.dto';
@@ -153,6 +154,11 @@ class ExperienceDTO {
   @IsString()
   @IsNotEmpty()
   title: string;
+
+  @IsString()
+  @MaxLength(100)
+  @IsOptional()
+  company?: string;
 
   @IsString()
   @IsNotEmpty()

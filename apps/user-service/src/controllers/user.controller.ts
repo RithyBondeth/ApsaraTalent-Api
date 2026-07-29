@@ -28,7 +28,11 @@ import {
   FavoriteCountResponseDTO,
 } from '@app/contracts/dtos/user';
 import {
+  I_FAVORITES_SERVICE,
+  I_RECOMMENDATIONS_SERVICE,
   I_USER_SERVICE,
+  IFavoritesService,
+  IRecommendationsService,
   IUserService,
 } from '@app/contracts/interfaces/service/user-service.interface';
 import { PaginationDTO } from '@app/contracts/dtos/shared';
@@ -37,6 +41,10 @@ import { PaginationDTO } from '@app/contracts/dtos/shared';
 export class UserController implements IUserRpcController {
   constructor(
     @Inject(I_USER_SERVICE) private readonly userService: IUserService,
+    @Inject(I_FAVORITES_SERVICE)
+    private readonly favoritesService: IFavoritesService,
+    @Inject(I_RECOMMENDATIONS_SERVICE)
+    private readonly recommendationsService: IRecommendationsService,
   ) {}
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL)
@@ -78,7 +86,9 @@ export class UserController implements IUserRpcController {
   async employeeFavoriteCompany(
     @Payload() employeeCompanyFavoriteDTO: EmployeeCompanyFavoriteDTO,
   ): Promise<EmployeeFavoriteCompanyResponseDTO> {
-    return this.userService.employeeFavoriteCompany(employeeCompanyFavoriteDTO);
+    return this.favoritesService.employeeFavoriteCompany(
+      employeeCompanyFavoriteDTO,
+    );
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.REMOVE_COMPANY_FROM_FAVORITE)
@@ -86,7 +96,7 @@ export class UserController implements IUserRpcController {
     @Payload()
     employeeCompanyFavoriteWithFavoriteIdDTO: EmployeeCompanyFavoriteWithFavoriteIdDTO,
   ): Promise<EmployeeUnfavoriteCompanyResponseDTO> {
-    return this.userService.employeeUnfavoriteCompany(
+    return this.favoritesService.employeeUnfavoriteCompany(
       employeeCompanyFavoriteWithFavoriteIdDTO,
     );
   }
@@ -96,7 +106,7 @@ export class UserController implements IUserRpcController {
     @Payload()
     companyEmployeeFavoriteWithFavoriteIdDTO: CompanyEmployeeFavoriteWithFavoriteIdDTO,
   ): Promise<CompanyUnfavoriteEmployeeResponseDTO> {
-    return this.userService.companyUnfavoriteEmployee(
+    return this.favoritesService.companyUnfavoriteEmployee(
       companyEmployeeFavoriteWithFavoriteIdDTO,
     );
   }
@@ -105,35 +115,43 @@ export class UserController implements IUserRpcController {
   async companyFavoriteEmployee(
     @Payload() companyEmployeeFavoriteDTO: CompanyEmployeeFavoriteDTO,
   ): Promise<CompanyFavoriteEmployeeResponseDTO> {
-    return this.userService.companyFavoriteEmployee(companyEmployeeFavoriteDTO);
+    return this.favoritesService.companyFavoriteEmployee(
+      companyEmployeeFavoriteDTO,
+    );
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_EMPLOYEE_FAVORITE)
   async findAllEmployeeFavorite(
     @Payload() employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
   ): Promise<EmployeeFavoritesListItemDTO[]> {
-    return this.userService.findAllEmployeeFavorites(employeeFavoriteLookupDTO);
+    return this.favoritesService.findAllEmployeeFavorites(
+      employeeFavoriteLookupDTO,
+    );
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_COMPANY_FAVORITE)
   async findAllCompanyFavorite(
     @Payload() companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
   ): Promise<CompanyFavoritesListItemDTO[]> {
-    return this.userService.findAllCompanyFavorites(companyFavoriteLookupDTO);
+    return this.favoritesService.findAllCompanyFavorites(
+      companyFavoriteLookupDTO,
+    );
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.COUNT_COMPANY_FAVORITE)
   async countCompanyFavorite(
     @Payload() companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
   ): Promise<FavoriteCountResponseDTO> {
-    return this.userService.countCompanyFavorite(companyFavoriteLookupDTO);
+    return this.favoritesService.countCompanyFavorite(companyFavoriteLookupDTO);
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.COUNT_EMPLOYEE_FAVORITE)
   async countEmployeeFavorite(
     @Payload() employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
   ): Promise<FavoriteCountResponseDTO> {
-    return this.userService.countEmployeeFavorite(employeeFavoriteLookupDTO);
+    return this.favoritesService.countEmployeeFavorite(
+      employeeFavoriteLookupDTO,
+    );
   }
 
   @MessagePattern(USER_SERVICE.ACTIONS.FIND_ALL_CAREER_SCOPES)
@@ -150,7 +168,7 @@ export class UserController implements IUserRpcController {
   async getEmployeeRecommendations(
     @Payload() employeeRecommendationsDTO: EmployeeRecommendationsDTO,
   ): Promise<CompanyResponseDTO[]> {
-    return this.userService.getEmployeeRecommendations(
+    return this.recommendationsService.getEmployeeRecommendations(
       employeeRecommendationsDTO,
     );
   }
@@ -159,7 +177,7 @@ export class UserController implements IUserRpcController {
   async getCompanyRecommendations(
     @Payload() companyRecommendationsDTO: CompanyRecommendationsDTO,
   ): Promise<EmployeeResponseDTO[]> {
-    return this.userService.getCompanyRecommendations(
+    return this.recommendationsService.getCompanyRecommendations(
       companyRecommendationsDTO,
     );
   }

@@ -43,9 +43,7 @@ export const USER_SERVICE = {
     COUNT_EMPLOYEE_FAVORITE: { cmd: 'countEmployeeFavorite' },
 
     FIND_ALL_CAREER_SCOPES: { cmd: 'findAllCareerScopes' },
-
     UPDATE_PUSH_TOKEN: { cmd: 'updatePushNotificationToken' },
-
     CLEAR_CURRENT_USER_CACHE: { cmd: 'clearCurrentUserCache' },
 
     GET_EMPLOYEE_RECOMMENDATIONS: { cmd: 'getEmployeeRecommendations' },
@@ -57,5 +55,6 @@ export const USER_SERVICE = {
     GET_BLOCK_STATUS: { cmd: 'getBlockStatus' },
     GET_HIDDEN_PROFILE_IDS: { cmd: 'getHiddenProfileIds' },
     REPORT_USER: { cmd: 'reportUser' },
+    REPORT_PROBLEM: { cmd: 'reportProblem' },
   },
 };

@@ -2,6 +2,7 @@ import { User } from '@app/common/database/entities/user.entity';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
+import { hashRefreshToken } from '@app/common/jwt/refresh-token-hash.util';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
@@ -9,9 +10,10 @@ import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { checkEmail } from '@app/utils/functions/check-email';
 import { ILoginService } from '@app/contracts/interfaces/service/auth-service.interface';
-import { LoginDTO, LoginResponseDTO, UserResponseDTO } from '@app/contracts';
+import { LoginDTO, LoginResponseDTO } from '@app/contracts';
 import { CacheCleanupService } from '../../shared/services/cache-cleanup.service';
 import { RpcException } from '@nestjs/microservices';
+import { toUserResponseDTO } from '@app/common/utils/to-user-response.util';
 
 @Injectable()
 export class LoginService implements ILoginService {
@@ -79,7 +81,7 @@ export class LoginService implements ILoginService {
       ]);
 
       //Save refresh token and update login tracking
-      user.refreshToken = refreshToken;
+      user.refreshToken = hashRefreshToken(refreshToken);
       user.lastLoginMethod = ELoginMethod.EMAIL_PASSWORD;
       user.lastLoginAt = new Date();
       await this.userRepository.save(user);
@@ -92,8 +94,7 @@ export class LoginService implements ILoginService {
         message: 'Successfully Logged in',
         accessToken: accessToken,
         refreshToken: refreshToken,
-        user: new UserResponseDTO({
-          ...user,
+        user: toUserResponseDTO(user, {
           employee: undefined,
           company: undefined,
         }),

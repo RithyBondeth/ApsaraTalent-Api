@@ -1,16 +1,14 @@
 import { User } from '@app/common/database/entities/user.entity';
 import { JwtService } from '@app/common/jwt/jwt.service';
+import { hashRefreshToken } from '@app/common/jwt/refresh-token-hash.util';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { IRefreshTokenService } from '@app/contracts/interfaces/service/auth-service.interface';
-import {
-  RefreshTokenDTO,
-  RefreshTokenResponseDTO,
-  UserResponseDTO,
-} from '@app/contracts';
+import { RefreshTokenDTO, RefreshTokenResponseDTO } from '@app/contracts';
+import { toUserResponseDTO } from '@app/common/utils/to-user-response.util';
 
 @Injectable()
 export class RefreshTokenService implements IRefreshTokenService {
@@ -37,11 +35,12 @@ export class RefreshTokenService implements IRefreshTokenService {
         });
       }
 
-      //Find the user associated with the refresh token
+      //Find the user associated with the refresh token. The column holds a
+      //digest, so the presented token is hashed before comparison.
       const user = await this.userRepository.findOne({
         where: {
           id: decoded.id,
-          refreshToken: refreshTokenDTO.refreshToken,
+          refreshToken: hashRefreshToken(refreshTokenDTO.refreshToken),
         },
       });
       if (!user)
@@ -54,14 +53,14 @@ export class RefreshTokenService implements IRefreshTokenService {
       const [accessToken, refreshToken] = await Promise.all([
         this.jwtService.generateToken({
           id: user.id,
-          info: user.email,
+          info: user.email ?? user.phone,
           role: user.role,
         }),
         this.jwtService.generateRefreshToken(user.id),
       ]);
 
-      //Update the user refresh token
-      user.refreshToken = refreshToken;
+      //Rotate: the old digest is replaced, so the presented token dies here.
+      user.refreshToken = hashRefreshToken(refreshToken);
       await this.userRepository.save(user);
 
       //Return token and user details
@@ -69,19 +68,19 @@ export class RefreshTokenService implements IRefreshTokenService {
         message: 'New refresh token was created successfully',
         accessToken: accessToken,
         refreshToken: refreshToken,
-        user: new UserResponseDTO({
-          ...user,
+        user: toUserResponseDTO(user, {
           employee: undefined,
           company: undefined,
         }),
       });
     } catch (error) {
-      this.logger.error(
-        (error as Error).message || 'An error occurred while refreshing token.',
-      );
+      const message =
+        (error as Error)?.message ||
+        'An error occurred while refreshing token.';
+      this.logger.error(message);
       if (error instanceof RpcException) throw error;
       throw new RpcException({
-        message: (error as Error).message,
+        message,
         statusCode: 500,
       });
     }

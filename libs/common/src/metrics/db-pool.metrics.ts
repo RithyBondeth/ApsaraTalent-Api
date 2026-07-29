@@ -57,10 +57,9 @@ export class DbPoolMetrics implements OnModuleInit {
       () => pool.waitingCount ?? 0,
     );
 
+    const configuredMax = Number((this.dataSource.options as any)?.extra?.max);
     const max =
-      pool.options?.max ??
-      Number((this.dataSource.options as any)?.extra?.max) ??
-      0;
+      pool.options?.max ?? (Number.isFinite(configuredMax) ? configuredMax : 0);
     define('db_pool_max', 'Configured maximum size of the pg pool.', () => max);
 
     this.logger.log(`DB pool metrics registered (max=${max})`);

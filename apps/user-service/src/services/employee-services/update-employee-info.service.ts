@@ -4,6 +4,7 @@ import { Employee } from '@app/common/database/entities/employee/employee.entity
 import { Experience } from '@app/common/database/entities/employee/experience.entity';
 import { Skill } from '@app/common/database/entities/employee/skill.entity';
 import { Social } from '@app/common/database/entities/social.entity';
+import { User } from '@app/common/database/entities/user.entity';
 import { EmbeddingService } from '@app/common/embedding/embedding.service';
 import { CacheInvalidationService } from '@app/common/redis/cache-invalidation.service';
 import { Injectable } from '@nestjs/common';
@@ -33,6 +34,8 @@ export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
     private readonly socialRepository: Repository<Social>,
     @InjectRepository(Education)
     private readonly educationRepository: Repository<Education>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     private readonly logger: PinoLogger,
     private readonly cacheInvalidationService: CacheInvalidationService,
     private readonly embeddingService: EmbeddingService,
@@ -73,6 +76,7 @@ export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
         experienceIdsToDelete,
         educationIdsToDelete,
         socialIdsToDelete,
+        email,
         ...scalarFields
       } = updateEmployeeInfoDTO as any;
 
@@ -82,6 +86,15 @@ export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
       const previousJob = employee.job;
       Object.assign(employee, scalarFields);
       await this.employeeRepository.save(employee);
+
+      if (email !== undefined && employee.user) {
+        const normalizedEmail = email.trim().toLowerCase();
+        if (normalizedEmail && normalizedEmail !== employee.user.email) {
+          employee.user.email = normalizedEmail;
+          employee.user.isEmailVerified = false;
+          await this.userRepository.save(employee.user);
+        }
+      }
 
       // When the job/position title changes, re-embed it asynchronously.
       // Fire-and-forget: don't block the profile update response.
@@ -368,7 +381,10 @@ export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
 
       return new UpdateEmployeeInfoResponseDTO({
         message: 'Employee information updated successfully',
-        employee: new EmployeeResponseDTO(freshEmployee ?? employee),
+        employee: new EmployeeResponseDTO({
+          ...(freshEmployee ?? employee),
+          email: freshEmployee?.user?.email ?? employee.user?.email,
+        }),
       });
     } catch (error) {
       // preserve intended RpcException status codes (404, etc.)

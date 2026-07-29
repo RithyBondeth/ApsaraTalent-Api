@@ -234,12 +234,12 @@ export class RegisterService implements IRegisterService {
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      this.logger.error(
-        (error as Error).message ||
-          'An error occurred while registering company.',
-      );
+      const message =
+        (error as Error)?.message ||
+        'An error occurred while registering company.';
+      this.logger.error(message);
       throw new RpcException({
-        message: (error as Error).message,
+        message,
         statusCode: 500,
       });
     } finally {
@@ -432,12 +432,12 @@ export class RegisterService implements IRegisterService {
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      this.logger.error(
-        (error as Error).message ||
-          'An error occurred while registering employee.',
-      );
+      const message =
+        (error as Error)?.message ||
+        'An error occurred while registering employee.';
+      this.logger.error(message);
       throw new RpcException({
-        message: (error as Error).message,
+        message,
         statusCode: 500,
       });
     } finally {

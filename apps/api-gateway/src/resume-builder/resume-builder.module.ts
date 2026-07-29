@@ -7,6 +7,7 @@ import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/service-actions
 import { ResumeBuilderController } from './controllers/resume-builder.controller';
 import { ResumeTemplateController } from './controllers/resume-template.controller';
 import { AiProfileBioService } from './services/ai-profile-bio.service';
+import { AdminGuard } from '@app/common/guards/admin.guard';
 
 @Module({
   imports: [
@@ -27,6 +28,6 @@ import { AiProfileBioService } from './services/ai-profile-bio.service';
     JwtModule,
   ],
   controllers: [ResumeBuilderController, ResumeTemplateController],
-  providers: [AiProfileBioService, AiQuotaGuard],
+  providers: [AiProfileBioService, AiQuotaGuard, AdminGuard],
 })
 export class ResumeBuilderModule {}

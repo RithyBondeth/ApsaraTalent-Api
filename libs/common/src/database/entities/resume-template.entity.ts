@@ -13,6 +13,9 @@ export class ResumeTemplate {
   @Column({ nullable: true })
   image: string;
 
+  @Column({ unique: true })
+  templateKey: string;
+
   @Column()
   title: string;
 

@@ -14,6 +14,24 @@ export function normalizeAuthServiceError(error: unknown): {
   if (!error || typeof error !== 'object') return fallback;
 
   const err = error as Record<string, unknown>;
+
+  if (typeof err.message === 'string') {
+    try {
+      const parsed = JSON.parse(err.message) as Record<string, unknown>;
+      const parsedStatus = parsed.statusCode;
+      const parsedMessage = parsed.message;
+      if (
+        typeof parsedStatus === 'number' &&
+        typeof parsedMessage === 'string'
+      ) {
+        return { statusCode: parsedStatus, message: parsedMessage };
+      }
+      return fallback;
+    } catch {
+      // A normal, non-JSON error message is handled by the candidate scan.
+    }
+  }
+
   const candidates: unknown[] = [err, err.response, err.error, err.cause];
 
   for (const candidate of candidates) {

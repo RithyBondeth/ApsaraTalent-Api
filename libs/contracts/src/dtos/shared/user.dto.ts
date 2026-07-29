@@ -20,6 +20,7 @@ export class SkillResponseDTO {
 export class ExperienceResponseDTO {
   id?: string;
   title: string;
+  company?: string;
   description: string;
   @Type(() => Date)
   startDate: Date;
@@ -78,6 +79,7 @@ export class EmployeeResponseDTO {
   languages?: string[];
   expectedSalaryMin?: number;
   expectedSalaryMax?: number;
+  isHide: boolean;
   @Type(() => SkillResponseDTO)
   skills?: SkillResponseDTO[];
   @Type(() => ExperienceResponseDTO)
@@ -86,6 +88,8 @@ export class EmployeeResponseDTO {
   educations?: EducationResponseDTO[];
   @Type(() => SocialResponseDTO)
   socials?: SocialResponseDTO[];
+  @Type(() => CareerScopesResponseDTO)
+  careerScopes?: CareerScopesResponseDTO[];
   @Type(() => Date)
   createdAt?: Date;
   @Type(() => Date)

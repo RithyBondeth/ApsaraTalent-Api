@@ -1,7 +1,6 @@
 import { Company } from '@app/common/database/entities/company/company.entity';
 import { Image } from '@app/common/database/entities/company/image.entity';
-import { User } from '@app/common/database/entities/user.entity';
-import { RedisService } from '@app/common/redis/redis.service';
+import { CacheInvalidationService } from '@app/common/redis/cache-invalidation.service';
 import { UploadfileService } from '@app/common/uploadfile/uploadfile.service';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
@@ -31,11 +30,9 @@ export class ImageCompanyService implements IImageCompanyService {
     private readonly companyRepository: Repository<Company>,
     @InjectRepository(Image)
     private readonly imageRepository: Repository<Image>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
     private readonly uploadFileService: UploadfileService,
     private readonly logger: PinoLogger,
-    private readonly redisService: RedisService,
+    private readonly cacheInvalidationService: CacheInvalidationService,
   ) {}
 
   /**
@@ -45,21 +42,7 @@ export class ImageCompanyService implements IImageCompanyService {
    * - all users list cache (if used)
    */
   private async invalidateCompanyCaches(companyId: string): Promise<void> {
-    const users = await this.userRepository.find({
-      where: { company: { id: companyId } },
-      select: ['id'],
-    });
-
-    const keysToDelete: string[] = users.map((u) =>
-      this.redisService.generateUserKey('detail', u.id),
-    );
-
-    // if you cache "all users" list
-    keysToDelete.push(this.redisService.generateListKey('user', {}));
-
-    await Promise.all(keysToDelete.map((k) => this.redisService.del(k)));
-
-    this.logger.info({ companyId, keysToDelete }, 'Company caches invalidated');
+    await this.cacheInvalidationService.invalidateCompanyCache(companyId);
   }
 
   async uploadCompanyAvatar(
@@ -115,7 +98,7 @@ export class ImageCompanyService implements IImageCompanyService {
       });
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           "An error occurred while uploading the company's avatar.",
       );
 
@@ -123,7 +106,7 @@ export class ImageCompanyService implements IImageCompanyService {
 
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           "An error occurred while uploading the company's avatar.",
         statusCode: 500,
       });
@@ -168,7 +151,7 @@ export class ImageCompanyService implements IImageCompanyService {
       });
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           "An error occurred while removing the company's avatar.",
       );
 
@@ -176,7 +159,7 @@ export class ImageCompanyService implements IImageCompanyService {
 
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           "An error occurred while removing the company's avatar.",
         statusCode: 500,
       });
@@ -233,7 +216,7 @@ export class ImageCompanyService implements IImageCompanyService {
       });
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           "An error occurred while uploading the company's cover.",
       );
 
@@ -241,7 +224,7 @@ export class ImageCompanyService implements IImageCompanyService {
 
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           "An error occurred while uploading the company's cover.",
         statusCode: 500,
       });
@@ -285,7 +268,7 @@ export class ImageCompanyService implements IImageCompanyService {
       });
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           "An error occurred while removing the company's cover.",
       );
 
@@ -293,7 +276,7 @@ export class ImageCompanyService implements IImageCompanyService {
 
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           "An error occurred while removing the company's cover.",
         statusCode: 500,
       });
@@ -347,7 +330,7 @@ export class ImageCompanyService implements IImageCompanyService {
       });
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           "An error occurred while uploading the company's images.",
       );
 
@@ -355,7 +338,7 @@ export class ImageCompanyService implements IImageCompanyService {
 
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           "An error occurred while uploading the company's images.",
         statusCode: 500,
       });
@@ -397,7 +380,7 @@ export class ImageCompanyService implements IImageCompanyService {
       });
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           "An error occurred while removing the company's image.",
       );
 
@@ -405,7 +388,7 @@ export class ImageCompanyService implements IImageCompanyService {
 
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           "An error occurred while removing the company's image.",
         statusCode: 500,
       });

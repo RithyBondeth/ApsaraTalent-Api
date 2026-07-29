@@ -142,7 +142,7 @@ export class SearchEmployeeService implements ISearchEmployeeService {
           );
         }
 
-        if (withScopes && careerScopes?.length > 0) {
+        if (withScopes && (careerScopes?.length ?? 0) > 0) {
           qb.andWhere(
             `EXISTS (
                SELECT 1
@@ -214,7 +214,11 @@ export class SearchEmployeeService implements ISearchEmployeeService {
       let finalTotal = total;
       let isUsingFallback = false;
 
-      if (employees.length === 0 && careerScopes?.length > 0 && page === 1) {
+      if (
+        employees.length === 0 &&
+        (careerScopes?.length ?? 0) > 0 &&
+        page === 1
+      ) {
         const fallbackQuery = buildQuery(false);
         fallbackQuery.skip(0).take(pageSize);
         const [fbEmps, fbTotal] = await fallbackQuery.getManyAndCount();
@@ -243,13 +247,13 @@ export class SearchEmployeeService implements ISearchEmployeeService {
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while searching for employees.',
       );
       if (error instanceof RpcException) throw error;
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while searching for employees.',
         statusCode: 500,
       });

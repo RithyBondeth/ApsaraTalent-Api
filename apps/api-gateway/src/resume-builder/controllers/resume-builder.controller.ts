@@ -1,5 +1,6 @@
 import { AuthGuard } from '@app/common/guards/auth.guard';
 import { AiQuotaGuard } from '@app/common/throttler/guards/ai-quota.guard';
+import { AiQuotaAction } from '@app/common/throttler/decorators/ai-quota-action.decorator';
 import { IResumeBuilderController } from '@app/contracts/interfaces/controller/resume-builder-controller.interface';
 import {
   Body,
@@ -28,6 +29,7 @@ import {
   OptimizeResumeDTO,
   OptimizeResumeResponseDTO,
   RefineProfileBioDTO,
+  GenerateResumeFromTextDTO,
 } from '@app/contracts/dtos/resume';
 import { AiProfileBioService } from '../services/ai-profile-bio.service';
 import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/service-actions/resume-builder-service.constant';
@@ -44,8 +46,62 @@ export class ResumeBuilderController implements IResumeBuilderController {
     private readonly aiProfileBio: AiProfileBioService,
   ) {}
 
-  @Post('build-resume')
+  @Post('generate')
   @UseGuards(AiQuotaGuard)
+  @AiQuotaAction('cvGeneration')
+  @HttpCode(HttpStatus.OK)
+  async generateResume(
+    @Body() buildResumeDTO: BuildResumeDTO,
+  ): Promise<BuildResumeDTO> {
+    const aiInput = buildResumeDTO.personalInfo.profilePicture
+      ? {
+          ...buildResumeDTO,
+          personalInfo: {
+            ...buildResumeDTO.personalInfo,
+            profilePicture: undefined,
+          },
+        }
+      : buildResumeDTO;
+    const generated = await rpcCall<BuildResumeDTO>(
+      this.resumeBuilderClient,
+      RESUME_BUILDER_SERVICE.ACTIONS.GENERATE_RESUME,
+      aiInput,
+      RESUME.CONTROLLER_TIMEOUT,
+    );
+
+    // Defense in depth: identity, selected style and section order always come
+    // from the validated request. Only the constrained design may come from AI.
+    return {
+      ...generated,
+      personalInfo: { ...buildResumeDTO.personalInfo },
+      template: buildResumeDTO.template,
+      sectionOrder: buildResumeDTO.sectionOrder
+        ? [...buildResumeDTO.sectionOrder]
+        : undefined,
+    };
+  }
+
+  @Post('generate-from-text')
+  @UseGuards(AiQuotaGuard)
+  @AiQuotaAction('cvGeneration')
+  @HttpCode(HttpStatus.OK)
+  async generateResumeFromText(
+    @Body() generateResumeFromTextDTO: GenerateResumeFromTextDTO,
+  ): Promise<BuildResumeDTO> {
+    const generated = await rpcCall<BuildResumeDTO>(
+      this.resumeBuilderClient,
+      RESUME_BUILDER_SERVICE.ACTIONS.GENERATE_RESUME_FROM_TEXT,
+      generateResumeFromTextDTO,
+      RESUME.CONTROLLER_TIMEOUT,
+    );
+
+    return {
+      ...generated,
+      template: generateResumeFromTextDTO.template,
+    };
+  }
+
+  @Post('build-resume')
   @HttpCode(HttpStatus.CREATED)
   async buildResume(
     @Body() buildResumeDTO: BuildResumeDTO,
@@ -120,6 +176,7 @@ export class ResumeBuilderController implements IResumeBuilderController {
       ],
       0.6,
       res,
+      RESUME.AI_COVER_LETTER_MAX_TOKENS,
     );
   }
 
@@ -166,6 +223,7 @@ export class ResumeBuilderController implements IResumeBuilderController {
       ],
       0.4,
       res,
+      RESUME.AI_COVER_LETTER_MAX_TOKENS,
     );
   }
 
@@ -206,6 +264,7 @@ export class ResumeBuilderController implements IResumeBuilderController {
       ],
       0.4,
       res,
+      RESUME.AI_OPTIMIZE_MAX_TOKENS,
     );
   }
 
@@ -242,6 +301,6 @@ export class ResumeBuilderController implements IResumeBuilderController {
     @Res() res: Response,
   ): Promise<void> {
     const messages = this.aiProfileBio.getMessages(refineProfileBioDTO);
-    await this.aiStream.pipe(messages, 0.7, res);
+    await this.aiStream.pipe(messages, 0.7, res, RESUME.AI_REFINE_MAX_TOKENS);
   }
 }

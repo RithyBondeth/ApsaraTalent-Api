@@ -1,5 +1,6 @@
 export class ResumeTemplateResponseDTO {
   id: string;
+  templateKey: string;
   title: string;
   description: string;
   image: string | null;

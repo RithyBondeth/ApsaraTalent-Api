@@ -1,0 +1,138 @@
+import * as nodemailer from 'nodemailer';
+import { EmailService } from './email.service';
+
+jest.mock('nodemailer', () => ({ createTransport: jest.fn() }));
+
+describe('EmailService', () => {
+  const sendMail = jest.fn();
+  const values: Record<string, string | number> = {
+    'email.host': 'smtp.example.com',
+    'email.port': 587,
+    'email.user': 'user',
+    'email.password': 'password',
+    'email.from': 'noreply@example.com',
+  };
+  // emailConfig uses getOrThrow for these — they are .required() in the Joi
+  // schema, so the config is asserting a guarantee that already holds.
+  const config = {
+    get: jest.fn((key: string) => values[key]),
+    getOrThrow: jest.fn((key: string) => {
+      if (!(key in values)) throw new Error(`Missing config key: ${key}`);
+      return values[key];
+    }),
+  };
+  const logger = { info: jest.fn(), error: jest.fn() };
+
+  async function createService() {
+    (nodemailer.createTransport as jest.Mock).mockReturnValue({ sendMail });
+    const service = new EmailService(config as any, logger as any);
+    await new Promise((resolve) => setImmediate(resolve));
+    return service;
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    sendMail.mockResolvedValue({ messageId: 'email-1' });
+  });
+
+  it('initializes SMTP from application configuration', async () => {
+    await createService();
+    expect(nodemailer.createTransport).toHaveBeenCalledWith(
+      expect.objectContaining({
+        host: 'smtp.example.com',
+        port: 587,
+        secure: false,
+        auth: { user: 'user', pass: 'password' },
+      }),
+    );
+  });
+
+  it('uses the configured sender when none is provided', async () => {
+    const service = await createService();
+    await service.sendEmail({
+      to: 'person@example.com',
+      subject: 'Welcome',
+      text: 'Hello',
+    });
+    expect(sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: 'noreply@example.com',
+        to: 'person@example.com',
+      }),
+    );
+  });
+
+  it('preserves an explicitly supplied sender', async () => {
+    const service = await createService();
+    await service.sendEmail({
+      from: 'company@example.com',
+      to: 'person@example.com',
+      subject: 'Match',
+      text: 'Matched',
+    });
+    expect(sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({ from: 'company@example.com' }),
+    );
+  });
+
+  it('rejects missing recipients before calling SMTP', async () => {
+    const service = await createService();
+    await expect(
+      service.sendEmail({ subject: 'Invalid' } as any),
+    ).rejects.toThrow('Recipient email is required');
+    expect(sendMail).not.toHaveBeenCalled();
+  });
+
+  it('propagates a stable SMTP failure', async () => {
+    const service = await createService();
+    sendMail.mockRejectedValue(new Error('SMTP unavailable'));
+    await expect(
+      service.sendEmail({
+        to: 'person@example.com',
+        subject: 'Hello',
+        text: 'Hello',
+      }),
+    ).rejects.toThrow('SMTP unavailable');
+  });
+
+  it('normalizes non-Error SMTP failures', async () => {
+    const service = await createService();
+    sendMail.mockRejectedValue('offline');
+    await expect(
+      service.sendEmail({
+        to: 'person@example.com',
+        subject: 'Hello',
+        text: 'Hello',
+      }),
+    ).rejects.toThrow('Unknown error');
+    expect(logger.error).toHaveBeenCalledWith(
+      'Failed to send email: ',
+      'Unknown error',
+    );
+  });
+
+  it('fails construction immediately when required SMTP configuration is missing', () => {
+    config.getOrThrow.mockImplementationOnce(() => {
+      throw new Error('Missing SMTP host');
+    });
+
+    expect(() => new EmailService(config as any, logger as any)).toThrow(
+      'Missing SMTP host',
+    );
+    expect(nodemailer.createTransport).not.toHaveBeenCalled();
+  });
+
+  it('normalizes non-Error transporter initialization failures', () => {
+    (nodemailer.createTransport as jest.Mock).mockImplementationOnce(() => {
+      throw 'transport failure';
+    });
+
+    expect(() => new EmailService(config as any, logger as any)).toThrow(
+      'Unknown error',
+    );
+    expect(logger.error).toHaveBeenCalledWith(
+      'Failed to initialize email transporter: ',
+      'Unknown error',
+    );
+  });
+});

@@ -29,14 +29,17 @@ import {
 import { CanAccessAttachmentResponseDTO } from '@app/contracts/dtos/chat/chat-service/can-access-attachment.dto';
 import { rpcCall } from '../../utils/rpc-call';
 import { Response } from 'express';
-import { access } from 'fs/promises';
-import { basename, resolve, sep } from 'path';
+import { basename } from 'path';
+import { serveStorageObject, StorageService } from '@app/common';
 
 @Controller('chat')
 export class ChatController implements IChatController {
   private readonly logger = new Logger(ChatController.name);
 
-  constructor(@Inject(CHAT_SERVICE.NAME) private chatClient: ClientProxy) {}
+  constructor(
+    @Inject(CHAT_SERVICE.NAME) private chatClient: ClientProxy,
+    private readonly storageService: StorageService,
+  ) {}
 
   @Post('initiate')
   @UseGuards(AuthGuard)
@@ -130,20 +133,14 @@ export class ChatController implements IChatController {
       throw new ForbiddenException('Attachment access denied');
     }
 
-    const chatRoot = resolve(process.cwd(), 'storage', 'chat');
-    const filePath = resolve(chatRoot, date, filename);
-    if (!filePath.startsWith(`${chatRoot}${sep}`)) {
+    const key = `chat/${date}/${filename}`;
+
+    if (!(await this.storageService.exists(key))) {
       throw new NotFoundException('Attachment not found');
     }
 
-    try {
-      await access(filePath);
-    } catch {
-      throw new NotFoundException('Attachment not found');
-    }
-
-    res.setHeader('Cache-Control', 'private, no-store');
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    res.sendFile(filePath);
+    await serveStorageObject(res, this.storageService, key, {
+      cacheControl: 'private, no-store',
+    });
   }
 }

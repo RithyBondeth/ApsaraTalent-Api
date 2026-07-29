@@ -1,4 +1,13 @@
+export type TAiQuotaAction = 'cvGeneration';
+
+export interface IAiQuotaBucket {
+  used: number;
+  limit: number;
+  remaining: number;
+}
+
 export interface IAiQuotaUsage {
-  daily: { used: number; limit: number; remaining: number };
+  daily: IAiQuotaBucket;
+  actions: Record<TAiQuotaAction, IAiQuotaBucket>;
   resetsAt: string;
 }

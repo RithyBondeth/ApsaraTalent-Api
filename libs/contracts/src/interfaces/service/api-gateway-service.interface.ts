@@ -17,17 +17,11 @@ export const I_CHAT_MESSAGE_SERVICE = 'IChatMessageService';
 
 // AI Stream
 export interface IAiStreamService {
-  setSseHeaders(res: Response): void;
-
-  rawStream(
-    messages: OpenAI.Chat.ChatCompletionMessageParam[],
-    temperature: number,
-  ): AsyncGenerator<string, void, unknown>;
-
   pipe(
     messages: OpenAI.Chat.ChatCompletionMessageParam[],
     temperature: number,
     res: Response,
+    maxTokens?: number,
   ): Promise<void>;
 }
 

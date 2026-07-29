@@ -12,6 +12,7 @@ import {
   GenerateInterviewPrepPdfDTO,
   GenerateInterviewPrepPdfResponseDTO,
   RefineProfileBioDTO,
+  GenerateResumeFromTextDTO,
 } from '@app/contracts/dtos';
 import {
   CreateResumeTemplateDTO,
@@ -39,6 +40,10 @@ export interface IResumeTemplateController {
 export type IResumeTemplateRpcController = IResumeTemplateController;
 
 export interface IResumeBuilderController {
+  generateResume(buildResumeDTO: BuildResumeDTO): Promise<BuildResumeDTO>;
+  generateResumeFromText(
+    generateResumeFromTextDTO: GenerateResumeFromTextDTO,
+  ): Promise<BuildResumeDTO>;
   buildResume(buildResumeDTO: BuildResumeDTO): Promise<BuildResumeResponseDTO>;
   optimizeResume(
     optimizeResumeDTO: OptimizeResumeDTO,
@@ -79,4 +84,6 @@ export type IResumeBuilderRpcController = Omit<
   | 'streamPolishCoverLetter'
   | 'streamOptimizeResume'
   | 'streamRefineBio'
+  | 'generateResumeFromText'
+  | 'generateResume'
 >;

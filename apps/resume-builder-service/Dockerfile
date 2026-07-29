@@ -33,6 +33,9 @@ COPY --from=builder /app/dist/apps/resume-builder-service ./dist/apps/resume-bui
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 
+RUN chown -R node:node /app
+USER node
+
 EXPOSE 3003
 
 CMD ["node", "--enable-source-maps", "dist/apps/resume-builder-service/main"]

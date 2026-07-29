@@ -47,6 +47,7 @@ export class JobService implements IJobServiceService {
       });
       const result = jobs.map((job) => new JobResponseDTO(job));
       await this.redisService.set(cacheKey, result, JOB.JOB_LIST_TTL);
+      return result;
     } catch (error) {
       this.logger.error(
         (error as Error).message || 'An error occurred while fetching the job',
@@ -269,7 +270,7 @@ export class JobService implements IJobServiceService {
       let finalTotal = total;
       let isUsingFallback = false;
 
-      if (jobs.length === 0 && careerScopes?.length > 0 && page === 1) {
+      if (jobs.length === 0 && (careerScopes?.length ?? 0) > 0 && page === 1) {
         const fallbackQuery = buildQuery(false);
         fallbackQuery.skip(0).take(pageSize);
         const [fbJobs, fbTotal] = await fallbackQuery.getManyAndCount();

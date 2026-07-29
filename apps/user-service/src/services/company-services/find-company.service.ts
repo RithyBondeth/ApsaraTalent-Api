@@ -125,12 +125,12 @@ export class FindCompanyService implements IFindCompanyService {
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while fetching all of the companies.',
       );
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while fetching all of the companies.',
         statusCode: 500,
       });
@@ -158,12 +158,12 @@ export class FindCompanyService implements IFindCompanyService {
       return new CountAllUsersResponseDTO(result);
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while counting all companies.',
       );
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while counting all companies.',
         statusCode: 500,
       });
@@ -229,6 +229,15 @@ export class FindCompanyService implements IFindCompanyService {
         ],
       });
 
+      // An unknown company id must be a 404, not a TypeError on `user.company`.
+      // The block check above already guards this way; this lookup did not.
+      if (!user?.company) {
+        throw new RpcException({
+          statusCode: 404,
+          message: 'There is no company with this id',
+        });
+      }
+
       const result = new CompanyResponseDTO({
         ...user.company,
         email: user.email,
@@ -242,13 +251,16 @@ export class FindCompanyService implements IFindCompanyService {
 
       return result;
     } catch (error) {
+      // Preserve deliberate status codes (e.g. the 404 above); only genuinely
+      // unexpected failures become a 500.
+      if (error instanceof RpcException) throw error;
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while fetching a company.',
       );
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while fetching a company.',
         statusCode: 500,
       });

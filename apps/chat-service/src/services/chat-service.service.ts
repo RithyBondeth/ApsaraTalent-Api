@@ -276,6 +276,7 @@ export class ChatService implements IChatService {
         },
       });
     } catch (error) {
+      if (error instanceof RpcException) throw error;
       throw new RpcException({
         message: `Failed to create message: ${(error as Error).message}`,
         statusCode: 500,

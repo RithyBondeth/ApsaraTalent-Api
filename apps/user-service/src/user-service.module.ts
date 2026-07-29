@@ -43,7 +43,9 @@ import { ImageEmployeeController } from './controllers/employee-controllers/imag
 import { SearchEmployeeController } from './controllers/employee-controllers/search-employee.controller';
 import { UpdateEmployeeInfoController } from './controllers/employee-controllers/update-employee-info.controller';
 import { UploadEmployeeReferenceController } from './controllers/employee-controllers/upload-employee-reference.controller';
+import { EmailModule } from '@app/common/email/email.module';
 import { ModerationController } from './controllers/moderation/moderation.controller';
+import { SupportController } from './controllers/support/support.controller';
 import { UserController } from './controllers/user.controller';
 import { UserHealthController } from './health/health.controller';
 import { FindCompanyService } from './services/company-services/find-company.service';
@@ -57,7 +59,10 @@ import { SearchEmployeeService } from './services/employee-services/search-emplo
 import { UpdateEmployeeInfoService } from './services/employee-services/update-employee-info.service';
 import { UploadEmployeeReferenceService } from './services/employee-services/upload-employee-reference.service';
 import { ModerationService } from './services/moderation/moderation.service';
+import { SupportService } from './services/support/support.service';
 import { UserService } from './services/user.service';
+import { FavoritesService } from './services/favorites.service';
+import { RecommendationsService } from './services/recommendations.service';
 import {
   I_UPDATE_EMPLOYEE_INFO_SERVICE,
   I_IMAGE_EMPLOYEE_SERVICE,
@@ -68,9 +73,12 @@ import {
   I_UPLOAD_EMPLOYEE_REFERENCE_SERVICE,
   I_SEARCH_EMPLOYEE_SERVICE,
   I_USER_SERVICE,
+  I_FAVORITES_SERVICE,
+  I_RECOMMENDATIONS_SERVICE,
   I_OPEN_POSITION_SERVICE,
   I_EXPERIENCE_AND_EDUCATION_SERVICE,
   I_MODERATION_SERVICE,
+  I_SUPPORT_SERVICE,
 } from '@app/contracts/interfaces/service/user-service.interface';
 
 @Module({
@@ -98,6 +106,7 @@ import {
       UserReport,
     ]),
     LoggerModule,
+    EmailModule,
     UploadfileModule,
     JwtModule,
     EmbeddingModule,
@@ -128,6 +137,7 @@ import {
     OpenPositionController,
     ExperienceAndEducationController,
     ModerationController,
+    SupportController,
   ],
   providers: [
     {
@@ -148,12 +158,18 @@ import {
     },
     { provide: I_SEARCH_EMPLOYEE_SERVICE, useClass: SearchEmployeeService },
     { provide: I_USER_SERVICE, useClass: UserService },
+    { provide: I_FAVORITES_SERVICE, useClass: FavoritesService },
+    {
+      provide: I_RECOMMENDATIONS_SERVICE,
+      useClass: RecommendationsService,
+    },
     { provide: I_OPEN_POSITION_SERVICE, useClass: OpenPositionService },
     {
       provide: I_EXPERIENCE_AND_EDUCATION_SERVICE,
       useClass: ExperienceAndEducationService,
     },
     { provide: I_MODERATION_SERVICE, useClass: ModerationService },
+    { provide: I_SUPPORT_SERVICE, useClass: SupportService },
     CacheInvalidationService,
     RedisCacheHealthIndicator,
     {

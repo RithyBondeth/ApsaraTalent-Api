@@ -5,13 +5,16 @@ import { ENoticePeriod } from '@app/common/database/enums/notice-period.enum';
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsDate,
+  IsEmail,
   IsEnum,
   IsNumber,
   IsOptional,
   IsPositive,
   IsString,
   IsUrl,
+  MaxLength,
   ValidateNested,
 } from 'class-validator';
 
@@ -37,6 +40,11 @@ class ExperienceDTO {
   @IsString()
   @IsOptional()
   title?: string;
+
+  @IsString()
+  @MaxLength(100)
+  @IsOptional()
+  company?: string;
 
   @IsString()
   @IsOptional()
@@ -100,6 +108,10 @@ class EducationDTO {
 }
 
 export class UpdateEmployeeInfoDTO {
+  @IsEmail()
+  @IsOptional()
+  email?: string;
+
   @IsString()
   @IsOptional()
   firstname?: string;
@@ -111,7 +123,7 @@ export class UpdateEmployeeInfoDTO {
   @IsDate()
   @Type(() => Date)
   @IsOptional()
-  dob?: Date;
+  dob?: Date | null;
 
   @IsString()
   @IsOptional()
@@ -174,34 +186,63 @@ export class UpdateEmployeeInfoDTO {
 
   @IsEnum(EWorkMode)
   @IsOptional()
-  workMode?: EWorkMode;
+  workMode?: EWorkMode | null;
 
   @IsEnum(ENoticePeriod)
   @IsOptional()
-  noticePeriod?: ENoticePeriod;
+  noticePeriod?: ENoticePeriod | null;
 
   @IsUrl()
   @IsOptional()
-  portfolioUrl?: string;
+  portfolioUrl?: string | null;
 
   @IsUrl()
   @IsOptional()
-  linkedinUrl?: string;
+  linkedinUrl?: string | null;
 
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
-  languages?: string[];
+  languages?: string[] | null;
 
   @IsNumber()
   @IsPositive()
   @IsOptional()
-  expectedSalaryMin?: number;
+  expectedSalaryMin?: number | null;
 
   @IsNumber()
   @IsPositive()
   @IsOptional()
-  expectedSalaryMax?: number;
+  expectedSalaryMax?: number | null;
+
+  @IsBoolean()
+  @IsOptional()
+  isHide?: boolean;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  skillIdsToDelete?: string[];
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  careerScopeIdsToDelete?: string[];
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  experienceIdsToDelete?: string[];
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  educationIdsToDelete?: string[];
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  socialIdsToDelete?: string[];
 }
 
 export class UpdateEmployeeInfoResponseDTO {

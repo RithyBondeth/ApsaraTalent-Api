@@ -15,6 +15,7 @@ import {
   GenerateInterviewPrepPdfResponseDTO,
   OptimizeResumeDTO,
   OptimizeResumeResponseDTO,
+  GenerateResumeFromTextDTO,
 } from '@app/contracts/dtos/resume';
 import {
   I_RESUME_BUILDER_SERVICE,
@@ -27,6 +28,22 @@ export class ResumeBuilderController implements IResumeBuilderRpcController {
     @Inject(I_RESUME_BUILDER_SERVICE)
     private readonly resumeBuilderService: IResumeBuilderService,
   ) {}
+
+  @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.GENERATE_RESUME)
+  async generateResume(
+    @Payload() buildResumeDTO: BuildResumeDTO,
+  ): Promise<BuildResumeDTO> {
+    return await this.resumeBuilderService.generateResume(buildResumeDTO);
+  }
+
+  @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.GENERATE_RESUME_FROM_TEXT)
+  async generateResumeFromText(
+    @Payload() generateResumeFromTextDTO: GenerateResumeFromTextDTO,
+  ): Promise<BuildResumeDTO> {
+    return await this.resumeBuilderService.generateResumeFromText(
+      generateResumeFromTextDTO,
+    );
+  }
 
   @MessagePattern(RESUME_BUILDER_SERVICE.ACTIONS.BUILD_RESUME)
   async buildResume(

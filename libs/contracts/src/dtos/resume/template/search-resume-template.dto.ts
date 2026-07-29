@@ -1,9 +1,9 @@
-import { Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import { IsBoolean, IsOptional, IsString } from 'class-validator';
 import { ResumeTemplateResponseDTO } from './resume-template.dto';
 
 export class SearchResumeTemplateDTO {
-  @Type(() => Boolean)
+  @Transform(({ value }) => value === true || value === 'true')
   @IsOptional()
   @IsBoolean()
   isPremium: boolean;

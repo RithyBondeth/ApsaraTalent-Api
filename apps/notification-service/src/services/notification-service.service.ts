@@ -196,7 +196,7 @@ export class NotificationService implements INotificationService {
       },
       { isRead: true },
     );
-    if (result.affected > 0) {
+    if ((result.affected ?? 0) > 0) {
       await this.redisService.invalidateNotificationCaches(
         notificationIdDTO.userId,
       );
@@ -251,7 +251,7 @@ export class NotificationService implements INotificationService {
       id: notificationIdDTO.notificationId,
       user: { id: notificationIdDTO.userId } as any,
     });
-    if (result.affected > 0) {
+    if ((result.affected ?? 0) > 0) {
       await this.redisService.invalidateNotificationCaches(
         notificationIdDTO.userId,
       );

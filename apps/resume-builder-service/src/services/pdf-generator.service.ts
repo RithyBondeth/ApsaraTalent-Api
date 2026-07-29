@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import * as puppeteer from 'puppeteer';
 import { RESUME } from '@app/contracts/constants/domain/resume.constant';
 import { IPdfGeneratorService } from '@app/contracts/interfaces/service';
@@ -34,7 +39,7 @@ export class PdfGeneratorService
     // Collapse concurrent launches into a single in-flight promise.
     if (!this.launching) {
       this.launching = puppeteer
-        .launch({ headless: true, args: ['--no-sandbox'] })
+        .launch({ headless: true, args: ['--disable-dev-shm-usage'] })
         .then((b) => {
           this.browser = b;
           this.launching = null;
@@ -53,6 +58,11 @@ export class PdfGeneratorService
       this.active++;
       return;
     }
+    if (this.waiters.length >= RESUME.PDF_MAX_QUEUE) {
+      throw new ServiceUnavailableException(
+        'Resume generation is busy. Please try again shortly.',
+      );
+    }
     await new Promise<void>((resolve) => this.waiters.push(resolve));
     this.active++;
   }
@@ -69,6 +79,16 @@ export class PdfGeneratorService
     try {
       const browser = await this.getBrowser();
       page = await browser.newPage();
+      await page.setJavaScriptEnabled(false);
+      await page.setRequestInterception(true);
+      page.on('request', (request) => {
+        const url = request.url();
+        if (url === 'about:blank' || url.startsWith('data:')) {
+          void request.continue();
+          return;
+        }
+        void request.abort('blockedbyclient');
+      });
       await page.setContent(html, {
         waitUntil: 'networkidle0',
         timeout: RESUME.GENERATION_TIMEOUT,
@@ -77,11 +97,12 @@ export class PdfGeneratorService
       const pdf = await page.pdf({
         format: 'A4',
         printBackground: true,
+        preferCSSPageSize: true,
         margin: {
-          top: '20px',
-          right: '20px',
-          bottom: '20px',
-          left: '20px',
+          top: '0',
+          right: '0',
+          bottom: '0',
+          left: '0',
         },
         displayHeaderFooter: false,
       });

@@ -2,6 +2,7 @@ import { User } from '@app/common/database/entities/user.entity';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
+import { hashRefreshToken } from '@app/common/jwt/refresh-token-hash.util';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
@@ -49,8 +50,6 @@ export class GoogleAuthService implements IGoogleAuthService {
       }
       user.lastLoginMethod = ELoginMethod.GOOGLE;
       user.lastLoginAt = new Date();
-      await this.userRepository.save(user);
-
       // Generate JWT tokens
       const payload: IPayload = {
         id: user.id,
@@ -62,6 +61,9 @@ export class GoogleAuthService implements IGoogleAuthService {
         this.jwtService.generateToken(payload),
         this.jwtService.generateRefreshToken(user.id),
       ]);
+
+      user.refreshToken = hashRefreshToken(refreshToken);
+      await this.userRepository.save(user);
 
       // Clear Cache in USER SERVICE (non-blocking — must not prevent login)
       this.cacheCleanupService.clearSafe(user.id, 'Google');

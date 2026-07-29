@@ -13,6 +13,7 @@ import {
   GenerateCoverLetterPdfResponseDTO,
   GenerateInterviewPrepPdfDTO,
   GenerateInterviewPrepPdfResponseDTO,
+  GenerateResumeFromTextDTO,
 } from '@app/contracts/dtos';
 import {
   CreateResumeTemplateDTO,
@@ -25,6 +26,10 @@ export const I_RESUME_TEMPLATE_SERVICE = 'IResumeTemplateService';
 export const I_PDF_GENERATOR_SERVICE = 'IPdfGeneratorService';
 
 export interface IResumeBuilderService {
+  generateResume(buildResumeDTO: BuildResumeDTO): Promise<BuildResumeDTO>;
+  generateResumeFromText(
+    generateResumeFromTextDTO: GenerateResumeFromTextDTO,
+  ): Promise<BuildResumeDTO>;
   buildResume(buildResumeDTO: BuildResumeDTO): Promise<BuildResumeResponseDTO>;
   optimizeResume(
     optimizeResumeDTO: OptimizeResumeDTO,

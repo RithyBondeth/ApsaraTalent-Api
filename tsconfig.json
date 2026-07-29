@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "ignoreDeprecations": "5.0",
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,
@@ -11,6 +12,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": ".",
+    "types": ["node", "jest"],
     "incremental": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
@@ -21,22 +23,22 @@
     "strict": true,
     "paths": {
       "@app/common": [
-        "libs/common/src"
+        "./libs/common/src"
       ],
       "@app/common/*": [
-        "libs/common/src/*"
+        "./libs/common/src/*"
       ],
       "@app/contracts": [
-        "libs/contracts/src"
+        "./libs/contracts/src"
       ],
       "@app/contracts/*": [
-        "libs/contracts/src/*"
+        "./libs/contracts/src/*"
       ],
       "@app/utils": [
-        "libs/utils/src"
+        "./libs/utils/src"
       ],
       "@app/utils/*": [
-        "libs/utils/src/*"
+        "./libs/utils/src/*"
       ]
     }
   }

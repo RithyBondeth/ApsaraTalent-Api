@@ -40,6 +40,8 @@ import { PaginationDTO } from '@app/contracts/dtos/shared';
 
 export const I_JOB_SERVICE_SERVICE = 'IJobServiceService';
 export const I_MATCHING_SERVICE = 'IMatchingService';
+export const I_MATCHING_ANALYTICS_SERVICE = 'IMatchingAnalyticsService';
+export const I_MATCHING_AI_SERVICE = 'IMatchingAiService';
 export const I_INTERVIEW_SERVICE = 'IInterviewService';
 export const I_APPLICATION_SERVICE = 'IApplicationService';
 
@@ -70,9 +72,15 @@ export interface IMatchingService {
   findCurrentCompanyMatchingCount(
     companyMatchLookupDTO: CompanyMatchingLookupDTO,
   ): Promise<MatchCountResponseDTO>;
+}
+
+export interface IMatchingAnalyticsService {
   getMatchingAnalytics(
     matchAnalyticsDTO: MatchingAnalyticsDTO,
   ): Promise<MatchingAnalyticsResponseDTO>;
+}
+
+export interface IMatchingAiService {
   getAiMatchExplanation(
     aiMatchExplanationDTO: AiMatchExplanationDTO,
   ): Promise<AiMatchExplanationResponseDTO>;

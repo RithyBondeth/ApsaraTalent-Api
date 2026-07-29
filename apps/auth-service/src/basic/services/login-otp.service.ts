@@ -3,6 +3,7 @@ import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
+import { hashRefreshToken } from '@app/common/jwt/refresh-token-hash.util';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -13,11 +14,11 @@ import { AUTH } from '@app/contracts/constants/domain/auth.constant';
 import {
   LoginOtpDTO,
   LoginOtpResponseDTO,
-  UserResponseDTO,
   VerifyOtpDTO,
   VerifyOtpResponseDTO,
 } from '@app/contracts';
 import { CacheCleanupService } from '../../shared/services/cache-cleanup.service';
+import { toUserResponseDTO } from '@app/common/utils/to-user-response.util';
 
 @Injectable()
 export class LoginOTPService implements ILoginOTPService {
@@ -82,7 +83,7 @@ export class LoginOTPService implements ILoginOTPService {
           statusCode: 401,
         });
 
-      if (user.otpCodeExpires < new Date())
+      if (!user.otpCodeExpires || user.otpCodeExpires < new Date())
         throw new RpcException({ message: 'OTP expired', statusCode: 401 });
 
       // Prepare payload early to start JWT generation in parallel
@@ -101,7 +102,7 @@ export class LoginOTPService implements ILoginOTPService {
       // Update user record
       user.otpCode = null;
       user.otpCodeExpires = null;
-      user.refreshToken = refreshToken;
+      user.refreshToken = hashRefreshToken(refreshToken);
       user.lastLoginMethod = ELoginMethod.PHONE_OTP;
       user.lastLoginAt = new Date();
 
@@ -115,8 +116,7 @@ export class LoginOTPService implements ILoginOTPService {
         message: 'OTP verified successfully',
         accessToken,
         refreshToken,
-        user: new UserResponseDTO({
-          ...user,
+        user: toUserResponseDTO(user, {
           employee: undefined,
           company: undefined,
         }),

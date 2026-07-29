@@ -1,11 +1,13 @@
-import { JwtModule, LoggerModule } from '@app/common';
+import { JwtModule, LoggerModule, ThrottlerModule } from '@app/common';
+import { ThrottlerGuard } from '@app/common/throttler/guards/throttler.guard';
 import { ConfigModule } from '@app/common/config';
 import { UploadfileModule } from '@app/common/uploadfile/uploadfile.module';
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AiStreamModule } from './ai-stream/ai-stream.module';
 import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './chat/chat.module';
+import { StorageHttpModule } from './storage/storage-http.module';
 import { HealthModule } from './health/health.module';
 import { JobModule } from './job/job.module';
 import { NotificationModule } from './notification/notification.module';
@@ -27,6 +29,7 @@ import { AiModule } from './ai/ai.module';
     AiModule,
     AuthModule,
     UploadfileModule,
+    StorageHttpModule,
     HealthModule,
     ResumeBuilderModule,
     UserModule,
@@ -36,11 +39,16 @@ import { AiModule } from './ai/ai.module';
     JobModule,
     NotificationModule,
     MetricsModule,
+    ThrottlerModule,
   ],
   providers: [
     {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
   ],
 })

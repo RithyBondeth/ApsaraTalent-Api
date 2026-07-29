@@ -65,7 +65,7 @@ export class ResumeParseService implements IResumeParseService {
                       - description: professional summary, max 300 characters
                       - skills: flat array of skill name strings (e.g. ["React", "Node.js", "PostgreSQL"])
                       - experiences: array of work experience objects — use EXACTLY these keys:
-                          [{ "title": "<job title>", "description": "<responsibilities / achievements>", "startDate": "YYYY-MM-DD", "endDate": "YYYY-MM-DD" }, ...]
+                          [{ "title": "<job title>", "company": "<employer name>", "description": "<responsibilities / achievements>", "startDate": "YYYY-MM-DD", "endDate": "YYYY-MM-DD" }, ...]
                           Use today's date (${new Date().toISOString().slice(0, 10)}) as endDate for roles still in progress.
                           Extract ALL positions listed in the resume.
                       - educations: array of education objects — use EXACTLY these keys:

@@ -69,6 +69,10 @@ import {
   BlockStatusResponseDTO,
   ReportUserResponseDTO,
 } from '../../dtos/user/moderation/moderation.dto';
+import {
+  ReportProblemDTO,
+  ReportProblemResponseDTO,
+} from '../../dtos/user/support/support.dto';
 
 export const I_UPDATE_EMPLOYEE_INFO_SERVICE = 'IUpdateEmployeeInfoService';
 export const I_IMAGE_EMPLOYEE_SERVICE = 'IImageEmployeeService';
@@ -80,10 +84,13 @@ export const I_UPLOAD_EMPLOYEE_REFERENCE_SERVICE =
   'IUploadEmployeeReferenceService';
 export const I_SEARCH_EMPLOYEE_SERVICE = 'ISearchEmployeeService';
 export const I_USER_SERVICE = 'IUserService';
+export const I_FAVORITES_SERVICE = 'IFavoritesService';
+export const I_RECOMMENDATIONS_SERVICE = 'IRecommendationsService';
 export const I_OPEN_POSITION_SERVICE = 'IOpenPositionService';
 export const I_EXPERIENCE_AND_EDUCATION_SERVICE =
   'IExperienceAndEducationService';
 export const I_MODERATION_SERVICE = 'IModerationService';
+export const I_SUPPORT_SERVICE = 'ISupportService';
 
 export interface IUpdateEmployeeInfoService {
   updateEmployeeInfo(
@@ -168,6 +175,10 @@ export interface IUserService {
     updatePushNotificationTokenDTO: UpdatePushNotificationTokenDTO,
   ): Promise<UpdatePushNotificationTokenResponseDTO>;
   findAllCareerScopes(): Promise<CareerScopesResponseDTO[]>;
+  clearCurrentUserCache(userIdDTO: UserIdDTO): Promise<void>;
+}
+
+export interface IFavoritesService {
   employeeFavoriteCompany(
     employeeCompanyFavoriteDTO: EmployeeCompanyFavoriteDTO,
   ): Promise<EmployeeFavoriteCompanyResponseDTO>;
@@ -192,7 +203,9 @@ export interface IUserService {
   countEmployeeFavorite(
     employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
   ): Promise<FavoriteCountResponseDTO>;
-  clearCurrentUserCache(userIdDTO: UserIdDTO): Promise<void>;
+}
+
+export interface IRecommendationsService {
   getEmployeeRecommendations(
     employeeRecommendationsDTO: EmployeeRecommendationsDTO,
   ): Promise<CompanyResponseDTO[]>;
@@ -229,4 +242,10 @@ export interface IModerationService {
     getHiddenProfileIdsDTO: GetHiddenProfileIdsDTO,
   ): Promise<string[]>;
   reportUser(reportUserDTO: ReportUserDTO): Promise<ReportUserResponseDTO>;
+}
+
+export interface ISupportService {
+  reportProblem(
+    reportProblemDTO: ReportProblemDTO,
+  ): Promise<ReportProblemResponseDTO>;
 }

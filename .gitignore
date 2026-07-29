@@ -44,7 +44,7 @@ lerna-debug.log*
 !.env.test
 
 # Storage directory
-storage/
+storage/**
 uploads/
 
 # Old environment files (to be removed)
@@ -63,3 +63,8 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Database backups — contain full production data (PII). Never commit.
+/backups/
+*.dump
+*.sql.gz

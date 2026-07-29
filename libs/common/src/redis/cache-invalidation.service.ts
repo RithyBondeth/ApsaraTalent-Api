@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Company } from '../database/entities/company/company.entity';
 import { User } from '../database/entities/user.entity';
 import { RedisService } from './redis.service';
 
@@ -12,8 +11,6 @@ export class CacheInvalidationService {
 
   constructor(
     private readonly redisService: RedisService,
-    @InjectRepository(Company)
-    private readonly companyRepository: Repository<Company>,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
   ) {}
 
@@ -23,19 +20,55 @@ export class CacheInvalidationService {
       select: ['id'],
     });
 
-    const keysToDelete: string[] = users.map((u) =>
-      this.redisService.generateUserKey('detail', u.id),
-    );
+    const keysToDelete: string[] = [
+      this.redisService.generateEmployeeKey('detail', employeeId),
+      ...users.flatMap((user) => [
+        this.redisService.generateUserKey('detail', user.id),
+        this.redisService.generateAuthSessionKey(user.id),
+      ]),
+    ];
 
-    // if you cache "all users" list
-    keysToDelete.push(this.redisService.generateListKey('user', {}));
-
-    await Promise.all(keysToDelete.map((k) => this.redisService.del(k)));
+    await Promise.all([
+      ...keysToDelete.map((key) => this.redisService.del(key)),
+      this.redisService.delPattern('employee:list:*'),
+      this.redisService.delPattern('employee:search:*'),
+      this.redisService.delPattern('user:list:*'),
+      this.redisService.delPattern('employee-recommendations:list:*'),
+      this.redisService.delPattern('company-recommendations:list:*'),
+      this.redisService.invalidateMatchingProfileCaches(),
+    ]);
 
     this.logger.log(
       { employeeId, keysToDelete },
       'Employee caches invalidated',
     );
+  }
+
+  async invalidateCompanyCache(companyId: string): Promise<void> {
+    const users = await this.userRepository.find({
+      where: { company: { id: companyId } },
+      select: ['id'],
+    });
+
+    const keysToDelete: string[] = [
+      this.redisService.generateCompanyKey('detail', companyId),
+      ...users.flatMap((user) => [
+        this.redisService.generateUserKey('detail', user.id),
+        this.redisService.generateAuthSessionKey(user.id),
+      ]),
+    ];
+
+    await Promise.all([
+      ...keysToDelete.map((key) => this.redisService.del(key)),
+      this.redisService.delPattern('company:list:*'),
+      this.redisService.delPattern('user:list:*'),
+      this.redisService.delPattern('employee-recommendations:list:*'),
+      this.redisService.delPattern('company-recommendations:list:*'),
+      this.redisService.invalidateJobSearchCaches(),
+      this.redisService.invalidateMatchingProfileCaches(),
+    ]);
+
+    this.logger.log({ companyId, keysToDelete }, 'Company caches invalidated');
   }
 
   // ==================== USER EVENTS ====================
@@ -90,50 +123,7 @@ export class CacheInvalidationService {
   @OnEvent('company.updated')
   async handleCompanyUpdate(payload: { companyId: string }): Promise<void> {
     const { companyId } = payload;
-
-    this.logger.warn(`[EVENT] company.updated received: ${companyId}`);
-
-    // 1) Find company + its owning user (most reliable way)
-    const company = await this.companyRepository.findOne({
-      where: { id: companyId },
-      relations: ['user'], // <-- important
-      select: { id: true, user: { id: true } } as any,
-    });
-
-    const ownerUserId = company?.user?.id;
-
-    // 2) Build the exact keys you want to delete (log them!)
-    const companyDetailKey = this.redisService.generateCompanyKey(
-      'detail',
-      companyId,
-    );
-    const userDetailKey = ownerUserId
-      ? this.redisService.generateUserKey('detail', ownerUserId)
-      : null;
-
-    this.logger.warn(`[CACHE] deleting company key: ${companyDetailKey}`);
-    if (userDetailKey)
-      this.logger.warn(`[CACHE] deleting user key: ${userDetailKey}`);
-    else
-      this.logger.warn(
-        `[CACHE] owner user not found for companyId=${companyId} (user cache not deleted)`,
-      );
-
-    // 3) Delete caches
-    await Promise.all([
-      this.redisService.del(companyDetailKey),
-      this.redisService.delPattern('company:list:*'),
-
-      // delete the cached user detail that includes this company
-      userDetailKey ? this.redisService.del(userDetailKey) : Promise.resolve(),
-
-      // optional: if your user list includes company info
-      this.redisService.delPattern('user:list:*'),
-    ]);
-
-    this.logger.log(
-      `Invalidated cache for company ${companyId} and user ${ownerUserId ?? 'N/A'}`,
-    );
+    await this.invalidateCompanyCache(companyId);
   }
 
   @OnEvent('company.favorites.updated')

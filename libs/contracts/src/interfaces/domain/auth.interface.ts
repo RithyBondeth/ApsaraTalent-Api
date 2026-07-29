@@ -86,6 +86,7 @@ export interface IParsedResumeData {
   skills?: string[];
   experiences?: Array<{
     title: string;
+    company?: string;
     description: string;
     /** ISO date string YYYY-MM-DD */
     startDate: string;

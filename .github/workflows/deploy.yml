@@ -9,6 +9,71 @@ on:
       - main
 
 jobs:
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # A real .env was committed once before and its credentials are still in
+      # this repository's history. This gate makes the same mistake fail the
+      # build instead of reaching the remote a second time.
+      - name: Reject committed environment files
+        run: |
+          tracked=$(git ls-files | grep -E '(^|/)\.env' | grep -vE '\.env\.example$|\.env\.test$|test/e2e/e2e\.env$' || true)
+          if [ -n "$tracked" ]; then
+            echo "::error::Environment files must never be committed:"
+            echo "$tracked"
+            exit 1
+          fi
+
+  dependencies:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Capture complete production dependency audit
+        run: npm audit --omit=dev --json > dependency-audit.json || true
+
+      - name: Reject high or critical production advisories
+        run: npm run security:audit
+
+      - name: Upload dependency audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-dependency-audit
+          path: dependency-audit.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Reject credential-shaped literals
+        run: |
+          # Long random-looking assignments to secret-named variables, well-known
+          # key prefixes, and connection strings with an embedded password
+          # (postgres://user:pass@host — a real DATABASE_URL was once committed
+          # this way in a root-level debug script that this glob used to miss).
+          # Scoped to source and config, not lockfiles.
+          if git grep -nIE \
+            -e 'sk-[A-Za-z0-9]{20,}' \
+            -e 'AKIA[0-9A-Z]{16}' \
+            -e 'SG\.[A-Za-z0-9_-]{20,}' \
+            -e '-----BEGIN [A-Z ]*PRIVATE KEY-----' \
+            -e '(SECRET|PASSWORD|TOKEN|API_KEY)[A-Z_]*\s*[:=]\s*["'"'"']?[A-Za-z0-9/+_-]{24,}' \
+            -e '(postgres(ql)?|mysql|mongodb(\+srv)?|redis|rediss|amqps?)://[^\s"'"'"']+:[^\s"'"'"']+@' \
+            -- 'apps/**' 'libs/**' 'scripts/**' 'migrations/**' 'test/**' '*.ts' '*.js' '*.mjs' '*.json' '*.yml' '*.toml' \
+            ':!*.spec.ts' ':!package-lock.json' ':!test/e2e/e2e.env'; then
+            echo "::error::Possible hard-coded credential above. Move it to an environment variable."
+            exit 1
+          fi
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -25,7 +90,7 @@ jobs:
         run: npm ci
 
       - name: Run lint
-        run: npm run lint
+        run: npm run lint:check
 
   test:
     name: Test
@@ -44,6 +109,15 @@ jobs:
 
       - name: Run automated tests
         run: npm run test:cov -- --runInBand
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-coverage
+          path: coverage/
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Run isolated end-to-end tests
         run: npm run test:e2e
@@ -67,14 +141,77 @@ jobs:
       - name: Typecheck (all services)
         run: npx tsc --noEmit -p tsconfig.json
 
+      # Existing strictNullChecks debt is tolerated; new debt is not, and any
+      # new possibly-null dereference fails outright.
+      - name: Strict-null ratchet
+        run: npm run typecheck:strict
+
+      - name: Validate load-test configuration
+        run: npm run test:load:check
+
       - name: Build API Gateway
         run: npm run build
+
+  migrate:
+    name: Run DB Migrations
+    runs-on: ubuntu-latest
+    needs: [lint, test, build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Migrations run here rather than at application boot: eight services
+      # share one database, so booting them together would race eight concurrent
+      # migration runs against each other. Running once, before any service is
+      # redeployed, keeps it to a single ordered pass.
+      #
+      # NOTE: the very first run against the existing production database must be
+      # preceded by a one-off `npm run migration:baseline -- --apply` from a
+      # workstation — production already has all nine migrations applied by hand
+      # but has no migrations table recording it. See migrations/README.md.
+      # Fail loudly and legibly rather than letting TypeORM emit a cryptic
+      # connection error. This job intentionally BLOCKS the deploy: shipping code
+      # against an un-migrated schema is the exact failure this pipeline exists
+      # to prevent, so skipping when unconfigured would defeat the purpose.
+      - name: Verify DATABASE_URL secret is configured
+        env:
+          DATABASE_URL: ${{ secrets['DATABASE_URL'] }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL repository secret is not set."
+            echo "Add it under Settings -> Secrets and variables -> Actions."
+            echo "Before the first run, baseline the existing production database:"
+            echo "  DATABASE_URL=<production-url> npm run migration:baseline -- --apply"
+            echo "See migrations/README.md for the full rollout procedure."
+            exit 1
+          fi
+
+      - name: Show migration status
+        run: npm run migration:show
+        env:
+          DATABASE_URL: ${{ secrets['DATABASE_URL'] }}
+
+      - name: Apply pending migrations
+        run: npm run migration:run
+        env:
+          DATABASE_URL: ${{ secrets['DATABASE_URL'] }}
 
   deploy:
     name: Deploy All Services
     runs-on: ubuntu-latest
-    needs: [lint, build]
+    needs: [lint, build, migrate]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      RAILWAY_TOKEN: ${{ secrets['RAILWAY_TOKEN'] }}
     steps:
       - uses: actions/checkout@v4
 
@@ -83,39 +220,21 @@ jobs:
 
       - name: Deploy api-gateway
         run: railway up --service api-gateway --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
       - name: Deploy auth-service
         run: railway up --service auth-service --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
       - name: Deploy user-service
         run: railway up --service user-service --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
       - name: Deploy resume-builder-service
         run: railway up --service resume-builder-service --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
       - name: Deploy chat-service
         run: railway up --service chat-service --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
       - name: Deploy job-service
         run: railway up --service job-service --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
       - name: Deploy notification-service
         run: railway up --service notification-service --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-
-      # payment-service is excluded — PaymentModule is currently disabled in api-gateway.
-      # To re-enable: uncomment PaymentModule in apps/api-gateway/src/api-gateway.module.ts
-      # then add a deploy step for payment-service here.

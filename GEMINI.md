@@ -18,7 +18,6 @@ The project is a monorepo managed with Nest CLI, consisting of several microserv
 -   **resume-builder-service**: Provides functionality for creating and managing resumes.
 -   **chat-service**: Powers the real-time chat functionality.
 -   **job-service**: Manages job postings and applications.
--   **payment-service**: Handles all payment-related logic.
 -   **notification-service**: Manages and sends notifications to users.
 
 ### Shared Library:
@@ -65,7 +64,6 @@ You can run each microservice individually in development mode. This is useful f
 -   **Resume Builder Service**: `npm run start:dev:resume`
 -   **Chat Service**: `npm run start:dev:chat`
 -   **Job Service**: `npm run start:dev:job`
--   **Payment Service**: `npm run start:dev:payment`
 -   **Notification Service**: `npm run start:dev:notification`
 
 ## Testing

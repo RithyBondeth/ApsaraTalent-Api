@@ -5,12 +5,20 @@ import {
 } from '@app/contracts/interfaces/domain/notification.interface';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as admin from 'firebase-admin';
+import {
+  App,
+  cert,
+  getApp,
+  getApps,
+  initializeApp,
+  ServiceAccount,
+} from 'firebase-admin/app';
+import { getMessaging, Message } from 'firebase-admin/messaging';
 import { PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class PushNotificationService implements IPushNotificationService {
-  private firebaseApp: admin.app.App | null = null;
+  private firebaseApp: App | null = null;
 
   constructor(
     private readonly configService: ConfigService,
@@ -29,7 +37,7 @@ export class PushNotificationService implements IPushNotificationService {
       return;
     }
 
-    let serviceAccount: admin.ServiceAccount;
+    let serviceAccount: ServiceAccount;
     try {
       serviceAccount = JSON.parse(raw);
     } catch {
@@ -50,16 +58,16 @@ export class PushNotificationService implements IPushNotificationService {
       const clientEmail =
         (serviceAccount as any).client_email ||
         (serviceAccount as any).clientEmail;
-      this.firebaseApp = admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
+      this.firebaseApp = initializeApp({
+        credential: cert(serviceAccount),
         projectId,
       });
       this.logger.info(
         `Firebase Admin initialized for project ${projectId} with ${clientEmail}`,
       );
     } catch (error: any) {
-      if (admin.apps.length > 0) {
-        this.firebaseApp = admin.app();
+      if (getApps().length > 0) {
+        this.firebaseApp = getApp();
         return;
       }
       this.logger.error(
@@ -115,7 +123,7 @@ export class PushNotificationService implements IPushNotificationService {
       // Deep-link URL — opens the correct chat thread when the user clicks the notification.
       const link = normalizedData?.url || '/notification';
 
-      const message: admin.messaging.Message = {
+      const message: Message = {
         token,
         notification: {
           title: pushNotificationPayload.title,
@@ -144,7 +152,7 @@ export class PushNotificationService implements IPushNotificationService {
         },
       };
 
-      const response = await admin.messaging(this.firebaseApp).send(message);
+      const response = await getMessaging(this.firebaseApp).send(message);
       return { success: true, response };
     } catch (error: any) {
       this.logger.error(

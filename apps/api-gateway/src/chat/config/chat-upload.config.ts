@@ -1,8 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
-import { existsSync, mkdirSync } from 'fs';
+import { extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { createUploadStorageEngine } from '@app/common';
 import {
   ALLOWED_MIME_TYPES_FOR_CHAT,
   MAX_FILE_SIZE_BYTES_FOR_CHAT,
@@ -23,15 +22,11 @@ export const chatUploadMulterOptions: MulterOptions = {
     }
     callback(null, true);
   },
-  storage: diskStorage({
-    destination: (_req: any, _file: any, callback: any) => {
-      const today = new Date().toISOString().slice(0, 10);
-      const dir = join(process.cwd(), 'storage', 'chat', today);
-      if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-      callback(null, dir);
-    },
-    filename: (_req: any, file: any, callback: any) => {
-      callback(null, `${uuidv4()}${extname(file.originalname)}`);
-    },
+  // Date-partitioned so the attachment URL keeps its /chat/<date>/<file> shape,
+  // which the authenticated download endpoint and the stored message rows both
+  // depend on. The engine resolves local-vs-S3 per request.
+  storage: createUploadStorageEngine({
+    resolveFolder: () => `chat/${new Date().toISOString().slice(0, 10)}`,
+    resolveFilename: (_req, file) => `${uuidv4()}${extname(file.originalname)}`,
   }),
 };

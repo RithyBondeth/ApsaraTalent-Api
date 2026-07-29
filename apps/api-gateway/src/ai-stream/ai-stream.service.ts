@@ -16,40 +16,12 @@ export class AiStreamService implements IAiStreamService {
     this.model = config.get<string>('openai.model') ?? 'gpt-4o';
   }
 
-  /** Set standard SSE response headers and flush. */
-  setSseHeaders(res: Response): void {
-    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-cache, no-store');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no');
-    res.flushHeaders();
-  }
-
-  /**
-   * Async generator that yields raw text chunks from an OpenAI chat completion stream.
-   * Useful for controllers that need to process chunks before writing to the response.
-   */
-  async *rawStream(
-    messages: OpenAI.Chat.ChatCompletionMessageParam[],
-    temperature: number,
-  ): AsyncGenerator<string, void, unknown> {
-    const stream = await this.openai.chat.completions.create({
-      model: this.model,
-      temperature,
-      stream: true,
-      messages,
-    });
-    for await (const chunk of stream) {
-      const text = chunk.choices[0]?.delta?.content ?? '';
-      if (text) yield text;
-    }
-  }
-
   /** Write SSE headers and stream an OpenAI chat completion to the HTTP response. */
   async pipe(
     messages: OpenAI.Chat.ChatCompletionMessageParam[],
     temperature: number,
     res: Response,
+    maxTokens = 2_048,
   ): Promise<void> {
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache, no-store');
@@ -57,29 +29,48 @@ export class AiStreamService implements IAiStreamService {
     res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders();
 
+    let clientClosed = false;
+    const controller = new AbortController();
+    const handleClose = () => {
+      clientClosed = true;
+      controller.abort();
+    };
+    res.once('close', handleClose);
+
     try {
-      const stream = await this.openai.chat.completions.create({
-        model: this.model,
-        temperature,
-        stream: true,
-        messages,
-      });
+      const stream = await this.openai.chat.completions.create(
+        {
+          model: this.model,
+          temperature,
+          stream: true,
+          max_tokens: maxTokens,
+          messages,
+        },
+        { signal: controller.signal },
+      );
 
       for await (const chunk of stream) {
+        if (clientClosed) break;
         const text = chunk.choices[0]?.delta?.content ?? '';
         if (text) {
           res.write(`data: ${JSON.stringify({ t: 'chunk', v: text })}\n\n`);
         }
       }
 
-      res.write(`data: ${JSON.stringify({ t: 'done' })}\n\n`);
-    } catch (err: any) {
-      this.logger.error('[OpenAI Stream Error]', err);
-      res.write(
-        `data: ${JSON.stringify({ t: 'error', v: err?.message ?? 'Stream failed' })}\n\n`,
-      );
+      if (!clientClosed) {
+        res.write(`data: ${JSON.stringify({ t: 'done' })}\n\n`);
+      }
+    } catch (err: unknown) {
+      if (!clientClosed) {
+        this.logger.error('[OpenAI Stream Error]', err);
+        const message = err instanceof Error ? err.message : 'Stream failed';
+        if (!res.writableEnded) {
+          res.write(`data: ${JSON.stringify({ t: 'error', v: message })}\n\n`);
+        }
+      }
     } finally {
-      res.end();
+      res.off('close', handleClose);
+      if (!res.writableEnded) res.end();
     }
   }
 }

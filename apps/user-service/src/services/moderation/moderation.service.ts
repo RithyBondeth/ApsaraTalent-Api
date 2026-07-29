@@ -109,7 +109,7 @@ export class ModerationService implements IModerationService {
       return ids;
     } catch (error) {
       this.logger.error(
-        (error as Error).message || 'Failed to load hidden profile ids.',
+        (error as Error)?.message || 'Failed to load hidden profile ids.',
       );
       return [];
     }
@@ -175,7 +175,7 @@ export class ModerationService implements IModerationService {
       });
     } catch (error) {
       if (error instanceof RpcException) throw error;
-      this.logger.error((error as Error).message || 'Failed to block user.');
+      this.logger.error((error as Error)?.message || 'Failed to block user.');
       throw new RpcException({
         statusCode: 500,
         message: 'An error occurred while blocking the user.',
@@ -213,7 +213,7 @@ export class ModerationService implements IModerationService {
         blocked: false,
       });
     } catch (error) {
-      this.logger.error((error as Error).message || 'Failed to unblock user.');
+      this.logger.error((error as Error)?.message || 'Failed to unblock user.');
       throw new RpcException({
         statusCode: 500,
         message: 'An error occurred while unblocking the user.',
@@ -248,7 +248,7 @@ export class ModerationService implements IModerationService {
         );
     } catch (error) {
       this.logger.error(
-        (error as Error).message || 'Failed to list blocked users.',
+        (error as Error)?.message || 'Failed to list blocked users.',
       );
       throw new RpcException({
         statusCode: 500,
@@ -279,7 +279,7 @@ export class ModerationService implements IModerationService {
       });
     } catch (error) {
       this.logger.error(
-        (error as Error).message || 'Failed to get block status.',
+        (error as Error)?.message || 'Failed to get block status.',
       );
       throw new RpcException({
         statusCode: 500,
@@ -327,7 +327,7 @@ export class ModerationService implements IModerationService {
       });
     } catch (error) {
       if (error instanceof RpcException) throw error;
-      this.logger.error((error as Error).message || 'Failed to report user.');
+      this.logger.error((error as Error)?.message || 'Failed to report user.');
       throw new RpcException({
         statusCode: 500,
         message: 'An error occurred while submitting the report.',

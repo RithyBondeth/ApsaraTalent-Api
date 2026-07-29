@@ -118,12 +118,12 @@ export class FindEmployeeService implements IFindEmployeeService {
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while fetching all of the employees',
       );
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while fetching all of the employees',
         statusCode: 500,
       });
@@ -192,6 +192,15 @@ export class FindEmployeeService implements IFindEmployeeService {
           'employee.educations',
         ],
       });
+      // An unknown employee id must be a 404, not a TypeError on
+      // `user.employee`. The block check above already guards this way.
+      if (!user?.employee) {
+        throw new RpcException({
+          statusCode: 404,
+          message: 'There is no employee with this id',
+        });
+      }
+
       const result = new EmployeeResponseDTO({
         ...user.employee,
         email: user.email,
@@ -201,13 +210,16 @@ export class FindEmployeeService implements IFindEmployeeService {
 
       return result;
     } catch (error) {
+      // Preserve deliberate status codes (e.g. the 404 above); only genuinely
+      // unexpected failures become a 500.
+      if (error instanceof RpcException) throw error;
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while fetching an employee',
       );
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while fetching an employee',
         statusCode: 500,
       });
@@ -237,12 +249,12 @@ export class FindEmployeeService implements IFindEmployeeService {
       return new CountAllUsersResponseDTO(result);
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while counting all employees',
       );
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while counting all employees',
         statusCode: 500,
       });

@@ -1,6 +1,9 @@
-import request from 'supertest';
+import supertest from 'supertest';
 
 const baseUrl = process.env.E2E_BASE_URL ?? 'http://127.0.0.1:13000';
+const frontendOrigin = process.env.FRONTEND_ORIGIN ?? 'http://127.0.0.1:14000';
+const request = (url: string) =>
+  supertest.agent(url).set('Origin', frontendOrigin);
 const password = 'E2e!Password123';
 const runId = `${Date.now()}${Math.floor(Math.random() * 10000)}`;
 
@@ -18,13 +21,20 @@ const tinyPdf = Buffer.from(
   '%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF',
 );
 
-function cookieHeader(response: request.Response): string {
+function cookieHeader(response: supertest.Response): string {
   const values = response.headers['set-cookie'];
   const cookies = Array.isArray(values) ? values : values ? [values] : [];
   return cookies.map((value) => value.split(';', 1)[0]).join('; ');
 }
 
-function expectSecureAuthBoundary(response: request.Response): void {
+function cookieValue(response: supertest.Response, name: string): string {
+  const cookie = cookieHeader(response)
+    .split('; ')
+    .find((value) => value.startsWith(`${name}=`));
+  return decodeURIComponent(cookie?.slice(name.length + 1) ?? '');
+}
+
+function expectSecureAuthBoundary(response: supertest.Response): void {
   const values = response.headers['set-cookie'];
   const cookies = Array.isArray(values) ? values : values ? [values] : [];
   expect(cookies.some((value) => value.startsWith('auth-token='))).toBe(true);
@@ -460,6 +470,22 @@ describe('isolated API system', () => {
       .send({ identifier: phone, password })
       .expect(200);
     expectSecureAuthBoundary(login);
+
+    // Refresh credentials are signed JWTs too, but must never authorize normal
+    // API requests as access tokens.
+    await request(baseUrl)
+      .get('/user/current-user')
+      .set('Authorization', `Bearer ${cookieValue(login, 'refresh-token')}`)
+      .expect(401);
+
+    // A browser carrying auth cookies must not be able to mutate state from an
+    // untrusted website, even though CORS would hide the response body.
+    await request(baseUrl)
+      .post('/auth/logout')
+      .set('Cookie', cookieHeader(login))
+      .set('Origin', 'https://attacker.example')
+      .set('Sec-Fetch-Site', 'cross-site')
+      .expect(403);
 
     const refreshed = await request(baseUrl)
       .post('/auth/refresh')

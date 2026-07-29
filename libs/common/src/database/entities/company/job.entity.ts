@@ -62,7 +62,7 @@ export class Job {
   openingsCount: number | null;
 
   @Column({ nullable: true })
-  expireDate: Date;
+  expireDate: Date | null;
 
   @Column({
     type: 'text',

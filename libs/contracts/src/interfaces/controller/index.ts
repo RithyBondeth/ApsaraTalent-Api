@@ -5,7 +5,6 @@ export * from './user-controllers/company-controller.interface';
 export * from './user-controllers/employee-controller.interface';
 export * from './job-controllers/job-controller.interface';
 export * from './notification-controller.interface';
-export * from './payment-controller.interface';
 export * from './user-controllers/public-user-controller.interface';
 export * from './resume-builder-controller.interface';
 export * from './user-controllers/user-controller.interface';

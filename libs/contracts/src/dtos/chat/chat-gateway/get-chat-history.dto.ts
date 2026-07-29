@@ -35,7 +35,7 @@ export class GetChatHistoryRpcDTO {
 export class GetChatHistoryResponseDTO {
   messages: MessageResponseDTO[];
   partnerId: string;
-  partnerProfile: UserResponseDTO;
+  partnerProfile: UserResponseDTO | null;
 
   constructor(partial: Partial<GetChatHistoryResponseDTO>) {
     Object.assign(this, partial);

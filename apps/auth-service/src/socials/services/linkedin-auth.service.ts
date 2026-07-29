@@ -2,6 +2,7 @@ import { User } from '@app/common/database/entities/user.entity';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
+import { hashRefreshToken } from '@app/common/jwt/refresh-token-hash.util';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
@@ -47,8 +48,6 @@ export class LinkedInAuthService implements ILinkedInAuthService {
       }
       user.lastLoginMethod = ELoginMethod.LINKEDIN;
       user.lastLoginAt = new Date();
-      await this.users.save(user);
-
       const payload: IPayload = {
         id: user.id,
         info: user.email,
@@ -58,6 +57,9 @@ export class LinkedInAuthService implements ILinkedInAuthService {
         this.jwt.generateToken(payload),
         this.jwt.generateRefreshToken(user.id),
       ]);
+
+      user.refreshToken = hashRefreshToken(refreshToken);
+      await this.users.save(user);
 
       // Clear Cache in USER SERVICE (non-blocking — must not prevent login)
       this.cacheCleanupService.clearSafe(user.id, 'LinkedIn');
