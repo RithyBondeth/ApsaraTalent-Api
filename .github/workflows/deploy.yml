@@ -90,7 +90,7 @@ jobs:
         run: npm ci
 
       - name: Run lint
-        run: npm run lint
+        run: npm run lint:check
 
   test:
     name: Test
