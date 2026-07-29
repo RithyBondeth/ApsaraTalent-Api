@@ -125,12 +125,12 @@ export class FindCompanyService implements IFindCompanyService {
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while fetching all of the companies.',
       );
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while fetching all of the companies.',
         statusCode: 500,
       });
@@ -158,12 +158,12 @@ export class FindCompanyService implements IFindCompanyService {
       return new CountAllUsersResponseDTO(result);
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while counting all companies.',
       );
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while counting all companies.',
         statusCode: 500,
       });
@@ -255,12 +255,12 @@ export class FindCompanyService implements IFindCompanyService {
       // unexpected failures become a 500.
       if (error instanceof RpcException) throw error;
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while fetching a company.',
       );
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while fetching a company.',
         statusCode: 500,
       });

@@ -227,4 +227,56 @@ describe('TwoFactorService', () => {
     jwt.generateRefreshToken.mockResolvedValue('refresh');
     await expectRpcFailure((service as any)[method](dto), 500, 'write failed');
   });
+
+  it.each([
+    [{ id: 'u1', phone: '+85512345678' }, '+85512345678'],
+    [{ id: 'u1' }, 'u1'],
+  ])('uses the safest available setup label', async (user, label) => {
+    repository.findOne.mockResolvedValue(user);
+    (otplib.generateSecret as jest.Mock).mockReturnValue('secret');
+    (otplib.generateURI as jest.Mock).mockReturnValue('otpauth://uri');
+
+    await service.twoFactorSetup({ userId: 'u1' });
+
+    expect(otplib.generateURI).toHaveBeenCalledWith(
+      expect.objectContaining({ label }),
+    );
+  });
+
+  it('uses a phone identity for a phone-only 2FA login', async () => {
+    const user = {
+      id: 'u1',
+      phone: '+85512345678',
+      role: 'employee',
+      twoFactorSecret: 'secret',
+      isTwoFactorEnabled: true,
+    };
+    repository.findOne.mockResolvedValue(user);
+    (otplib.verify as jest.Mock).mockReturnValue(true);
+    jwt.generateToken.mockResolvedValue('access');
+    jwt.generateRefreshToken.mockResolvedValue('refresh');
+
+    await service.twoFactorVerifyLogin({ userId: 'u1', otp: '123456' });
+
+    expect(jwt.generateToken).toHaveBeenCalledWith(
+      expect.objectContaining({ info: '+85512345678' }),
+    );
+  });
+
+  it.each([
+    ['twoFactorSetup', { userId: 'u1' }, '2FA setup failed'],
+    ['twoFactorEnable', { userId: 'u1', otp: '123456' }, '2FA enable failed'],
+    ['twoFactorDisable', { userId: 'u1', otp: '123456' }, '2FA disable failed'],
+    [
+      'twoFactorVerifyLogin',
+      { userId: 'u1', otp: '123456' },
+      '2FA verify-login failed',
+    ],
+  ])(
+    'uses a stable fallback for a null %s failure',
+    async (method, dto, message) => {
+      repository.findOne.mockRejectedValueOnce(null);
+      await expectRpcFailure((service as any)[method](dto), 500, message);
+    },
+  );
 });

@@ -1,6 +1,5 @@
 import { Job } from '@app/common/database/entities/company/job.entity';
-import { User } from '@app/common/database/entities/user.entity';
-import { RedisService } from '@app/common/redis/redis.service';
+import { CacheInvalidationService } from '@app/common/redis/cache-invalidation.service';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -17,30 +16,8 @@ export class OpenPositionService implements IOpenPositionService {
   constructor(
     private readonly logger: PinoLogger,
     @InjectRepository(Job) private readonly jobRepository: Repository<Job>,
-    @InjectRepository(User) private readonly userRepository: Repository<User>,
-    private readonly redisService: RedisService,
+    private readonly cacheInvalidationService: CacheInvalidationService,
   ) {}
-
-  private async invalidateCompanyCaches(companyId: string): Promise<void> {
-    const users = await this.userRepository.find({
-      where: { company: { id: companyId } },
-      select: ['id'],
-    });
-
-    const keysToDelete = users.map((u) =>
-      this.redisService.generateUserKey('detail', u.id),
-    );
-
-    // If you cache user list
-    keysToDelete.push(this.redisService.generateListKey('user', {}));
-
-    await Promise.all(keysToDelete.map((k) => this.redisService.del(k)));
-
-    this.logger.info(
-      { companyId, keysToDelete },
-      'Company caches invalidated after removing open position',
-    );
-  }
 
   async removeOpenPosition(
     removeOpenPositionDTO: RemoveOpenPositionDTO,
@@ -61,11 +38,7 @@ export class OpenPositionService implements IOpenPositionService {
       await this.jobRepository.delete(opId);
 
       // Invalidate cache after deletion
-      await Promise.all([
-        this.invalidateCompanyCaches(companyId),
-        // A removed job must disappear from job search/list results too.
-        this.redisService.invalidateJobSearchCaches(),
-      ]);
+      await this.cacheInvalidationService.invalidateCompanyCache(companyId);
 
       return new RemoveOpenPositionResponseDTO({
         message: `${removedJob.title} position was removed successfully.`,

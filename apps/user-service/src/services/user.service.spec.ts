@@ -272,4 +272,73 @@ describe('UserService', () => {
       message: 'scope list failed',
     });
   });
+
+  it('maps sparse users without employee or company relations', async () => {
+    users.createQueryBuilder.mockReturnValue(
+      queryBuilder([{ id: 'user-sparse', employee: null, company: null }]),
+    );
+
+    await expect(service.findAllUsers({})).resolves.toEqual([
+      expect.objectContaining({
+        id: 'user-sparse',
+        employee: undefined,
+      }),
+    ]);
+  });
+
+  it('trims and stores a non-empty push notification token', async () => {
+    users.update.mockResolvedValue({ affected: 1 });
+
+    await service.updatePushNotificationToken({
+      userId: 'user-1',
+      token: '  push-token  ',
+    });
+
+    expect(users.update).toHaveBeenCalledWith(
+      { id: 'user-1' },
+      { pushNotificationToken: 'push-token' },
+    );
+  });
+
+  it('warms both startup caches successfully', async () => {
+    const scopesWarm = jest
+      .spyOn(service, 'findAllCareerScopes')
+      .mockResolvedValue([]);
+    const usersWarm = jest.spyOn(service, 'findAllUsers').mockResolvedValue([]);
+
+    await expect(service.onModuleInit()).resolves.toBeUndefined();
+
+    expect(scopesWarm).toHaveBeenCalled();
+    expect(usersWarm).toHaveBeenCalledWith({ skip: 0, limit: 20 });
+    expect(logger.info).toHaveBeenCalledWith('Cache warming complete');
+  });
+
+  it('uses stable messages for null read failures and cache warming failures', async () => {
+    users.createQueryBuilder.mockImplementationOnce(() => {
+      throw null;
+    });
+    const list = (await service
+      .findAllUsers({})
+      .catch((error) => error)) as RpcException;
+    expect(list.getError()).toEqual({
+      statusCode: 500,
+      message: 'An error occurred while finding all the users.',
+    });
+
+    users.count.mockRejectedValueOnce(null);
+    const count = (await service
+      .countAllUsers()
+      .catch((error) => error)) as RpcException;
+    expect(count.getError()).toEqual({
+      statusCode: 500,
+      message: 'An error occurred while counting all users.',
+    });
+
+    jest.spyOn(service, 'findAllCareerScopes').mockRejectedValueOnce(null);
+    jest.spyOn(service, 'findAllUsers').mockResolvedValueOnce([]);
+    await service.onModuleInit();
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Unknown error'),
+    );
+  });
 });

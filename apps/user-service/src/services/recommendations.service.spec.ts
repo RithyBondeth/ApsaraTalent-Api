@@ -73,6 +73,12 @@ describe('RecommendationsService', () => {
     expect(internal.clampRecoLimit(2.9)).toBe(2);
     expect(internal.vectorCentroid([])).toBeNull();
     expect(internal.vectorCentroid([[0, 0]])).toBeNull();
+    expect(
+      internal.vectorCentroid([
+        [1, -1],
+        [-1, 1],
+      ]),
+    ).toBeNull();
     expect(internal.vectorCentroid([[3, 4], [3, 4], [1]])).toEqual([0.6, 0.8]);
     expect(internal.toVectorLiteral([1, 2])).toBe('[1,2]');
     expect(internal.normalizeDegree('Master of Science')).toBeGreaterThan(
@@ -81,6 +87,7 @@ describe('RecommendationsService', () => {
     expect(internal.normalizeDegree('Associate diploma')).toBe(2);
     expect(internal.normalizeDegree('High school certificate')).toBe(1);
     expect(internal.normalizeDegree('Professional certificate')).toBe(0);
+    expect(internal.normalizeDegree('Doctor of Philosophy')).toBe(5);
     expect(internal.normalizeDegree(null)).toBe(0);
     expect(internal.extractYears('at least 4 years')).toBe(4);
     expect(internal.extractYears('')).toBe(0);
@@ -549,5 +556,247 @@ describe('RecommendationsService', () => {
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('company recommendation database failed'),
     );
+  });
+
+  it('returns early for missing source profiles and empty candidate pools', async () => {
+    users.createQueryBuilder
+      .mockReturnValueOnce(recommendationBuilder({ one: null }))
+      .mockReturnValueOnce(recommendationBuilder({ raw: [] }));
+    (matches as any).createQueryBuilder = jest.fn(() =>
+      recommendationBuilder({ raw: [] }),
+    );
+
+    await expect(
+      service.getEmployeeRecommendations({ employeeId: 'missing' }),
+    ).resolves.toEqual([]);
+
+    users.createQueryBuilder
+      .mockReturnValueOnce(recommendationBuilder({ one: null }))
+      .mockReturnValueOnce(recommendationBuilder({ raw: [] }));
+    (matches as any).createQueryBuilder = jest.fn(() =>
+      recommendationBuilder({ raw: [] }),
+    );
+
+    await expect(
+      service.getCompanyRecommendations({ companyId: 'missing' }),
+    ).resolves.toEqual([]);
+  });
+
+  it('contains malformed recommendation failures with stable logging', async () => {
+    users.createQueryBuilder.mockImplementationOnce(() => {
+      throw null;
+    });
+    await expect(
+      service.getEmployeeRecommendations({ employeeId: 'employee-1' }),
+    ).resolves.toEqual([]);
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Unknown error'),
+    );
+
+    users.createQueryBuilder.mockImplementationOnce(() => {
+      throw null;
+    });
+    await expect(
+      service.getCompanyRecommendations({ companyId: 'company-1' }),
+    ).resolves.toEqual([]);
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Unknown error'),
+    );
+  });
+
+  it('scores and enriches companies with sparse optional profile data', async () => {
+    const employee = {
+      id: 'employee-1',
+      skills: [{ name: 'TypeScript' }],
+      careerScopes: [{ id: 'scope-1', embedding: '[1,0]' }],
+      educations: [{ degree: 'Doctorate' }],
+      job: 'Backend Engineer',
+      description: 'Platform engineer',
+      yearsOfExperience: '5 years',
+      location: 'Phnom Penh',
+      jobEmbedding: null,
+    };
+    const scopeCompanies = [
+      {
+        id: 'company-user-1',
+        company: {
+          id: 'company-1',
+          careerScopes: [{ id: 'scope-1' }],
+        },
+      },
+      {
+        id: 'company-user-2',
+        company: {
+          id: 'company-2',
+          careerScopes: [{ id: 'scope-1' }],
+        },
+      },
+      {
+        id: 'company-user-3',
+        company: {
+          id: 'company-3',
+          careerScopes: [{ id: 'scope-1' }],
+        },
+      },
+    ];
+    const positionCompanies = [
+      {
+        company: { id: 'company-1', openPositions: null },
+      },
+      {
+        company: {
+          id: 'company-2',
+          location: null,
+          openPositions: [
+            {
+              title: null,
+              description: null,
+              skillsRequired: null,
+              educationRequired: null,
+              experienceRequired: null,
+              titleEmbedding: null,
+            },
+          ],
+        },
+      },
+    ];
+    const builders = [
+      recommendationBuilder({ one: { employee } }),
+      recommendationBuilder({
+        raw: [
+          { userId: 'company-user-1' },
+          { userId: 'company-user-2' },
+          { userId: 'company-user-3' },
+        ],
+      }),
+      recommendationBuilder({ raw: [] }),
+      recommendationBuilder({ many: scopeCompanies }),
+      recommendationBuilder({ many: positionCompanies }),
+      recommendationBuilder({
+        many: [
+          {
+            company: {
+              id: 'company-1',
+              benefits: null,
+              values: null,
+            },
+          },
+        ],
+      }),
+    ];
+    for (const builder of builders) {
+      users.createQueryBuilder.mockReturnValueOnce(builder);
+    }
+    (matches as any).createQueryBuilder = jest.fn(() =>
+      recommendationBuilder({ raw: [{ companyId: null }] }),
+    );
+    jest
+      .spyOn(service as any, 'nearestScopeIds')
+      .mockResolvedValue(['scope-1']);
+
+    const result = await service.getEmployeeRecommendations({
+      employeeId: 'employee-1',
+      requesterId: 'employee-user',
+    });
+
+    expect(result).toHaveLength(3);
+    expect(result).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'company-1', benefits: [], values: [] }),
+        expect.objectContaining({ id: 'company-2', benefits: [], values: [] }),
+        expect.objectContaining({ id: 'company-3', benefits: [], values: [] }),
+      ]),
+    );
+  });
+
+  it('scores sparse employee candidates using career-scope overlap', async () => {
+    const company = {
+      id: 'company-1',
+      location: null,
+      careerScopes: [{ id: 'scope-1', embedding: '[1,0]' }],
+      openPositions: [
+        {
+          title: null,
+          description: null,
+          skillsRequired: null,
+          educationRequired: null,
+          experienceRequired: null,
+          titleEmbedding: null,
+        },
+      ],
+    };
+    const employee = {
+      id: 'employee-1',
+      job: null,
+      description: null,
+      location: null,
+      yearsOfExperience: null,
+      availability: null,
+      jobEmbedding: null,
+    };
+    const builders = [
+      recommendationBuilder({ one: { company } }),
+      recommendationBuilder({ raw: [{ userId: 'employee-user' }] }),
+      recommendationBuilder({ raw: [] }),
+      recommendationBuilder({ many: [{ id: 'employee-user', employee }] }),
+      recommendationBuilder({
+        many: [
+          {
+            id: 'employee-user',
+            employee: {
+              id: 'employee-1',
+              careerScopes: [{ id: 'scope-1' }],
+            },
+          },
+        ],
+      }),
+      recommendationBuilder({
+        many: [
+          {
+            id: 'employee-user',
+            employee: { id: 'employee-1', skills: null },
+          },
+        ],
+      }),
+      recommendationBuilder({
+        many: [
+          {
+            id: 'employee-user',
+            employee: { id: 'employee-1', experiences: null },
+          },
+        ],
+      }),
+      recommendationBuilder({
+        many: [
+          {
+            id: 'employee-user',
+            employee: { id: 'employee-1', educations: null },
+          },
+        ],
+      }),
+    ];
+    for (const builder of builders) {
+      users.createQueryBuilder.mockReturnValueOnce(builder);
+    }
+    (matches as any).createQueryBuilder = jest.fn(() =>
+      recommendationBuilder({ raw: [{ employeeId: null }] }),
+    );
+    jest
+      .spyOn(service as any, 'nearestScopeIds')
+      .mockResolvedValue(['scope-1']);
+
+    await expect(
+      service.getCompanyRecommendations({
+        companyId: 'company-1',
+        requesterId: 'company-user',
+      }),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        id: 'employee-1',
+        skills: [],
+        experiences: [],
+        educations: [],
+      }),
+    ]);
   });
 });

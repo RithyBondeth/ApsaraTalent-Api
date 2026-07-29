@@ -372,4 +372,180 @@ describe('MatchingService', () => {
       'company count failed',
     );
   });
+
+  it('suppresses notifications when like targets have no linked users', async () => {
+    employees.findOne.mockResolvedValue({
+      ...employee,
+      username: '',
+      firstname: 'Fallback',
+      avatar: null,
+      user: undefined,
+    });
+    companies.findOne.mockResolvedValue({
+      ...company,
+      avatar: null,
+      user: undefined,
+    });
+    matching.findOne.mockResolvedValue(null);
+
+    await expect(
+      service.employeeLikes({ eid: 'employee-1', cid: 'company-1' }),
+    ).resolves.toEqual(expect.objectContaining({ notificationTargets: [] }));
+    await expect(
+      service.companyLikes({ eid: 'employee-1', cid: 'company-1' }),
+    ).resolves.toEqual(expect.objectContaining({ notificationTargets: [] }));
+    expect(notifications.emit).not.toHaveBeenCalled();
+    expect(email.sendEmail).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['findCurrentEmployeeLiked', { eid: 'employee-1' }],
+    ['findCurrentCompanyLiked', { cid: 'company-1' }],
+    ['findCurrentEmployeeMatching', { eid: 'employee-1' }],
+    ['findCurrentCompanyMatching', { cid: 'company-1' }],
+    ['findCurrentEmployeeMatchingCount', { eid: 'employee-1' }],
+    ['findCurrentCompanyMatchingCount', { cid: 'company-1' }],
+  ])('returns %s directly from cache', async (method, dto) => {
+    const cached = { cached: method };
+    redis.get.mockResolvedValueOnce(cached);
+    await expect((service as any)[method](dto)).resolves.toBe(cached);
+  });
+
+  it('uses fallback messages for malformed matching repository failures', async () => {
+    employees.findOne.mockResolvedValue(employee);
+    companies.findOne.mockResolvedValue(company);
+    matching.findOne.mockRejectedValueOnce(null);
+    await expectRpc(
+      service.employeeLikes({ eid: 'employee-1', cid: 'company-1' }),
+      500,
+      'An error occurred while liking.',
+    );
+
+    matching.findOne.mockResolvedValueOnce({ id: 'match-1' });
+    matching.delete.mockRejectedValueOnce({ statusCode: 502 });
+    await expectRpc(
+      service.unmatch({ eid: 'employee-1', cid: 'company-1' }),
+      502,
+      'An error occurred while unmatching.',
+    );
+  });
+
+  it.each([
+    [
+      'findCurrentEmployeeLiked',
+      { eid: 'employee-1' },
+      'An error occurred while fetching the employee liked.',
+    ],
+    [
+      'findCurrentCompanyLiked',
+      { cid: 'company-1' },
+      'An error occurred while fetching the company liked.',
+    ],
+    [
+      'findCurrentEmployeeMatching',
+      { eid: 'employee-1' },
+      'An error occurred while fetching the employee matching.',
+    ],
+    [
+      'findCurrentCompanyMatching',
+      { cid: 'company-1' },
+      'An error occurred while fetching the company matching.',
+    ],
+    [
+      'findCurrentEmployeeMatchingCount',
+      { eid: 'employee-1' },
+      'An error occurred while counting the current employee matching.',
+    ],
+    [
+      'findCurrentCompanyMatchingCount',
+      { cid: 'company-1' },
+      'An error occurred while counting the current company matching.',
+    ],
+  ])(
+    'uses a stable fallback for malformed %s failures',
+    async (method, dto, message) => {
+      if (method.includes('Count')) {
+        matching.count.mockRejectedValueOnce(null);
+      } else {
+        matching.find.mockRejectedValueOnce(null);
+      }
+      await expectRpc((service as any)[method](dto), 500, message);
+    },
+  );
+
+  it('maps absent skill scores to null in both match lists', async () => {
+    matching.find
+      .mockResolvedValueOnce([{ company, isMatched: true }])
+      .mockResolvedValueOnce([{ employee, isMatched: true }]);
+
+    await expect(
+      service.findCurrentEmployeeMatching({ eid: 'employee-1' }),
+    ).resolves.toEqual([
+      expect.objectContaining({ id: 'company-1', skillScore: null }),
+    ]);
+    await expect(
+      service.findCurrentCompanyMatching({ cid: 'company-1' }),
+    ).resolves.toEqual([
+      expect.objectContaining({ id: 'employee-1', skillScore: null }),
+    ]);
+  });
+
+  it.each(['employeeLikes', 'companyLikes'])(
+    'completes a reciprocal %s when linked email accounts are incomplete',
+    async (method) => {
+      employees.findOne.mockResolvedValue({
+        ...employee,
+        username: '',
+        firstname: 'Fallback Name',
+        avatar: null,
+        user: undefined,
+      });
+      companies.findOne.mockResolvedValue({
+        ...company,
+        avatar: null,
+      });
+      matching.findOne.mockResolvedValue({
+        employee,
+        company,
+        employeeLiked: method === 'companyLikes',
+        companyLiked: method === 'employeeLikes',
+        isMatched: false,
+      });
+
+      await expect(
+        (service as any)[method]({
+          eid: 'employee-1',
+          cid: 'company-1',
+        }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          isMatched: true,
+          notificationTargets: ['company-user'],
+        }),
+      );
+      expect(email.sendEmail).not.toHaveBeenCalled();
+      expect(notifications.emit).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          data: expect.objectContaining({ senderAvatar: null }),
+        }),
+      );
+    },
+  );
+
+  it('ignores unnamed employee skills when calculating a score', () => {
+    const compute = (service as any).computeSkillScore.bind(service);
+    expect(
+      compute(
+        {
+          ...employee,
+          skills: [{ name: null }, { name: ' TypeScript ' }],
+        },
+        company,
+      ),
+    ).toBe(50);
+    expect(
+      compute({ ...employee, skills: [{ name: null }] }, company),
+    ).toBeNull();
+  });
 });

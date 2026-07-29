@@ -382,4 +382,49 @@ describe('InterviewService', () => {
       'An error occurred while updating interview status.',
     );
   });
+
+  it('rejects transitions from an unknown stored interview status', async () => {
+    interviews.findOne.mockResolvedValue(
+      existingInterview('legacy-status' as InterviewStatus),
+    );
+
+    await expectRpc(
+      service.updateInterviewStatus({
+        interviewId: 'interview-1',
+        requestUserId: 'employee-user',
+        status: InterviewStatus.ACCEPTED,
+      }),
+      400,
+      'Cannot transition from "legacy-status" to "accepted".',
+    );
+  });
+
+  it('uses the employee first name when notifying after a status update', async () => {
+    const interview = existingInterview();
+    interview.employee.username = '';
+    (interview.employee as any).firstname = 'Fallback Name';
+    interviews.findOne.mockResolvedValue(interview);
+
+    await service.updateInterviewStatus({
+      interviewId: 'interview-1',
+      requestUserId: 'employee-user',
+      status: InterviewStatus.ACCEPTED,
+    });
+
+    expect(notifications.emit).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        data: expect.objectContaining({ senderName: 'Fallback Name' }),
+      }),
+    );
+  });
+
+  it('uses the employee-list fallback for a null repository failure', async () => {
+    interviews.find.mockRejectedValueOnce(null);
+    await expectRpc(
+      service.getInterviewsByEmployee({ employeeId: 'employee-1' }),
+      500,
+      'An error occurred while fetching interviews.',
+    );
+  });
 });

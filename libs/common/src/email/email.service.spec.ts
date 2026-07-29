@@ -110,4 +110,29 @@ describe('EmailService', () => {
       'Unknown error',
     );
   });
+
+  it('fails construction immediately when required SMTP configuration is missing', () => {
+    config.getOrThrow.mockImplementationOnce(() => {
+      throw new Error('Missing SMTP host');
+    });
+
+    expect(() => new EmailService(config as any, logger as any)).toThrow(
+      'Missing SMTP host',
+    );
+    expect(nodemailer.createTransport).not.toHaveBeenCalled();
+  });
+
+  it('normalizes non-Error transporter initialization failures', () => {
+    (nodemailer.createTransport as jest.Mock).mockImplementationOnce(() => {
+      throw 'transport failure';
+    });
+
+    expect(() => new EmailService(config as any, logger as any)).toThrow(
+      'Unknown error',
+    );
+    expect(logger.error).toHaveBeenCalledWith(
+      'Failed to initialize email transporter: ',
+      'Unknown error',
+    );
+  });
 });

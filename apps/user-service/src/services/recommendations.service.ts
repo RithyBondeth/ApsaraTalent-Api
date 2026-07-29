@@ -479,7 +479,7 @@ export class RecommendationsService implements IRecommendationsService {
       return recommendations;
     } catch (error) {
       this.logger.warn(
-        `Employee recommendations unavailable for ${employeeId}: ${(error as Error).message}`,
+        `Employee recommendations unavailable for ${employeeId}: ${(error as Error)?.message || 'Unknown error'}`,
       );
       return [];
     }
@@ -842,7 +842,7 @@ export class RecommendationsService implements IRecommendationsService {
       return recommendations;
     } catch (error) {
       this.logger.warn(
-        `Company recommendations unavailable for ${companyId}: ${(error as Error).message}`,
+        `Company recommendations unavailable for ${companyId}: ${(error as Error)?.message || 'Unknown error'}`,
       );
       return [];
     }

@@ -1,4 +1,4 @@
-import { BadRequestException, HttpStatus } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import * as Sentry from '@sentry/nestjs';
 import { firstValueFrom } from 'rxjs';
@@ -76,6 +76,36 @@ describe('GlobalRpcExceptionFilter', () => {
 
     await expect(
       firstValueFrom(filter.catch('unexpected', rpcHost()) as any),
+    ).rejects.toEqual({
+      statusCode: 500,
+      message: 'Internal server error',
+    });
+  });
+
+  it('normalizes incomplete RPC, HTTP, and Error payload shapes', async () => {
+    await expect(
+      firstValueFrom(
+        filter.catch(new RpcException({ message: 42 }), rpcHost()) as any,
+      ),
+    ).rejects.toEqual({
+      statusCode: 500,
+      message: 'Internal server error',
+    });
+
+    await expect(
+      firstValueFrom(
+        filter.catch(
+          new HttpException('plain failure', HttpStatus.BAD_REQUEST),
+          rpcHost(),
+        ) as any,
+      ),
+    ).rejects.toEqual({
+      statusCode: 400,
+      message: 'plain failure',
+    });
+
+    await expect(
+      firstValueFrom(filter.catch(new Error(''), rpcHost()) as any),
     ).rejects.toEqual({
       statusCode: 500,
       message: 'Internal server error',

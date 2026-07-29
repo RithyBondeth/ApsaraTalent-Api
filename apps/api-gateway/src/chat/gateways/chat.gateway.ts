@@ -7,7 +7,6 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { firstValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
 import { ClientProxy } from '@nestjs/microservices';
 import { JwtService } from '@app/common/jwt/jwt.service';
@@ -33,6 +32,7 @@ import { SocketBroadcastService } from '../../socket/socket-broadcast.service';
 import { ChatMessageService } from '../services/chat-message.service';
 import { extractChatToken } from '../utils/chat-token.util';
 import { IChatGateway } from '@app/contracts/interfaces/gateway/chat-gateway.interface';
+import { rpcCall } from '../../utils/rpc-call';
 import { GetUnreadCountResponseDTO } from '@app/contracts/dtos/chat/chat-gateway/get-unread-count.dto';
 import {
   MarkAsReadDTO,
@@ -286,11 +286,10 @@ export class ChatGateway
     const userId = client.data.userId;
     try {
       this.logger.log(`[WS] Fetching recent chats for userId=${userId}`);
-      const chats = await firstValueFrom(
-        this.chatServiceClient.send(
-          CHAT_SERVICE.ACTIONS.GET_RECENT_CHATS,
-          userId,
-        ),
+      const chats = await rpcCall<any[]>(
+        this.chatServiceClient,
+        CHAT_SERVICE.ACTIONS.GET_RECENT_CHATS,
+        userId,
       );
       return chats.map(
         (chat: GetRecentChatsResponseDTO) =>
@@ -312,8 +311,10 @@ export class ChatGateway
       this.logger.log(
         `[WS] Fetching history: user1=${userId1}, user2=${getChatHistoryDTO.partnerId}`,
       );
-      const history = await firstValueFrom(
-        this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.GET_CHAT_HISTORY, {
+      const history = await rpcCall<any>(
+        this.chatServiceClient,
+        CHAT_SERVICE.ACTIONS.GET_CHAT_HISTORY,
+        {
           userId1,
           userId2: getChatHistoryDTO.partnerId,
           limit: Math.min(
@@ -324,7 +325,7 @@ export class ChatGateway
             Math.max(0, getChatHistoryDTO.offset || 0),
             CHAT.MAX_HISTORY_OFFSET,
           ),
-        }),
+        },
       );
       return new GetChatHistoryResponseDTO(history);
     } catch (error: any) {
@@ -343,11 +344,10 @@ export class ChatGateway
   ): Promise<GetUnreadCountResponseDTO> {
     const userId = client.data.userId;
     try {
-      const count = await firstValueFrom(
-        this.chatServiceClient.send(
-          CHAT_SERVICE.ACTIONS.GET_UNREAD_COUNT,
-          userId,
-        ),
+      const count = await rpcCall<number>(
+        this.chatServiceClient,
+        CHAT_SERVICE.ACTIONS.GET_UNREAD_COUNT,
+        userId,
       );
       return new GetUnreadCountResponseDTO({
         count: typeof count === 'number' ? count : 0,
@@ -381,11 +381,13 @@ export class ChatGateway
         return;
       }
 
-      await firstValueFrom<MarkAsReadResponseDTO>(
-        this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.MARK_MESSAGE_READ, {
+      await rpcCall<MarkAsReadResponseDTO>(
+        this.chatServiceClient,
+        CHAT_SERVICE.ACTIONS.MARK_MESSAGE_READ,
+        {
           messageId,
           readerId: client.data.userId,
-        }),
+        },
       );
 
       this.logger.log(
@@ -438,12 +440,14 @@ export class ChatGateway
         `[WS] Reaction received: messageId=${updateReactionDTO.messageId}, userId=${client.data.userId}, emoji=${updateReactionDTO.emoji}`,
       );
 
-      const result = await firstValueFrom<UpdateReactionResponseDTO>(
-        this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.UPDATE_REACTION, {
+      const result = await rpcCall<UpdateReactionResponseDTO>(
+        this.chatServiceClient,
+        CHAT_SERVICE.ACTIONS.UPDATE_REACTION,
+        {
           messageId: updateReactionDTO.messageId,
           userId: client.data.userId,
           emoji: updateReactionDTO.emoji,
-        }),
+        },
       );
 
       const payload = {
@@ -500,12 +504,14 @@ export class ChatGateway
     }
 
     try {
-      const result = await firstValueFrom<EditMessageResponseDTO>(
-        this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.EDIT_MESSAGE, {
+      const result = await rpcCall<EditMessageResponseDTO>(
+        this.chatServiceClient,
+        CHAT_SERVICE.ACTIONS.EDIT_MESSAGE,
+        {
           messageId: editMessageDTO.messageId,
           requesterId: client.data.userId,
           newContent: trimmed,
-        }),
+        },
       );
 
       const broadcastPayload = {
@@ -551,11 +557,13 @@ export class ChatGateway
     }
 
     try {
-      const result = await firstValueFrom(
-        this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.DELETE_MESSAGE, {
+      const result = await rpcCall<any>(
+        this.chatServiceClient,
+        CHAT_SERVICE.ACTIONS.DELETE_MESSAGE,
+        {
           messageId: deleteMessageDTO.messageId,
           requesterId: client.data.userId,
-        }),
+        },
       );
 
       const broadcastPayload = { messageId: deleteMessageDTO.messageId };

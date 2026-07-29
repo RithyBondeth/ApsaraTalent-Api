@@ -308,4 +308,76 @@ describe('ModerationService', () => {
       expect.objectContaining({ details: null }),
     );
   });
+
+  it('returns early when a requester has no hidden profiles', async () => {
+    const query: any = {};
+    for (const method of ['select', 'addSelect', 'where']) {
+      query[method] = jest.fn(() => query);
+    }
+    query.getRawMany = jest.fn().mockResolvedValue([]);
+    blocks.createQueryBuilder.mockReturnValue(query);
+
+    await expect(
+      service.getHiddenProfileIds({ requesterId: 'requester' }),
+    ).resolves.toEqual([]);
+    expect(users.find).not.toHaveBeenCalled();
+  });
+
+  it('uses stable behavior for null moderation failures', async () => {
+    const hiddenQuery: any = {};
+    for (const method of ['select', 'addSelect', 'where']) {
+      hiddenQuery[method] = jest.fn(() => hiddenQuery);
+    }
+    hiddenQuery.getRawMany = jest.fn().mockRejectedValue(null);
+    blocks.createQueryBuilder.mockReturnValueOnce(hiddenQuery);
+    await expect(
+      service.getHiddenProfileIds({ requesterId: 'requester' }),
+    ).resolves.toEqual([]);
+    expect(logger.error).toHaveBeenCalledWith(
+      'Failed to load hidden profile ids.',
+    );
+
+    blocks.findOne.mockRejectedValueOnce(null);
+    await expectRpc(
+      service.blockUser({ blockerId: 'user-1', blockedId: 'user-2' }),
+      500,
+      'An error occurred while blocking the user.',
+    );
+
+    const deleteQb: any = {};
+    deleteQb.delete = jest.fn(() => deleteQb);
+    deleteQb.where = jest.fn(() => deleteQb);
+    deleteQb.execute = jest.fn().mockRejectedValue(null);
+    blocks.createQueryBuilder.mockReturnValueOnce(deleteQb);
+    await expectRpc(
+      service.unblockUser({ blockerId: 'user-1', blockedId: 'user-2' }),
+      500,
+      'An error occurred while unblocking the user.',
+    );
+
+    blocks.find.mockRejectedValueOnce(null);
+    await expectRpc(
+      service.listBlockedUsers({ blockerId: 'user-1' }),
+      500,
+      'An error occurred while loading blocked users.',
+    );
+
+    blocks.exists.mockRejectedValueOnce(null);
+    await expectRpc(
+      service.getBlockStatus({ userId: 'user-1', otherUserId: 'user-2' }),
+      500,
+      'An error occurred while checking block status.',
+    );
+
+    reports.save.mockRejectedValueOnce(null);
+    await expectRpc(
+      service.reportUser({
+        reporterId: 'user-1',
+        reportedId: 'user-2',
+        reason: EReportReason.SPAM,
+      }),
+      500,
+      'An error occurred while submitting the report.',
+    );
+  });
 });

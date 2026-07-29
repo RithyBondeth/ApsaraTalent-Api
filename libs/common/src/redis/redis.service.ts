@@ -138,6 +138,37 @@ export class RedisService {
     }
   }
 
+  /**
+   * Resolve clients exposed through an async getClient() API.
+   *
+   * @keyv/redis v5 returns a Promise from getClient(). Pattern invalidation
+   * previously treated that Promise as the client, failed the `keys` feature
+   * check, and fell back to clearing the whole cache.
+   */
+  private async resolveAsyncClient(): Promise<any | null> {
+    try {
+      const stores = this.cacheManager.stores as any;
+      const store = Array.isArray(stores) ? stores[0] : stores;
+      const getter =
+        (typeof store?.getClient === 'function'
+          ? () => store.getClient()
+          : null) ??
+        (typeof store?.store?.getClient === 'function'
+          ? () => store.store.getClient()
+          : null) ??
+        (typeof (this.cacheManager as any).store?.getClient === 'function'
+          ? () => (this.cacheManager as any).store.getClient()
+          : null);
+
+      return getter ? await getter() : null;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.warn(`Redis client discovery failed: ${errorMessage}`);
+      return null;
+    }
+  }
+
   private connecting: Promise<void> | null = null;
 
   /**
@@ -290,26 +321,59 @@ export class RedisService {
     prefix: string = this.PREFIX,
   ): Promise<void> {
     try {
-      const stores = this.cacheManager.stores as any;
-      const store = Array.isArray(stores) ? stores[0] : stores;
       const client =
-        store?.getClient?.() ??
-        store?.store?.getClient?.() ??
-        (this.cacheManager as any).store?.getClient?.();
-      if (client && typeof client.keys === 'function') {
-        const fullPattern = `${prefix}:${pattern}`;
-        const keys = await client.keys(fullPattern);
-        if (keys.length > 0) {
-          await Promise.all(keys.map((key: any) => this.del(key)));
-          this.logger.log(
-            `Deleted ${keys.length} keys matching ${fullPattern}`,
-          );
-        }
-      } else {
-        await this.cacheManager.clear();
+        (await this.getReadyClient()) ?? (await this.resolveAsyncClient());
+      if (!client) {
         this.logger.warn(
-          'Cache store does not support pattern deletion; cleared cache safely',
+          `Cache store does not support pattern deletion; skipped ${prefix}:${pattern}`,
         );
+        return;
+      }
+
+      const fullPattern = `${prefix}:${pattern}`;
+      let deleted = 0;
+
+      const deleteBatch = async (keys: string[]): Promise<void> => {
+        if (keys.length === 0) return;
+        if (typeof client.unlink === 'function') {
+          await client.unlink(keys);
+        } else {
+          await Promise.all(keys.map((key) => this.del(key)));
+        }
+        deleted += keys.length;
+      };
+
+      // node-redis exposes scanIterator(), which avoids the blocking KEYS
+      // command and lets us unlink matches in bounded batches.
+      if (typeof client.scanIterator === 'function') {
+        for await (const result of client.scanIterator({
+          MATCH: fullPattern,
+          COUNT: 100,
+        })) {
+          await deleteBatch(Array.isArray(result) ? result : [result]);
+        }
+      } else if (typeof client.scan === 'function') {
+        let cursor = '0';
+        do {
+          const result = await client.scan(cursor, {
+            MATCH: fullPattern,
+            COUNT: 100,
+          });
+          cursor = String(result.cursor);
+          await deleteBatch(result.keys ?? []);
+        } while (cursor !== '0');
+      } else if (typeof client.keys === 'function') {
+        // Compatibility fallback for non-node-redis stores and test doubles.
+        await deleteBatch(await client.keys(fullPattern));
+      } else {
+        this.logger.warn(
+          `Redis client cannot scan keys; skipped ${fullPattern}`,
+        );
+        return;
+      }
+
+      if (deleted > 0) {
+        this.logger.log(`Deleted ${deleted} keys matching ${fullPattern}`);
       }
     } catch (error) {
       const errorMessage =
@@ -407,6 +471,10 @@ export class RedisService {
       this.del(this.generateMatchingKey('employee-matching-count', eid)),
       this.del(this.generateMatchingKey('company-matching-count', cid)),
     ]);
+  }
+
+  async invalidateMatchingProfileCaches(): Promise<void> {
+    await this.delPattern('matching:*', this.JOB_PREFIX);
   }
 
   // ===== CHAT SERVICE KEYS =====

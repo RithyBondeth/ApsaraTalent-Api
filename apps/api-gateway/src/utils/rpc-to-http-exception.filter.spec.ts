@@ -67,4 +67,70 @@ describe('RpcToHttpExceptionFilter', () => {
     filter.catch(serverError, host);
     expect(Sentry.captureException).toHaveBeenCalledWith(serverError);
   });
+
+  it.each([
+    [undefined, 500, 'Internal server error'],
+    [42, 500, 'Internal server error'],
+    [{ cause: { statusCode: 429, message: 'Slow down' } }, 429, 'Slow down'],
+    [{ statusCode: 418 }, 418, 'Internal server error'],
+    [{ message: ['first', 'second'] }, 500, 'first, second'],
+  ])('covers additional defensive RPC shapes %#', (error, code, message) => {
+    filter.catch(error, host);
+    expect(json).toHaveBeenCalledWith({ statusCode: code, message });
+  });
+
+  it('parses a late JSON message after candidate locations are exhausted', () => {
+    let reads = 0;
+    const error = {
+      get message() {
+        reads += 1;
+        return reads === 1
+          ? 123
+          : JSON.stringify({ statusCode: 409, message: 'Late conflict' });
+      },
+    };
+
+    filter.catch(error, host);
+
+    expect(json).toHaveBeenCalledWith({
+      statusCode: 409,
+      message: 'Late conflict',
+    });
+  });
+
+  it('returns the original late message when it is not JSON', () => {
+    let reads = 0;
+    const error = {
+      get message() {
+        reads += 1;
+        return reads === 1 ? 123 : 'late plain failure';
+      },
+    };
+
+    filter.catch(error, host);
+
+    expect(json).toHaveBeenCalledWith({
+      statusCode: 500,
+      message: 'late plain failure',
+    });
+  });
+
+  it('falls back when late JSON has an invalid response shape', () => {
+    let reads = 0;
+    const error = {
+      get message() {
+        reads += 1;
+        return reads === 1
+          ? 123
+          : JSON.stringify({ statusCode: 'bad', message: 42 });
+      },
+    };
+
+    filter.catch(error, host);
+
+    expect(json).toHaveBeenCalledWith({
+      statusCode: 500,
+      message: 'Internal server error',
+    });
+  });
 });

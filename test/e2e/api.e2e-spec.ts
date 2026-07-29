@@ -1,6 +1,9 @@
-import request from 'supertest';
+import supertest from 'supertest';
 
 const baseUrl = process.env.E2E_BASE_URL ?? 'http://127.0.0.1:13000';
+const frontendOrigin = process.env.FRONTEND_ORIGIN ?? 'http://127.0.0.1:14000';
+const request = (url: string) =>
+  supertest.agent(url).set('Origin', frontendOrigin);
 const password = 'E2e!Password123';
 const runId = `${Date.now()}${Math.floor(Math.random() * 10000)}`;
 
@@ -18,20 +21,20 @@ const tinyPdf = Buffer.from(
   '%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF',
 );
 
-function cookieHeader(response: request.Response): string {
+function cookieHeader(response: supertest.Response): string {
   const values = response.headers['set-cookie'];
   const cookies = Array.isArray(values) ? values : values ? [values] : [];
   return cookies.map((value) => value.split(';', 1)[0]).join('; ');
 }
 
-function cookieValue(response: request.Response, name: string): string {
+function cookieValue(response: supertest.Response, name: string): string {
   const cookie = cookieHeader(response)
     .split('; ')
     .find((value) => value.startsWith(`${name}=`));
   return decodeURIComponent(cookie?.slice(name.length + 1) ?? '');
 }
 
-function expectSecureAuthBoundary(response: request.Response): void {
+function expectSecureAuthBoundary(response: supertest.Response): void {
   const values = response.headers['set-cookie'];
   const cookies = Array.isArray(values) ? values : values ? [values] : [];
   expect(cookies.some((value) => value.startsWith('auth-token='))).toBe(true);

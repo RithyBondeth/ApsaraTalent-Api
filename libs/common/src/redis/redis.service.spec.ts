@@ -342,6 +342,41 @@ describe('RedisService', () => {
     });
   });
 
+  describe('raw client discovery', () => {
+    it.each([
+      [{ stores: { client: { id: 'direct' } } }, 'direct'],
+      [{ stores: [{ store: { client: { id: 'nested' } } }] }, 'nested'],
+      [{ stores: [{ getClient: () => ({ id: 'getter' }) }] }, 'getter'],
+      [
+        { stores: [{ store: { getClient: () => ({ id: 'nested-getter' }) } }] },
+        'nested-getter',
+      ],
+      [
+        {
+          stores: [{}],
+          store: { getClient: () => ({ id: 'manager-getter' }) },
+        },
+        'manager-getter',
+      ],
+    ])(
+      'discovers a client from supported cache-manager shape %#',
+      async (shape, id) => {
+        await setup(shape);
+        expect((service as any).resolveClient()).toEqual({ id });
+      },
+    );
+
+    it('returns null when cache store discovery throws', async () => {
+      await setup();
+      Object.defineProperty(cacheManager, 'stores', {
+        get() {
+          throw new Error('broken store');
+        },
+      });
+      expect((service as any).resolveClient()).toBeNull();
+    });
+  });
+
   // ─── getReadyClient (tested indirectly via hitRateLimits) ─────────────────
 
   describe('getReadyClient (indirect tests)', () => {
@@ -402,6 +437,29 @@ describe('RedisService', () => {
       expect(cacheManager.del).toHaveBeenCalledTimes(2);
     });
 
+    it('awaits the async getClient API used by @keyv/redis v5', async () => {
+      const mockClient = {
+        scanIterator: jest.fn(() =>
+          (async function* () {
+            yield ['key:1', 'key:2'];
+          })(),
+        ),
+        unlink: jest.fn().mockResolvedValue(2),
+      };
+      await setup({
+        stores: [{ getClient: jest.fn().mockResolvedValue(mockClient) }],
+      });
+
+      await service.delPattern('user:*');
+
+      expect(mockClient.scanIterator).toHaveBeenCalledWith({
+        MATCH: `${PREFIX}:user:*`,
+        COUNT: 100,
+      });
+      expect(mockClient.unlink).toHaveBeenCalledWith(['key:1', 'key:2']);
+      expect(cacheManager.clear).not.toHaveBeenCalled();
+    });
+
     it('does nothing when no matching keys found', async () => {
       const mockClient = {
         keys: jest.fn().mockResolvedValue([]),
@@ -411,11 +469,10 @@ describe('RedisService', () => {
       expect(cacheManager.del).not.toHaveBeenCalled();
     });
 
-    it('falls back to clear() when client has no keys()', async () => {
-      // No client at all → store.getClient is undefined
+    it('does not clear unrelated caches when pattern deletion is unavailable', async () => {
       await setup({ stores: [{}] });
       await service.delPattern('user:*');
-      expect(cacheManager.clear).toHaveBeenCalled();
+      expect(cacheManager.clear).not.toHaveBeenCalled();
     });
 
     it('swallows errors silently', async () => {
@@ -494,9 +551,20 @@ describe('RedisService', () => {
 
   describe('invalidateJobSearchCaches', () => {
     it('calls delPattern for job:search:* and job:list:*', async () => {
-      // Fallback path — no client
+      const delPattern = jest
+        .spyOn(service, 'delPattern')
+        .mockResolvedValue(undefined);
       await service.invalidateJobSearchCaches();
-      expect(cacheManager.clear).toHaveBeenCalledTimes(2);
+      expect(delPattern).toHaveBeenNthCalledWith(
+        1,
+        'job:search:*',
+        'apsaratalent:job-service',
+      );
+      expect(delPattern).toHaveBeenNthCalledWith(
+        2,
+        'job:list:*',
+        'apsaratalent:job-service',
+      );
     });
   });
 
@@ -539,12 +607,17 @@ describe('RedisService', () => {
 
   describe('invalidateNotificationCaches', () => {
     it('deletes unread-count key and calls delPattern for list', async () => {
+      const delPattern = jest
+        .spyOn(service, 'delPattern')
+        .mockResolvedValue(undefined);
       await service.invalidateNotificationCaches('u1');
-      // del for unread-count + clear() from delPattern fallback
       expect(cacheManager.del).toHaveBeenCalledWith(
         'apsaratalent:notification-service:unread-count:u1',
       );
-      expect(cacheManager.clear).toHaveBeenCalled();
+      expect(delPattern).toHaveBeenCalledWith(
+        'list:u1:*',
+        'apsaratalent:notification-service',
+      );
     });
   });
 });

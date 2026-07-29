@@ -6,7 +6,7 @@ import { Value } from '@app/common/database/entities/company/value.entity';
 import { Social } from '@app/common/database/entities/social.entity';
 import { User } from '@app/common/database/entities/user.entity';
 import { EmbeddingService } from '@app/common/embedding/embedding.service';
-import { RedisService } from '@app/common/redis/redis.service';
+import { CacheInvalidationService } from '@app/common/redis/cache-invalidation.service';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -36,7 +36,7 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
     private readonly socialRepository: Repository<Social>,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly logger: PinoLogger,
-    private readonly redisService: RedisService,
+    private readonly cacheInvalidationService: CacheInvalidationService,
     private readonly embeddingService: EmbeddingService,
   ) {}
 
@@ -128,7 +128,7 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
 
         const uniqueFinalIds = Array.from(new Set(finalIds));
 
-        const currentIds = new Set(company.benefits.map((b) => b.id));
+        const currentIds = new Set((company.benefits ?? []).map((b) => b.id));
         const finalSet = new Set(uniqueFinalIds);
 
         const toAdd = uniqueFinalIds.filter((id) => !currentIds.has(id));
@@ -181,7 +181,7 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
 
         const uniqueFinalIds = Array.from(new Set(finalIds));
 
-        const currentIds = new Set(company.values.map((v) => v.id));
+        const currentIds = new Set((company.values ?? []).map((v) => v.id));
         const finalSet = new Set(uniqueFinalIds);
 
         const toAdd = uniqueFinalIds.filter((id) => !currentIds.has(id));
@@ -320,7 +320,9 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
         }
 
         const uniqueFinalIds = Array.from(new Set(finalIds));
-        const currentIds = new Set(company.careerScopes.map((c) => c.id));
+        const currentIds = new Set(
+          (company.careerScopes ?? []).map((c) => c.id),
+        );
         const finalSet = new Set(uniqueFinalIds);
 
         const toAdd = uniqueFinalIds.filter((id) => !currentIds.has(id));
@@ -396,22 +398,7 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
       /* =======================================================
          8️⃣ CACHE INVALIDATION
       ======================================================= */
-      const users = await this.userRepository.find({
-        where: { company: { id: companyId } },
-        select: ['id'],
-      });
-
-      const keysToDelete = users.map((u) =>
-        this.redisService.generateUserKey('detail', u.id),
-      );
-      keysToDelete.push(this.redisService.generateListKey('user', {}));
-
-      await Promise.all([
-        ...keysToDelete.map((k) => this.redisService.del(k)),
-        // Company edits can change job postings or fields that job search
-        // filters/sorts on (e.g. company location, size), so refresh those.
-        this.redisService.invalidateJobSearchCaches(),
-      ]);
+      await this.cacheInvalidationService.invalidateCompanyCache(companyId);
 
       return new UpdateCompanyInfoResponseDTO({
         message: 'Company information updated successfully',
@@ -427,12 +414,12 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
       if (error instanceof RpcException) throw error;
 
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           "An error occurred while updating the company's information.",
       );
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           "An error occurred while updating the company's information.",
         statusCode: 500,
       });

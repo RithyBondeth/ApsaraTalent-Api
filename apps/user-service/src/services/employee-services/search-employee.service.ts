@@ -247,13 +247,13 @@ export class SearchEmployeeService implements ISearchEmployeeService {
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while searching for employees.',
       );
       if (error instanceof RpcException) throw error;
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while searching for employees.',
         statusCode: 500,
       });

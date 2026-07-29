@@ -1,6 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
 import { Server } from 'socket.io';
 import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-service.constant';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
@@ -13,6 +12,7 @@ import {
 import { UserResponseDTO } from '@app/contracts/dtos';
 import { buildChatNotificationPreview } from '../utils/chat-notification.util';
 import { SocketStateService } from './socket-state.service';
+import { rpcCall } from '../../utils/rpc-call';
 
 @Injectable()
 export class ChatNotificationService implements IChatNotificationService {
@@ -31,11 +31,10 @@ export class ChatNotificationService implements IChatNotificationService {
     avatar: string;
   }> {
     try {
-      const user = await firstValueFrom<UserResponseDTO>(
-        this.userServiceClient.send(
-          USER_SERVICE.ACTIONS.FIND_ONE_BY_ID,
-          userId,
-        ),
+      const user = await rpcCall<UserResponseDTO>(
+        this.userServiceClient,
+        USER_SERVICE.ACTIONS.FIND_ONE_BY_ID,
+        userId,
       );
       if (!user) return { name: 'Unknown', avatar: CHAT.DEFAULT_AVATAR_PATH };
 
@@ -79,25 +78,24 @@ export class ChatNotificationService implements IChatNotificationService {
         attachmentFilename: params.attachmentFilename ?? null,
       });
 
-      const savedNotification = await firstValueFrom(
-        this.notificationClient.send(
-          NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION,
-          {
-            userId: params.receiverId,
-            title: senderProfile?.name || 'New message',
-            message: preview,
-            type: 'chat',
-            data: {
-              senderId: params.senderId,
-              receiverId: params.receiverId,
-              messageId: params.messageId,
-              messageType: params.messageType,
-              url: `/message?chat=${params.senderId}`,
-            },
-            sendPush: !receiverOnline,
-            senderAvatar: senderProfile?.avatar || null,
+      const savedNotification = await rpcCall<any>(
+        this.notificationClient,
+        NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION,
+        {
+          userId: params.receiverId,
+          title: senderProfile?.name || 'New message',
+          message: preview,
+          type: 'chat',
+          data: {
+            senderId: params.senderId,
+            receiverId: params.receiverId,
+            messageId: params.messageId,
+            messageType: params.messageType,
+            url: `/message?chat=${params.senderId}`,
           },
-        ),
+          sendPush: !receiverOnline,
+          senderAvatar: senderProfile?.avatar || null,
+        },
       );
 
       if (savedNotification?.id)
@@ -128,14 +126,16 @@ export class ChatNotificationService implements IChatNotificationService {
     },
   ): Promise<void> {
     try {
-      const savedMessage = await firstValueFrom(
-        this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.CREATE_MESSAGE, {
+      const savedMessage = await rpcCall<any>(
+        this.chatServiceClient,
+        CHAT_SERVICE.ACTIONS.CREATE_MESSAGE,
+        {
           senderId: params.senderId,
           receiverId: params.receiverId,
           content: params.content,
           type: 'call',
           timestamp: new Date(),
-        }),
+        },
       );
 
       server.to(params.receiverId).emit(CHAT_WEBSOCKET_EVENTS.NEW_MESSAGE, {

@@ -22,6 +22,22 @@ import {
   PUBLIC_STORAGE_FOLDERS,
 } from '@app/common';
 
+export function resolveSessionSecret(
+  sessionSecret: string | undefined,
+  isProduction: boolean,
+): string {
+  if (sessionSecret) return sessionSecret;
+  if (isProduction) {
+    throw new Error(
+      'SESSION_SECRET is required in production. Refusing to start with a default secret.',
+    );
+  }
+  console.warn(
+    '[bootstrap] SESSION_SECRET is unset — using an insecure development default.',
+  );
+  return 'insecure-development-secret';
+}
+
 async function bootstrap() {
   const app =
     await NestFactory.create<NestExpressApplication>(ApiGatewayModule);
@@ -85,22 +101,15 @@ async function bootstrap() {
   // missing one must stop the boot rather than silently degrade to a value
   // that is published in this repository's history.
   const sessionSecret = configService.get<string>('session.secret');
-  if (!sessionSecret) {
-    if (isProduction) {
-      throw new Error(
-        'SESSION_SECRET is required in production. Refusing to start with a default secret.',
-      );
-    }
-
-    console.warn(
-      '[bootstrap] SESSION_SECRET is unset — using an insecure development default.',
-    );
-  }
+  const resolvedSessionSecret = resolveSessionSecret(
+    sessionSecret,
+    isProduction,
+  );
 
   // Handle Express sessions securely
   app.use(
     session({
-      secret: sessionSecret || 'insecure-development-secret',
+      secret: resolvedSessionSecret,
       resave: false,
       saveUninitialized: false, // Don't create session until stored
       cookie: {

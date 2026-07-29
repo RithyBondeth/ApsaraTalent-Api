@@ -118,12 +118,12 @@ export class FindEmployeeService implements IFindEmployeeService {
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while fetching all of the employees',
       );
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while fetching all of the employees',
         statusCode: 500,
       });
@@ -214,12 +214,12 @@ export class FindEmployeeService implements IFindEmployeeService {
       // unexpected failures become a 500.
       if (error instanceof RpcException) throw error;
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while fetching an employee',
       );
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while fetching an employee',
         statusCode: 500,
       });
@@ -249,12 +249,12 @@ export class FindEmployeeService implements IFindEmployeeService {
       return new CountAllUsersResponseDTO(result);
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while counting all employees',
       );
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while counting all employees',
         statusCode: 500,
       });

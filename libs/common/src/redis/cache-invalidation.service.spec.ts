@@ -7,28 +7,33 @@ describe('CacheInvalidationService', () => {
     generateUserKey: jest.fn((kind, id) => `user:${kind}:${id}`),
     generateEmployeeKey: jest.fn((kind, id) => `employee:${kind}:${id}`),
     generateCompanyKey: jest.fn((kind, id) => `company:${kind}:${id}`),
+    generateAuthSessionKey: jest.fn((id) => `auth:${id}`),
     generateListKey: jest.fn((kind) => `${kind}:list`),
+    invalidateJobSearchCaches: jest.fn(),
+    invalidateMatchingProfileCaches: jest.fn(),
   };
-  const companies = { findOne: jest.fn() };
   const users = { find: jest.fn() };
-  const service = new CacheInvalidationService(
-    redis as any,
-    companies as any,
-    users as any,
-  );
+  const service = new CacheInvalidationService(redis as any, users as any);
 
   beforeEach(() => {
     jest.clearAllMocks();
     redis.del.mockResolvedValue(undefined);
     redis.delPattern.mockResolvedValue(undefined);
+    redis.invalidateJobSearchCaches.mockResolvedValue(undefined);
+    redis.invalidateMatchingProfileCaches.mockResolvedValue(undefined);
+    users.find.mockResolvedValue([]);
   });
 
-  it('invalidates owning user details and the employee list', async () => {
+  it('invalidates employee detail, owner, list, search, and derived caches', async () => {
     users.find.mockResolvedValue([{ id: 'user-1' }, { id: 'user-2' }]);
     await service.invalidateEmployeeCache('employee-1');
+    expect(redis.del).toHaveBeenCalledWith('employee:detail:employee-1');
     expect(redis.del).toHaveBeenCalledWith('user:detail:user-1');
-    expect(redis.del).toHaveBeenCalledWith('user:detail:user-2');
-    expect(redis.del).toHaveBeenCalledWith('user:list');
+    expect(redis.del).toHaveBeenCalledWith('auth:user-2');
+    expect(redis.delPattern).toHaveBeenCalledWith('employee:list:*');
+    expect(redis.delPattern).toHaveBeenCalledWith('employee:search:*');
+    expect(redis.delPattern).toHaveBeenCalledWith('user:list:*');
+    expect(redis.invalidateMatchingProfileCaches).toHaveBeenCalled();
   });
 
   it('handles user, employee, and favorite update events', async () => {
@@ -50,19 +55,19 @@ describe('CacheInvalidationService', () => {
   });
 
   it('invalidates company and owner-user caches', async () => {
-    companies.findOne.mockResolvedValue({
-      id: 'company-1',
-      user: { id: 'owner-1' },
-    });
+    users.find.mockResolvedValue([{ id: 'owner-1' }]);
     await service.handleCompanyUpdate({ companyId: 'company-1' });
     expect(redis.del).toHaveBeenCalledWith('company:detail:company-1');
     expect(redis.del).toHaveBeenCalledWith('user:detail:owner-1');
+    expect(redis.del).toHaveBeenCalledWith('auth:owner-1');
     expect(redis.delPattern).toHaveBeenCalledWith('company:list:*');
     expect(redis.delPattern).toHaveBeenCalledWith('user:list:*');
+    expect(redis.invalidateJobSearchCaches).toHaveBeenCalled();
+    expect(redis.invalidateMatchingProfileCaches).toHaveBeenCalled();
   });
 
   it('still invalidates company lists when no owner is found', async () => {
-    companies.findOne.mockResolvedValue(null);
+    users.find.mockResolvedValue([]);
     await service.handleCompanyUpdate({ companyId: 'company-1' });
     expect(redis.del).toHaveBeenCalledTimes(1);
     expect(redis.del).toHaveBeenCalledWith('company:detail:company-1');

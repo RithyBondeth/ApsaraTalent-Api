@@ -151,6 +151,50 @@ describe('auth-rpc.util', () => {
         message: 'Internal server error',
       });
     });
+
+    it('ignores arrays without a string message and preserves a valid status', () => {
+      expect(
+        normalizeAuthServiceError({
+          statusCode: 422,
+          message: [null, 12, false],
+        }),
+      ).toEqual({
+        statusCode: 422,
+        message: 'Internal server error',
+      });
+    });
+
+    it('parses a JSON message exposed only after candidate scanning', () => {
+      let reads = 0;
+      const error = {
+        get message() {
+          reads += 1;
+          return reads < 3
+            ? 123
+            : JSON.stringify({ statusCode: 429, message: 'Try later' });
+        },
+      };
+
+      expect(normalizeAuthServiceError(error)).toEqual({
+        statusCode: 429,
+        message: 'Try later',
+      });
+    });
+
+    it('falls back when a late message is malformed JSON', () => {
+      let reads = 0;
+      const error = {
+        get message() {
+          reads += 1;
+          return reads < 3 ? 123 : '{invalid';
+        },
+      };
+
+      expect(normalizeAuthServiceError(error)).toEqual({
+        statusCode: 500,
+        message: 'Internal server error',
+      });
+    });
   });
 
   // ─── rethrowAuthServiceError ──────────────────────────────────────────────

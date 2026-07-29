@@ -46,12 +46,12 @@ export class ResumeTemplateService implements IResumeTemplateService {
     } catch (error) {
       if (error instanceof RpcException) throw error;
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           "An error occurred while fetching all resume's templates.",
       );
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           "An error occurred while fetching all resume's templates.",
         statusCode: 500,
       });
@@ -86,12 +86,12 @@ export class ResumeTemplateService implements IResumeTemplateService {
     } catch (error) {
       if (error instanceof RpcException) throw error;
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           "An error occurred while fetching a resume's templates.",
       );
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           "An error occurred while fetching a resume's templates.",
         statusCode: 500,
       });
@@ -128,19 +128,19 @@ export class ResumeTemplateService implements IResumeTemplateService {
         message: "Resume's template was successfully created.",
       });
     } catch (error) {
-      if ((error as { code?: string }).code === '23505') {
+      if ((error as { code?: string })?.code === '23505') {
         throw new RpcException({
           message: 'A resume template with this key already exists.',
           statusCode: 409,
         });
       }
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           "An error occurred while creating the resume's template.",
       );
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           "An error occurred while creating the resume's template.",
         statusCode: 500,
       });
@@ -204,12 +204,12 @@ export class ResumeTemplateService implements IResumeTemplateService {
     } catch (error) {
       if (error instanceof RpcException) throw error;
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           "An error occurred while searching the resume's templates.",
       );
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           "An error occurred while searching the resume's templates.",
         statusCode: 500,
       });

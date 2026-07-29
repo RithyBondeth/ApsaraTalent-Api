@@ -1,5 +1,6 @@
 import { ImageService } from './image.service';
 import { PinoLogger } from 'nestjs-pino';
+import { MAX_DECODED_AVATAR_BYTES } from '@app/contracts';
 
 describe('ImageService', () => {
   const logger = {
@@ -36,5 +37,32 @@ describe('ImageService', () => {
 
     expect(result).toMatch(/^data:image\/jpeg;base64,/);
     expect(result.length).toBeLessThan(1_500_000);
+  });
+
+  it('rejects empty and oversized decoded image payloads before processing', async () => {
+    await expect(
+      service.optimizeProfilePicture('data:image/png;base64,AA=='),
+    ).rejects.toThrow();
+
+    const oversized = Buffer.alloc(MAX_DECODED_AVATAR_BYTES + 1).toString(
+      'base64',
+    );
+    await expect(
+      service.optimizeProfilePicture(`data:image/png;base64,${oversized}`),
+    ).rejects.toThrow('Profile picture is too large');
+  });
+
+  it('rejects a decoded image whose detected format is not allowed', async () => {
+    const gif = 'R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+    await expect(
+      service.optimizeProfilePicture(`data:image/png;base64,${gif}`),
+    ).rejects.toThrow('Unsupported profile picture format');
+  });
+
+  it('returns a stable error for non-Error image processing failures', async () => {
+    const loggerOnly = new ImageService(logger as unknown as PinoLogger);
+    await expect(
+      loggerOnly.optimizeProfilePicture('data:image/png;base64,not-base64'),
+    ).rejects.toThrow();
   });
 });

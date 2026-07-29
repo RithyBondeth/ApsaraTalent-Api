@@ -53,7 +53,7 @@ export class RefreshTokenService implements IRefreshTokenService {
       const [accessToken, refreshToken] = await Promise.all([
         this.jwtService.generateToken({
           id: user.id,
-          info: user.email,
+          info: user.email ?? user.phone,
           role: user.role,
         }),
         this.jwtService.generateRefreshToken(user.id),
@@ -74,12 +74,13 @@ export class RefreshTokenService implements IRefreshTokenService {
         }),
       });
     } catch (error) {
-      this.logger.error(
-        (error as Error).message || 'An error occurred while refreshing token.',
-      );
+      const message =
+        (error as Error)?.message ||
+        'An error occurred while refreshing token.';
+      this.logger.error(message);
       if (error instanceof RpcException) throw error;
       throw new RpcException({
-        message: (error as Error).message,
+        message,
         statusCode: 500,
       });
     }

@@ -247,4 +247,42 @@ describe('ResumeTemplateService', () => {
       'search failed',
     );
   });
+
+  it('uses stable fallbacks for null repository failures', async () => {
+    repository.find.mockRejectedValueOnce(null);
+    await expectRpc(
+      service.findAllResumeTemplate(),
+      500,
+      "An error occurred while fetching all resume's templates.",
+    );
+
+    repository.findOne.mockRejectedValueOnce(null);
+    await expectRpc(
+      service.findOneResumeTemplate('template-1'),
+      500,
+      "An error occurred while fetching a resume's templates.",
+    );
+
+    repository.save.mockRejectedValueOnce(null);
+    await expectRpc(
+      service.createResumeTemplate(
+        {
+          templateKey: 'classic',
+          title: 'Classic',
+          description: 'Template',
+        } as any,
+        undefined as any,
+      ),
+      500,
+      "An error occurred while creating the resume's template.",
+    );
+
+    const query = { getMany: jest.fn().mockRejectedValue(null) };
+    repository.createQueryBuilder.mockReturnValueOnce(query);
+    await expectRpc(
+      service.searchResumeTemplate({} as any),
+      500,
+      "An error occurred while searching the resume's templates.",
+    );
+  });
 });

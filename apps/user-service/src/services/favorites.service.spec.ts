@@ -50,6 +50,16 @@ describe('FavoritesService', () => {
     redis.del.mockResolvedValue(undefined);
   });
 
+  async function expectRpc(
+    promise: Promise<unknown>,
+    statusCode: number,
+    message: string,
+  ) {
+    const error = (await promise.catch((caught) => caught)) as RpcException;
+    expect(error).toBeInstanceOf(RpcException);
+    expect(error.getError()).toEqual({ statusCode, message });
+  }
+
   it('prevents duplicate employee favorites', async () => {
     employeeFavorites.findOne.mockResolvedValue({ id: 'favorite-1' });
     const error = (await service
@@ -91,6 +101,21 @@ describe('FavoritesService', () => {
       expect.objectContaining({ statusCode: 404 }),
     );
     expect(employeeFavorites.remove).not.toHaveBeenCalled();
+  });
+
+  it('prevents removal of a missing company favorite', async () => {
+    companyFavorites.findOne.mockResolvedValue(null);
+    const error = (await service
+      .companyUnfavoriteEmployee({
+        cid: 'company-1',
+        eid: 'employee-1',
+        favoriteId: 'missing',
+      })
+      .catch((caught) => caught)) as RpcException;
+    expect(error.getError()).toEqual(
+      expect.objectContaining({ statusCode: 404 }),
+    );
+    expect(companyFavorites.remove).not.toHaveBeenCalled();
   });
 
   it('creates company favorites symmetrically', async () => {
@@ -175,7 +200,11 @@ describe('FavoritesService', () => {
       {
         id: 'favorite-1',
         createdAt: new Date('2026-01-01T00:00:00Z'),
-        company: { id: 'company-1', user: { id: 'user-2' }, openPositions: [] },
+        company: {
+          id: 'company-1',
+          user: { id: 'user-2' },
+          openPositions: [{ id: 'job-1', skillsRequired: '' }],
+        },
       },
     ]);
     const result = await service.findAllEmployeeFavorites({
@@ -320,5 +349,160 @@ describe('FavoritesService', () => {
       statusCode: 500,
       message: 'employee count failed',
     });
+  });
+
+  it('normalizes a company duplicate-key race to Already favorited', async () => {
+    companyFavorites.findOne.mockResolvedValue(null);
+    companyFavorites.save.mockRejectedValueOnce({ code: '23505' });
+
+    const duplicate = (await service
+      .companyFavoriteEmployee({ cid: 'company-1', eid: 'employee-1' })
+      .catch((error) => error)) as RpcException;
+
+    expect(duplicate.getError()).toEqual({
+      statusCode: 400,
+      message: 'Already favorited',
+    });
+  });
+
+  it('wraps cache invalidation failures without emitting update events', async () => {
+    employeeFavorites.findOne.mockResolvedValue(null);
+    employeeFavorites.save.mockResolvedValue({ id: 'favorite-1' });
+    redis.del.mockRejectedValueOnce(new Error('cache delete failed'));
+
+    const failure = (await service
+      .employeeFavoriteCompany({ eid: 'employee-1', cid: 'company-1' })
+      .catch((error) => error)) as RpcException;
+
+    expect(failure.getError()).toEqual({
+      statusCode: 500,
+      message: 'cache delete failed',
+    });
+    expect(events.emit).not.toHaveBeenCalled();
+  });
+
+  it('handles missing nested relations in populated favorite lists', async () => {
+    employeeFavorites.find.mockResolvedValueOnce([
+      {
+        id: 'employee-favorite',
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+        company: undefined,
+      },
+    ]);
+    await expect(
+      service.findAllEmployeeFavorites({ eid: 'employee-1' }),
+    ).resolves.toEqual([
+      expect.objectContaining({ userId: '', company: expect.any(Object) }),
+    ]);
+
+    companyFavorites.find.mockResolvedValueOnce([
+      {
+        id: 'company-favorite',
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+        employee: undefined,
+      },
+    ]);
+    await expect(
+      service.findAllCompanyFavorites({ cid: 'company-1' }),
+    ).resolves.toEqual([
+      expect.objectContaining({ userId: '', employee: expect.any(Object) }),
+    ]);
+  });
+
+  it('wraps empty non-Error failures with operation-specific messages', async () => {
+    companyFavorites.findOne.mockRejectedValueOnce(null);
+    const favoriteFailure = (await service
+      .companyFavoriteEmployee({ cid: 'company-1', eid: 'employee-1' })
+      .catch((error) => error)) as RpcException;
+    expect(favoriteFailure.getError()).toEqual({
+      statusCode: 500,
+      message: 'An error occurred while favoriting employee.',
+    });
+
+    companyFavorites.find.mockRejectedValueOnce(null);
+    const listFailure = (await service
+      .findAllCompanyFavorites({ cid: 'company-1' })
+      .catch((error) => error)) as RpcException;
+    expect(listFailure.getError()).toEqual({
+      statusCode: 500,
+      message: 'An error occurred while finding company favorites.',
+    });
+  });
+
+  it('wraps cache population failures from list and count operations', async () => {
+    employeeFavorites.find.mockResolvedValueOnce([]);
+    redis.set.mockRejectedValueOnce(new Error('cache write failed'));
+    const listFailure = (await service
+      .findAllEmployeeFavorites({ eid: 'employee-1' })
+      .catch((error) => error)) as RpcException;
+    expect(listFailure.getError()).toEqual({
+      statusCode: 500,
+      message: 'cache write failed',
+    });
+
+    companyFavorites.count.mockResolvedValueOnce(1);
+    redis.set.mockRejectedValueOnce(new Error('count cache failed'));
+    const countFailure = (await service
+      .countCompanyFavorite({ cid: 'company-1' })
+      .catch((error) => error)) as RpcException;
+    expect(countFailure.getError()).toEqual({
+      statusCode: 500,
+      message: 'count cache failed',
+    });
+  });
+
+  it('uses operation-specific fallbacks for every remaining null failure', async () => {
+    employeeFavorites.findOne.mockRejectedValueOnce(null);
+    await expectRpc(
+      service.employeeFavoriteCompany({
+        eid: 'employee-1',
+        cid: 'company-1',
+      }),
+      500,
+      'An error occurred while favoriting company.',
+    );
+
+    employeeFavorites.findOne.mockRejectedValueOnce(null);
+    await expectRpc(
+      service.employeeUnfavoriteCompany({
+        eid: 'employee-1',
+        cid: 'company-1',
+        favoriteId: 'favorite-1',
+      }),
+      500,
+      'An error occurred while unfavoriting company.',
+    );
+
+    companyFavorites.findOne.mockRejectedValueOnce(null);
+    await expectRpc(
+      service.companyUnfavoriteEmployee({
+        cid: 'company-1',
+        eid: 'employee-1',
+        favoriteId: 'favorite-1',
+      }),
+      500,
+      'An error occurred while unfavoriting employee.',
+    );
+
+    employeeFavorites.find.mockRejectedValueOnce(null);
+    await expectRpc(
+      service.findAllEmployeeFavorites({ eid: 'employee-1' }),
+      500,
+      'An error occurred while finding employee favorites.',
+    );
+
+    companyFavorites.count.mockRejectedValueOnce(null);
+    await expectRpc(
+      service.countCompanyFavorite({ cid: 'company-1' }),
+      500,
+      'An error occurred while counting company favorites.',
+    );
+
+    employeeFavorites.count.mockRejectedValueOnce(null);
+    await expectRpc(
+      service.countEmployeeFavorite({ eid: 'employee-1' }),
+      500,
+      'An error occurred while counting employee favorites.',
+    );
   });
 });

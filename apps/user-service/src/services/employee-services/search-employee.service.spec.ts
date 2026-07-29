@@ -127,4 +127,96 @@ describe('SearchEmployeeService', () => {
       message: 'database unavailable',
     });
   });
+
+  it('builds education, experience, scope, and experience-order filters', async () => {
+    const qb = queryBuilder([[{ id: 'employee-1', user: undefined }], 1]);
+    repository.createQueryBuilder.mockReturnValue(qb);
+
+    const result = await service.searchEmployee({
+      experienceLevel: '3 - 5 years',
+      education: ['Bachelor', 'Master'],
+      careerScopes: ['Engineering'],
+      sortBy: 'yearsOfExperience',
+      sortOrder: 'desc',
+    } as any);
+
+    expect(qb.andWhere).toHaveBeenCalledWith(
+      'employee.yearsOfExperience = :experienceLevel',
+      { experienceLevel: '3 - 5 years' },
+    );
+    expect(qb.andWhere).toHaveBeenCalledWith(
+      expect.stringContaining('cs_candidate.embedding'),
+      expect.objectContaining({ searchScopes: ['Engineering'] }),
+    );
+    expect(qb.orderBy).toHaveBeenCalledWith(
+      expect.stringContaining('No Experience'),
+      'DESC',
+    );
+    expect(result.data[0]).toEqual(
+      expect.objectContaining({ userId: undefined }),
+    );
+
+    const brackets = qb.andWhere.mock.calls
+      .map(([condition]) => condition)
+      .find((condition) => condition?.whereFactory);
+    const expression = {
+      where: jest.fn(),
+      orWhere: jest.fn(),
+    };
+    brackets.whereFactory(expression);
+    expect(expression.where).toHaveBeenCalledWith(
+      'edu.degree ILIKE :degree_0',
+      { degree_0: '%Bachelor%' },
+    );
+    expect(expression.orWhere).toHaveBeenCalledWith(
+      'edu.degree ILIKE :degree_1',
+      { degree_1: '%Master%' },
+    );
+  });
+
+  it.each(['All', ''])(
+    'does not add an experience filter for the %j sentinel',
+    async (experienceLevel) => {
+      const qb = queryBuilder([[], 0]);
+      repository.createQueryBuilder.mockReturnValue(qb);
+      await service.searchEmployee({ experienceLevel } as any);
+      expect(qb.andWhere).not.toHaveBeenCalledWith(
+        'employee.yearsOfExperience = :experienceLevel',
+        expect.anything(),
+      );
+    },
+  );
+
+  it('preserves RPC errors and uses a defensive message for non-Error failures', async () => {
+    const rpc = new RpcException({ statusCode: 409, message: 'conflict' });
+    repository.createQueryBuilder.mockImplementationOnce(() => {
+      throw rpc;
+    });
+    await expect(service.searchEmployee({} as any)).rejects.toBe(rpc);
+
+    repository.createQueryBuilder.mockImplementationOnce(() => {
+      throw null;
+    });
+    const failure = (await service
+      .searchEmployee({} as any)
+      .catch((caught) => caught)) as RpcException;
+    expect(failure.getError()).toEqual({
+      statusCode: 500,
+      message: 'An error occurred while searching for employees.',
+    });
+  });
+
+  it('wraps cache write failures after a successful database search', async () => {
+    repository.createQueryBuilder.mockReturnValue(queryBuilder([[], 0]));
+    redis.set.mockRejectedValueOnce(new Error('cache unavailable'));
+
+    const failure = (await service
+      .searchEmployee({} as any)
+      .catch((caught) => caught)) as RpcException;
+
+    expect(failure.getError()).toEqual({
+      statusCode: 500,
+      message: 'cache unavailable',
+    });
+  });
 });

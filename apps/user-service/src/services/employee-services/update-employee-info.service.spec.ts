@@ -246,4 +246,127 @@ describe('UpdateEmployeeInfoService', () => {
     );
     expect(result.message).toBe('Employee information updated successfully');
   });
+
+  it('handles sparse relationships, duplicate IDs, and missing owned records', async () => {
+    const employee = {
+      id: 'employee-1',
+      job: null,
+      user: { id: 'user-1', email: 'person@example.com' },
+      skills: null,
+      careerScopes: null,
+    };
+    employeeRepo.findOne
+      .mockResolvedValueOnce(employee)
+      .mockResolvedValueOnce(null);
+    repository.findOne.mockResolvedValue(null);
+    const skillRelation = relationQueryBuilder();
+    const scopeRelation = relationQueryBuilder();
+    employeeRepo.createQueryBuilder
+      .mockReturnValueOnce(skillRelation)
+      .mockReturnValueOnce(scopeRelation);
+
+    const result = await service.updateEmployeeInfo({
+      employeeId: 'employee-1',
+      updateEmployeeInfoDTO: {
+        email: ' ',
+        skills: [{ id: 'skill-1' }, { id: 'skill-1' }],
+        skillIdsToDelete: [],
+        careerScopes: [{ id: 'scope-1' }, { id: 'scope-1' }],
+        careerScopeIdsToDelete: [],
+        experiences: [{ id: 'foreign-experience', title: 'Ignored' }],
+        experienceIdsToDelete: [],
+        educations: [{ id: 'foreign-education', degree: 'Ignored' }],
+        educationIdsToDelete: [],
+        socials: [{ id: 'foreign-social', url: 'https://invalid.test' }],
+        socialIdsToDelete: [],
+      } as any,
+    });
+
+    expect(skillRelation.addAndRemove).toHaveBeenCalledWith(['skill-1'], []);
+    expect(scopeRelation.addAndRemove).toHaveBeenCalledWith(['scope-1'], []);
+    expect(repository.save).not.toHaveBeenCalled();
+    expect(repository.createQueryBuilder).not.toHaveBeenCalled();
+    expect(userRepo.save).not.toHaveBeenCalled();
+    expect(result.message).toBe('Employee information updated successfully');
+  });
+
+  it('contains asynchronous embedding failures for job titles and scopes', async () => {
+    const employee = {
+      id: 'employee-1',
+      job: 'Developer',
+      user: { email: 'person@example.com' },
+      skills: [],
+      careerScopes: [],
+    };
+    employeeRepo.findOne.mockResolvedValue(employee);
+    repository.findOne.mockResolvedValue(null);
+    repository.save.mockResolvedValue({ id: 'scope-new', name: 'Design' });
+    employeeRepo.createQueryBuilder.mockReturnValue(relationQueryBuilder());
+    embedding.embedAsVector.mockRejectedValue(new Error('embedding offline'));
+
+    await expect(
+      service.updateEmployeeInfo({
+        employeeId: 'employee-1',
+        updateEmployeeInfoDTO: {
+          job: 'Lead',
+          careerScopes: [{ name: 'Design' }],
+        } as any,
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        message: 'Employee information updated successfully',
+      }),
+    );
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to embed employee job title'),
+    );
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to embed career scope'),
+    );
+  });
+
+  it('covers explicit relation deletion and unchanged relation sets', async () => {
+    const employee = {
+      id: 'employee-1',
+      user: { email: 'person@example.com' },
+      skills: [{ id: 'skill-old' }, { id: 'skill-delete' }],
+      careerScopes: [{ id: 'scope-keep' }],
+    };
+    employeeRepo.findOne.mockResolvedValue(employee);
+    const skillRelation = relationQueryBuilder();
+    employeeRepo.createQueryBuilder.mockReturnValueOnce(skillRelation);
+
+    await service.updateEmployeeInfo({
+      employeeId: 'employee-1',
+      updateEmployeeInfoDTO: {
+        skills: [{ id: 'skill-delete' }],
+        skillIdsToDelete: ['skill-delete'],
+        careerScopes: [{ id: 'scope-keep' }, null],
+        careerScopeIdsToDelete: [],
+      } as any,
+    });
+
+    expect(skillRelation.addAndRemove).toHaveBeenCalledWith(
+      [],
+      expect.arrayContaining(['skill-old', 'skill-delete']),
+    );
+    expect(employeeRepo.createQueryBuilder).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses a stable fallback for a null update failure', async () => {
+    employeeRepo.findOne.mockRejectedValueOnce(null);
+    const error = (await service
+      .updateEmployeeInfo({
+        employeeId: 'employee-1',
+        updateEmployeeInfoDTO: {},
+      })
+      .catch((caught) => caught)) as RpcException;
+
+    expect(error.getError()).toEqual({
+      statusCode: 500,
+      message: "An error occurred while updating the employee's information.",
+    });
+  });
 });

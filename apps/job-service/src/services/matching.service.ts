@@ -195,7 +195,7 @@ export class MatchingService implements IMatchingService {
         notificationTargets.push(companyUserId);
       }
 
-      if (becameMatched) {
+      if (becameMatched && company.user?.email && employee.user?.email) {
         this.emailService
           .sendEmail({
             from: company.user.email,
@@ -405,7 +405,7 @@ export class MatchingService implements IMatchingService {
         notificationTargets.push(employeeUserId);
       }
 
-      if (becameMatched) {
+      if (becameMatched && employee.user?.email && company.user?.email) {
         this.emailService
           .sendEmail({
             from: employee.user.email,
@@ -464,11 +464,13 @@ export class MatchingService implements IMatchingService {
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while fetching the employee liked.',
       );
       throw new RpcException({
-        message: (error as Error).message,
+        message:
+          (error as Error)?.message ||
+          'An error occurred while fetching the employee liked.',
         statusCode: 500,
       });
     }
@@ -507,11 +509,13 @@ export class MatchingService implements IMatchingService {
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while fetching the company liked.',
       );
       throw new RpcException({
-        message: (error as Error).message,
+        message:
+          (error as Error)?.message ||
+          'An error occurred while fetching the company liked.',
         statusCode: 500,
       });
     }
@@ -552,11 +556,13 @@ export class MatchingService implements IMatchingService {
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while fetching the employee matching.',
       );
       throw new RpcException({
-        message: (error as Error).message,
+        message:
+          (error as Error)?.message ||
+          'An error occurred while fetching the employee matching.',
         statusCode: 500,
       });
     }
@@ -597,11 +603,13 @@ export class MatchingService implements IMatchingService {
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while fetching the company matching.',
       );
       throw new RpcException({
-        message: (error as Error).message,
+        message:
+          (error as Error)?.message ||
+          'An error occurred while fetching the company matching.',
         statusCode: 500,
       });
     }
@@ -629,11 +637,13 @@ export class MatchingService implements IMatchingService {
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while counting the current employee matching.',
       );
       throw new RpcException({
-        message: (error as Error).message,
+        message:
+          (error as Error)?.message ||
+          'An error occurred while counting the current employee matching.',
         statusCode: 500,
       });
     }
@@ -643,9 +653,9 @@ export class MatchingService implements IMatchingService {
     employee: Employee,
     company: Company,
   ): number | null {
-    const employeeSkills = (employee.skills ?? []).map((s) =>
-      s.name.toLowerCase().trim(),
-    );
+    const employeeSkills = (employee.skills ?? [])
+      .map((s) => (s.name ?? '').toLowerCase().trim())
+      .filter(Boolean);
     if (!employeeSkills.length) return null;
 
     const jobs = company.openPositions ?? [];
@@ -689,11 +699,13 @@ export class MatchingService implements IMatchingService {
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while counting the current company matching.',
       );
       throw new RpcException({
-        message: (error as Error).message,
+        message:
+          (error as Error)?.message ||
+          'An error occurred while counting the current company matching.',
         statusCode: 500,
       });
     }

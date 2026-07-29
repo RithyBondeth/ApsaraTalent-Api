@@ -1,5 +1,10 @@
 import 'reflect-metadata';
-import { CHAT_WEBSOCKET_EVENTS } from '@app/contracts';
+import {
+  CHAT_ALLOW_ALL_CORS,
+  CHAT_ALLOWED_ORIGINS,
+  CHAT_WEBSOCKET_EVENTS,
+} from '@app/contracts';
+import { GATEWAY_OPTIONS } from '@nestjs/websockets/constants';
 import { CallGateway } from './call.gateway';
 
 describe('CallGateway', () => {
@@ -24,6 +29,21 @@ describe('CallGateway', () => {
       avatar: 'a.png',
     });
     notifications.resolveCallEndContent.mockReturnValue('Call ended');
+  });
+
+  it('applies the configured signaling CORS policy', () => {
+    const options = Reflect.getMetadata(GATEWAY_OPTIONS, CallGateway);
+    const headerless = jest.fn();
+    options.cors.origin(undefined, headerless);
+    expect(headerless).toHaveBeenCalledWith(null, true);
+
+    const untrusted = jest.fn();
+    options.cors.origin('https://untrusted.example', untrusted);
+    if (CHAT_ALLOW_ALL_CORS || CHAT_ALLOWED_ORIGINS.length === 0) {
+      expect(untrusted).toHaveBeenCalledWith(null, true);
+    } else {
+      expect(untrusted).toHaveBeenCalledWith(expect.any(Error), false);
+    }
   });
 
   it('rejects unauthorized and malformed call offers', async () => {
@@ -131,4 +151,60 @@ describe('CallGateway', () => {
       expect(authenticated.emit).toHaveBeenCalledWith('error', { message });
     },
   );
+
+  it.each([
+    [{ receiverId: 'receiver', offer: { type: 'offer' } }, 'callId'],
+    [{ callId: 'call-1', offer: { type: 'offer' } }, 'receiverId'],
+    [{ callId: 'call-1', receiverId: 'receiver' }, 'offer'],
+  ])('rejects call offers missing %s', async (payload, missingField) => {
+    expect(missingField).toBeTruthy();
+    const socket = client('caller');
+    await expect(
+      gateway.handleCallOffer(socket, payload as any),
+    ).resolves.toEqual(expect.objectContaining({ success: false }));
+    expect(server.to).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['handleCallAnswer', { callerId: 'caller', answer: {} }],
+    ['handleCallAnswer', { callId: 'call-1', answer: {} }],
+    ['handleCallAnswer', { callId: 'call-1', callerId: 'caller' }],
+    ['handleIceCandidate', { targetUserId: 'receiver', candidate: {} }],
+    ['handleIceCandidate', { callId: 'call-1', candidate: {} }],
+    ['handleIceCandidate', { callId: 'call-1', targetUserId: 'receiver' }],
+  ])('rejects partial signaling payloads in %s', async (method, payload) => {
+    await expect(
+      (gateway as any)[method](client('user-1'), payload),
+    ).resolves.toEqual(expect.objectContaining({ success: false }));
+    expect(server.to).not.toHaveBeenCalled();
+  });
+
+  it('does not emit an incoming call when caller-profile lookup fails', async () => {
+    notifications.getCallerProfile.mockRejectedValueOnce(
+      new Error('profile unavailable'),
+    );
+    await expect(
+      gateway.handleCallOffer(client('caller'), {
+        callId: 'call-1',
+        receiverId: 'receiver',
+        offer: { type: 'offer', sdp: 'sdp' },
+      } as any),
+    ).rejects.toThrow('profile unavailable');
+    expect(server.to).not.toHaveBeenCalled();
+  });
+
+  it('surfaces call-log persistence failures after notifying the peer', async () => {
+    notifications.emitCallLogMessage.mockRejectedValueOnce(
+      new Error('chat persistence unavailable'),
+    );
+    await expect(
+      gateway.handleCallDecline(client('receiver'), {
+        callId: 'call-1',
+        callerId: 'caller',
+      }),
+    ).rejects.toThrow('chat persistence unavailable');
+    expect(roomEmit).toHaveBeenCalledWith(CHAT_WEBSOCKET_EVENTS.CALL_DECLINED, {
+      callId: 'call-1',
+    });
+  });
 });

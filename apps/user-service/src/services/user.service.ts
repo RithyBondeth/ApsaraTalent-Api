@@ -49,7 +49,7 @@ export class UserService implements IUserService, OnModuleInit {
       this.logger.info('Cache warming complete');
     } catch (error) {
       this.logger.warn(
-        `Cache warming failed (non-fatal): ${(error as Error).message}`,
+        `Cache warming failed (non-fatal): ${(error as Error)?.message || 'Unknown error'}`,
       );
     }
   }
@@ -121,13 +121,13 @@ export class UserService implements IUserService, OnModuleInit {
       return results;
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while finding all the users.',
       );
       throw new RpcException({
         statusCode: 500,
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while finding all the users.',
       });
     }
@@ -154,13 +154,13 @@ export class UserService implements IUserService, OnModuleInit {
       return new CountAllUsersResponseDTO(result);
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while counting all users.',
       );
       throw new RpcException({
         statusCode: 500,
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while counting all users.',
       });
     }
@@ -232,13 +232,13 @@ export class UserService implements IUserService, OnModuleInit {
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while finding user by id.',
       );
       throw new RpcException({
         statusCode: 500,
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while finding user by id.',
       });
     }
@@ -310,13 +310,13 @@ export class UserService implements IUserService, OnModuleInit {
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while finding career scopes.',
       );
       if (error instanceof RpcException) throw error;
       throw new RpcException({
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while finding career scopes.',
         statusCode: 500,
       });

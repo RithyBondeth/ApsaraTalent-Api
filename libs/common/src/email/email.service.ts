@@ -18,9 +18,9 @@ export class EmailService {
     this.initializeTransporter();
   }
 
-  private async initializeTransporter() {
+  private initializeTransporter(): void {
     try {
-      this.emailConfig = await emailConfig(this.configService);
+      this.emailConfig = emailConfig(this.configService);
 
       this.transporter = nodemailer.createTransport({
         host: this.emailConfig.host,

@@ -1,9 +1,9 @@
 import { ConfigService } from '@nestjs/config';
 import { IEmailConfigOptions } from '../interfaces/email-config.interface';
 
-export const emailConfig = async (
+export const emailConfig = (
   configService: ConfigService,
-): Promise<IEmailConfigOptions> => ({
+): IEmailConfigOptions => ({
   // These keys are .required() in validation.schema.ts, so getOrThrow states
   // that guarantee at the use site rather than re-typing it as optional.
   host: configService.getOrThrow<string>('email.host'),

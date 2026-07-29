@@ -97,7 +97,7 @@ export class FavoritesService implements IFavoritesService {
       });
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while favoriting company.',
       );
       if ((error as any)?.code === '23505') {
@@ -110,7 +110,7 @@ export class FavoritesService implements IFavoritesService {
       throw new RpcException({
         statusCode: 500,
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while favoriting company.',
       });
     }
@@ -165,14 +165,14 @@ export class FavoritesService implements IFavoritesService {
       });
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while unfavoriting company.',
       );
       if (error instanceof RpcException) throw error;
       throw new RpcException({
         statusCode: 500,
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while unfavoriting company.',
       });
     }
@@ -230,7 +230,7 @@ export class FavoritesService implements IFavoritesService {
       });
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while favoriting employee.',
       );
       if ((error as any)?.code === '23505') {
@@ -243,7 +243,7 @@ export class FavoritesService implements IFavoritesService {
       throw new RpcException({
         statusCode: 500,
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while favoriting employee.',
       });
     }
@@ -298,14 +298,14 @@ export class FavoritesService implements IFavoritesService {
       });
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while unfavoriting employee.',
       );
       if (error instanceof RpcException) throw error;
       throw new RpcException({
         statusCode: 500,
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while unfavoriting employee.',
       });
     }
@@ -358,13 +358,13 @@ export class FavoritesService implements IFavoritesService {
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while finding employee favorites.',
       );
       throw new RpcException({
         statusCode: 500,
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while finding employee favorites.',
       });
     }
@@ -412,13 +412,13 @@ export class FavoritesService implements IFavoritesService {
       return result;
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while finding company favorites.',
       );
       throw new RpcException({
         statusCode: 500,
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while finding company favorites.',
       });
     }
@@ -452,13 +452,13 @@ export class FavoritesService implements IFavoritesService {
       return new FavoriteCountResponseDTO(result);
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while counting company favorites.',
       );
       throw new RpcException({
         statusCode: 500,
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while counting company favorites.',
       });
     }
@@ -492,13 +492,13 @@ export class FavoritesService implements IFavoritesService {
       return new FavoriteCountResponseDTO(result);
     } catch (error) {
       this.logger.error(
-        (error as Error).message ||
+        (error as Error)?.message ||
           'An error occurred while counting employee favorites.',
       );
       throw new RpcException({
         statusCode: 500,
         message:
-          (error as Error).message ||
+          (error as Error)?.message ||
           'An error occurred while counting employee favorites.',
       });
     }

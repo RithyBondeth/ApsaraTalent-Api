@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { plainToInstance } from 'class-transformer';
 import {
   AiMatchProfilesDTO,
   AiMatchProfilesResponseDTO,
@@ -90,5 +91,76 @@ describe('shared response DTO mappings', () => {
     expect(existing.employee).toBe(employee);
     expect(existing.company).toBe(company);
     expect(new UserResponseDTO({ id: 'user-3' })).toEqual({ id: 'user-3' });
+  });
+
+  it('constructs and transforms every nested employee response field', () => {
+    const employee = plainToInstance(EmployeeResponseDTO, {
+      id: 'employee-1',
+      dob: '2000-01-01T00:00:00.000Z',
+      skills: [{ name: 'TypeScript' }],
+      experiences: [
+        {
+          title: 'Engineer',
+          startDate: '2024-01-01T00:00:00.000Z',
+          endDate: '2025-01-01T00:00:00.000Z',
+        },
+      ],
+      educations: [{ school: 'RUPP', degree: 'BSc', year: '2024' }],
+      socials: [{ platform: 'GitHub', url: 'https://github.com/example' }],
+      careerScopes: [{ name: 'Software' }],
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-02T00:00:00.000Z',
+    });
+
+    expect(employee.dob).toBeInstanceOf(Date);
+    expect(employee.skills?.[0]).toBeInstanceOf(SkillResponseDTO);
+    expect(employee.experiences?.[0]).toBeInstanceOf(ExperienceResponseDTO);
+    expect(employee.experiences?.[0].startDate).toBeInstanceOf(Date);
+    expect(employee.educations?.[0]).toBeInstanceOf(EducationResponseDTO);
+    expect(employee.socials?.[0]).toBeInstanceOf(SocialResponseDTO);
+    expect(employee.careerScopes?.[0]).toBeInstanceOf(CareerScopesResponseDTO);
+    expect(employee.createdAt).toBeInstanceOf(Date);
+    expect(employee.updatedAt).toBeInstanceOf(Date);
+  });
+
+  it('constructs every nested company and user response field', () => {
+    const user = plainToInstance(UserResponseDTO, {
+      id: 'user-1',
+      employee: { id: 'employee-1' },
+      company: {
+        id: 'company-1',
+        images: [{ image: '/image.png' }],
+        openPositions: [{ id: 'job-1', skillsRequired: '' }],
+        values: [{ label: 'Integrity' }],
+        benefits: [{ label: 'Remote' }],
+        careerScopes: [{ name: 'Engineering' }],
+        socials: [{ platform: 'LinkedIn', url: 'https://linkedin.com' }],
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+      lastLoginAt: '2026-01-01T00:00:00.000Z',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-02T00:00:00.000Z',
+    });
+
+    expect(user.employee).toBeInstanceOf(EmployeeResponseDTO);
+    expect(user.company).toBeInstanceOf(CompanyResponseDTO);
+    expect(user.company?.images?.[0]).toBeInstanceOf(ImageResponseDTO);
+    expect(user.company?.openPositions?.[0]).toBeInstanceOf(
+      JobPositionResponseDTO,
+    );
+    expect(user.company?.values?.[0]).toBeInstanceOf(
+      ValuesAndBenefitsResponseDTO,
+    );
+    expect(user.company?.benefits?.[0]).toBeInstanceOf(
+      ValuesAndBenefitsResponseDTO,
+    );
+    expect(user.company?.careerScopes?.[0]).toBeInstanceOf(
+      CareerScopesResponseDTO,
+    );
+    expect(user.company?.socials?.[0]).toBeInstanceOf(SocialResponseDTO);
+    expect(user.company?.createdAt).toBeInstanceOf(Date);
+    expect(user.lastLoginAt).toBeInstanceOf(Date);
+    expect(user.createdAt).toBeInstanceOf(Date);
+    expect(user.updatedAt).toBeInstanceOf(Date);
   });
 });

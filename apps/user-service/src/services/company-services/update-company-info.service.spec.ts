@@ -18,11 +18,8 @@ describe('UpdateCompanyInfoService', () => {
   };
   const userRepo = { save: jest.fn(), find: jest.fn() };
   const logger = { error: jest.fn(), warn: jest.fn() };
-  const redis = {
-    generateUserKey: jest.fn((_type, id) => `user:${id}`),
-    generateListKey: jest.fn(() => 'user-list'),
-    del: jest.fn(),
-    invalidateJobSearchCaches: jest.fn(),
+  const cache = {
+    invalidateCompanyCache: jest.fn(),
   };
   const embedding = { embedAsVector: jest.fn() };
   const service = new UpdateCompanyInfoService(
@@ -34,7 +31,7 @@ describe('UpdateCompanyInfoService', () => {
     repository as any,
     userRepo as any,
     logger as any,
-    redis as any,
+    cache as any,
     embedding as any,
   );
 
@@ -103,8 +100,7 @@ describe('UpdateCompanyInfoService', () => {
         isEmailVerified: false,
       }),
     );
-    expect(redis.del).toHaveBeenCalledWith('user:user-1');
-    expect(redis.invalidateJobSearchCaches).toHaveBeenCalled();
+    expect(cache.invalidateCompanyCache).toHaveBeenCalledWith('company-1');
     expect(result.message).toBe('Company information updated successfully');
   });
 
@@ -240,5 +236,129 @@ describe('UpdateCompanyInfoService', () => {
     expect(embedding.embedAsVector).toHaveBeenCalledWith('Design');
     expect(repository.query).toHaveBeenCalledTimes(3);
     expect(result.company.openPositions).toHaveLength(1);
+  });
+
+  it('contains asynchronous embedding failures without failing the profile update', async () => {
+    const company = {
+      id: 'company-1',
+      user: { id: 'user-1', email: 'company@example.com' },
+      benefits: [],
+      values: [],
+      openPositions: [],
+      careerScopes: [],
+      socials: [],
+    };
+    companyRepo.findOne.mockResolvedValue(company);
+    companyRepo.createQueryBuilder.mockReturnValue(relationQueryBuilder());
+    repository.findOne.mockResolvedValue(null);
+    repository.save.mockImplementation(async (value: any) => ({
+      id: value.title ? 'job-new' : 'scope-new',
+      ...value,
+    }));
+    embedding.embedAsVector.mockRejectedValue(new Error('embedding offline'));
+
+    await expect(
+      service.updateCompanyInfo({
+        companyId: 'company-1',
+        updateCompanyInfoDTO: {
+          jobs: [{ title: 'Engineer' }],
+          careerScopes: [{ name: 'Engineering' }],
+        } as any,
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        message: 'Company information updated successfully',
+      }),
+    );
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('embedding offline'),
+    );
+  });
+
+  it('wraps cache invalidation and non-Error repository failures', async () => {
+    companyRepo.findOne.mockResolvedValueOnce({
+      id: 'company-1',
+      benefits: [],
+      values: [],
+      openPositions: [],
+      careerScopes: [],
+      socials: [],
+    });
+    cache.invalidateCompanyCache.mockRejectedValueOnce(
+      new Error('cache unavailable'),
+    );
+    const cacheFailure = (await service
+      .updateCompanyInfo({
+        companyId: 'company-1',
+        updateCompanyInfoDTO: {},
+      })
+      .catch((error) => error)) as RpcException;
+    expect(cacheFailure.getError()).toEqual({
+      statusCode: 500,
+      message: 'cache unavailable',
+    });
+
+    companyRepo.findOne.mockRejectedValueOnce(null);
+    const repositoryFailure = (await service
+      .updateCompanyInfo({
+        companyId: 'company-1',
+        updateCompanyInfoDTO: {},
+      })
+      .catch((error) => error)) as RpcException;
+    expect(repositoryFailure.getError()).toEqual({
+      statusCode: 500,
+      message: "An error occurred while updating the company's information.",
+    });
+  });
+
+  it('handles sparse collections, duplicate relation IDs, and missing owned rows', async () => {
+    const company = {
+      id: 'company-1',
+      user: { email: 'company@example.com' },
+      benefits: null,
+      values: null,
+      openPositions: null,
+      careerScopes: null,
+      socials: null,
+    };
+    companyRepo.findOne
+      .mockResolvedValueOnce(company)
+      .mockResolvedValueOnce(null);
+    repository.findOne.mockResolvedValue(null);
+    const relations = [
+      relationQueryBuilder(),
+      relationQueryBuilder(),
+      relationQueryBuilder(),
+    ];
+    companyRepo.createQueryBuilder
+      .mockReturnValueOnce(relations[0])
+      .mockReturnValueOnce(relations[1])
+      .mockReturnValueOnce(relations[2]);
+
+    const result = await service.updateCompanyInfo({
+      companyId: 'company-1',
+      updateCompanyInfoDTO: {
+        email: ' ',
+        benefits: [{ id: 1 }, { id: 1 }],
+        benefitIdsToDelete: [],
+        values: [{ id: 2 }, { id: 2 }, { label: ' ' }],
+        valueIdsToDelete: [],
+        jobs: [{ id: 'foreign-job', title: 'Ignored' }],
+        jobIdsToDelete: [],
+        careerScopes: [{ id: 'scope-1' }, { id: 'scope-1' }],
+        careerScopeIdsToDelete: [],
+        socials: [{ id: 'foreign-social', url: 'https://invalid.test' }],
+        socialIdsToDelete: [],
+      } as any,
+    });
+
+    expect(relations[0].addAndRemove).toHaveBeenCalledWith([1], []);
+    expect(relations[1].addAndRemove).toHaveBeenCalledWith([2], []);
+    expect(relations[2].addAndRemove).toHaveBeenCalledWith(['scope-1'], []);
+    expect(repository.save).not.toHaveBeenCalled();
+    expect(repository.createQueryBuilder).not.toHaveBeenCalled();
+    expect(userRepo.save).not.toHaveBeenCalled();
+    expect(result.message).toBe('Company information updated successfully');
   });
 });

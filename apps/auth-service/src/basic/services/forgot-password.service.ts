@@ -88,10 +88,11 @@ export class ForgotPasswordService implements IForgotPasswordService {
         statusCode: 422,
       });
     } catch (error) {
-      this.logger.error((error as Error).message || 'Forgot password failed');
+      const message = (error as Error)?.message || 'Forgot password failed';
+      this.logger.error(message);
       if (error instanceof RpcException) throw error;
       throw new RpcException({
-        message: (error as Error).message,
+        message,
         statusCode: 500,
       });
     }

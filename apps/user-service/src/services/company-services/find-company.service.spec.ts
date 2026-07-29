@@ -155,4 +155,67 @@ describe('FindCompanyService', () => {
       message: 'detail failed',
     });
   });
+
+  it('collects blocks in both directions and maps visible job positions', async () => {
+    blocks.find.mockResolvedValue([
+      { blocker: { id: 'requester' }, blocked: { id: 'blocked-a' } },
+      { blocker: { id: 'blocked-b' }, blocked: { id: 'requester' } },
+    ]);
+    companies.find
+      .mockResolvedValueOnce([{ id: 'company-blocked' }])
+      .mockResolvedValueOnce([
+        {
+          id: 'company-visible',
+          openPositions: [{ id: 'job-1', skillsRequired: '' }],
+        },
+      ]);
+
+    const result = await service.findAll({ requesterId: 'requester' });
+
+    expect(result[0].openPositions?.[0]).toEqual(
+      expect.objectContaining({ id: 'job-1' }),
+    );
+    expect(redis.get).not.toHaveBeenCalled();
+    expect(redis.set).not.toHaveBeenCalled();
+  });
+
+  it('preserves a missing-company 404 without a requester', async () => {
+    users.findOne.mockResolvedValue(null);
+    const failure = (await service
+      .findOneById({ companyId: 'missing' })
+      .catch((error) => error)) as RpcException;
+    expect(failure.getError()).toEqual({
+      statusCode: 404,
+      message: 'There is no company with this id',
+    });
+  });
+
+  it('returns stable operation errors for non-Error repository failures', async () => {
+    companies.find.mockRejectedValueOnce(null);
+    const listFailure = (await service
+      .findAll({})
+      .catch((error) => error)) as RpcException;
+    expect(listFailure.getError()).toEqual({
+      statusCode: 500,
+      message: 'An error occurred while fetching all of the companies.',
+    });
+
+    companies.count.mockRejectedValueOnce(null);
+    const countFailure = (await service
+      .countAllCompanies()
+      .catch((error) => error)) as RpcException;
+    expect(countFailure.getError()).toEqual({
+      statusCode: 500,
+      message: 'An error occurred while counting all companies.',
+    });
+
+    users.findOne.mockRejectedValueOnce(null);
+    const detailFailure = (await service
+      .findOneById({ companyId: 'company-1' })
+      .catch((error) => error)) as RpcException;
+    expect(detailFailure.getError()).toEqual({
+      statusCode: 500,
+      message: 'An error occurred while fetching a company.',
+    });
+  });
 });

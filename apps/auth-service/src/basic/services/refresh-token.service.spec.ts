@@ -6,6 +6,7 @@ describe('RefreshTokenService', () => {
   const user = {
     id: 'user-id',
     email: 'user@example.com',
+    phone: '+85512345678',
     role: 'employee',
     refreshToken: hashRefreshToken('old-refresh'),
   };
@@ -80,5 +81,64 @@ describe('RefreshTokenService', () => {
     await expect(
       service.refreshToken({ refreshToken: 'unknown-refresh' }),
     ).rejects.toBeInstanceOf(RpcException);
+  });
+
+  it('rejects cryptographically invalid refresh tokens before storage lookup', async () => {
+    const { service, repository, jwt } = createService();
+    jwt.verifyRefreshToken.mockRejectedValueOnce(new Error('bad signature'));
+
+    const failure = (await service
+      .refreshToken({ refreshToken: 'invalid' })
+      .catch((error) => error)) as RpcException;
+
+    expect(failure.getError()).toEqual({
+      statusCode: 401,
+      message: 'Invalid refresh token',
+    });
+    expect(repository.findOne).not.toHaveBeenCalled();
+  });
+
+  it('uses the phone in the new access token for a phone-only account', async () => {
+    const phoneUser = { ...user, email: null };
+    const { service, jwt } = createService(phoneUser as any);
+
+    await service.refreshToken({ refreshToken: 'old-refresh' });
+
+    expect(jwt.generateToken).toHaveBeenCalledWith({
+      id: user.id,
+      info: user.phone,
+      role: user.role,
+    });
+  });
+
+  it.each(['generateToken', 'generateRefreshToken'] as const)(
+    'wraps %s failures without rotating the stored digest',
+    async (method) => {
+      const { service, repository, jwt } = createService();
+      jwt[method].mockRejectedValueOnce(new Error('signing unavailable'));
+
+      const failure = (await service
+        .refreshToken({ refreshToken: 'old-refresh' })
+        .catch((error) => error)) as RpcException;
+      expect(failure.getError()).toEqual({
+        statusCode: 500,
+        message: 'signing unavailable',
+      });
+      expect(repository.save).not.toHaveBeenCalled();
+    },
+  );
+
+  it('returns a stable failure for non-Error persistence rejections', async () => {
+    const { service, repository } = createService();
+    repository.save.mockRejectedValueOnce(null);
+
+    const failure = (await service
+      .refreshToken({ refreshToken: 'old-refresh' })
+      .catch((error) => error)) as RpcException;
+
+    expect(failure.getError()).toEqual({
+      statusCode: 500,
+      message: 'An error occurred while refreshing token.',
+    });
   });
 });

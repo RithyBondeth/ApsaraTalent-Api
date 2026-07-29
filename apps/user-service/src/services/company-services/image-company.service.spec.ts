@@ -10,21 +10,17 @@ describe('ImageCompanyService', () => {
     save: jest.fn(),
     delete: jest.fn(),
   };
-  const users = { find: jest.fn() };
   const uploads = { getUploadFile: jest.fn() };
   const logger = { info: jest.fn(), error: jest.fn() };
-  const redis = {
-    generateUserKey: jest.fn((_type, id) => `user:${id}`),
-    generateListKey: jest.fn(() => 'user-list'),
-    del: jest.fn(),
+  const cache = {
+    invalidateCompanyCache: jest.fn(),
   };
   const service = new ImageCompanyService(
     companies as any,
     images as any,
-    users as any,
     uploads as any,
     logger as any,
-    redis as any,
+    cache as any,
   );
   const file = { filename: 'new.png' } as Express.Multer.File;
 
@@ -32,7 +28,6 @@ describe('ImageCompanyService', () => {
     jest.clearAllMocks();
     companies.save.mockImplementation(async (value) => value);
     images.save.mockImplementation(async (value) => value);
-    users.find.mockResolvedValue([{ id: 'user-1' }]);
     uploads.getUploadFile.mockImplementation(
       (folder, uploaded) => `/storage/${folder}/${uploaded.filename}`,
     );
@@ -73,8 +68,7 @@ describe('ImageCompanyService', () => {
       expect.stringContaining('storage/company-avatars/avatar.png'),
       'Old Avatar Image',
     );
-    expect(redis.del).toHaveBeenCalledWith('user:user-1');
-    expect(redis.del).toHaveBeenCalledWith('user-list');
+    expect(cache.invalidateCompanyCache).toHaveBeenCalledWith('company-1');
   });
 
   it('removes an existing avatar', async () => {
@@ -98,7 +92,7 @@ describe('ImageCompanyService', () => {
 
     await service.removeCompanyCover({ companyId: 'company-1' });
     expect(company.cover).toBeNull();
-    expect(redis.del).toHaveBeenCalled();
+    expect(cache.invalidateCompanyCache).toHaveBeenCalledWith('company-1');
   });
 
   it('removes all orphan gallery files for a missing company', async () => {
@@ -252,11 +246,74 @@ describe('ImageCompanyService', () => {
     );
 
     companies.findOne.mockResolvedValueOnce({ id: 'company-1' });
-    users.find.mockRejectedValueOnce(new Error('cache lookup failed'));
+    cache.invalidateCompanyCache.mockRejectedValueOnce(
+      new Error('cache lookup failed'),
+    );
     await expectRpc(
       service.uploadCompanyAvatar({ companyId: 'company-1', avatar: file }),
       500,
       'cache lookup failed',
+    );
+  });
+
+  it.each([
+    [
+      'uploadCompanyAvatar',
+      { companyId: 'company-1', avatar: file },
+      { id: 'company-1' },
+      "An error occurred while uploading the company's avatar.",
+    ],
+    [
+      'removeCompanyAvatar',
+      { companyId: 'company-1' },
+      { id: 'company-1', avatar: '/avatars/a.png' },
+      "An error occurred while removing the company's avatar.",
+    ],
+    [
+      'uploadCompanyCover',
+      { companyId: 'company-1', cover: file },
+      { id: 'company-1' },
+      "An error occurred while uploading the company's cover.",
+    ],
+    [
+      'removeCompanyCover',
+      { companyId: 'company-1' },
+      { id: 'company-1', cover: '/covers/c.png' },
+      "An error occurred while removing the company's cover.",
+    ],
+  ])(
+    'uses a stable fallback when %s receives a null persistence failure',
+    async (method, dto, company, message) => {
+      companies.findOne.mockResolvedValue(company);
+      companies.save.mockRejectedValueOnce(null);
+      await expectRpc((service as any)[method](dto), 500, message);
+    },
+  );
+
+  it('uses stable fallbacks for malformed gallery failures', async () => {
+    companies.findOne.mockResolvedValue({ id: 'company-1' });
+    images.save.mockRejectedValueOnce(null);
+    await expectRpc(
+      service.uploadCompanyImages({
+        companyId: 'company-1',
+        images: [file],
+      }),
+      500,
+      "An error occurred while uploading the company's images.",
+    );
+
+    images.findOne.mockResolvedValueOnce({
+      id: 'image-1',
+      image: '/images/x.png',
+    });
+    images.delete.mockRejectedValueOnce(null);
+    await expectRpc(
+      service.removeCompanyImage({
+        companyId: 'company-1',
+        imageId: 'image-1',
+      }),
+      500,
+      "An error occurred while removing the company's image.",
     );
   });
 });

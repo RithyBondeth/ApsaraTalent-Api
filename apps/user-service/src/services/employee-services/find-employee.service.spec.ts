@@ -158,4 +158,77 @@ describe('FindEmployeeService', () => {
       message: 'detail failed',
     });
   });
+
+  it('loads and caches an unfiltered database page', async () => {
+    employees.find.mockResolvedValue([{ id: 'employee-1', firstname: 'Sok' }]);
+
+    await expect(service.findAll({ skip: 5, limit: 2 })).resolves.toEqual([
+      expect.objectContaining({ id: 'employee-1' }),
+    ]);
+    expect(redis.set).toHaveBeenCalledWith(
+      'employees',
+      expect.any(Array),
+      expect.any(Number),
+    );
+  });
+
+  it('collects a blocker from the reverse side of a block relation', async () => {
+    blocks.find.mockResolvedValue([
+      { blocker: { id: 'other-user' }, blocked: { id: 'requester' } },
+    ]);
+    employees.find
+      .mockResolvedValueOnce([{ id: 'blocked-employee' }])
+      .mockResolvedValueOnce([]);
+
+    await service.findAll({ requesterId: 'requester' });
+
+    expect(employees.find).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        where: expect.objectContaining({ user: expect.any(Object) }),
+      }),
+    );
+    expect(redis.get).not.toHaveBeenCalled();
+  });
+
+  it('preserves a missing employee detail as a 404 without a requester', async () => {
+    users.findOne.mockResolvedValue(null);
+    const error = (await service
+      .findOneById({ employeeId: 'missing' })
+      .catch((caught) => caught)) as RpcException;
+
+    expect(error.getError()).toEqual({
+      statusCode: 404,
+      message: 'There is no employee with this id',
+    });
+  });
+
+  it('uses stable fallback messages for malformed repository failures', async () => {
+    employees.find.mockRejectedValueOnce(null);
+    const list = (await service
+      .findAll({})
+      .catch((error) => error)) as RpcException;
+    expect(list.getError()).toEqual({
+      statusCode: 500,
+      message: 'An error occurred while fetching all of the employees',
+    });
+
+    users.findOne.mockRejectedValueOnce(null);
+    const detail = (await service
+      .findOneById({ employeeId: 'employee-1' })
+      .catch((error) => error)) as RpcException;
+    expect(detail.getError()).toEqual({
+      statusCode: 500,
+      message: 'An error occurred while fetching an employee',
+    });
+
+    employees.count.mockRejectedValueOnce(null);
+    const count = (await service
+      .countAllEmployees()
+      .catch((error) => error)) as RpcException;
+    expect(count.getError()).toEqual({
+      statusCode: 500,
+      message: 'An error occurred while counting all employees',
+    });
+  });
 });

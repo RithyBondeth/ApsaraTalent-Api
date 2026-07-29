@@ -339,4 +339,98 @@ describe('MatchingAiService', () => {
       .catch((error) => error)) as RpcException;
     expect(prep.getError()).toBe('AI interview prep failed');
   });
+
+  it('serializes sparse profiles with empty relationship collections', async () => {
+    employees.findOne.mockResolvedValue({
+      id: 'employee-1',
+      skills: null,
+      careerScopes: undefined,
+      educations: null,
+      experiences: undefined,
+    });
+    companies.findOne.mockResolvedValue({
+      id: 'company-1',
+      openPositions: null,
+      careerScopes: undefined,
+      benefits: null,
+      values: undefined,
+    });
+
+    await expect(
+      service.getAiMatchProfiles({
+        eid: 'employee-1',
+        cid: 'company-1',
+      }),
+    ).resolves.toEqual({
+      employeeProfile: expect.objectContaining({
+        skills: [],
+        careerScopes: [],
+        education: [],
+        experience: [],
+      }),
+      companyProfile: expect.objectContaining({
+        openPositions: [],
+        careerScopes: [],
+      }),
+    });
+  });
+
+  it('uses the default model and sparse relations for both AI requests', async () => {
+    config.get.mockReturnValue(undefined);
+    employees.findOne.mockResolvedValue({
+      id: 'employee-1',
+      skills: null,
+      careerScopes: null,
+      educations: null,
+      experiences: null,
+    });
+    companies.findOne.mockResolvedValue({
+      id: 'company-1',
+      openPositions: null,
+      careerScopes: null,
+      benefits: null,
+      values: null,
+    });
+    const create = jest
+      .fn()
+      .mockResolvedValueOnce({
+        choices: [{ message: { content: JSON.stringify({}) } }],
+      })
+      .mockResolvedValueOnce({
+        choices: [{ message: { content: JSON.stringify({ questions: [] }) } }],
+      });
+    (service as any).openAI = { chat: { completions: { create } } };
+
+    await service.getAiMatchExplanation({
+      eid: 'employee-1',
+      cid: 'company-1',
+    });
+    await service.getAiInterviewPrep({
+      eid: 'employee-1',
+      cid: 'company-1',
+    });
+
+    expect(create).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ model: 'gpt-4o' }),
+    );
+    expect(create).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ model: 'gpt-4o' }),
+    );
+  });
+
+  it('returns cached interview preparation without loading profiles', async () => {
+    const cached = { questions: [{ question: 'Cached question' }] };
+    redis.get.mockResolvedValueOnce(cached);
+
+    await expect(
+      service.getAiInterviewPrep({
+        eid: 'employee-1',
+        cid: 'company-1',
+        interviewTitle: 'Culture',
+      }),
+    ).resolves.toBe(cached);
+    expect(employees.findOne).not.toHaveBeenCalled();
+  });
 });

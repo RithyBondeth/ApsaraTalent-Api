@@ -222,4 +222,116 @@ describe('RegisterService', () => {
     );
     expect(result.message).toContain('verify your email');
   });
+
+  it('rolls back company registration failures and uses a defensive error message', async () => {
+    manager.save.mockRejectedValueOnce(null);
+
+    const error = (await service
+      .companyRegister({
+        authEmail: false,
+        phone: '+85512345678',
+        name: 'Apsara',
+      } as any)
+      .catch((caught) => caught)) as RpcException;
+
+    expect(error.getError()).toEqual({
+      message: 'An error occurred while registering company.',
+      statusCode: 500,
+    });
+    expect(runner.rollbackTransaction).toHaveBeenCalled();
+    expect(runner.release).toHaveBeenCalled();
+    expect(runner.commitTransaction).not.toHaveBeenCalled();
+  });
+
+  it('creates every employee relation collection in the same transaction', async () => {
+    await service.employeeRegister({
+      authEmail: false,
+      phone: '+85512345678',
+      password: 'hash',
+      firstname: 'Sok',
+      lastname: 'Dara',
+      username: 'sok',
+      educations: [{ school: 'RUPP', degree: 'BSc' }],
+      skills: [{ name: 'TypeScript' }],
+      experiences: [{ company: 'Apsara', title: 'Engineer' }],
+      careerScopes: [{ name: 'Software' }],
+      socials: [{ platform: 'github', url: 'https://github.com/sok' }],
+    } as any);
+
+    expect(manager.create).toHaveBeenCalledWith(
+      expect.any(Function),
+      expect.objectContaining({ school: 'RUPP' }),
+    );
+    expect(manager.create).toHaveBeenCalledWith(
+      expect.any(Function),
+      expect.objectContaining({ company: 'Apsara' }),
+    );
+    expect(manager.create).toHaveBeenCalledWith(
+      expect.any(Function),
+      expect.objectContaining({ platform: 'github' }),
+    );
+    expect(runner.commitTransaction).toHaveBeenCalled();
+  });
+
+  it.each(['companyRegister', 'employeeRegister'] as const)(
+    '%s releases its transaction when a database error has no message',
+    async (method) => {
+      manager.save.mockRejectedValueOnce({});
+      const payload =
+        method === 'companyRegister'
+          ? { authEmail: false, phone: '+85511111111', name: 'Apsara' }
+          : {
+              authEmail: false,
+              phone: '+85511111111',
+              firstname: 'Sok',
+              username: 'sok',
+            };
+
+      const failure = (await service[method](payload as any).catch(
+        (caught) => caught,
+      )) as RpcException;
+
+      expect((failure.getError() as any).message).toContain(
+        method === 'companyRegister' ? 'company' : 'employee',
+      );
+      expect(runner.rollbackTransaction).toHaveBeenCalled();
+      expect(runner.release).toHaveBeenCalled();
+    },
+  );
+
+  it('contains verification-email delivery failure after a committed registration', async () => {
+    email.sendEmail.mockRejectedValueOnce(new Error('SMTP unavailable'));
+
+    await expect(
+      service.employeeRegister({
+        authEmail: true,
+        email: 'employee@example.com',
+        phone: '+85512345678',
+        firstname: 'Sok',
+        username: 'sok',
+      } as any),
+    ).resolves.toEqual(expect.objectContaining({ accessToken: 'access' }));
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(runner.commitTransaction).toHaveBeenCalled();
+    expect(logger.error).toHaveBeenCalledWith(
+      'Failed to send verification email: SMTP unavailable',
+    );
+  });
+
+  it('does not roll back committed data when credential issuance fails', async () => {
+    jwt.generateToken.mockRejectedValueOnce(new Error('signing unavailable'));
+
+    await expect(
+      service.companyRegister({
+        authEmail: false,
+        phone: '+85512345678',
+        name: 'Apsara',
+      } as any),
+    ).rejects.toThrow('signing unavailable');
+
+    expect(runner.commitTransaction).toHaveBeenCalled();
+    expect(runner.rollbackTransaction).not.toHaveBeenCalled();
+    expect(runner.release).toHaveBeenCalled();
+  });
 });

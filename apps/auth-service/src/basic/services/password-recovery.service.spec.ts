@@ -72,6 +72,54 @@ describe('password recovery services', () => {
     );
   });
 
+  it('rejects an account with no available delivery channel', async () => {
+    repository.findOne.mockResolvedValue({ email: null, phone: null });
+    const failure = (await forgot
+      .forgotPassword({ identifier: 'orphaned-account' })
+      .catch((error) => error)) as RpcException;
+    expect(failure.getError()).toEqual({
+      statusCode: 422,
+      message:
+        'This account has no email address or phone number to send a reset token to',
+    });
+  });
+
+  it.each([
+    ['email', { email: 'person@example.com', phone: null }],
+    ['phone', { email: null, phone: '+85512345678' }],
+  ])('wraps %s reset-token delivery failures', async (channel, user) => {
+    repository.findOne.mockResolvedValue(user);
+    if (channel === 'email') {
+      email.sendEmail.mockRejectedValueOnce(new Error('email unavailable'));
+    } else {
+      message.sendResetToken.mockRejectedValueOnce(
+        new Error('message unavailable'),
+      );
+    }
+
+    const failure = (await forgot
+      .forgotPassword({
+        identifier: user.email ?? user.phone!,
+      })
+      .catch((error) => error)) as RpcException;
+    expect(failure.getError()).toEqual({
+      statusCode: 500,
+      message:
+        channel === 'email' ? 'email unavailable' : 'message unavailable',
+    });
+  });
+
+  it('returns a stable failure when storage rejects without an Error object', async () => {
+    repository.findOne.mockRejectedValueOnce(null);
+    const failure = (await forgot
+      .forgotPassword({ identifier: 'person@example.com' })
+      .catch((error) => error)) as RpcException;
+    expect(failure.getError()).toEqual({
+      statusCode: 500,
+      message: 'Forgot password failed',
+    });
+  });
+
   it('rejects mismatched replacement passwords before querying storage', async () => {
     await rpcError(
       reset.resetPassword({

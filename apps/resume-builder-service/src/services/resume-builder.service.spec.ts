@@ -25,6 +25,9 @@ describe('ResumeBuilderService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    config.get.mockImplementation((key) =>
+      key === 'openai.model' ? 'gpt-test' : 'key',
+    );
     pdf.generate.mockResolvedValue(Buffer.from('pdf'));
   });
 
@@ -382,4 +385,72 @@ describe('ResumeBuilderService', () => {
       expect(error.getError()).toBe(message);
     },
   );
+
+  it('rejects missing content from a text-import response', async () => {
+    mockCreate.mockResolvedValue({ choices: [{ message: {} }] });
+
+    const error = (await service
+      .generateResumeFromText({
+        sourceText: 'Sok Dara',
+        template: 'classic',
+      } as any)
+      .catch((caught) => caught)) as RpcException;
+
+    expect(error.getError()).toBe('AI returned an empty imported resume');
+  });
+
+  it('uses the default OpenAI model across every AI workflow', async () => {
+    config.get.mockReturnValue(undefined);
+    mockCreate
+      .mockResolvedValueOnce({
+        choices: [{ message: { content: JSON.stringify({}) } }],
+      })
+      .mockResolvedValueOnce({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                personalInfo: { fullName: 'Sok' },
+                experience: [],
+                skills: [],
+              }),
+            },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [{ message: { content: JSON.stringify({}) } }],
+      })
+      .mockResolvedValueOnce({
+        choices: [{ message: { content: 'Cover letter' } }],
+      })
+      .mockResolvedValueOnce({
+        choices: [{ message: { content: 'Polished letter' } }],
+      });
+
+    await service.generateResume({
+      template: 'classic',
+      personalInfo: { fullName: 'Sok', email: 'sok@example.com' },
+      experience: [],
+      skills: [],
+      education: '',
+    } as any);
+    await service.generateResumeFromText({
+      sourceText: 'Sok Dara',
+      template: 'classic',
+    } as any);
+    await service.optimizeResume({} as any);
+    await service.generateCoverLetter({
+      employeeName: 'Sok',
+      companyName: 'Apsara',
+      openPositions: [],
+      employeeSkills: [],
+    } as any);
+    await service.polishCoverLetter({ coverLetterText: 'Original' });
+
+    expect(mockCreate).toHaveBeenCalledTimes(5);
+    for (const [request] of mockCreate.mock.calls) {
+      expect(request.model).toBe('gpt-4o');
+    }
+  });
 });

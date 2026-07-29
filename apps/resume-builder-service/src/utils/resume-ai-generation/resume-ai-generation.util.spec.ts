@@ -216,4 +216,79 @@ describe('per-template fallback design spaces', () => {
       );
     }
   });
+
+  it('rejects malformed JSON and malformed design containers', () => {
+    expect(() => parseGeneratedResumeContent('{not-json')).toThrow(SyntaxError);
+    expect(parseGeneratedResumeDesign(null)).toBeUndefined();
+    expect(parseGeneratedResumeDesign([])).toBeUndefined();
+
+    const valid = buildFallbackResumeDesign('modern', 12);
+    expect(
+      parseGeneratedResumeDesign({
+        ...valid,
+        sidebarSections: ['skills', 'skills'],
+      }),
+    ).toBeUndefined();
+    expect(
+      parseGeneratedResumeDesign({
+        ...valid,
+        sidebarSections: [],
+      }),
+    ).toBeUndefined();
+  });
+
+  it('clips oversized generation input in every reduction stage', () => {
+    const trusted = trustedResume();
+    trusted.summary = 's'.repeat(2_000);
+    trusted.education = 'e'.repeat(2_000);
+    trusted.skills = Array.from({ length: 30 }, (_, index) => `skill-${index}`);
+    trusted.experience = Array.from({ length: 6 }, (_, index) => ({
+      company: `Company ${index}`,
+      position: `Position ${index}`,
+      startDate: '2020',
+      endDate: '2026',
+      description: 'description'.repeat(50),
+      achievements: ['achievement'.repeat(30)],
+    }));
+
+    const parsed = JSON.parse(
+      buildResumeGenerationInput(trusted, 700),
+    ) as Record<string, any>;
+
+    expect(parsed.experience).toHaveLength(1);
+    expect(parsed.currentSkills.length).toBeLessThanOrEqual(5);
+    expect(parsed.currentSummary.length).toBeLessThanOrEqual(200);
+    expect(parsed.education.length).toBeLessThanOrEqual(300);
+  });
+
+  it('ignores malformed experience suggestions and deduplicates bounded skills', () => {
+    const trusted = trustedResume();
+    const generatedSkills = Array.from(
+      { length: 140 },
+      (_, index) => `Skill ${index}`,
+    );
+    const result = mergeGeneratedResumeContent(trusted, {
+      experience: [
+        null,
+        'invalid',
+        { index: 0.5, description: 'fractional' },
+        { index: -1, description: 'negative' },
+        {
+          index: 0,
+          description: 'x'.repeat(5_001),
+          achievements: [' ', 12, 'Valid achievement'],
+        },
+      ],
+      skills: ['typescript', ...generatedSkills],
+    });
+
+    expect(result.experience[0].description).toBe(
+      trusted.experience[0].description,
+    );
+    expect(result.experience[0].achievements).toEqual(['Valid achievement']);
+    expect(result.skills.filter((skill) => /typescript/i.test(skill))).toEqual([
+      'TypeScript',
+    ]);
+    expect(result.skills).toHaveLength(100);
+  });
 });

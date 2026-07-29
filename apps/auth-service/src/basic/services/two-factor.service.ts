@@ -57,10 +57,10 @@ export class TwoFactorService implements ITwoFactorService {
         secret,
       });
     } catch (error) {
-      this.logger.error((error as Error).message || '2FA setup failed');
+      this.logger.error((error as Error)?.message || '2FA setup failed');
       if (error instanceof RpcException) throw error;
       throw new RpcException({
-        message: (error as Error).message,
+        message: (error as Error)?.message || '2FA setup failed',
         statusCode: 500,
       });
     }
@@ -99,10 +99,10 @@ export class TwoFactorService implements ITwoFactorService {
         message: 'Two-factor authentication has been enabled.',
       });
     } catch (error) {
-      this.logger.error((error as Error).message || '2FA enable failed');
+      this.logger.error((error as Error)?.message || '2FA enable failed');
       if (error instanceof RpcException) throw error;
       throw new RpcException({
-        message: (error as Error).message,
+        message: (error as Error)?.message || '2FA enable failed',
         statusCode: 500,
       });
     }
@@ -142,10 +142,10 @@ export class TwoFactorService implements ITwoFactorService {
         message: 'Two-factor authentication has been disabled.',
       });
     } catch (error) {
-      this.logger.error((error as Error).message || '2FA disable failed');
+      this.logger.error((error as Error)?.message || '2FA disable failed');
       if (error instanceof RpcException) throw error;
       throw new RpcException({
-        message: (error as Error).message,
+        message: (error as Error)?.message || '2FA disable failed',
         statusCode: 500,
       });
     }
@@ -202,10 +202,10 @@ export class TwoFactorService implements ITwoFactorService {
         }),
       });
     } catch (error) {
-      this.logger.error((error as Error).message || '2FA verify-login failed');
+      this.logger.error((error as Error)?.message || '2FA verify-login failed');
       if (error instanceof RpcException) throw error;
       throw new RpcException({
-        message: (error as Error).message,
+        message: (error as Error)?.message || '2FA verify-login failed',
         statusCode: 500,
       });
     }

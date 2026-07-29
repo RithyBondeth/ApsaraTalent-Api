@@ -27,6 +27,33 @@ jobs:
             exit 1
           fi
 
+  dependencies:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Capture complete production dependency audit
+        run: npm audit --omit=dev --json > dependency-audit.json || true
+
+      - name: Reject high or critical production advisories
+        run: npm run security:audit
+
+      - name: Upload dependency audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-dependency-audit
+          path: dependency-audit.json
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Reject credential-shaped literals
         run: |
           # Long random-looking assignments to secret-named variables, well-known
@@ -118,6 +145,9 @@ jobs:
       # new possibly-null dereference fails outright.
       - name: Strict-null ratchet
         run: npm run typecheck:strict
+
+      - name: Validate load-test configuration
+        run: npm run test:load:check
 
       - name: Build API Gateway
         run: npm run build

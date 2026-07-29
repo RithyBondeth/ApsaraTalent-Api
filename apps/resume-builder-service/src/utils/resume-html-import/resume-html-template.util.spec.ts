@@ -246,3 +246,123 @@ describe('multi-page pagination', () => {
     expect(html).toMatch(/\.resume-body \{[^}]*flex: 1 1 auto/);
   });
 });
+
+describe('malformed and sparse résumé content', () => {
+  it('sanitizes unusual social links and supplies safe sparse-profile fallbacks', () => {
+    const html = buildResumeHtml(
+      resume({
+        personalInfo: {
+          fullName: '   ',
+          email: '',
+          socials: {
+            custom_profile_url: 'profile.example.com/person',
+            protocolRelative: '//example.com/person',
+            blank: '   ',
+            invalid: 'https://%',
+            mail: 'mailto:attacker@example.com',
+          },
+        },
+        summary: '',
+        experience: [],
+        skills: [],
+        education: '',
+        careerScopes: [],
+        yearsOfExperience: '',
+        sectionOrder: [
+          'summary',
+          'experience',
+          'skills',
+          'education',
+          'careerScopes',
+        ],
+        template: 'unknown-template' as any,
+      }),
+    );
+
+    expect(html).toContain('>CV<');
+    expect(html).toContain('href="https://profile.example.com/person"');
+    expect(html).toContain('href="https://example.com/person"');
+    expect(html).not.toContain('mailto:');
+    expect(html).not.toContain('https://%');
+    expect(html).not.toContain('<h2>Professional Summary</h2>');
+    expect(html).not.toContain('<h2>Work Experience</h2>');
+  });
+
+  it.each([
+    ['bar', 'square', 'list'],
+    ['plain', 'soft', 'grid'],
+  ] as const)(
+    'renders %s headings, %s corners, and %s skills defensively',
+    (sectionStyle, cornerStyle, skillsStyle) => {
+      const html = buildResumeHtml(
+        resume({
+          yearsOfExperience: '10 years',
+          education: 'BSc | MSc',
+          design: {
+            layout: 'two-column',
+            columnRatio: 'balanced',
+            headerLayout: 'centered',
+            avatarPlacement: 'center',
+            sidebarSections: ['skills'],
+            palette: 'cobalt',
+            typography: 'sans',
+            density: 'balanced',
+            headerStyle: 'minimal',
+            sectionStyle,
+            cornerStyle,
+            experienceStyle: 'cards',
+            skillsStyle,
+            educationStyle: 'timeline',
+            summaryStyle: 'quote',
+            decoration: 'top-band',
+          },
+        }),
+      );
+
+      expect(html).toContain('10 years exp.');
+      expect(html).toContain('BSc');
+      expect(html).toContain('MSc');
+      expect(html).toContain(
+        skillsStyle === 'list' ? 'skill-list' : `skills-${skillsStyle}`,
+      );
+      expect(html).not.toContain('<script>');
+    },
+  );
+
+  it('preserves already formatted experience labels and omits empty entry fields', () => {
+    const html = buildResumeHtml(
+      resume({
+        yearsOfExperience: 'Senior experience',
+        experience: [
+          {
+            company: '',
+            position: 'Engineer',
+            startDate: '',
+            endDate: '',
+            description: '',
+            achievements: [],
+          },
+        ],
+      }),
+    );
+
+    expect(html).toContain('Senior experience');
+    expect(html).not.toContain('Senior experience yrs exp.');
+    expect(html).not.toContain('<div class="company"></div>');
+    expect(html).not.toContain('<ul></ul>');
+  });
+
+  it.each([
+    [' ', ''],
+    ['5', '5 yrs exp.'],
+  ])('formats the unusual experience value %j safely', (value, expected) => {
+    const html = buildResumeHtml(
+      resume({
+        yearsOfExperience: value,
+        availability: 'Available',
+      }),
+    );
+    if (expected) expect(html).toContain(expected);
+    else expect(html).not.toContain('yrs exp.');
+  });
+});

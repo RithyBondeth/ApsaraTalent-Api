@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
 import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-service.constant';
 import { SendMessageDTO, SendMessageResultDTO } from '@app/contracts';
 import { IChatMessageService } from '@app/contracts/interfaces/service';
+import { rpcCall } from '../../utils/rpc-call';
 
 @Injectable()
 export class ChatMessageService implements IChatMessageService {
@@ -19,15 +19,19 @@ export class ChatMessageService implements IChatMessageService {
     const hasAttachment = !!sendMessageDTO.attachment;
     const messageType = sendMessageDTO.type ?? 'text';
 
-    const usersData = await firstValueFrom(
-      this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.VALIDATE_CHAT_USERS, {
+    const usersData = await rpcCall<any>(
+      this.chatServiceClient,
+      CHAT_SERVICE.ACTIONS.VALIDATE_CHAT_USERS,
+      {
         senderId,
         receiverId: sendMessageDTO.receiverId,
-      }),
+      },
     );
 
-    const savedMessage = await firstValueFrom(
-      this.chatServiceClient.send(CHAT_SERVICE.ACTIONS.CREATE_MESSAGE, {
+    const savedMessage = await rpcCall<any>(
+      this.chatServiceClient,
+      CHAT_SERVICE.ACTIONS.CREATE_MESSAGE,
+      {
         senderId: usersData.sender.id,
         receiverId: usersData.receiver.id,
         content: trimmedContent,
@@ -38,7 +42,7 @@ export class ChatMessageService implements IChatMessageService {
         attachmentFilename: sendMessageDTO.attachmentFilename ?? null,
         attachmentDuration: sendMessageDTO.attachmentDuration ?? null,
         attachmentAmplitude: sendMessageDTO.attachmentAmplitude ?? null,
-      }),
+      },
     );
 
     return {

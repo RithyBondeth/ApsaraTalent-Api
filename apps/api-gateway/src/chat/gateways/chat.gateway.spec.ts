@@ -1,5 +1,12 @@
 import 'reflect-metadata';
-import { CHAT, CHAT_SERVICE, CHAT_WEBSOCKET_EVENTS } from '@app/contracts';
+import {
+  CHAT,
+  CHAT_ALLOW_ALL_CORS,
+  CHAT_ALLOWED_ORIGINS,
+  CHAT_SERVICE,
+  CHAT_WEBSOCKET_EVENTS,
+} from '@app/contracts';
+import { GATEWAY_OPTIONS } from '@nestjs/websockets/constants';
 import { of, throwError } from 'rxjs';
 import { ChatGateway } from './chat.gateway';
 
@@ -50,6 +57,21 @@ describe('ChatGateway', () => {
   it('registers the Socket.IO server for cross-service broadcasts', () => {
     gateway.afterInit(server);
     expect(broadcast.setServer).toHaveBeenCalledWith(server);
+  });
+
+  it('applies the configured socket CORS policy', () => {
+    const options = Reflect.getMetadata(GATEWAY_OPTIONS, ChatGateway);
+    const allowed = jest.fn();
+    options.cors.origin(undefined, allowed);
+    expect(allowed).toHaveBeenCalledWith(null, true);
+
+    const denied = jest.fn();
+    options.cors.origin('https://untrusted.example', denied);
+    if (CHAT_ALLOW_ALL_CORS || CHAT_ALLOWED_ORIGINS.length === 0) {
+      expect(denied).toHaveBeenCalledWith(null, true);
+    } else {
+      expect(denied).toHaveBeenCalledWith(expect.any(Error), false);
+    }
   });
 
   it('disconnects connections without a token', async () => {
@@ -467,6 +489,133 @@ describe('ChatGateway', () => {
     });
     expect(socket.emit).toHaveBeenLastCalledWith('error', {
       message: 'not owner',
+    });
+  });
+
+  it('keeps a user online across multiple sockets and disconnects silently without identity', async () => {
+    jwt.verifyToken.mockResolvedValue({ id: 'user-1' });
+    socketState.addSocket.mockReturnValue(false);
+    await gateway.handleConnection(client('access-token'));
+    expect(server.emit).not.toHaveBeenCalledWith(
+      CHAT_WEBSOCKET_EVENTS.USER_STATUS,
+      expect.objectContaining({ status: 'online' }),
+    );
+
+    socketState.removeSocket.mockReturnValue(false);
+    await gateway.handleDisconnect(client(undefined, 'user-1'));
+    expect(server.emit).not.toHaveBeenCalledWith(
+      CHAT_WEBSOCKET_EVENTS.USER_STATUS,
+      expect.objectContaining({ status: 'offline' }),
+    );
+    expect(socketState.removeSocket).toHaveBeenCalledWith('user-1', 'socket-1');
+
+    await gateway.handleDisconnect(client());
+    expect(socketState.removeSocket).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([new Error('join failed'), 'unexpected failure'])(
+    'contains outer connection failures %#',
+    async (failure) => {
+      jwt.verifyToken.mockResolvedValue({ id: 'user-1' });
+      const socket = client('access-token');
+      socket.join.mockImplementation(() => {
+        throw failure;
+      });
+
+      await expect(gateway.handleConnection(socket)).resolves.toBeUndefined();
+      expect(socket.disconnect).toHaveBeenCalledWith(true);
+    },
+  );
+
+  it('supports named receivers, attachment-only state, and non-numeric unread replies', async () => {
+    messages.sendMessage.mockResolvedValue({
+      usersData: {
+        sender: { id: 'sender', email: 's@example.com' },
+        receiver: {
+          id: 'receiver',
+          name: 'Receiver Name',
+          email: 'r@example.com',
+        },
+      },
+      savedMessage: { id: 'message-1', content: null },
+    });
+    const sent = await gateway.handleMessage(client(undefined, 'sender'), {
+      receiverId: 'receiver',
+      attachment: 'file-key',
+    } as any);
+    expect(sent).toEqual(
+      expect.objectContaining({
+        message: expect.objectContaining({
+          receiver: expect.objectContaining({ name: 'Receiver Name' }),
+        }),
+      }),
+    );
+
+    chatClient.send.mockReturnValueOnce(of({ count: 12 }));
+    await expect(
+      gateway.handleGetUnreadCount(client(undefined, 'user-1')),
+    ).resolves.toEqual(expect.objectContaining({ count: 0 }));
+  });
+
+  it('handles read, edit, and delete operations without optional peer broadcasts', async () => {
+    const socket = client(undefined, 'sender');
+    chatClient.send
+      .mockReturnValueOnce(of({ success: true, messageId: 'read-1' }))
+      .mockReturnValueOnce(
+        of({ success: true, messageId: 'edit-1', newContent: 'updated' }),
+      )
+      .mockReturnValueOnce(of({ success: true, messageId: 'delete-1' }));
+
+    await gateway.handleRead(socket, 'read-1' as any);
+    await gateway.handleEditMessage(socket, {
+      messageId: 'edit-1',
+      receiverId: undefined as any,
+      newContent: ' updated ',
+    });
+    await gateway.handleDeleteMessage(socket, {
+      messageId: 'delete-1',
+      receiverId: undefined as any,
+    });
+
+    expect(server.to).not.toHaveBeenCalledWith(undefined);
+  });
+
+  it.each([new Error('socket failure'), 'non-error failure'])(
+    'contains typing transport failures %#',
+    async (failure) => {
+      server.to.mockImplementationOnce(() => {
+        throw failure;
+      });
+      const socket = client(undefined, 'sender');
+      await gateway.handleTyping(socket, {
+        receiverId: 'receiver',
+        isTyping: false,
+      });
+      expect(socket.emit).toHaveBeenCalledWith('error', {
+        message: 'Failed to send typing indicator',
+      });
+    },
+  );
+
+  it('uses defensive messages for non-Error handler failures', async () => {
+    const socket = client(undefined, 'sender');
+    messages.sendMessage.mockRejectedValueOnce('persistence failure');
+    await gateway.handleMessage(socket, {
+      receiverId: 'receiver',
+      content: 'hello',
+    });
+    expect(socket.emit).toHaveBeenLastCalledWith('error', {
+      message: 'Failed to send message',
+    });
+
+    chatClient.send.mockReturnValueOnce(throwError(() => 'reaction failure'));
+    await gateway.handleReaction(socket, {
+      messageId: 'message-1',
+      receiverId: 'receiver',
+      emoji: '👍',
+    });
+    expect(socket.emit).toHaveBeenLastCalledWith('error', {
+      message: 'Unknown error',
     });
   });
 });

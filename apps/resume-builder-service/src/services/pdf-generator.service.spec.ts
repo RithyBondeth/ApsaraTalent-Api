@@ -61,6 +61,10 @@ describe('PdfGeneratorService', () => {
     request.url.mockReturnValueOnce('data:image/png;base64,abc');
     handler(request);
     expect(request.continue).toHaveBeenCalled();
+
+    request.url.mockReturnValueOnce('about:blank');
+    handler(request);
+    expect(request.continue).toHaveBeenCalledTimes(2);
   });
 
   it('reuses one connected browser across multiple PDFs', async () => {
@@ -97,5 +101,66 @@ describe('PdfGeneratorService', () => {
     await service.onModuleDestroy();
     expect(browser.close).toHaveBeenCalled();
     expect((service as any).browser).toBeNull();
+  });
+
+  it('collapses concurrent browser launches into one shared promise', async () => {
+    const service = new PdfGeneratorService();
+    let resolveLaunch: (value: typeof browser) => void;
+    (puppeteer.launch as jest.Mock).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveLaunch = resolve;
+      }),
+    );
+
+    const first = (service as any).getBrowser();
+    const second = (service as any).getBrowser();
+    expect(puppeteer.launch).toHaveBeenCalledTimes(1);
+    resolveLaunch!(browser);
+
+    await expect(first).resolves.toBe(browser);
+    await expect(second).resolves.toBe(browser);
+  });
+
+  it('clears a failed launch so a later request can retry', async () => {
+    const service = new PdfGeneratorService();
+    (puppeteer.launch as jest.Mock)
+      .mockRejectedValueOnce(new Error('Chromium unavailable'))
+      .mockResolvedValueOnce(browser);
+
+    await expect(service.generate('first')).rejects.toThrow(
+      'Chromium unavailable',
+    );
+    expect((service as any).active).toBe(0);
+    await expect(service.generate('second')).resolves.toEqual(
+      Buffer.from([1, 2, 3]),
+    );
+    expect(puppeteer.launch).toHaveBeenCalledTimes(2);
+  });
+
+  it('wakes exactly one queued renderer when capacity is released', async () => {
+    const service = new PdfGeneratorService();
+    (service as any).active = RESUME.PDF_MAX_CONCURRENCY;
+    const queued = (service as any).acquire();
+    expect((service as any).waiters).toHaveLength(1);
+
+    (service as any).release();
+    await queued;
+
+    expect((service as any).active).toBe(RESUME.PDF_MAX_CONCURRENCY);
+    expect((service as any).waiters).toHaveLength(0);
+  });
+
+  it('contains browser and page cleanup failures during shutdown', async () => {
+    const service = new PdfGeneratorService();
+    await service.generate('resume');
+    browser.close.mockRejectedValueOnce(new Error('already closed'));
+    await expect(service.onModuleDestroy()).resolves.toBeUndefined();
+
+    const next = new PdfGeneratorService();
+    page.close.mockRejectedValueOnce(new Error('page crashed'));
+    await expect(next.generate('resume')).resolves.toEqual(
+      Buffer.from([1, 2, 3]),
+    );
+    expect((next as any).active).toBe(0);
   });
 });

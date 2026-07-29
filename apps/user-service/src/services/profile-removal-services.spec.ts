@@ -17,18 +17,13 @@ describe('profile child-record removal services', () => {
 
   describe('OpenPositionService', () => {
     const jobs = { findOne: jest.fn(), delete: jest.fn() };
-    const users = { find: jest.fn() };
-    const redis = {
-      generateUserKey: jest.fn((_kind, id) => `user:${id}`),
-      generateListKey: jest.fn(() => 'user-list'),
-      del: jest.fn(),
-      invalidateJobSearchCaches: jest.fn(),
+    const cache = {
+      invalidateCompanyCache: jest.fn(),
     };
     const service = new OpenPositionService(
       logger as any,
       jobs as any,
-      users as any,
-      redis as any,
+      cache as any,
     );
 
     beforeEach(() => jest.clearAllMocks());
@@ -45,7 +40,6 @@ describe('profile child-record removal services', () => {
 
     it('deletes an owned job and invalidates profile and job-search caches', async () => {
       jobs.findOne.mockResolvedValue({ id: 'job-1', title: 'Engineer' });
-      users.find.mockResolvedValue([{ id: 'user-1' }, { id: 'user-2' }]);
 
       const result = await service.removeOpenPosition({
         companyId: 'company-1',
@@ -57,8 +51,7 @@ describe('profile child-record removal services', () => {
         relations: ['company'],
       });
       expect(jobs.delete).toHaveBeenCalledWith('job-1');
-      expect(redis.del).toHaveBeenCalledTimes(3);
-      expect(redis.invalidateJobSearchCaches).toHaveBeenCalled();
+      expect(cache.invalidateCompanyCache).toHaveBeenCalledWith('company-1');
       expect(result.message).toContain('Engineer');
     });
 

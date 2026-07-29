@@ -489,4 +489,126 @@ describe('ChatService', () => {
     );
     expect(chats.find.mock.calls.at(-1)?.[0].where).toHaveLength(8);
   });
+
+  it('uses safe partner defaults when a chat participant has no profile', async () => {
+    users.findOne.mockResolvedValue({
+      id: 'receiver',
+      email: null,
+    });
+    chats.findOne.mockResolvedValue({ id: 'chat-1' });
+
+    await expect(
+      service.createOrGetChat({
+        senderId: 'sender',
+        receiverId: 'receiver',
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        name: 'Unknown',
+        avatar: expect.stringContaining('default'),
+        alreadyExists: true,
+      }),
+    );
+  });
+
+  it.each([
+    ['image', 'image'],
+    ['document', 'document'],
+    ['audio', 'audio'],
+    ['text', undefined],
+  ])(
+    'maps %s message metadata and missing relation fallbacks',
+    async (messageType, attachmentType) => {
+      chats.save.mockResolvedValue({ id: `message-${messageType}` });
+      chats.findOne.mockResolvedValue({
+        id: `message-${messageType}`,
+        content: '',
+        messageType,
+        reactions: null,
+        sender: { company: null, email: null },
+        receiver: { employee: { firstname: null, lastname: 'Dara' } },
+      });
+
+      const result = await service.createMessage({
+        senderId: 'sender',
+        receiverId: 'receiver',
+        content: '',
+        type: messageType as any,
+      });
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          senderId: 'sender',
+          receiverId: 'receiver',
+          attachmentType,
+          reactions: {},
+          sender: expect.objectContaining({
+            id: 'sender',
+            name: 'Unknown',
+            email: '',
+          }),
+          receiver: expect.objectContaining({
+            id: 'receiver',
+            name: 'Dara',
+            email: '',
+          }),
+        }),
+      );
+    },
+  );
+
+  it('formats sparse image, document, and text history messages', async () => {
+    chats.find.mockResolvedValue(
+      ['image', 'document', 'text'].map((messageType, index) => ({
+        id: `message-${index}`,
+        messageType,
+        sender: index === 0 ? { company: { name: 'Apsara' } } : null,
+        receiver: null,
+        reactions: null,
+      })),
+    );
+    userClient.send.mockReturnValue(of({ id: 'receiver' }));
+
+    const result = await service.getChatHistory({
+      userId1: 'sender',
+      userId2: 'receiver',
+    });
+
+    expect(result.messages.map((message) => message.attachmentType)).toEqual([
+      'image',
+      'document',
+      undefined,
+    ]);
+    expect(
+      (result.messages as any[]).map((message) => message.senderName),
+    ).toEqual(['Apsara', 'Unknown', 'Unknown']);
+    expect(result.messages.every((message) => message.reactions)).toBe(true);
+  });
+
+  it('resolves a non-UUID recent-chat identity and uses it as the cache key', async () => {
+    (isUuid as jest.Mock).mockImplementation(
+      (value: string) => value === 'canonical-user',
+    );
+    (resolveUserIdSafe as jest.Mock).mockResolvedValue('canonical-user');
+    const qb: any = {};
+    for (const method of [
+      'leftJoinAndSelect',
+      'where',
+      'orWhere',
+      'orderBy',
+      'addOrderBy',
+      'take',
+    ]) {
+      qb[method] = jest.fn(() => qb);
+    }
+    qb.getMany = jest.fn().mockResolvedValue([]);
+    chats.createQueryBuilder.mockReturnValue(qb);
+
+    await expect(service.getRecentChats(' employee-id ')).resolves.toEqual([]);
+
+    expect(redis.generateRecentChatsKey).toHaveBeenCalledWith('canonical-user');
+    expect(qb.where).toHaveBeenCalledWith('sender.id IN (:...userIds)', {
+      userIds: ['canonical-user'],
+    });
+  });
 });
