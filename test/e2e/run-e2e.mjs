@@ -64,6 +64,25 @@ function run(command, args, options = {}) {
   });
 }
 
+async function runWithRetry(command, args, options = {}, attempts = 3) {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      await run(command, args, options);
+      return;
+    } catch (error) {
+      if (attempt === attempts) throw error;
+
+      const delayMs = attempt * 5000;
+      process.stderr.write(
+        `${command} ${args.join(' ')} failed (attempt ${attempt}/${attempts}); retrying in ${delayMs / 1000}s\n`,
+      );
+      await new Promise((resolvePromise) =>
+        setTimeout(resolvePromise, delayMs),
+      );
+    }
+  }
+}
+
 function waitForPort(port, child, timeoutMs = 90000) {
   const deadline = Date.now() + timeoutMs;
   return new Promise((resolvePromise, reject) => {
@@ -224,7 +243,10 @@ try {
   assertIsolated(env);
   runtimeDir = await mkdtemp(join(tmpdir(), 'apsara-e2e-'));
 
-  await run('docker', [
+  // Pulls occasionally fail on hosted runners with transient registry TLS or
+  // rate-limit errors. Compose up is idempotent, so retrying here avoids
+  // turning an external registry hiccup into a failed release.
+  await runWithRetry('docker', [
     'compose',
     '-f',
     composeFile,
