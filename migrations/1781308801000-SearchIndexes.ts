@@ -53,13 +53,30 @@ export class SearchIndexes1781308801000 implements MigrationInterface {
          ON job ("type")`,
       `CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_job_experience_required
          ON job ("experienceRequired")`,
-      `CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_job_salary_range
-         ON job ("salaryMin", "salaryMax")`,
 
       // Education degree: trigram for ILIKE
       `CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_education_degree_trgm
          ON education USING gin ("degree" gin_trgm_ops)`,
     ];
+
+    // Some older databases predate the structured salary columns. A later
+    // migration adds and backfills them, then creates this index. Keep this
+    // migration compatible with both schema generations so a partial run can
+    // be safely resumed.
+    const salaryColumns = (await queryRunner.query(`
+      SELECT "column_name"
+      FROM "information_schema"."columns"
+      WHERE "table_schema" = 'public'
+        AND "table_name" = 'job'
+        AND "column_name" IN ('salaryMin', 'salaryMax');
+    `)) as { column_name: string }[] | undefined;
+
+    if (Array.isArray(salaryColumns) && salaryColumns.length === 2) {
+      statements.push(
+        `CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_job_salary_range
+           ON job ("salaryMin", "salaryMax")`,
+      );
+    }
 
     for (const statement of statements) {
       await queryRunner.query(statement);

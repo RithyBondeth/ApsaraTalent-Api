@@ -8,6 +8,7 @@ import { CompanyLocationSearchIndex1781568000000 } from './1781568000000-Company
 import { AddExperienceCompany1783987200000 } from './1783987200000-AddExperienceCompany';
 import { AddResumeTemplateKey1783987201000 } from './1783987201000-AddResumeTemplateKey';
 import { HashRefreshTokens1784073600000 } from './1784073600000-HashRefreshTokens';
+import { AddJobSearchColumns1785316800000 } from './1785316800000-AddJobSearchColumns';
 
 describe('database migration contracts', () => {
   const migrations = [
@@ -21,6 +22,7 @@ describe('database migration contracts', () => {
     ['experience company', new AddExperienceCompany1783987200000()],
     ['resume template key', new AddResumeTemplateKey1783987201000()],
     ['hash refresh tokens', new HashRefreshTokens1784073600000()],
+    ['job search columns', new AddJobSearchColumns1785316800000()],
   ] as const;
 
   it.each(migrations)(

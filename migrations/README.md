@@ -4,9 +4,9 @@ Schema changes are applied **only** through the migrations in this directory.
 TypeORM's `synchronize` is hard-forced to `false` in production
 (`libs/common/src/config/configuration.ts`) and there is a unit test asserting it.
 
-Until 2026-07-18 these were loose `.sql` files applied by hand. They are now
-TypeORM migration classes with the original SQL preserved verbatim, tracked in a
-`migrations` table so the database knows what has and hasn't run.
+Several migrations began as loose `.sql` files applied by hand. They are now
+TypeORM migration classes with the original SQL preserved verbatim, tracked in
+a `migrations` table so the database knows what has and hasn't run.
 
 ## Commands
 
@@ -30,9 +30,10 @@ wins over `.env`.
 
 ## First-time rollout against the existing production database
 
-Production already contains the effects of all nine migrations, because they were
-applied by hand. It just has no `migrations` table recording that. **Baseline it
-once**, otherwise `migration:run` re-executes all nine.
+Baseline only when the target database already contains the effects of **every**
+migration on disk but has no `migrations` table recording them. Audit the schema
+first. If even one migration effect is missing, do not baseline the full set;
+take a backup and run the idempotent migrations normally.
 
 They are all written idempotently, so re-running would most likely be harmless —
 but "most likely harmless" is not a deploy strategy, and the concurrent index
@@ -40,7 +41,7 @@ builds would still churn against live tables.
 
 ```bash
 # 1. Take a backup first. Non-negotiable.
-# 2. Confirm the target, and confirm the schema really is up to date.
+# 2. Confirm the target, and confirm every migration effect is already present.
 DATABASE_URL="<production-url>" npm run migration:baseline          # dry run
 # 3. Read the printed host/database. If it is right:
 DATABASE_URL="<production-url>" npm run migration:baseline -- --apply
@@ -50,9 +51,9 @@ DATABASE_URL="<production-url>" npm run migration:show
 
 From then on, production only needs `npm run migration:run`.
 
-**Do not baseline a fresh or empty database** — that would mark migrations as
-applied without creating anything. Fresh databases (local, CI, a new staging
-environment) just run `migration:run`.
+**Do not baseline a fresh, empty, or partially migrated database** — that would
+mark missing changes as applied without creating them. Those databases should
+run `migration:run`.
 
 ## Writing a new migration
 

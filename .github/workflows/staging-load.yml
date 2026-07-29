@@ -15,12 +15,12 @@ on:
       concurrency:
         description: Parallel workers
         required: true
-        default: "10"
+        default: '10'
         type: string
       duration_seconds:
         description: Duration in seconds
         required: true
-        default: "30"
+        default: '30'
         type: string
 
 jobs:
@@ -28,7 +28,7 @@ jobs:
     name: Authorized staging load
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    environment: staging
+    environment: 'apsaratalent / develop'
     steps:
       - uses: actions/checkout@v4
 
@@ -44,12 +44,12 @@ jobs:
       - name: Run thresholded load test
         run: npm run test:load | tee staging-load-result.json
         env:
-          LOAD_ALLOW_REMOTE: "1"
+          LOAD_ALLOW_REMOTE: '1'
           LOAD_BASE_URL: ${{ inputs.base_url }}
           LOAD_PATHS: ${{ inputs.paths }}
           LOAD_CONCURRENCY: ${{ inputs.concurrency }}
           LOAD_DURATION_SECONDS: ${{ inputs.duration_seconds }}
-          LOAD_AUTHORIZATION: ${{ secrets.LOAD_TEST_AUTHORIZATION }}
+          LOAD_AUTHORIZATION: ${{ secrets['LOAD_TEST_AUTHORIZATION'] }}
 
       - name: Upload result
         if: always()

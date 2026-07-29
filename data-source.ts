@@ -23,7 +23,10 @@ export const AppDataSource = new DataSource({
   url: process.env.DATABASE_URL,
   synchronize: false,
   migrationsRun: false,
-  migrations: ['migrations/*.ts'],
+  // Timestamp-prefixed files are executable migrations. Restricting the glob
+  // prevents colocated Jest specs from being imported by ts-node in release
+  // commands (where `describe`/`it` do not exist).
+  migrations: ['migrations/[0-9]*.ts'],
   migrationsTableName: 'migrations',
   migrationsTransactionMode: 'each',
   logging: ['query', 'error', 'schema'],

@@ -184,7 +184,7 @@ jobs:
       # to prevent, so skipping when unconfigured would defeat the purpose.
       - name: Verify DATABASE_URL secret is configured
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ secrets['DATABASE_URL'] }}
         run: |
           if [ -z "$DATABASE_URL" ]; then
             echo "::error::DATABASE_URL repository secret is not set."
@@ -198,12 +198,12 @@ jobs:
       - name: Show migration status
         run: npm run migration:show
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ secrets['DATABASE_URL'] }}
 
       - name: Apply pending migrations
         run: npm run migration:run
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ secrets['DATABASE_URL'] }}
 
   deploy:
     name: Deploy All Services
@@ -211,7 +211,7 @@ jobs:
     needs: [lint, build, migrate]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     env:
-      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_TOKEN: ${{ secrets['RAILWAY_TOKEN'] }}
     steps:
       - uses: actions/checkout@v4
 

@@ -2,12 +2,10 @@
  * Baseline the migration history for a database whose schema ALREADY contains
  * the changes described by the existing migrations.
  *
- * Why this exists: the nine migrations in migrations/ were originally applied by
- * hand as raw .sql files, so production already has their effects but has no
- * `migrations` table recording that. Running `migration:run` against it without
- * baselining would re-execute all nine. They happen to be written idempotently
- * so that would most likely be harmless — but "most likely harmless" is not a
- * deploy strategy, and the CONCURRENTLY index builds would still churn.
+ * Why this exists: some migrations began as loose SQL files that may have been
+ * applied by hand before TypeORM started tracking migration history. A database
+ * that already has EVERY migration effect but no `migrations` ledger can use
+ * this command to record that history without replaying the SQL.
  *
  * This script records migrations as applied WITHOUT executing their SQL.
  *
@@ -46,20 +44,15 @@ async function main() {
   try {
     const queryRunner = AppDataSource.createQueryRunner();
 
-    // Same DDL TypeORM creates for its own migrations table, so a later
-    // migration:run finds exactly what it expects.
-    await queryRunner.query(`
-      CREATE TABLE IF NOT EXISTS "${MIGRATIONS_TABLE}" (
-        "id" SERIAL NOT NULL,
-        "timestamp" bigint NOT NULL,
-        "name" character varying NOT NULL,
-        CONSTRAINT "PK_${MIGRATIONS_TABLE}_id" PRIMARY KEY ("id")
-      );
-    `);
+    const tableCheck = (await queryRunner.query(
+      `SELECT to_regclass(format('%I.%I', current_schema(), $1)) IS NOT NULL AS "exists";`,
+      [MIGRATIONS_TABLE],
+    )) as { exists: boolean }[];
+    const migrationsTableExists = tableCheck[0]?.exists ?? false;
 
-    const recorded: { name: string }[] = await queryRunner.query(
-      `SELECT name FROM "${MIGRATIONS_TABLE}";`,
-    );
+    const recorded: { name: string }[] = migrationsTableExists
+      ? await queryRunner.query(`SELECT name FROM "${MIGRATIONS_TABLE}";`)
+      : [];
     const recordedNames = new Set(recorded.map((r) => r.name));
 
     // AppDataSource.migrations is populated from the migrations glob at
@@ -96,6 +89,20 @@ async function main() {
     }
 
     if (apply && pending.length > 0) {
+      if (!migrationsTableExists) {
+        // Same DDL TypeORM creates for its own migrations table, so a later
+        // migration:run finds exactly what it expects. This is intentionally
+        // inside APPLY mode: a dry run must never mutate the target database.
+        await queryRunner.query(`
+          CREATE TABLE "${MIGRATIONS_TABLE}" (
+            "id" SERIAL NOT NULL,
+            "timestamp" bigint NOT NULL,
+            "name" character varying NOT NULL,
+            CONSTRAINT "PK_${MIGRATIONS_TABLE}_id" PRIMARY KEY ("id")
+          );
+        `);
+      }
+
       for (const m of pending) {
         await queryRunner.query(
           `INSERT INTO "${MIGRATIONS_TABLE}" ("timestamp", "name") VALUES ($1, $2);`,
