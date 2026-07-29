@@ -44,7 +44,7 @@ lerna-debug.log*
 !.env.test
 
 # Storage directory
-storage/
+storage/**
 uploads/
 
 # Old environment files (to be removed)
