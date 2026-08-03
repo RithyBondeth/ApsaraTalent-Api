@@ -25,7 +25,7 @@ jobs:
       - name: Reject committed environment files
         shell: bash
         run: |
-          tracked=$(git ls-files | grep -E '(^|/)\.env' | grep -vE '\.env\.example$|\.env\.test$|test/e2e/e2e\.env$' || true)
+          tracked=$(git ls-files | grep -E '(^|/)\.env' | grep -vE '(^|/)\.env(\.[A-Za-z0-9_-]+)*\.example$|(^|/)\.env\.test$|test/e2e/e2e\.env$' || true)
           if [[ -n "$tracked" ]]; then
             echo "::error::Environment files must never be committed:"
             echo "$tracked"
