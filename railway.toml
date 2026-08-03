@@ -22,7 +22,7 @@
 # so uploaded files persist across deploys and restarts.
 
 [build]
-builder = "dockerfile"
+builder = "DOCKERFILE"
 # IMPORTANT:
 # Do not set a single shared `dockerfilePath` in this root file for a
 # multi-service Railway project. If set here, every service may build the same
@@ -37,7 +37,17 @@ builder = "dockerfile"
 # - chat-service    -> apps/chat-service/Dockerfile
 # - job-service     -> apps/job-service/Dockerfile
 # - notification    -> apps/notification-service/Dockerfile
+#
+# Also configure a service-specific config file path so Railway probes the
+# correct endpoint:
+# - API services      -> railway/api-service.toml
+# - Prometheus        -> railway/prometheus.toml
+# - Alertmanager      -> railway/alertmanager.toml
+# - blackbox-exporter -> railway/blackbox-exporter.toml
+# - Grafana           -> railway/grafana.toml
 
 [deploy]
-restartPolicyType = "on_failure"
-restartPolicyMaxRetries = 3
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+overlapSeconds = 20
+drainingSeconds = 30

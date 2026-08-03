@@ -30,7 +30,8 @@ export const validationSchema = Joi.object({
   EMAIL_FROM: Joi.string().required(),
 
   // Throttler
-  THROTTLE_TTL: Joi.number().required(),
+  THROTTLE_TTL: Joi.number().optional(),
+  THROTTLE_TTL_MS: Joi.number().integer().min(1000).default(60000),
   THROTTLE_LIMIT: Joi.number().required(),
 
   // SMS Services
@@ -113,8 +114,9 @@ export const validationSchema = Joi.object({
   SENTRY_DSN: Joi.string().allow('').optional(),
   SENTRY_TRACES_SAMPLE_RATE: Joi.number().min(0).max(1).default(0.1),
 
-  // Metrics (Prometheus) — optional bearer token to protect /metrics
-  METRICS_TOKEN: Joi.string().allow('').optional(),
+  // Metrics (Prometheus) — empty is convenient locally; production /metrics
+  // fails closed until a strong bearer token is configured.
+  METRICS_TOKEN: Joi.string().min(32).allow('').optional(),
 
   // Firebase (Push Notifications)
   FIREBASE_SERVICE_ACCOUNT: Joi.string().optional(),

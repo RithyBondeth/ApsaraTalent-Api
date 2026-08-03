@@ -58,6 +58,11 @@ export class HealthController implements IHealthController {
     return {
       status: 'ok',
       service: 'api-gateway',
+      release:
+        process.env.RAILWAY_GIT_COMMIT_SHA ||
+        process.env.SENTRY_RELEASE ||
+        process.env.GITHUB_SHA ||
+        'unknown',
       uptime: Math.round(process.uptime()),
       timestamp: new Date().toISOString(),
     };

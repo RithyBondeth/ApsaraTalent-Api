@@ -8,18 +8,19 @@ import {
   HEALTH_PATTERN,
   USER_SERVICE,
 } from '@app/contracts/constants';
-import { Controller } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MessagePattern } from '@nestjs/microservices';
 import { Transport } from '@nestjs/microservices';
 import {
+  HealthCheck,
   HealthCheckResult,
   HealthCheckService,
   MicroserviceHealthIndicator,
   TypeOrmHealthIndicator,
 } from '@nestjs/terminus';
 
-@Controller()
+@Controller('health')
 export class AuthHealthController implements IHealthRpcController {
   constructor(
     private readonly health: HealthCheckService,
@@ -28,6 +29,13 @@ export class AuthHealthController implements IHealthRpcController {
     private readonly configService: ConfigService,
   ) {}
 
+  @Get('live')
+  checkLiveness() {
+    return { status: 'ok', service: 'auth-service' };
+  }
+
+  @Get('ready')
+  @HealthCheck()
   @MessagePattern(HEALTH_PATTERN)
   checkHealth(): Promise<HealthCheckResult> {
     return this.health.check([

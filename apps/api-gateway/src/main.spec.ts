@@ -106,6 +106,7 @@ describe('API gateway startup wiring', () => {
         token?.name === 'ConfigService' ? config : logger,
       ),
       set: jest.fn(),
+      enableShutdownHooks: jest.fn(),
       useGlobalFilters: jest.fn(),
       useGlobalPipes: jest.fn(),
       use: jest.fn(),
@@ -128,6 +129,7 @@ describe('API gateway startup wiring', () => {
     });
 
     expect(app.useGlobalFilters).toHaveBeenCalledTimes(1);
+    expect(app.enableShutdownHooks).toHaveBeenCalledTimes(1);
     expect(app.useGlobalPipes).toHaveBeenCalledTimes(1);
     expect(app.useWebSocketAdapter).toHaveBeenCalledTimes(1);
     expect(app.useStaticAssets).toHaveBeenCalledTimes(2);
@@ -176,6 +178,7 @@ describe('API gateway startup wiring', () => {
         token?.name === 'ConfigService' ? config : logger,
       ),
       set: jest.fn(),
+      enableShutdownHooks: jest.fn(),
       useGlobalFilters: jest.fn(),
       useGlobalPipes: jest.fn(),
       use: jest.fn(),

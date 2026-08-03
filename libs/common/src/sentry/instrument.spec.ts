@@ -42,11 +42,28 @@ describe('Sentry instrumentation', () => {
       }),
     );
     const sampler = init.mock.calls[0][0].tracesSampler;
+    expect(init.mock.calls[0][0].beforeSend).toBeDefined();
     expect(sampler({ name: 'GET /health', parentSampled: undefined })).toBe(0);
     expect(sampler({ name: 'GET /metrics', parentSampled: undefined })).toBe(0);
     expect(sampler({ name: 'GET /jobs', parentSampled: true })).toBe(true);
     expect(sampler({ name: 'GET /jobs', parentSampled: false })).toBe(false);
     expect(sampler({ name: 'GET /jobs', parentSampled: undefined })).toBe(0.25);
+  });
+
+  it('allows tracing to be explicitly disabled', () => {
+    process.env.SENTRY_DSN = 'https://public@example.com/1';
+    process.env.SENTRY_TRACES_SAMPLE_RATE = '0';
+    const init = jest.fn();
+    jest.isolateModules(() => {
+      jest.doMock('@sentry/nestjs', () => ({ init }));
+      jest.requireActual('./instrument');
+    });
+    expect(
+      init.mock.calls[0][0].tracesSampler({
+        name: 'GET /jobs',
+        parentSampled: undefined,
+      }),
+    ).toBe(0);
   });
 
   it('uses deployment defaults when optional Sentry settings are absent', () => {

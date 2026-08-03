@@ -1,0 +1,74 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager.railway.internal:9093']
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ['127.0.0.1:9090']
+        labels: { service: prometheus }
+
+  - job_name: alertmanager
+    static_configs:
+      - targets: ['alertmanager.railway.internal:9093']
+        labels: { service: alertmanager }
+
+  - job_name: blackbox-exporter
+    static_configs:
+      - targets: ['blackbox-exporter.railway.internal:9115']
+        labels: { service: blackbox-exporter }
+
+  - job_name: apsaratalent-gateway
+    metrics_path: /metrics
+    authorization:
+      type: Bearer
+      credentials_file: /tmp/apsara-metrics-token
+    static_configs:
+      - targets: ['api-gateway.railway.internal:3000']
+        labels: { service: api-gateway }
+
+  - job_name: apsaratalent-services
+    metrics_path: /metrics
+    authorization:
+      type: Bearer
+      credentials_file: /tmp/apsara-metrics-token
+    static_configs:
+      - targets: ['auth-service.railway.internal:9101']
+        labels: { service: auth-service }
+      - targets: ['user-service.railway.internal:9102']
+        labels: { service: user-service }
+      - targets: ['resume-builder-service.railway.internal:9103']
+        labels: { service: resume-builder-service }
+      - targets: ['chat-service.railway.internal:9104']
+        labels: { service: chat-service }
+      - targets: ['job-service.railway.internal:9105']
+        labels: { service: job-service }
+      - targets: ['notification-service.railway.internal:9107']
+        labels: { service: notification-service }
+
+  - job_name: apsaratalent-readiness
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets: ['http://api-gateway.railway.internal:3000/health/ready']
+        labels: { service: api-gateway-private-readiness }
+      - targets: ['__PUBLIC_API_HEALTH_URL__']
+        labels: { service: api-gateway-public-readiness }
+      - targets: ['__WEB_HEALTH_URL__']
+        labels: { service: web-readiness }
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter.railway.internal:9115

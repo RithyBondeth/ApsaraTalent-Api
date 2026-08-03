@@ -1,42 +1,64 @@
-name: Deploy to Railway
+name: Verify and deploy API
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-${{ github.workflow }}-${{ github.ref }}
+  # A production migration/release must never be interrupted or interleaved.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   secrets:
     name: Secret scan
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      # A real .env was committed once before and its credentials are still in
-      # this repository's history. This gate makes the same mistake fail the
-      # build instead of reaching the remote a second time.
       - name: Reject committed environment files
+        shell: bash
         run: |
           tracked=$(git ls-files | grep -E '(^|/)\.env' | grep -vE '\.env\.example$|\.env\.test$|test/e2e/e2e\.env$' || true)
-          if [ -n "$tracked" ]; then
+          if [[ -n "$tracked" ]]; then
             echo "::error::Environment files must never be committed:"
             echo "$tracked"
+            exit 1
+          fi
+
+      - name: Reject credential-shaped literals
+        shell: bash
+        run: |
+          if git grep -nIE \
+            -e 'sk-[A-Za-z0-9]{20,}' \
+            -e 'AKIA[0-9A-Z]{16}' \
+            -e 'SG\.[A-Za-z0-9_-]{20,}' \
+            -e '-----BEGIN [A-Z ]*PRIVATE KEY-----' \
+            -e '(SECRET|PASSWORD|TOKEN|API_KEY)[A-Z_]*[[:space:]]*[:=][[:space:]]*["'"']?[A-Za-z0-9/+_-]{24,}' \
+            -e '(postgres(ql)?|mysql|mongodb(\+srv)?|redis|rediss|amqps?)://[^[:space:]"'"']+:[^[:space:]"'"']+@' \
+            -- 'apps/**' 'libs/**' 'scripts/**' 'migrations/**' 'test/**' '*.ts' '*.js' '*.mjs' '*.json' '*.yml' '*.toml' \
+            ':!*.spec.ts' ':!package-lock.json' ':!test/e2e/e2e.env'; then
+            echo "::error::Possible hard-coded credential above. Move it to an environment variable."
             exit 1
           fi
 
   dependencies:
     name: Dependency audit
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Capture complete production dependency audit
@@ -47,61 +69,47 @@ jobs:
 
       - name: Upload dependency audit
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: api-dependency-audit
           path: dependency-audit.json
           if-no-files-found: warn
           retention-days: 14
 
-      - name: Reject credential-shaped literals
-        run: |
-          # Long random-looking assignments to secret-named variables, well-known
-          # key prefixes, and connection strings with an embedded password
-          # (postgres://user:pass@host — a real DATABASE_URL was once committed
-          # this way in a root-level debug script that this glob used to miss).
-          # Scoped to source and config, not lockfiles.
-          if git grep -nIE \
-            -e 'sk-[A-Za-z0-9]{20,}' \
-            -e 'AKIA[0-9A-Z]{16}' \
-            -e 'SG\.[A-Za-z0-9_-]{20,}' \
-            -e '-----BEGIN [A-Z ]*PRIVATE KEY-----' \
-            -e '(SECRET|PASSWORD|TOKEN|API_KEY)[A-Z_]*\s*[:=]\s*["'"'"']?[A-Za-z0-9/+_-]{24,}' \
-            -e '(postgres(ql)?|mysql|mongodb(\+srv)?|redis|rediss|amqps?)://[^\s"'"'"']+:[^\s"'"'"']+@' \
-            -- 'apps/**' 'libs/**' 'scripts/**' 'migrations/**' 'test/**' '*.ts' '*.js' '*.mjs' '*.json' '*.yml' '*.toml' \
-            ':!*.spec.ts' ':!package-lock.json' ':!test/e2e/e2e.env'; then
-            echo "::error::Possible hard-coded credential above. Move it to an environment variable."
-            exit 1
-          fi
-
   lint:
-    name: Lint
+    name: Lint and environment contract
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate the copyable environment example
+        run: npm run check:env -- .env.example
+
       - name: Run lint
         run: npm run lint:check
 
   test:
-    name: Test
+    name: Unit and end-to-end tests
     runs-on: ubuntu-latest
+    timeout-minutes: 35
+    needs: [secrets, dependencies, lint]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install dependencies
@@ -112,7 +120,7 @@ jobs:
 
       - name: Upload coverage report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: api-coverage
           path: coverage/
@@ -123,118 +131,255 @@ jobs:
         run: npm run test:e2e
 
   build:
-    name: Typecheck & Build
+    name: Typecheck and build every service
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    timeout-minutes: 25
+    needs: [secrets, dependencies, lint, test]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Typecheck (all services)
+      - name: Typecheck all services
         run: npx tsc --noEmit -p tsconfig.json
 
-      # Existing strictNullChecks debt is tolerated; new debt is not, and any
-      # new possibly-null dereference fails outright.
-      - name: Strict-null ratchet
+      - name: Enforce strict-null ratchet
         run: npm run typecheck:strict
 
       - name: Validate load-test configuration
         run: npm run test:load:check
 
-      - name: Build API Gateway
-        run: npm run build
+      - name: Build every service
+        run: npm run build:all
+
+  containers:
+    name: Container ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [secrets, dependencies, lint, test, build]
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - api-gateway
+          - auth-service
+          - user-service
+          - resume-builder-service
+          - chat-service
+          - job-service
+          - notification-service
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build production container
+        run: >-
+          docker build
+          --file apps/${{ matrix.service }}/Dockerfile
+          --tag apsaratalent/${{ matrix.service }}:${{ github.sha }}
+          .
+
+  monitoring:
+    name: Validate monitoring configuration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [secrets, dependencies, lint]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Validate Grafana dashboard JSON
+        run: jq empty monitoring/grafana/dashboards/apsaratalent-api.json
+
+      - name: Validate Prometheus configurations and alert rules
+        shell: bash
+        run: |
+          metrics_token_file="$RUNNER_TEMP/prometheus-metrics-token"
+          touch "$metrics_token_file"
+          chmod 600 "$metrics_token_file"
+          docker run --rm \
+            -v "$PWD/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro" \
+            -v "$PWD/monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro" \
+            --entrypoint /bin/promtool \
+            prom/prometheus:v3.13.2 check config /etc/prometheus/prometheus.yml
+          docker run --rm \
+            -v "$PWD/monitoring/production/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro" \
+            -v "$PWD/monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro" \
+            -v "$metrics_token_file:/tmp/apsara-metrics-token:ro" \
+            --entrypoint /bin/promtool \
+            prom/prometheus:v3.13.2 check config /etc/prometheus/prometheus.yml
+
+      - name: Validate Alertmanager configurations
+        shell: bash
+        run: |
+          docker run --rm \
+            -v "$PWD/monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro" \
+            --entrypoint /bin/amtool \
+            prom/alertmanager:v0.33.1 check-config /etc/alertmanager/alertmanager.yml
+          docker run --rm \
+            -v "$PWD/monitoring/production/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro" \
+            --entrypoint /bin/amtool \
+            prom/alertmanager:v0.33.1 check-config /etc/alertmanager/alertmanager.yml
+
+      - name: Validate blackbox exporter configuration
+        run: >-
+          docker run --rm
+          -v "$PWD/monitoring/blackbox.yml:/etc/blackbox/blackbox.yml:ro"
+          prom/blackbox-exporter:v0.28.0
+          --config.file=/etc/blackbox/blackbox.yml
+          --config.check
+
+  monitoring-containers:
+    name: Monitoring container ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [secrets, dependencies, lint, monitoring]
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [prometheus, alertmanager, blackbox, grafana]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build production monitoring container
+        run: >-
+          docker build
+          --file monitoring/production/${{ matrix.service }}/Dockerfile
+          --tag apsaratalent/monitoring-${{ matrix.service }}:${{ github.sha }}
+          .
+
+  release-preflight:
+    name: Validate production release destination
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [secrets, dependencies, lint, test, build, containers, monitoring, monitoring-containers]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      PRODUCTION_API_URL: ${{ vars.PRODUCTION_API_URL }}
+    steps:
+      - name: Require every release credential before migrations
+        shell: bash
+        run: |
+          for name in DATABASE_URL RAILWAY_TOKEN PRODUCTION_API_URL; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::$name is required before a production migration can run."
+              exit 1
+            fi
+          done
 
   migrate:
-    name: Run DB Migrations
+    name: Run production database migrations
     runs-on: ubuntu-latest
-    needs: [lint, test, build]
+    timeout-minutes: 20
+    needs: [release-preflight]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      # Migrations run here rather than at application boot: eight services
-      # share one database, so booting them together would race eight concurrent
-      # migration runs against each other. Running once, before any service is
-      # redeployed, keeps it to a single ordered pass.
-      #
-      # NOTE: the very first run against the existing production database must be
-      # preceded by a one-off `npm run migration:baseline -- --apply` from a
-      # workstation — production already has all nine migrations applied by hand
-      # but has no migrations table recording it. See migrations/README.md.
-      # Fail loudly and legibly rather than letting TypeORM emit a cryptic
-      # connection error. This job intentionally BLOCKS the deploy: shipping code
-      # against an un-migrated schema is the exact failure this pipeline exists
-      # to prevent, so skipping when unconfigured would defeat the purpose.
-      - name: Verify DATABASE_URL secret is configured
+      - name: Require the production database secret
         env:
-          DATABASE_URL: ${{ secrets['DATABASE_URL'] }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        shell: bash
         run: |
-          if [ -z "$DATABASE_URL" ]; then
-            echo "::error::DATABASE_URL repository secret is not set."
-            echo "Add it under Settings -> Secrets and variables -> Actions."
-            echo "Before the first run, baseline the existing production database:"
-            echo "  DATABASE_URL=<production-url> npm run migration:baseline -- --apply"
-            echo "See migrations/README.md for the full rollout procedure."
+          if [[ -z "$DATABASE_URL" ]]; then
+            echo "::error::DATABASE_URL is required. Complete the documented baseline before the first run."
             exit 1
           fi
 
       - name: Show migration status
         run: npm run migration:show
         env:
-          DATABASE_URL: ${{ secrets['DATABASE_URL'] }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Apply pending migrations
         run: npm run migration:run
         env:
-          DATABASE_URL: ${{ secrets['DATABASE_URL'] }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
   deploy:
-    name: Deploy All Services
+    name: Deploy all Railway services
     runs-on: ubuntu-latest
-    needs: [lint, build, migrate]
+    timeout-minutes: 60
+    needs: [release-preflight, migrate]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     env:
-      RAILWAY_TOKEN: ${{ secrets['RAILWAY_TOKEN'] }}
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      PRODUCTION_API_URL: ${{ vars.PRODUCTION_API_URL }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
+      - name: Require deployment configuration
+        shell: bash
+        run: |
+          if [[ -z "$RAILWAY_TOKEN" ]]; then
+            echo "::error::RAILWAY_TOKEN is required for production deployment."
+            exit 1
+          fi
+          if [[ -z "$PRODUCTION_API_URL" ]]; then
+            echo "::error::Set the PRODUCTION_API_URL repository variable to the public gateway origin."
+            exit 1
+          fi
 
-      - name: Deploy api-gateway
-        run: railway up --service api-gateway --detach
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
 
-      - name: Deploy auth-service
-        run: railway up --service auth-service --detach
+      - name: Install pinned Railway CLI
+        run: npm install --global @railway/cli@5.30.4
 
-      - name: Deploy user-service
-        run: railway up --service user-service --detach
+      # Internal services go first; the public gateway switches last. Attached
+      # mode streams the complete Railway build/deploy result and fails CI when
+      # a service does not become active.
+      - name: Deploy auth service
+        run: railway up --service auth-service
 
-      - name: Deploy resume-builder-service
-        run: railway up --service resume-builder-service --detach
+      - name: Deploy user service
+        run: railway up --service user-service
 
-      - name: Deploy chat-service
-        run: railway up --service chat-service --detach
+      - name: Deploy resume builder service
+        run: railway up --service resume-builder-service
 
-      - name: Deploy job-service
-        run: railway up --service job-service --detach
+      - name: Deploy chat service
+        run: railway up --service chat-service
 
-      - name: Deploy notification-service
-        run: railway up --service notification-service --detach
+      - name: Deploy job service
+        run: railway up --service job-service
+
+      - name: Deploy notification service
+        run: railway up --service notification-service
+
+      - name: Deploy Alertmanager
+        run: railway up --service alertmanager
+
+      - name: Deploy blackbox exporter
+        run: railway up --service blackbox-exporter
+
+      - name: Deploy Prometheus
+        run: railway up --service prometheus
+
+      - name: Deploy Grafana
+        run: railway up --service grafana
+
+      - name: Deploy API gateway
+        run: railway up --service api-gateway
+
+      - name: Verify production liveness and every readiness dependency
+        run: node scripts/ci/verify-deployment.mjs "$PRODUCTION_API_URL"

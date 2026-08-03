@@ -60,6 +60,7 @@ describe('Health controllers', () => {
 
   it('returns a stable gateway liveness response', () => {
     jest.spyOn(process, 'uptime').mockReturnValue(12.6);
+    process.env.SENTRY_RELEASE = 'release-1';
     jest.useFakeTimers().setSystemTime(new Date('2026-07-23T10:00:00.000Z'));
     const controller = new HealthController(
       health as any,
@@ -70,10 +71,12 @@ describe('Health controllers', () => {
     expect(controller.checkLiveness()).toEqual({
       status: 'ok',
       service: 'api-gateway',
+      release: 'release-1',
       uptime: 13,
       timestamp: '2026-07-23T10:00:00.000Z',
     });
     jest.useRealTimers();
+    delete process.env.SENTRY_RELEASE;
     jest.restoreAllMocks();
   });
 

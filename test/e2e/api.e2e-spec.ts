@@ -530,4 +530,18 @@ describe('isolated API system', () => {
     expect(blocked.status).toBeGreaterThanOrEqual(400);
     expect(blocked.headers['access-control-allow-origin']).toBeUndefined();
   });
+
+  it('protects Prometheus metrics with a bearer token', async () => {
+    const metricsToken = process.env.METRICS_TOKEN;
+    expect(metricsToken).toBeTruthy();
+
+    await request(baseUrl).get('/metrics').expect(401);
+    await request(baseUrl).get(`/metrics?token=${metricsToken}`).expect(401);
+
+    const metrics = await request(baseUrl)
+      .get('/metrics')
+      .set('Authorization', `Bearer ${metricsToken}`)
+      .expect(200);
+    expect(metrics.text).toContain('process_cpu_seconds_total');
+  });
 });

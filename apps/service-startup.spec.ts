@@ -46,6 +46,7 @@ describe('microservice startup wiring', () => {
         token?.name === 'ConfigService' ? config : logger,
       ),
       connectMicroservice: jest.fn(),
+      enableShutdownHooks: jest.fn(),
       useGlobalFilters: jest.fn(),
       useGlobalPipes: jest.fn(),
       useLogger: jest.fn(),
@@ -68,6 +69,7 @@ describe('microservice startup wiring', () => {
 
     expect(NestFactory.create).toHaveBeenCalledTimes(6);
     expect(app.connectMicroservice).toHaveBeenCalledTimes(6);
+    expect(app.enableShutdownHooks).toHaveBeenCalledTimes(6);
     expect(app.useGlobalFilters).toHaveBeenCalledTimes(6);
     expect(app.useGlobalPipes).toHaveBeenCalledTimes(6);
     expect(app.startAllMicroservices).toHaveBeenCalledTimes(6);

@@ -5,17 +5,18 @@ import {
 } from '@app/common';
 import { IHealthRpcController } from '@app/contracts';
 import { HEALTH_PATTERN, NOTIFICATION_SERVICE } from '@app/contracts/constants';
-import { Controller } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MessagePattern, Transport } from '@nestjs/microservices';
 import {
+  HealthCheck,
   HealthCheckResult,
   HealthCheckService,
   MicroserviceHealthIndicator,
   TypeOrmHealthIndicator,
 } from '@nestjs/terminus';
 
-@Controller()
+@Controller('health')
 export class JobHealthController implements IHealthRpcController {
   constructor(
     private readonly health: HealthCheckService,
@@ -25,6 +26,13 @@ export class JobHealthController implements IHealthRpcController {
     private readonly configService: ConfigService,
   ) {}
 
+  @Get('live')
+  checkLiveness() {
+    return { status: 'ok', service: 'job-service' };
+  }
+
+  @Get('ready')
+  @HealthCheck()
   @MessagePattern(HEALTH_PATTERN)
   checkHealth(): Promise<HealthCheckResult> {
     return this.health.check([
