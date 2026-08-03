@@ -40,8 +40,8 @@ jobs:
             -e 'AKIA[0-9A-Z]{16}' \
             -e 'SG\.[A-Za-z0-9_-]{20,}' \
             -e '-----BEGIN [A-Z ]*PRIVATE KEY-----' \
-            -e '(SECRET|PASSWORD|TOKEN|API_KEY)[A-Z_]*[[:space:]]*[:=][[:space:]]*["'"']?[A-Za-z0-9/+_-]{24,}' \
-            -e '(postgres(ql)?|mysql|mongodb(\+srv)?|redis|rediss|amqps?)://[^[:space:]"'"']+:[^[:space:]"'"']+@' \
+            -e "(SECRET|PASSWORD|TOKEN|API_KEY)[A-Z_]*[[:space:]]*[:=][[:space:]]*[\"']?[A-Za-z0-9/+_-]{24,}" \
+            -e "(postgres(ql)?|mysql|mongodb(\\+srv)?|redis|rediss|amqps?)://[^[:space:]\"']+:[^[:space:]\"']+@" \
             -- 'apps/**' 'libs/**' 'scripts/**' 'migrations/**' 'test/**' '*.ts' '*.js' '*.mjs' '*.json' '*.yml' '*.toml' \
             ':!*.spec.ts' ':!package-lock.json' ':!test/e2e/e2e.env'; then
             echo "::error::Possible hard-coded credential above. Move it to an environment variable."
