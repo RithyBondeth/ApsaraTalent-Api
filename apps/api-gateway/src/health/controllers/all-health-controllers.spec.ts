@@ -41,21 +41,32 @@ describe('Health controllers', () => {
 
   beforeEach(() => jest.clearAllMocks());
 
-  it('runs gateway readiness dependencies for both readiness routes', async () => {
+  it('keeps root health lightweight and reserves dependencies for readiness', async () => {
+    jest.spyOn(process, 'uptime').mockReturnValue(5);
+    process.env.SENTRY_RELEASE = 'release-root';
+    jest.useFakeTimers().setSystemTime(new Date('2026-08-04T00:00:00.000Z'));
     const controller = new HealthController(
       health as any,
       database as any,
       redis as any,
       internal as any,
     );
-    await expect(controller.checkHealth()).resolves.toEqual({ status: 'ok' });
+    expect(controller.checkHealth()).toEqual({
+      status: 'ok',
+      service: 'api-gateway',
+      release: 'release-root',
+      uptime: 5,
+      timestamp: '2026-08-04T00:00:00.000Z',
+    });
     await expect(controller.checkReadiness()).resolves.toEqual({
       status: 'ok',
     });
-    expect(database.pingCheck).toHaveBeenCalledTimes(2);
-    expect(redis.pingCheck).toHaveBeenCalledTimes(2);
-    // 6 INTERNAL_SERVICES x 2 readiness routes (checkHealth + checkReadiness).
-    expect(internal.pingCheck).toHaveBeenCalledTimes(12);
+    expect(database.pingCheck).toHaveBeenCalledTimes(1);
+    expect(redis.pingCheck).toHaveBeenCalledTimes(1);
+    expect(internal.pingCheck).toHaveBeenCalledTimes(6);
+    jest.useRealTimers();
+    delete process.env.SENTRY_RELEASE;
+    jest.restoreAllMocks();
   });
 
   it('returns a stable gateway liveness response', () => {

@@ -125,6 +125,18 @@ describe('isolated API system', () => {
   let company: Session;
   let jobId: string;
 
+  it('reports gateway liveness without waiting for dependencies', async () => {
+    const response = await request(baseUrl).get('/health').expect(200);
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        status: 'ok',
+        service: 'api-gateway',
+        uptime: expect.any(Number),
+        timestamp: expect.any(String),
+      }),
+    );
+  });
+
   it('reports the complete local service graph as ready', async () => {
     const response = await request(baseUrl).get('/health/ready').expect(200);
     expect(response.body.status).toBe('ok');

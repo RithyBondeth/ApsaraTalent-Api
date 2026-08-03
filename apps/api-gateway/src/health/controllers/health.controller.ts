@@ -42,9 +42,8 @@ export class HealthController implements IHealthController {
   ) {}
 
   @Get()
-  @HealthCheck()
-  checkHealth(): Promise<HealthCheckResult> {
-    return this.runReadinessChecks();
+  checkHealth(): LivenessResponseDTO {
+    return this.buildLivenessResponse();
   }
 
   @Get('ready')
@@ -55,6 +54,10 @@ export class HealthController implements IHealthController {
 
   @Get('live')
   checkLiveness(): LivenessResponseDTO {
+    return this.buildLivenessResponse();
+  }
+
+  private buildLivenessResponse(): LivenessResponseDTO {
     return {
       status: 'ok',
       service: 'api-gateway',
