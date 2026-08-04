@@ -1,9 +1,11 @@
 #!/bin/sh
 set -eu
 
-: "${ALERTMANAGER_SLACK_WEBHOOK_URL:?Configure an operations Slack webhook}"
+: "${ALERTMANAGER_TELEGRAM_BOT_TOKEN:?Configure the Telegram bot token}"
+: "${ALERTMANAGER_TELEGRAM_CHAT_ID:?Configure the Telegram destination chat ID}"
 umask 077
-printf '%s' "$ALERTMANAGER_SLACK_WEBHOOK_URL" > /tmp/apsara-slack-webhook
+printf '%s' "$ALERTMANAGER_TELEGRAM_BOT_TOKEN" > /tmp/apsara-telegram-bot-token
+printf '%s' "$ALERTMANAGER_TELEGRAM_CHAT_ID" > /tmp/apsara-telegram-chat-id
 
 exec /bin/alertmanager \
   --config.file=/etc/alertmanager/alertmanager.yml \
