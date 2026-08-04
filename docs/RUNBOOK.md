@@ -171,9 +171,10 @@ Because they are separate services, a partial rollback is possible and is
 usually wrong. Decide up front whether you are rolling back *all* API services
 or just one; mixed versions communicating over TCP RPC is its own outage.
 
-`restartPolicyType = "on_failure"` with 3 retries (railway.toml) means a service
-crash-looping on bad config will retry and then stay down. Check deploy logs
-before assuming a rollback failed.
+`restartPolicyType = "ON_FAILURE"` with 10 retries means a service
+crash-looping on bad config will retry and then stay down. The checked-in
+Railway configs also allow a 20-second rollout overlap and a 30-second graceful
+drain window. Check deploy logs before assuming a rollback failed.
 
 ---
 
@@ -240,7 +241,9 @@ they are handled.
    here is verified against a representative schema, not against prod's size.
    Restore timing on a real dataset is unknown — schedule a drill into a scratch
    Neon branch and record how long it took.
-4. **No staging environment.** CI deploys straight to production, so every
-   rollback here is a production action.
+4. **Staging provisioning is unconfirmed.** The manual load workflow now
+   accepts only the repository's `STAGING_API_URL` variable, but this does not
+   create or validate the provider environment. Confirm the environment exists
+   before relying on it.
 5. **Backups are manual.** `scripts/db/backup-db.sh` must be run by a person. At
    minimum, run it before any migration or risky deploy; better, schedule it.

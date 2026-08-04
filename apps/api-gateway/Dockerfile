@@ -1,19 +1,21 @@
 # Stage 1: Build
-FROM node:20-alpine AS builder
+FROM node:24.18.1-alpine3.23 AS builder
 WORKDIR /app
 
 COPY package*.json ./
+RUN npm ci
+
 COPY nest-cli.json webpack.config.js ./
 COPY tsconfig*.json ./
 COPY apps/api-gateway ./apps/api-gateway
 COPY apps/resume-builder-service ./apps/resume-builder-service
 COPY libs ./libs
 
-RUN npm ci
 RUN npx nest build api-gateway
+RUN npm prune --omit=dev
 
 # Stage 2: Production
-FROM node:20-alpine AS runner
+FROM node:24.18.1-alpine3.23 AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -32,15 +34,20 @@ ENV JOB_SERVICE_PORT=3005
 ENV NOTIFICATION_SERVICE_HOST=notification-service.railway.internal
 ENV NOTIFICATION_SERVICE_PORT=3007
 
-COPY --from=builder /app/dist/apps/api-gateway ./dist/apps/api-gateway
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./
+COPY --from=builder --chown=node:node /app/dist/apps/api-gateway ./dist/apps/api-gateway
+COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/package.json ./
 
 # Create storage directory for chat file uploads.
 # NOTE: This directory is ephemeral. On Railway, add a Volume mount at /app/storage
 # to persist uploaded files across deploys and restarts.
-RUN mkdir -p storage
+RUN mkdir -p storage && chown node:node storage
+
+USER node
 
 EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD wget -q -O /dev/null "http://127.0.0.1:${PORT}/health/ready" || exit 1
 
 CMD ["node", "--enable-source-maps", "dist/apps/api-gateway/main.js"]

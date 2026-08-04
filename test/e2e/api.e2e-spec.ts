@@ -125,6 +125,18 @@ describe('isolated API system', () => {
   let company: Session;
   let jobId: string;
 
+  it('reports gateway liveness without waiting for dependencies', async () => {
+    const response = await request(baseUrl).get('/health').expect(200);
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        status: 'ok',
+        service: 'api-gateway',
+        uptime: expect.any(Number),
+        timestamp: expect.any(String),
+      }),
+    );
+  });
+
   it('reports the complete local service graph as ready', async () => {
     const response = await request(baseUrl).get('/health/ready').expect(200);
     expect(response.body.status).toBe('ok');
@@ -529,5 +541,19 @@ describe('isolated API system', () => {
       .set('Access-Control-Request-Method', 'GET');
     expect(blocked.status).toBeGreaterThanOrEqual(400);
     expect(blocked.headers['access-control-allow-origin']).toBeUndefined();
+  });
+
+  it('protects Prometheus metrics with a bearer token', async () => {
+    const metricsToken = process.env.METRICS_TOKEN;
+    expect(metricsToken).toBeTruthy();
+
+    await request(baseUrl).get('/metrics').expect(401);
+    await request(baseUrl).get(`/metrics?token=${metricsToken}`).expect(401);
+
+    const metrics = await request(baseUrl)
+      .get('/metrics')
+      .set('Authorization', `Bearer ${metricsToken}`)
+      .expect(200);
+    expect(metrics.text).toContain('process_cpu_seconds_total');
   });
 });

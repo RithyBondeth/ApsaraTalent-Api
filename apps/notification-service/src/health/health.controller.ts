@@ -1,9 +1,10 @@
 import { HEALTH_PATTERN } from '@app/contracts/constants';
 import { HEALTH_DATABASE_TIMEOUT_MS } from '@app/common';
-import { Controller } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MessagePattern } from '@nestjs/microservices';
 import {
+  HealthCheck,
   HealthCheckError,
   HealthCheckResult,
   HealthCheckService,
@@ -13,7 +14,7 @@ import {
 import { PushNotificationService } from '../services/push-notification.service';
 import { IHealthRpcController } from '@app/contracts';
 
-@Controller()
+@Controller('health')
 export class NotificationHealthController implements IHealthRpcController {
   constructor(
     private readonly health: HealthCheckService,
@@ -23,6 +24,13 @@ export class NotificationHealthController implements IHealthRpcController {
     private readonly configService: ConfigService,
   ) {}
 
+  @Get('live')
+  checkLiveness() {
+    return { status: 'ok', service: 'notification-service' };
+  }
+
+  @Get('ready')
+  @HealthCheck()
   @MessagePattern(HEALTH_PATTERN)
   checkHealth(): Promise<HealthCheckResult> {
     return this.health.check([

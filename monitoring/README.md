@@ -7,10 +7,12 @@ Scrapes the `/metrics` endpoints exposed by the gateway and every microservice
 
 ```bash
 # from the repo root
-docker compose -f monitoring/docker-compose.yml up -d
+cp monitoring/.env.monitoring.example monitoring/.env.monitoring
+# Replace the example password with a password-manager-generated value.
+docker compose --env-file monitoring/.env.monitoring -f monitoring/docker-compose.yml up -d
 ```
 
-- **Grafana:** http://localhost:3030 (login `admin` / `admin`, change on first login)
+- **Grafana:** http://localhost:3030 (credentials come from `.env.monitoring`)
   The "ApsaraTalent API — Performance" dashboard is auto-provisioned.
 - **Prometheus:** http://localhost:9090 (check Status → Targets are all `UP`; Alerts tab shows rule state).
 - **Alertmanager:** http://localhost:9093 (fired alerts land here).
@@ -37,8 +39,12 @@ to come up.
 ## Securing the endpoints
 
 Set `METRICS_TOKEN` in the API's environment to require a bearer token, then
-uncomment the `authorization` block in `prometheus.yml` and set `credentials`
-to the same value.
+configure the corresponding Prometheus `authorization` block. In production,
+use `credentials_file` backed by your secret store; never commit the value.
+
+Production fails closed: `/metrics` returns 404 when no token is configured,
+and credentials in the query string are rejected. Keep Prometheus on the
+Railway private network whenever possible.
 
 ## Handy PromQL
 
@@ -61,6 +67,8 @@ http://localhost:9090/alerts):
 | Alert | Fires when | Severity |
 |---|---|---|
 | `ServiceDown` | a target is unscrapeable >1m | critical |
+| `EndpointUnready` | API or web readiness probe fails >2m | critical |
+| `MonitoringComponentDown` | Prometheus, Alertmanager, or blackbox exporter is down >2m | critical |
 | `HighHttpP95Latency` | route p95 > 1s for 10m | warning |
 | `HighHttp5xxRate` | route 5xx ratio > 5% for 5m | critical |
 | `GatewayTimeouts` | any 504s on a route for 5m | critical |
@@ -72,6 +80,10 @@ just collect in its UI. To get notified, uncomment the `slack_configs` block in
 `alertmanager.yml` and set your webhook URL (email/PagerDuty/etc. work the same
 way). Reload with `docker compose -f monitoring/docker-compose.yml restart alertmanager`.
 
+The repository intentionally does not contain a notification destination. A
+production rollout is incomplete until Alertmanager has a real receiver and a
+test alert has reached a human.
+
 After editing `alerts.yml`, reload Prometheus:
 `curl -X POST http://localhost:9090/-/reload` (or restart the container).
 
@@ -81,3 +93,7 @@ After editing `alerts.yml`, reload Prometheus:
   Linux (it's automatic on Docker Desktop for macOS/Windows).
 - Grafana is on host port **3030** and Prometheus on **9090** to avoid the API's
   own host ports (gateway 3000, services 3001–3007, metrics 9101–9107).
+- All monitoring UIs bind to `127.0.0.1`; use an authenticated TLS reverse
+  proxy rather than exposing these ports directly.
+- Image versions are pinned and Prometheus retains 30 days locally. Production
+  still needs persistent storage or remote-write retention.

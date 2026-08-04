@@ -42,9 +42,8 @@ export class HealthController implements IHealthController {
   ) {}
 
   @Get()
-  @HealthCheck()
-  checkHealth(): Promise<HealthCheckResult> {
-    return this.runReadinessChecks();
+  checkHealth(): LivenessResponseDTO {
+    return this.buildLivenessResponse();
   }
 
   @Get('ready')
@@ -55,9 +54,18 @@ export class HealthController implements IHealthController {
 
   @Get('live')
   checkLiveness(): LivenessResponseDTO {
+    return this.buildLivenessResponse();
+  }
+
+  private buildLivenessResponse(): LivenessResponseDTO {
     return {
       status: 'ok',
       service: 'api-gateway',
+      release:
+        process.env.RAILWAY_GIT_COMMIT_SHA ||
+        process.env.SENTRY_RELEASE ||
+        process.env.GITHUB_SHA ||
+        'unknown',
       uptime: Math.round(process.uptime()),
       timestamp: new Date().toISOString(),
     };
