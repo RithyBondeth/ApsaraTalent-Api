@@ -349,22 +349,22 @@ jobs:
       # mode streams the complete Railway build/deploy result and fails CI when
       # a service does not become active.
       - name: Deploy auth service
-        run: railway up --service auth-service
+        run: railway up --service "apsaratalent - Auth Service"
 
       - name: Deploy user service
-        run: railway up --service user-service
+        run: railway up --service "apsaratalent - User Service"
 
       - name: Deploy resume builder service
-        run: railway up --service resume-builder-service
+        run: railway up --service "apsaratalent - Resume Builder Service"
 
       - name: Deploy chat service
-        run: railway up --service chat-service
+        run: railway up --service "apsaratalent - Chat Service"
 
       - name: Deploy job service
-        run: railway up --service job-service
+        run: railway up --service "apsaratalent - Job Service"
 
       - name: Deploy notification service
-        run: railway up --service notification-service
+        run: railway up --service "apsaratalent - Notification Service"
 
       - name: Deploy Alertmanager
         run: railway up --service alertmanager
@@ -379,7 +379,7 @@ jobs:
         run: railway up --service grafana
 
       - name: Deploy API gateway
-        run: railway up --service api-gateway
+        run: railway up --service "apsaratalent - API Gateway"
 
       - name: Verify production liveness and every readiness dependency
         run: node scripts/ci/verify-deployment.mjs "$PRODUCTION_API_URL"
