@@ -347,24 +347,25 @@ jobs:
 
       # Internal services go first; the public gateway switches last. Attached
       # mode streams the complete Railway build/deploy result and fails CI when
-      # a service does not become active.
+      # a service does not become active. These are the service names shown in
+      # Railway Architecture; GitHub prefixes deployment labels separately.
       - name: Deploy auth service
-        run: railway up --service "apsaratalent - Auth Service"
+        run: railway up --service "Auth Service"
 
       - name: Deploy user service
-        run: railway up --service "apsaratalent - User Service"
+        run: railway up --service "User Service"
 
       - name: Deploy resume builder service
-        run: railway up --service "apsaratalent - Resume Builder Service"
+        run: railway up --service "Resume Builder Service"
 
       - name: Deploy chat service
-        run: railway up --service "apsaratalent - Chat Service"
+        run: railway up --service "Chat Service"
 
       - name: Deploy job service
-        run: railway up --service "apsaratalent - Job Service"
+        run: railway up --service "Job Service"
 
       - name: Deploy notification service
-        run: railway up --service "apsaratalent - Notification Service"
+        run: railway up --service "Notification Service"
 
       - name: Deploy Alertmanager
         run: railway up --service alertmanager
@@ -379,7 +380,7 @@ jobs:
         run: railway up --service grafana
 
       - name: Deploy API gateway
-        run: railway up --service "apsaratalent - API Gateway"
+        run: railway up --service "API Gateway"
 
       - name: Verify production liveness and every readiness dependency
         run: node scripts/ci/verify-deployment.mjs "$PRODUCTION_API_URL"
