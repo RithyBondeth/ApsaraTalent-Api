@@ -4,6 +4,7 @@
 // dotenv never overrides variables already present in the environment.
 import 'dotenv/config';
 import * as Sentry from '@sentry/nestjs';
+import { parseSentrySampleRate, sanitizeSentryEvent } from './event-sanitizer';
 
 /**
  * Shared Sentry initialization for every process (gateway + each microservice).
@@ -25,7 +26,9 @@ if (dsn) {
   const service =
     process.env.RAILWAY_SERVICE_NAME || process.env.SENTRY_SERVICE;
 
-  const tracesSampleRate = Number(process.env.SENTRY_TRACES_SAMPLE_RATE) || 0.1;
+  const tracesSampleRate = parseSentrySampleRate(
+    process.env.SENTRY_TRACES_SAMPLE_RATE,
+  );
 
   Sentry.init({
     dsn,
@@ -39,6 +42,7 @@ if (dsn) {
     // SENTRY_DEBUG=true logs SDK activity (init, envelope sends) to stdout —
     // use it to verify events are actually delivered.
     debug: process.env.SENTRY_DEBUG === 'true',
+    beforeSend: sanitizeSentryEvent,
     serverName: service,
     // Sample traces, but never for infra noise: health checks and Prometheus
     // scrapes fire constantly and would dominate the transaction quota.

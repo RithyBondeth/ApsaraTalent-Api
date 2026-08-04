@@ -41,6 +41,7 @@ export function resolveSessionSecret(
 async function bootstrap() {
   const app =
     await NestFactory.create<NestExpressApplication>(ApiGatewayModule);
+  app.enableShutdownHooks();
   const configService = app.get<ConfigService>(ConfigService);
   const isProduction = process.env.NODE_ENV === 'production';
 

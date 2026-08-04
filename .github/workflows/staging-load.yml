@@ -1,5 +1,8 @@
 name: Staging load test
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
     inputs:
@@ -29,14 +32,31 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: 'apsaratalent / develop'
+    concurrency:
+      group: staging-load
+      cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: npm
+
+      - name: Authorize staging target
+        env:
+          REQUESTED_BASE_URL: ${{ inputs.base_url }}
+          AUTHORIZED_BASE_URL: ${{ vars.STAGING_API_URL }}
+        run: |
+          if [ -z "$AUTHORIZED_BASE_URL" ]; then
+            echo "STAGING_API_URL repository variable is required" >&2
+            exit 1
+          fi
+          if [ "${REQUESTED_BASE_URL%/}" != "${AUTHORIZED_BASE_URL%/}" ]; then
+            echo "The requested URL is not the authorized staging origin" >&2
+            exit 1
+          fi
 
       - name: Install dependencies
         run: npm ci
@@ -53,7 +73,7 @@ jobs:
 
       - name: Upload result
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: staging-load-result
           path: staging-load-result.json

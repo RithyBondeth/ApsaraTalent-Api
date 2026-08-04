@@ -8,6 +8,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build api-gateway",
+    "build:all": "nest build api-gateway && nest build auth-service && nest build user-service && nest build resume-builder-service && nest build chat-service && nest build job-service && nest build notification-service",
     "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\"",
     "start": "npm run start:production",
     "start:dev": "nest start --watch",
@@ -174,7 +175,7 @@
   },
   "overrides": {
     "basic-ftp": "5.3.1",
-    "brace-expansion": "5.0.8",
+    "brace-expansion": "5.0.9",
     "gaxios": "7.3.0",
     "google-gax": "5.0.8",
     "multer": "$multer",
@@ -182,6 +183,7 @@
     "fast-xml-parser": "5.10.1",
     "rimraf": "6.1.3",
     "tar": "7.5.22",
+    "uuid": "11.1.1",
     "websocket-driver": "0.7.5"
   },
   "jest": {

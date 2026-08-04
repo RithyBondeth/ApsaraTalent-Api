@@ -188,6 +188,33 @@
           "datasource": { "type": "prometheus", "uid": "apsaratalent-prometheus" }
         }
       ]
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "User-facing readiness",
+      "datasource": { "type": "prometheus", "uid": "apsaratalent-prometheus" },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 51 },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 1,
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "auto", "textMode": "auto" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "probe_success{job=\"apsaratalent-readiness\"}",
+          "legendFormat": "{{service}}",
+          "datasource": { "type": "prometheus", "uid": "apsaratalent-prometheus" }
+        }
+      ]
     }
   ]
 }
