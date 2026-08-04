@@ -17,8 +17,9 @@ Required configuration:
 - Set `PUBLIC_API_HEALTH_URL=https://<api-domain>/health/ready` and
   `WEB_HEALTH_URL=https://<web-domain>/health` on Prometheus. Startup fails if
   either public end-to-end probe is missing.
-- Set `ALERTMANAGER_SLACK_WEBHOOK_URL` on Alertmanager. The container refuses to
-  start without a real notification destination.
+- Set `ALERTMANAGER_TELEGRAM_BOT_TOKEN` and `ALERTMANAGER_TELEGRAM_CHAT_ID` on
+  Alertmanager. The chat ID may be negative for a Telegram group. The container
+  refuses to start unless both values are present.
 - Set `GF_SECURITY_ADMIN_USER`, `GF_SECURITY_ADMIN_PASSWORD`,
   `GF_USERS_ALLOW_SIGN_UP=false`, `GF_AUTH_ANONYMOUS_ENABLED=false`, and
   `PROMETHEUS_URL=http://prometheus.railway.internal:9090` on Grafana.
@@ -36,4 +37,4 @@ Required configuration:
   health path, rollout overlap, and graceful shutdown window for each service.
 
 After rollout, confirm every target is `UP`, deliberately stop a non-production
-service, and verify that the Slack alert fires and later resolves.
+service, and verify that the Telegram alert fires and later resolves.
