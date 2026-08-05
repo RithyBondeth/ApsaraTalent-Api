@@ -11,8 +11,10 @@ export const emailConfig = (
   secure: false, // false for TLS - port 587
   transportOptions: {
     tls: {
-      ciphers: 'SSLv3',
-      rejectUnauthorized: false,
+      // Verify the server certificate. This was previously disabled alongside
+      // a forced SSLv3 cipher list, which left the connection open to MITM;
+      // smtp.gmail.com negotiates modern TLS fine without either override.
+      minVersion: 'TLSv1.2',
     },
   },
   auth: {
