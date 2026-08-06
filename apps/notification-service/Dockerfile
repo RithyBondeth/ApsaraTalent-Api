@@ -31,6 +31,12 @@ RUN npm prune --omit=dev
 FROM node:24.18.1-alpine3.23 AS runner
 WORKDIR /app
 
+# Freeze the release into the image so Sentry events match the source maps
+# uploaded for this same commit in the builder stage. ARGs do not cross stage
+# boundaries, so this must be re-declared here.
+ARG RAILWAY_GIT_COMMIT_SHA
+ENV SENTRY_RELEASE=${RAILWAY_GIT_COMMIT_SHA}
+
 ENV NODE_ENV=production
 ENV NOTIFICATION_SERVICE_PORT=3007
 ENV NOTIFICATION_SERVICE_METRICS_PORT=9107
