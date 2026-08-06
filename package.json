@@ -48,6 +48,7 @@
     "migration:create": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:create",
     "migration:baseline": "ts-node -r tsconfig-paths/register scripts/db/baseline-migrations.ts",
     "db:backup": "./scripts/db/backup-db.sh",
+    "db:restore-point": "node --env-file-if-exists=.env scripts/ci/create-restore-point.mjs",
     "storage:migrate": "ts-node -r tsconfig-paths/register scripts/db/migrate-storage-to-s3.ts",
     "seed": "ts-node -r tsconfig-paths/register scripts/db/seed.ts",
     "backfill:embeddings": "ts-node -r tsconfig-paths/register scripts/db/backfill-embeddings.ts",

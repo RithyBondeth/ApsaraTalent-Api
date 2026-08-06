@@ -53,7 +53,34 @@ capability being merged is not the same as the risk being closed.
 
 ## 2. Taking a backup
 
+### Automatic, before every production migration
+
+The `migrate` job creates a Neon branch as a restore point immediately before
+`migration:run`, and the release **stops** if it cannot. The branch id and name
+are printed in that job's step summary — that is the thing to restore from if a
+migration goes wrong.
+
+```bash
+# Same thing by hand, e.g. before a manual data fix. Reads NEON_API_KEY and
+# NEON_PROJECT_ID from your local .env; pass them inline to override.
+npm run db:restore-point
+```
+
+Branches are named `ci-restore-point/<UTC-timestamp>-<sha>`. The script keeps
+the 10 most recent and prunes older ones — it only ever deletes branches under
+that exact prefix, so a branch you created by hand is never touched. Override
+with `RESTORE_POINT_KEEP`, or set it to `0` to disable pruning (and then watch
+the project branch limit yourself).
+
+These are storage-only branches with no compute attached, so they cost storage
+and nothing else until someone attaches an endpoint during a recovery.
+
 ### Routine / before any risky change
+
+A restore point is a Neon-side snapshot; a `pg_dump` is a file you can carry off
+Neon entirely. Take one before anything that a branch would not save you from —
+a provider migration, a destructive backfill, or a plan change that could shorten
+the retention window.
 
 ```bash
 DATABASE_URL="<production-url>" ./scripts/db/backup-db.sh ./backups
@@ -156,20 +183,41 @@ applied against a freshly restored copy.
 
 ## 4. Rolling back a deployment
 
-### Web (Vercel)
+### Web (Vercel) — automatic
 
-Vercel deployments are immutable. Use **Instant Rollback** in the dashboard, or
-promote the previous production deployment. No database implications *provided*
-the schema has not moved on — see §5.
+The `deploy` job verifies the new deployment and, if verification fails, runs
+`vercel rollback` itself: the production alias goes back to the previous
+deployment without anyone being paged. The workflow summary says whether the
+rollback succeeded, and the run fails loudly if it did not.
 
-### API (Railway)
+You still need **Instant Rollback** in the dashboard when the failure is found
+later — by users, by Sentry, by a metric — rather than by the deploy's own
+health check. Deployments are immutable, so this is always available.
 
-Each of the 7 deployed services is rolled back independently: Railway service →
-**Deployments** → pick the last known-good → **Redeploy**.
+No database implications *provided* the schema has not moved on — see §5.
 
-Because they are separate services, a partial rollback is possible and is
-usually wrong. Decide up front whether you are rolling back *all* API services
-or just one; mixed versions communicating over TCP RPC is its own outage.
+### API (Railway) — one workflow, human-triggered
+
+Run the **Roll back Railway services** workflow (Actions → Run workflow):
+
+- `service: all` covers the 7 RPC-coupled application services, in the same
+  order as a deploy (internal services first, gateway last).
+- Named services roll back individually, including the monitoring components.
+- `apply` is **off by default**. The first run prints the current and target
+  deployment for each service and changes nothing. Read that table, then re-run
+  with `apply` checked.
+
+It aborts without touching anything if any targeted service has no earlier
+successful deployment to return to — a partial rollback is worse than none.
+After `service: all` it re-verifies `/health/ready` automatically.
+
+This is deliberately not automatic on a failed deploy. Rolling back a subset
+leaves mixed versions communicating over TCP RPC, which is its own outage, so
+the scope decision stays with a person. Decide *before* you run it whether you
+are rolling back all API services or one.
+
+The dashboard path still works if the workflow itself is broken: Railway
+service → **Deployments** → last known-good → **Redeploy**.
 
 `restartPolicyType = "ON_FAILURE"` with 10 retries means a service
 crash-looping on bad config will retry and then stay down. The checked-in
@@ -245,5 +293,11 @@ they are handled.
    accepts only the repository's `STAGING_API_URL` variable, but this does not
    create or validate the provider environment. Confirm the environment exists
    before relying on it.
-5. **Backups are manual.** `scripts/db/backup-db.sh` must be run by a person. At
-   minimum, run it before any migration or risky deploy; better, schedule it.
+5. **Off-Neon backups are still manual.** Every production migration now takes an
+   automatic Neon restore point (§2), so the migration path is covered. But every
+   restore point lives inside the same Neon project as the data — a project-level
+   or account-level loss takes both. `scripts/db/backup-db.sh` is the only copy
+   that leaves Neon, and it still must be run by a person. Schedule it.
+6. **The Railway rollback path is unrehearsed.** The workflow's dry run is safe
+   and free — run it once against production now, so the first time anyone reads
+   its output is not during an incident.

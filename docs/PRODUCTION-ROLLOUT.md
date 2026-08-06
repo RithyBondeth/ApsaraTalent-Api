@@ -10,7 +10,34 @@ check does not pass.
 API repository secrets:
 
 - `DATABASE_URL`: direct production database URL used by migrations.
-- `RAILWAY_TOKEN`: token scoped to the production Railway project.
+- `RAILWAY_TOKEN`: token scoped to the production Railway project. Also used by
+  the rollback workflow.
+- `NEON_API_KEY`: Neon API key with write access to the production project.
+  Used only to create the pre-migration restore point.
+- `NEON_PROJECT_ID`: the Neon project the restore point is taken in.
+
+Both are set by hand, independent of Neon's GitHub App. The App being installed
+on this repository grants access but provisions nothing — these two secrets are
+the only thing the release reads.
+
+Create the key at Neon Console → Account settings → API keys, and read the
+project id from Neon Console → project → Settings → General (it looks like
+`winter-frost-12345678`, and is *not* the `ep-...` endpoint id in
+`DATABASE_URL`). Prefer a project-scoped key if your account offers one; the
+release only ever lists, creates, and deletes branches in this one project.
+
+Verify both before the first release — this is read-only and creates nothing:
+
+```bash
+curl -s -H "Authorization: Bearer $NEON_API_KEY" \
+  "https://console.neon.tech/api/v2/projects/$NEON_PROJECT_ID/branches" | head -c 400
+```
+
+A JSON object with a `branches` array means both values are correct. `401`/`403`
+is a bad key or one without access to the project; `404` is a wrong project id.
+
+`release-preflight` fails the release if any of these are missing, before a
+single migration runs.
 
 API repository variables:
 
@@ -19,16 +46,30 @@ API repository variables:
 
 Web repository secrets:
 
-- `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID`.
+- `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID`. These are now
+  load-bearing: production is deployed by the `deploy` job in
+  `.github/workflows/deploy.yml`, not by Vercel's Git integration.
 - `SENTRY_AUTH_TOKEN` for source-map upload.
+- `VERCEL_AUTOMATION_BYPASS_SECRET` when Deployment Protection is enabled, so
+  the health verifier can reach a protected deployment.
 
 Web repository variables:
 
 - `SENTRY_ORG` and `SENTRY_PROJECT`.
+- `PRODUCTION_WEB_URL`: the public site origin. Optional but recommended — when
+  set, the deploy verifies the production alias and not only the fresh
+  deployment URL.
 
 Protect `main`, require the verification workflow, and require review before
 merging. The two workflows deploy only from `main`; pull requests build and
 test without changing production.
+
+> **Vercel: automatic production deploys must stay off.** `vercel.json` sets
+> `git.deploymentEnabled.main = false`. This is what makes the web checks a real
+> gate — without it Vercel builds and promotes every push to `main` regardless of
+> whether CI passed. If someone re-enables it in the Vercel dashboard, the gate
+> is gone and nothing in this repository will report that. Preview deploys on
+> other branches are unaffected.
 
 ## 2. Railway application services
 
