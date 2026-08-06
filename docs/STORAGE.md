@@ -106,7 +106,23 @@ private. Example policy:
 ```
 
 Verify before continuing: a public object returns 200 anonymously, and an object
-under `resumes/` returns 403.
+under `resumes/` returns 403. Step 3 checks this automatically once files exist.
+
+**Turn on object versioning before uploading anything.** This is the step that
+makes the bucket a *backup* rather than just a more durable disk. Without it,
+the bucket survives hardware failure but not a bad `delete` — from a bug, a
+mis-scoped credential, or a person. With versioning on, a delete writes a
+marker and the previous version is still recoverable.
+
+- **AWS S3**: bucket → Properties → Bucket Versioning → Enable.
+- **Cloudflare R2**: enabled per bucket under Settings.
+- **Backblaze B2**: "Keep all versions" lifecycle setting.
+
+Then add a lifecycle rule expiring **noncurrent** versions after 30–90 days, so
+old versions do not accumulate cost forever. Do not expire current versions.
+
+The application never needs versioning to be on — it is purely a recovery
+property, which is exactly why it gets skipped and why it belongs here.
 
 ### 2. Copy existing files into the bucket
 
@@ -126,9 +142,34 @@ npm run storage:migrate -- --apply   # upload
 It skips objects already present (so re-running resumes an interrupted copy),
 ignores dotfiles, and sets public-read only on the public prefixes.
 
-### 3. Spot-check the copy
+Note the skip is by key, not by content: an object left truncated by an
+interrupted upload is *present*, so the copy step will not notice it. Step 3 is
+what catches that.
 
-Confirm a handful of avatars load anonymously and that a resume does **not**.
+### 3. Verify the copy
+
+```bash
+npm run storage:verify
+```
+
+Read-only. For every file on the volume it checks the bucket has an object of
+the same size, and compares content by hash (S3 returns the MD5 as the object's
+ETag, so this costs a HEAD rather than a download). It then samples public and
+private keys and fetches them **anonymously** to confirm avatars are reachable
+and resumes are not.
+
+Exits non-zero on anything missing, differing, or wrongly exposed. Do not
+continue until it passes.
+
+```bash
+npm run storage:verify -- --quick        # sizes only, for a very large volume
+npm run storage:verify -- --sample 20    # widen the access audit
+```
+
+The anonymous audit needs `S3_PUBLIC_BASE_URL` set; without it the script says
+the boundary was not checked rather than implying it passed. If you skip it,
+confirm by hand that a public object returns 200 and a `resumes/` object does
+not.
 
 ### 4. Flip the driver
 
@@ -161,6 +202,11 @@ It is your rollback: unset `STORAGE_DRIVER` and redeploy.
 Files uploaded *after* the switch exist only in the bucket, so once new uploads
 have happened, rolling back leaves those missing. Roll back promptly or not at
 all.
+
+Before detaching the volume for good, run `npm run storage:verify` once more.
+By then it will report bucket-only objects (everything uploaded since the
+cutover) — that is expected and informational. What matters is that nothing on
+the volume is missing from the bucket.
 
 ---
 
@@ -202,6 +248,7 @@ bucket addressing by default.
 | `libs/common/src/storage/storage.registry.ts` | Static handle for multer (which cannot use DI) |
 | `apps/api-gateway/src/storage/controllers/public-storage.controller.ts` | Serves `/storage/<folder>/<path>` |
 | `scripts/db/migrate-storage-to-s3.ts` | Volume → bucket copy |
+| `scripts/db/verify-storage-migration.ts` | Proves the copy is complete and the access boundary holds |
 
 ### Gotcha: multer and dependency injection
 
