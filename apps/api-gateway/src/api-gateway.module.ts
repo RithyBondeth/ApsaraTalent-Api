@@ -17,11 +17,14 @@ import { UserModule } from './user/user.module';
 import { MetricsModule } from '@app/common/metrics/metrics.module';
 import { AiQuotaModule } from '@app/common/throttler/ai-quota.module';
 import { SentryModule } from '@sentry/nestjs/setup';
+// Drives the login_history 90-day retention job.
+import { ScheduleModule } from '@nestjs/schedule';
 import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
     SentryModule.forRoot(),
+    ScheduleModule.forRoot(),
     ConfigModule,
     LoggerModule,
     AiStreamModule,

@@ -29,7 +29,13 @@ import {
 import { Response, Request } from 'express';
 
 export interface IBasicAuthLoginController {
-  login(loginDTO: LoginDTO, res: Response): Promise<LoginResponseDTO>;
+  // `req` is optional so RPC-side implementations, which have no HTTP
+  // request, still satisfy this interface.
+  login(
+    loginDTO: LoginDTO,
+    res: Response,
+    req?: Request,
+  ): Promise<LoginResponseDTO>;
 }
 
 export interface IBasicAuthLoginRpcController {

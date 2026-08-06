@@ -21,10 +21,17 @@ describe('AuthController', () => {
   const resumeParse = { parseResume: jest.fn() };
   const iceServers = { getIceServers: jest.fn() };
   const response = {} as any;
+  // Audit writes are best-effort and irrelevant to these assertions.
+  const loginAudit = {
+    recordSuccess: jest.fn().mockResolvedValue(undefined),
+    recordFailure: jest.fn().mockResolvedValue(undefined),
+  };
+  const httpRequest = { get: () => undefined, ip: '127.0.0.1' } as any;
   const controller = new AuthController(
     client as any,
     resumeParse as any,
     iceServers as any,
+    loginAudit as any,
   );
   const request = sendAuthServiceRequest as jest.Mock;
 
@@ -63,7 +70,9 @@ describe('AuthController', () => {
       userId: 'user-1',
     });
 
-    await expect(controller.login({} as any, response)).resolves.toMatchObject({
+    await expect(
+      controller.login({} as any, response, httpRequest),
+    ).resolves.toMatchObject({
       requiresTwoFactor: true,
       userId: 'user-1',
     });
@@ -78,7 +87,7 @@ describe('AuthController', () => {
       refreshToken: 'refresh',
     });
 
-    const result = await controller.login({} as any, response);
+    const result = await controller.login({} as any, response, httpRequest);
 
     expect(setAuthTokenCookies).toHaveBeenCalledWith(response, {
       accessToken: 'access',

@@ -15,7 +15,18 @@ describe('authentication token boundary', () => {
     cookie: jest.fn(),
     clearCookie: jest.fn(),
   } as unknown as Response;
-  const controller = new AuthController(authClient, null, null);
+  // Audit writes are best-effort and irrelevant to these assertions.
+  const loginAudit = {
+    recordSuccess: jest.fn().mockResolvedValue(undefined),
+    recordFailure: jest.fn().mockResolvedValue(undefined),
+  };
+  const request = { get: () => undefined, ip: '127.0.0.1' } as any;
+  const controller = new AuthController(
+    authClient,
+    null as any,
+    null as any,
+    loginAudit as any,
+  );
 
   beforeEach(() => jest.clearAllMocks());
 
@@ -32,6 +43,7 @@ describe('authentication token boundary', () => {
     const result = await controller.login(
       { identifier: 'user@example.com', password: 'password' },
       response,
+      request,
     );
 
     expect(response.cookie).toHaveBeenCalledWith(

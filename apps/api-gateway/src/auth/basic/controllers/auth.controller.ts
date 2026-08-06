@@ -8,6 +8,7 @@ import {
   Controller,
   Get,
   HttpCode,
+  HttpException,
   HttpStatus,
   Inject,
   Param,
@@ -25,6 +26,8 @@ import { Request, Response } from 'express';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
 import { ResumeParseService } from '../../services/resume-parse.service';
 import { IceServersService } from '../../services/ice-servers.service';
+import { LoginAuditService } from '../../services/login-audit.service';
+import { clientIpFrom } from '../../utils/client-ip.util';
 import {
   CompanyRegisterDTO,
   EmployeeRegisterDTO,
@@ -66,6 +69,7 @@ export class AuthController implements IBasicAuthController {
     @Inject(AUTH_SERVICE.NAME) private readonly authClient: ClientProxy,
     private readonly resumeParse: ResumeParseService,
     private readonly iceServersService: IceServersService,
+    private readonly loginAudit: LoginAuditService,
   ) {}
 
   @Post('register-company')
@@ -121,14 +125,38 @@ export class AuthController implements IBasicAuthController {
   async login(
     @Body() loginDTO: LoginDTO,
     @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
   ): Promise<LoginResponseDTO> {
-    const response = await sendAuthServiceRequest<LoginResponseDTO>(
-      this.authClient,
-      AUTH_SERVICE.ACTIONS.LOGIN,
-      loginDTO,
-    );
+    // Captured before the RPC: the audit trail needs client details that only
+    // exist on the HTTP request, and they must be recorded on failure too.
+    const attempt = {
+      email: loginDTO.identifier ?? null,
+      ipAddress: clientIpFrom(req),
+      userAgent: req.get('user-agent') ?? null,
+    };
+
+    let response: LoginResponseDTO;
+    try {
+      response = await sendAuthServiceRequest<LoginResponseDTO>(
+        this.authClient,
+        AUTH_SERVICE.ACTIONS.LOGIN,
+        loginDTO,
+      );
+    } catch (error: unknown) {
+      // Record the failure, then rethrow untouched so the existing exception
+      // filter still produces the same response it always has.
+      await this.loginAudit.recordFailure(
+        attempt,
+        error instanceof HttpException
+          ? `http_${error.getStatus()}`
+          : 'rpc_error',
+      );
+      throw error;
+    }
 
     if (response.requiresTwoFactor) {
+      // Not a completed login — the second factor is still outstanding, so this
+      // is deliberately not recorded as a success.
       return new LoginResponseDTO({
         message: response.message,
         requiresTwoFactor: true,
@@ -139,6 +167,11 @@ export class AuthController implements IBasicAuthController {
     setAuthTokenCookies(res, {
       accessToken: response.accessToken!,
       refreshToken: response.refreshToken,
+    });
+
+    await this.loginAudit.recordSuccess({
+      ...attempt,
+      userId: response.user?.id ?? null,
     });
 
     return new LoginResponseDTO({
