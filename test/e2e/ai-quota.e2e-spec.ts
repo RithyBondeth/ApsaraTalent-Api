@@ -1,3 +1,4 @@
+import type { Cache } from '@nestjs/cache-manager';
 import { createCache } from 'cache-manager';
 import KeyvRedis from '@keyv/redis';
 import { RedisService } from '@app/common/redis/redis.service';
@@ -34,7 +35,14 @@ describe('AI quota (real Redis)', () => {
 
   beforeAll(() => {
     store = new KeyvRedis(REDIS_URL);
-    redisService = new RedisService(createCache({ stores: [store as any] }));
+    // keyv ships two declaration files — dist/index.d.ts for `import` and
+    // dist/index.d.cts for `require`. cache-manager and @nestjs/cache-manager
+    // resolve through different ones, and because Keyv declares a private
+    // field, TypeScript treats the two as unrelated types. Identical class at
+    // runtime; the cast only bridges the declaration split.
+    redisService = new RedisService(
+      createCache({ stores: [store as any] }) as unknown as Cache,
+    );
     service = new AiQuotaService(redisService, {
       get: (key: string) => CONFIG[key],
     } as any);
