@@ -45,7 +45,9 @@ async function main() {
     const queryRunner = AppDataSource.createQueryRunner();
 
     const tableCheck = (await queryRunner.query(
-      `SELECT to_regclass(format('%I.%I', current_schema(), $1)) IS NOT NULL AS "exists";`,
+      // $1 needs an explicit cast: format() is variadic "any", so Postgres
+      // cannot infer the parameter type and errors with 42P18.
+      `SELECT to_regclass(format('%I.%I', current_schema(), $1::text)) IS NOT NULL AS "exists";`,
       [MIGRATIONS_TABLE],
     )) as { exists: boolean }[];
     const migrationsTableExists = tableCheck[0]?.exists ?? false;
