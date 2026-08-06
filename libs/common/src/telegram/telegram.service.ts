@@ -64,9 +64,7 @@ export class TelegramService {
       );
 
       if (!response.ok) {
-        this.logger.warn(
-          `[telegram] sendMessage returned ${response.status}`,
-        );
+        this.logger.warn(`[telegram] sendMessage returned ${response.status}`);
       }
     } finally {
       clearTimeout(timeout);

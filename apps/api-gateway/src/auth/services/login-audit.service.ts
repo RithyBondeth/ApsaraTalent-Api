@@ -47,7 +47,10 @@ export class LoginAuditService {
   }
 
   private async persist(
-    row: LoginAttemptContext & { success: boolean; failureReason: string | null },
+    row: LoginAttemptContext & {
+      success: boolean;
+      failureReason: string | null;
+    },
   ): Promise<void> {
     try {
       await this.repository.insert({

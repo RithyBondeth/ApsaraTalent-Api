@@ -70,7 +70,9 @@ describe('AuthController', () => {
       userId: 'user-1',
     });
 
-    await expect(controller.login({} as any, response, httpRequest)).resolves.toMatchObject({
+    await expect(
+      controller.login({} as any, response, httpRequest),
+    ).resolves.toMatchObject({
       requiresTwoFactor: true,
       userId: 'user-1',
     });

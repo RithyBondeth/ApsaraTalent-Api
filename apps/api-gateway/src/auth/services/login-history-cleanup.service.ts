@@ -28,7 +28,9 @@ export class LoginHistoryCleanupService {
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
   async prune(): Promise<void> {
     const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - LoginHistoryCleanupService.RETENTION_DAYS);
+    cutoff.setDate(
+      cutoff.getDate() - LoginHistoryCleanupService.RETENTION_DAYS,
+    );
 
     try {
       const result = await this.repository.delete({
