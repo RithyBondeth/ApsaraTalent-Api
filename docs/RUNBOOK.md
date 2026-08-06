@@ -282,7 +282,14 @@ they are handled.
    enabled.** Object-storage support is merged and verified; production is still
    on `STORAGE_DRIVER=local`. Follow [STORAGE.md](./STORAGE.md) to copy the
    volume into a bucket and flip the driver. Until then, a volume failure is
-   still unrecoverable data loss.
+   still unrecoverable data loss — this is the largest remaining exposure in the
+   system, larger than anything in the deploy pipeline.
+
+   The cutover is now gated: `npm run storage:verify` proves every file copied
+   byte-for-byte and that private objects are not anonymously readable, so step
+   3 is a check rather than a spot-check. Enable **bucket versioning before
+   uploading** — without it the bucket is durable storage, not a backup, and a
+   bad delete is still unrecoverable.
 2. **Neon retention window is unconfirmed.** Fill in the blank in §2. PITR you
    have not checked is not a backup strategy.
 3. **No restore has been rehearsed against real production data.** The procedure
