@@ -1,0 +1,75 @@
+name: Roll back Railway services
+
+# Manual only. Rollback scope is a judgement call — rolling back a subset of
+# the RPC-coupled services leaves mixed revisions in production, which is its
+# own outage. See docs/RUNBOOK.md §4.
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: Service to roll back ("all" = the 7 application services)
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - API Gateway
+          - Auth Service
+          - User Service
+          - Resume Builder Service
+          - Chat Service
+          - Job Service
+          - Notification Service
+          - prometheus
+          - alertmanager
+          - blackbox-exporter
+          - grafana
+      apply:
+        description: Actually roll back. Leave unchecked for a dry run.
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  # Never let a rollback race a release or another rollback.
+  group: railway-production-release
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    name: ${{ inputs.apply && 'Roll back' || 'Preview rollback for' }} ${{ inputs.service }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      PRODUCTION_API_URL: ${{ vars.PRODUCTION_API_URL }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Require the deployment token
+        shell: bash
+        run: |
+          if [[ -z "$RAILWAY_TOKEN" ]]; then
+            echo "::error::RAILWAY_TOKEN is required to roll back."
+            exit 1
+          fi
+
+      - name: Roll back
+        env:
+          APPLY: ${{ inputs.apply && '1' || '0' }}
+        run: node scripts/ci/railway-rollback.mjs "${{ inputs.service }}"
+
+      # A rollback that leaves production unhealthy needs to be as loud as a bad
+      # deploy. Skipped on dry runs, which change nothing.
+      - name: Verify production recovered
+        if: inputs.apply && inputs.service == 'all'
+        run: node scripts/ci/verify-deployment.mjs "$PRODUCTION_API_URL"

@@ -262,12 +262,17 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
       PRODUCTION_API_URL: ${{ vars.PRODUCTION_API_URL }}
     steps:
+      # NEON_* is in this list because the restore point is a release
+      # requirement, not a nice-to-have: failing here costs a red build, while
+      # failing after `migration:run` costs a recovery.
       - name: Require every release credential before migrations
         shell: bash
         run: |
-          for name in DATABASE_URL RAILWAY_TOKEN PRODUCTION_API_URL; do
+          for name in DATABASE_URL RAILWAY_TOKEN NEON_API_KEY NEON_PROJECT_ID PRODUCTION_API_URL; do
             if [[ -z "${!name}" ]]; then
               echo "::error::$name is required before a production migration can run."
               exit 1
@@ -307,10 +312,33 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
+      # The restore point must exist before the first DDL statement runs. This
+      # step failing is a hard stop by design — see docs/RUNBOOK.md §2.
+      - name: Create pre-migration restore point
+        id: restore-point
+        run: npm run db:restore-point
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+          RESTORE_POINT_LABEL: ${{ github.sha }}
+
       - name: Apply pending migrations
         run: npm run migration:run
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Report the restore point covering this release
+        if: always() && steps.restore-point.outputs.branch-name != ''
+        shell: bash
+        run: |
+          echo "### Database restore point" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Taken immediately before migrations for \`${GITHUB_SHA}\`." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Branch: \`${{ steps.restore-point.outputs.branch-name }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Id: \`${{ steps.restore-point.outputs.branch-id }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Recovery procedure: docs/RUNBOOK.md §3." >> "$GITHUB_STEP_SUMMARY"
 
   deploy:
     name: Deploy all Railway services
@@ -384,3 +412,25 @@ jobs:
 
       - name: Verify production liveness and every readiness dependency
         run: node scripts/ci/verify-deployment.mjs "$PRODUCTION_API_URL"
+
+      # Railway rollback is deliberately not automated here. Rolling back one
+      # service while six others stay on the new revision is its own outage
+      # (see docs/RUNBOOK.md §4), so the decision stays with a human — but the
+      # human should not have to go find the procedure mid-incident.
+      - name: Surface the rollback procedure
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo "### ❌ Production verification failed — the new revision is live and unhealthy"
+            echo ""
+            echo "Roll back **all** API services together, or none. Mixed revisions"
+            echo "talking over TCP RPC is a second outage."
+            echo ""
+            echo "1. Run the **Roll back Railway services** workflow with"
+            echo "   \`service: all\` — it targets the deployment before this one."
+            echo "2. If a migration in this release is not backward compatible,"
+            echo "   read docs/RUNBOOK.md §5 *before* reverting it."
+            echo "3. Restore point for this release is recorded in the \`migrate\` job summary."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::error::Production verification failed. Roll back via the 'Roll back Railway services' workflow (service: all)."
