@@ -1,4 +1,9 @@
-import { collectDefaultMetrics, Histogram, register } from 'prom-client';
+import {
+  collectDefaultMetrics,
+  Counter,
+  Histogram,
+  register,
+} from 'prom-client';
 
 // Node/process metrics (event-loop lag, heap, GC, CPU) on the default registry.
 // Safe to call once at module load; guarded so repeated imports don't re-register.
@@ -59,3 +64,18 @@ export async function getMetrics(): Promise<{
 }> {
   return { contentType: register.contentType, body: await register.metrics() };
 }
+
+/**
+ * Authentication attempts, for spotting credential stuffing.
+ *
+ * Labels are deliberately low-cardinality: NEVER add user id, email, or IP here
+ * — Prometheus creates a time series per label combination, and per-user labels
+ * would grow unbounded. User-level detail belongs in the login_history table
+ * and the Telegram notification, not in metrics.
+ */
+export const loginAttempts = new Counter({
+  name: 'auth_login_attempts_total',
+  help: 'Login attempts at the gateway, labelled by outcome.',
+  labelNames: ['result'],
+  registers: [register],
+});

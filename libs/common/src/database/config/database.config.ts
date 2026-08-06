@@ -14,6 +14,7 @@ import { Experience } from '../entities/employee/experience.entity';
 import { EmployeeFavoriteCompany } from '../entities/employee/favorite-company.entity';
 import { Skill } from '../entities/employee/skill.entity';
 import { Interview } from '../entities/interview.entity';
+import { LoginHistory } from '../entities/login-history.entity';
 import { JobMatching } from '../entities/job-matching.entity';
 import { UserBlock } from '../entities/moderation/user-block.entity';
 import { UserReport } from '../entities/moderation/user-report.entity';
@@ -30,6 +31,7 @@ export const databaseConfig = async (
   url: configService.get<string>('database.url'),
   synchronize: configService.get<boolean>('database.synchronize'),
   entities: [
+    LoginHistory,
     User,
     Employee,
     Company,

@@ -1,4 +1,7 @@
-import { JwtModule, ThrottlerModule } from '@app/common';
+import { DatabaseModule, JwtModule, ThrottlerModule } from '@app/common';
+import { LoginHistory } from '@app/common/database/entities/login-history.entity';
+import { TelegramModule } from '@app/common/telegram/telegram.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -16,6 +19,8 @@ import { LinkedInStrategy } from './socials/strategies/linkedin.strategy';
 import { ResumeParseService } from './services/resume-parse.service';
 import { IceServersService } from './services/ice-servers.service';
 import { SocialAuthService } from './services/social-auth.service';
+import { LoginAuditService } from './services/login-audit.service';
+import { LoginHistoryCleanupService } from './services/login-history-cleanup.service';
 
 @Module({
   imports: [
@@ -35,6 +40,9 @@ import { SocialAuthService } from './services/social-auth.service';
     ThrottlerModule,
     PassportModule,
     JwtModule,
+    DatabaseModule,
+    TypeOrmModule.forFeature([LoginHistory]),
+    TelegramModule,
   ],
   controllers: [
     AuthController,
@@ -51,6 +59,8 @@ import { SocialAuthService } from './services/social-auth.service';
     ResumeParseService,
     IceServersService,
     SocialAuthService,
+    LoginAuditService,
+    LoginHistoryCleanupService,
   ],
 })
 export class AuthModule {}
