@@ -29,3 +29,33 @@ updates:
       github-actions:
         patterns:
           - "*"
+
+  # Base images are pinned by digest-free tag (node:24.18.1-alpine3.23,
+  # prom/prometheus:v3.13.2, ...). `npm audit` only sees the JavaScript tree, so
+  # without this block OS-level CVEs in the base layers accumulate invisibly.
+  # One entry covers every Dockerfile plus the compose files.
+  - package-ecosystem: docker
+    directories:
+      - /apps/api-gateway
+      - /apps/auth-service
+      - /apps/user-service
+      - /apps/resume-builder-service
+      - /apps/chat-service
+      - /apps/job-service
+      - /apps/notification-service
+      - /monitoring
+      - /monitoring/production/prometheus
+      - /monitoring/production/alertmanager
+      - /monitoring/production/blackbox
+      - /monitoring/production/grafana
+      - /test/e2e
+    schedule:
+      interval: weekly
+      day: monday
+      time: "10:00"
+      timezone: Asia/Phnom_Penh
+    open-pull-requests-limit: 5
+    groups:
+      docker-base-images:
+        patterns:
+          - "*"
