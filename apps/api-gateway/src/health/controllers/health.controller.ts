@@ -17,6 +17,7 @@ import {
 import {
   HEALTH_DATABASE_TIMEOUT_MS,
   RedisCacheHealthIndicator,
+  resolveReleaseLabel,
 } from '@app/common';
 import { LivenessResponseDTO } from '@app/contracts/dtos/health';
 import { IHealthController } from '@app/contracts/interfaces/controller/health-controller.interface';
@@ -61,11 +62,7 @@ export class HealthController implements IHealthController {
     return {
       status: 'ok',
       service: 'api-gateway',
-      release:
-        process.env.RAILWAY_GIT_COMMIT_SHA ||
-        process.env.SENTRY_RELEASE ||
-        process.env.GITHUB_SHA ||
-        'unknown',
+      release: resolveReleaseLabel(),
       uptime: Math.round(process.uptime()),
       timestamp: new Date().toISOString(),
     };

@@ -373,6 +373,38 @@ jobs:
       - name: Install pinned Railway CLI
         run: npm install --global @railway/cli@5.30.4
 
+      # `railway up` does not populate RAILWAY_GIT_COMMIT_SHA — Railway only
+      # injects it for its own git-triggered builds. Without this step every
+      # image shipped with an empty release: Sentry events carried no release,
+      # the source maps uploaded during the container build could not be matched
+      # to them, and /health/live reported "unknown". That last one is why the
+      # verification below could not tell a new revision from the previous one
+      # still serving.
+      #
+      # --skip-deploys is load-bearing: setting a variable normally triggers its
+      # own rollout, which would deploy all seven services at once and take the
+      # gateway down. With it, the value lands on the service and the ordered
+      # `railway up` steps below pick it up.
+      - name: Stamp the release onto every application service
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          for service in \
+            "Auth Service" \
+            "User Service" \
+            "Resume Builder Service" \
+            "Chat Service" \
+            "Job Service" \
+            "Notification Service" \
+            "API Gateway"; do
+            echo "Stamping $service with $RELEASE_SHA"
+            railway variables \
+              --service "$service" \
+              --set "SENTRY_RELEASE=$RELEASE_SHA" \
+              --skip-deploys
+          done
+
       # Internal services go first; the public gateway switches last. Attached
       # mode streams the complete Railway build/deploy result and fails CI when
       # a service does not become active. These are the service names shown in
@@ -410,7 +442,12 @@ jobs:
       - name: Deploy API gateway
         run: railway up --service "API Gateway"
 
+      # EXPECTED_RELEASE makes this prove the NEW revision is serving. Without
+      # it, a `railway up` that silently changed nothing left the previous
+      # revision answering health checks and the release passed verification.
       - name: Verify production liveness and every readiness dependency
+        env:
+          EXPECTED_RELEASE: ${{ github.sha }}
         run: node scripts/ci/verify-deployment.mjs "$PRODUCTION_API_URL"
 
       # Railway rollback is deliberately not automated here. Rolling back one
