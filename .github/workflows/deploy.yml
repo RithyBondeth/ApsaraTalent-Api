@@ -510,37 +510,37 @@ jobs:
       # a service does not become active. These are the service names shown in
       # Railway Architecture; GitHub prefixes deployment labels separately.
       - name: Deploy auth service
-        run: railway up --service "Auth Service"
+        run: scripts/ci/railway-up.sh "Auth Service"
 
       - name: Deploy user service
-        run: railway up --service "User Service"
+        run: scripts/ci/railway-up.sh "User Service"
 
       - name: Deploy resume builder service
-        run: railway up --service "Resume Builder Service"
+        run: scripts/ci/railway-up.sh "Resume Builder Service"
 
       - name: Deploy chat service
-        run: railway up --service "Chat Service"
+        run: scripts/ci/railway-up.sh "Chat Service"
 
       - name: Deploy job service
-        run: railway up --service "Job Service"
+        run: scripts/ci/railway-up.sh "Job Service"
 
       - name: Deploy notification service
-        run: railway up --service "Notification Service"
+        run: scripts/ci/railway-up.sh "Notification Service"
 
       - name: Deploy Alertmanager
-        run: railway up --service alertmanager
+        run: scripts/ci/railway-up.sh alertmanager
 
       - name: Deploy blackbox exporter
-        run: railway up --service blackbox-exporter
+        run: scripts/ci/railway-up.sh blackbox-exporter
 
       - name: Deploy Prometheus
-        run: railway up --service prometheus
+        run: scripts/ci/railway-up.sh prometheus
 
       - name: Deploy Grafana
-        run: railway up --service grafana
+        run: scripts/ci/railway-up.sh grafana
 
       - name: Deploy API gateway
-        run: railway up --service "API Gateway"
+        run: scripts/ci/railway-up.sh "API Gateway"
 
       # EXPECTED_RELEASE makes this prove the NEW revision is serving. Without
       # it, a `railway up` that silently changed nothing left the previous
@@ -548,6 +548,18 @@ jobs:
       - name: Verify production liveness and every readiness dependency
         env:
           EXPECTED_RELEASE: ${{ github.sha }}
+        run: node scripts/ci/verify-deployment.mjs "$PRODUCTION_API_URL"
+
+      # A failure part-way through the sequence leaves production on MIXED
+      # revisions and skips the verification above entirely, so without this the
+      # job ends without ever saying what is actually serving. Never gates:
+      # EXPECTED_RELEASE is deliberately unset so this reports rather than
+      # asserts, and continue-on-error keeps it from masking the real failure.
+      - name: Report what production is actually serving
+        if: failure()
+        continue-on-error: true
+        env:
+          DEPLOY_VERIFY_TIMEOUT_MS: "30000"
         run: node scripts/ci/verify-deployment.mjs "$PRODUCTION_API_URL"
 
       # Railway rollback is deliberately not automated here. Rolling back one
@@ -559,10 +571,22 @@ jobs:
         shell: bash
         run: |
           {
-            echo "### ❌ Production verification failed — the new revision is live and unhealthy"
+            echo "### ❌ Release did not complete"
             echo ""
-            echo "Roll back **all** API services together, or none. Mixed revisions"
-            echo "talking over TCP RPC is a second outage."
+            echo "Two different situations end up here — check which one above:"
+            echo ""
+            echo "**A deploy step failed part-way.** Production is on MIXED revisions:"
+            echo "the services listed before the failure are on this release, the rest"
+            echo "are on the previous one. The step above reports what the gateway is"
+            echo "actually serving. If the failure was a Railway transport error, the"
+            echo "wrapper already retried three times — re-running the job is safe and"
+            echo "is usually the fastest fix, because \`railway up\` is idempotent."
+            echo ""
+            echo "**Verification failed after all services deployed.** The new revision"
+            echo "is live and unhealthy."
+            echo ""
+            echo "Either way, roll back **all** API services together, or none. Mixed"
+            echo "revisions talking over TCP RPC is a second outage."
             echo ""
             echo "1. Run the **Roll back Railway services** workflow with"
             echo "   \`service: all\` — it targets the deployment before this one."
@@ -570,4 +594,4 @@ jobs:
             echo "   read docs/RUNBOOK.md §5 *before* reverting it."
             echo "3. Restore point for this release is recorded in the \`migrate\` job summary."
           } >> "$GITHUB_STEP_SUMMARY"
-          echo "::error::Production verification failed. Roll back via the 'Roll back Railway services' workflow (service: all)."
+          echo "::error::Release did not complete. See the job summary — production may be on mixed revisions."
