@@ -2,7 +2,10 @@
 FROM node:26.5.1-alpine3.23 AS builder
 WORKDIR /app
 
-COPY package*.json ./
+# .npmrc carries legacy-peer-deps=true. Without it `npm ci` here resolves
+# peers strictly while every other environment uses legacy resolution, so a
+# dependency with a peer conflict fails ONLY inside the container build.
+COPY package*.json .npmrc ./
 RUN npm ci
 
 COPY nest-cli.json webpack.config.js ./
