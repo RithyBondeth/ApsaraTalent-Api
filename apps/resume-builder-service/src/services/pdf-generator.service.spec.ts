@@ -42,7 +42,7 @@ describe('PdfGeneratorService', () => {
     expect(page.setRequestInterception).toHaveBeenCalledWith(true);
     expect(page.setContent).toHaveBeenCalledWith(
       '<html>Resume</html>',
-      expect.objectContaining({ waitUntil: 'networkidle0' }),
+      expect.objectContaining({ waitUntil: 'load' }),
     );
     expect(page.close).toHaveBeenCalled();
   });

@@ -89,8 +89,14 @@ export class PdfGeneratorService
         }
         void request.abort('blockedbyclient');
       });
+      // 'load' rather than the removed 'networkidle0' (puppeteer 25 dropped the
+      // networkidle* options). Equivalent here, and not a weaker guarantee:
+      // the interceptor above aborts every request that is not about:blank or
+      // a data: URI, and JavaScript is disabled — so nothing can start a
+      // network fetch that 'load' would race. Everything the PDF renders is
+      // inline, and inline resources are settled by the load event.
       await page.setContent(html, {
-        waitUntil: 'networkidle0',
+        waitUntil: 'load',
         timeout: RESUME.GENERATION_TIMEOUT,
       });
 
