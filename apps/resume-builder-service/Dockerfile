@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM node:24.18.1-alpine3.23 AS builder
+FROM node:26.5.1-alpine3.23 AS builder
 WORKDIR /app
 
 # .npmrc carries legacy-peer-deps=true. Without it `npm ci` here resolves
@@ -32,7 +32,7 @@ RUN npm prune --omit=dev
 
 # Stage 2: Production
 # Puppeteer requires Chrome dependencies
-FROM node:24.18.1-alpine3.23 AS runner
+FROM node:26.5.1-alpine3.23 AS runner
 WORKDIR /app
 
 # Freeze the release into the image so Sentry events match the source maps

@@ -9,6 +9,12 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "target": "ES2021",
+    // Types only — deliberately NOT raised via `target`. Bumping target to
+    // ES2022 flips useDefineForClassFields to true, which changes class-field
+    // semantics and breaks NestJS property injection. The runtime is Node 24,
+    // so these built-ins (Array.prototype.at, Object.hasOwn, .cause) all exist;
+    // only the compiler's view of them was stuck at ES2021.
+    "lib": ["ES2022"],
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": ".",
