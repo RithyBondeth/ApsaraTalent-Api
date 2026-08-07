@@ -147,6 +147,44 @@ if (!watchdog) {
   notes.push('alertmanager: dead-man’s switch armed');
 }
 
+// Neon's point-in-time-recovery window is the whole database recovery story
+// between nightly dumps, and RUNBOOK §7 has carried "retention window is
+// unconfirmed" as an open item — "PITR you have not checked is not a backup
+// strategy". Reporting it on every run is what stops it being unconfirmed, and
+// makes a silent plan change visible. Read-only, and optional so this job still
+// works with only RAILWAY_TOKEN.
+const neonKey = process.env.NEON_API_KEY?.trim();
+const neonProject = process.env.NEON_PROJECT_ID?.trim();
+if (neonKey && neonProject) {
+  try {
+    const response = await fetch(
+      `https://console.neon.tech/api/v2/projects/${neonProject}`,
+      {
+        headers: { Authorization: `Bearer ${neonKey}` },
+        signal: AbortSignal.timeout(20_000),
+      },
+    );
+    if (!response.ok) {
+      notes.push(`neon: could not read retention (HTTP ${response.status})`);
+    } else {
+      const { project } = await response.json();
+      const days = project.history_retention_seconds / 86_400;
+      notes.push(
+        `neon: point-in-time recovery window is ${days.toFixed(1)} days` +
+          (days < 1
+            ? ' — under 24h, so anything noticed a day late is unrecoverable'
+            : ''),
+      );
+    }
+  } catch (error) {
+    notes.push(
+      `neon: retention check failed (${error instanceof Error ? error.message : error})`,
+    );
+  }
+} else {
+  notes.push('neon: retention not checked — NEON_API_KEY/NEON_PROJECT_ID unset');
+}
+
 for (const note of notes) console.log(`  ${note}`);
 
 if (failures.length) {
