@@ -1,6 +1,19 @@
 describe('Sentry instrumentation', () => {
   const originalEnv = { ...process.env };
 
+  // instrument.ts starts with `import 'dotenv/config'` so a DSN set only in a
+  // local .env is picked up in development. Under test that made the suite read
+  // whatever happened to be in the developer's .env: these specs passed in CI
+  // (no .env there) and failed on every machine that had one. Neutralising the
+  // side-effecting import is what makes the environment below the only input.
+  const loadInstrument = (registerMocks: () => void) => {
+    jest.isolateModules(() => {
+      jest.doMock('dotenv/config', () => ({}));
+      registerMocks();
+      jest.requireActual('./instrument');
+    });
+  };
+
   afterEach(() => {
     process.env = { ...originalEnv };
     jest.resetModules();
@@ -12,9 +25,8 @@ describe('Sentry instrumentation', () => {
     // developer's local .env file while this isolated module is loading.
     process.env.SENTRY_DSN = '';
     const init = jest.fn();
-    jest.isolateModules(() => {
+    loadInstrument(() => {
       jest.doMock('@sentry/nestjs', () => ({ init }));
-      jest.requireActual('./instrument');
     });
     expect(init).not.toHaveBeenCalled();
   });
@@ -27,9 +39,8 @@ describe('Sentry instrumentation', () => {
     process.env.SENTRY_DEBUG = 'true';
     process.env.SENTRY_TRACES_SAMPLE_RATE = '0.25';
     const init = jest.fn();
-    jest.isolateModules(() => {
+    loadInstrument(() => {
       jest.doMock('@sentry/nestjs', () => ({ init }));
-      jest.requireActual('./instrument');
     });
     expect(init).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -54,9 +65,8 @@ describe('Sentry instrumentation', () => {
     process.env.SENTRY_DSN = 'https://public@example.com/1';
     process.env.SENTRY_TRACES_SAMPLE_RATE = '0';
     const init = jest.fn();
-    jest.isolateModules(() => {
+    loadInstrument(() => {
       jest.doMock('@sentry/nestjs', () => ({ init }));
-      jest.requireActual('./instrument');
     });
     expect(
       init.mock.calls[0][0].tracesSampler({
@@ -77,9 +87,8 @@ describe('Sentry instrumentation', () => {
     delete process.env.SENTRY_DEBUG;
     process.env.SENTRY_TRACES_SAMPLE_RATE = 'invalid';
     const init = jest.fn();
-    jest.isolateModules(() => {
+    loadInstrument(() => {
       jest.doMock('@sentry/nestjs', () => ({ init }));
-      jest.requireActual('./instrument');
     });
     expect(init).toHaveBeenCalledWith(
       expect.objectContaining({

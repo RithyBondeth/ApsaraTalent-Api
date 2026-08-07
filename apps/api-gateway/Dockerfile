@@ -70,6 +70,13 @@ COPY --from=builder --chown=node:node /app/dist/apps/api-gateway ./dist/apps/api
 COPY --from=builder --chown=node:node /app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/package.json ./
 
+# The storage volume is mounted only in this image, and `npm prune --omit=dev`
+# removed ts-node — so the repo's storage:migrate script cannot run where the
+# data actually is. This plain-ESM equivalent ships with the image so the
+# migration is auditable code rather than something fetched at runtime:
+#   railway ssh --service "API Gateway" -- node scripts/storage/migrate-in-container.mjs
+COPY --chown=node:node scripts/storage ./scripts/storage
+
 # Create storage directory for chat file uploads.
 # NOTE: This directory is ephemeral. On Railway, add a Volume mount at /app/storage
 # to persist uploaded files across deploys and restarts.

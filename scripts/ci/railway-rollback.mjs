@@ -153,11 +153,26 @@ async function previousSuccessfulDeployment(serviceId) {
   );
 
   const deployments = (data?.deployments?.edges ?? []).map((edge) => edge.node);
-  // Railway returns newest first. The current revision is the newest SUCCESS;
-  // the rollback target is the next SUCCESS below it. Anything CRASHED,
-  // FAILED, or REMOVED is not a place to roll back to.
-  const healthy = deployments.filter((deployment) => deployment.status === 'SUCCESS');
-  return { current: healthy[0], target: healthy[1], considered: deployments.length };
+
+  // Railway returns newest first. Only the deployment CURRENTLY serving traffic
+  // holds status SUCCESS — the moment a new one takes over, the old one becomes
+  // REMOVED. So "the second SUCCESS" never exists, and looking for it made this
+  // workflow fail for every service, every time (verified 2026-08-07: 1 SUCCESS
+  // and 19 REMOVED across the last 20 deployments of every service).
+  //
+  // REMOVED means "ran, then was superseded" — that IS the rollback target, and
+  // it is what Railway's own dashboard offers. A build that never ran is FAILED,
+  // CRASHED or SKIPPED, and those are excluded below.
+  const ROLLBACKABLE = new Set(['SUCCESS', 'REMOVED']);
+  const ran = deployments.filter((deployment) =>
+    ROLLBACKABLE.has(deployment.status),
+  );
+  const current = deployments.find(
+    (deployment) => deployment.status === 'SUCCESS',
+  );
+  // The newest deployment that ran and is not the one running now.
+  const target = ran.find((deployment) => deployment.id !== current?.id);
+  return { current, target, considered: deployments.length };
 }
 
 const plan = [];
@@ -169,14 +184,14 @@ for (const service of resolved) {
 const rows = plan.map(({ service, current, target }) => ({
   Service: service.name,
   Current: current ? `${current.id.slice(0, 12)} (${current.createdAt})` : 'none',
-  'Roll back to': target ? `${target.id.slice(0, 12)} (${target.createdAt})` : '⚠️ no earlier success',
+  'Roll back to': target ? `${target.id.slice(0, 12)} (${target.createdAt})` : '⚠️ no earlier deployment',
 }));
 console.table(rows);
 
 const unrollable = plan.filter(({ target }) => !target);
 if (unrollable.length > 0) {
   throw new Error(
-    `No earlier successful deployment for: ${unrollable
+    `No earlier deployment to roll back to for: ${unrollable
       .map(({ service }) => service.name)
       .join(', ')}. Roll these back from the Railway dashboard instead.`,
   );
