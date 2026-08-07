@@ -24,11 +24,11 @@
  * Usage:  node scripts/ci/backup-storage.mjs [--dry-run]
  *
  * Environment (all required unless noted):
- *   R2_ENDPOINT                  https://<account>.r2.cloudflarestorage.com
- *   R2_LIVE_BUCKET               source, read-only for this job
- *   R2_BACKUP_BUCKET             destination, write-only in practice
- *   R2_BACKUP_ACCESS_KEY_ID      token with read on live + write on backup
- *   R2_BACKUP_SECRET_ACCESS_KEY
+ *   S3_ENDPOINT                  https://<account>.r2.cloudflarestorage.com
+ *   S3_LIVE_BUCKET               source, read-only for this job
+ *   S3_BACKUP_BUCKET             destination, write-only in practice
+ *   S3_BACKUP_ACCESS_KEY_ID      token with read on live + write on backup
+ *   S3_BACKUP_SECRET_ACCESS_KEY
  *
  * This token is deliberately NOT the application's. The app must never hold
  * credentials that can reach the backup bucket, or a compromised app key could
@@ -42,18 +42,18 @@ import {
 
 const dryRun = process.argv.includes('--dry-run');
 
-const endpoint = process.env.R2_ENDPOINT?.trim();
-const liveBucket = process.env.R2_LIVE_BUCKET?.trim();
-const backupBucket = process.env.R2_BACKUP_BUCKET?.trim();
-const accessKeyId = process.env.R2_BACKUP_ACCESS_KEY_ID?.trim();
-const secretAccessKey = process.env.R2_BACKUP_SECRET_ACCESS_KEY?.trim();
+const endpoint = process.env.S3_ENDPOINT?.trim();
+const liveBucket = process.env.S3_LIVE_BUCKET?.trim();
+const backupBucket = process.env.S3_BACKUP_BUCKET?.trim();
+const accessKeyId = process.env.S3_BACKUP_ACCESS_KEY_ID?.trim();
+const secretAccessKey = process.env.S3_BACKUP_SECRET_ACCESS_KEY?.trim();
 
 const missing = [
-  !endpoint && 'R2_ENDPOINT',
-  !liveBucket && 'R2_LIVE_BUCKET',
-  !backupBucket && 'R2_BACKUP_BUCKET',
-  !accessKeyId && 'R2_BACKUP_ACCESS_KEY_ID',
-  !secretAccessKey && 'R2_BACKUP_SECRET_ACCESS_KEY',
+  !endpoint && 'S3_ENDPOINT',
+  !liveBucket && 'S3_LIVE_BUCKET',
+  !backupBucket && 'S3_BACKUP_BUCKET',
+  !accessKeyId && 'S3_BACKUP_ACCESS_KEY_ID',
+  !secretAccessKey && 'S3_BACKUP_SECRET_ACCESS_KEY',
 ].filter(Boolean);
 
 if (missing.length > 0) {
@@ -66,13 +66,13 @@ if (missing.length > 0) {
 
 if (liveBucket === backupBucket) {
   throw new Error(
-    'R2_LIVE_BUCKET and R2_BACKUP_BUCKET are the same bucket. A backup in the ' +
+    'S3_LIVE_BUCKET and S3_BACKUP_BUCKET are the same bucket. A backup in the ' +
       'same bucket protects against nothing.',
   );
 }
 
 const s3 = new S3Client({
-  region: process.env.R2_REGION || 'auto',
+  region: process.env.S3_REGION || 'auto',
   endpoint,
   credentials: { accessKeyId, secretAccessKey },
 });

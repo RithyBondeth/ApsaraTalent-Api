@@ -31,11 +31,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
-      R2_LIVE_BUCKET: ${{ secrets.R2_LIVE_BUCKET }}
-      R2_BACKUP_BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
-      R2_BACKUP_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
-      R2_BACKUP_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+      S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+      S3_LIVE_BUCKET: ${{ secrets.S3_LIVE_BUCKET }}
+      S3_BACKUP_BUCKET: ${{ secrets.S3_BACKUP_BUCKET }}
+      S3_BACKUP_ACCESS_KEY_ID: ${{ secrets.S3_BACKUP_ACCESS_KEY_ID }}
+      S3_BACKUP_SECRET_ACCESS_KEY: ${{ secrets.S3_BACKUP_SECRET_ACCESS_KEY }}
     steps:
       - uses: actions/checkout@v7
 

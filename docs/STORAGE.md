@@ -251,8 +251,8 @@ Three properties make this work, and removing any one of them defeats it:
 2. On that bucket only: Bucket Lock Rules → enable, retention **30 days**.
 3. Create a second Account API Token, Object Read & Write, scoped to **both**
    buckets — it reads live and writes backup.
-4. Add repository secrets: `R2_ENDPOINT`, `R2_LIVE_BUCKET`, `R2_BACKUP_BUCKET`,
-   `R2_BACKUP_ACCESS_KEY_ID`, `R2_BACKUP_SECRET_ACCESS_KEY`.
+4. Add repository secrets: `S3_ENDPOINT`, `S3_LIVE_BUCKET`, `S3_BACKUP_BUCKET`,
+   `S3_BACKUP_ACCESS_KEY_ID`, `S3_BACKUP_SECRET_ACCESS_KEY`.
 5. Run the workflow manually with **dry run** checked, then for real.
 
 ### Restoring
