@@ -9,6 +9,13 @@ jest.mock('openai', () =>
   })),
 );
 
+// puppeteer 25 is ESM-only ("type": "module", no CommonJS build). Node 24
+// handles `require()` of ESM natively, so production is unaffected — but
+// Jest's CommonJS module registry does not, and this suite pulls puppeteer in
+// transitively through PdfGeneratorService. This suite never drives a browser,
+// so a stub is enough. pdf-generator.service.spec.ts mocks it the same way.
+jest.mock('puppeteer', () => ({ launch: jest.fn() }));
+
 describe('ResumeBuilderService', () => {
   const config = {
     get: jest.fn((key) => (key === 'openai.model' ? 'gpt-test' : 'key')),
