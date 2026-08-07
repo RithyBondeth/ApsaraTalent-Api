@@ -30,6 +30,10 @@ jobs:
     timeout-minutes: 10
     env:
       RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      # Optional: reports the Neon point-in-time-recovery window so it stops
+      # being the "unconfirmed" item in RUNBOOK §7. Read-only.
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v7
 
