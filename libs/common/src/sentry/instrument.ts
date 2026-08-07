@@ -5,6 +5,7 @@
 import 'dotenv/config';
 import * as Sentry from '@sentry/nestjs';
 import { parseSentrySampleRate, sanitizeSentryEvent } from './event-sanitizer';
+import { resolveRelease } from '../utils/release.util';
 
 /**
  * Shared Sentry initialization for every process (gateway + each microservice).
@@ -37,8 +38,8 @@ if (dsn) {
     environment:
       process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || 'development',
     // Ties events to the deploy that produced them ("regressed in release X").
-    // Railway injects the commit SHA; SENTRY_RELEASE is a manual override.
-    release: process.env.SENTRY_RELEASE || process.env.RAILWAY_GIT_COMMIT_SHA,
+    // Same resolution order as /health/live — see utils/release.util.ts.
+    release: resolveRelease(),
     // SENTRY_DEBUG=true logs SDK activity (init, envelope sends) to stdout —
     // use it to verify events are actually delivered.
     debug: process.env.SENTRY_DEBUG === 'true',

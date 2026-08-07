@@ -1,6 +1,8 @@
+import { getHeapStatistics } from 'node:v8';
 import {
   collectDefaultMetrics,
   Counter,
+  Gauge,
   Histogram,
   register,
 } from 'prom-client';
@@ -12,6 +14,22 @@ if (!defaultsStarted) {
   collectDefaultMetrics({ register });
   defaultsStarted = true;
 }
+
+// prom-client ships nodejs_heap_size_used_bytes and nodejs_heap_size_total_bytes
+// but NOT the heap limit, which makes heap-pressure alerting impossible to get
+// right: `total` is what V8 has grown to so far, not the ceiling, so used/total
+// naturally sits at 85-96% on a perfectly healthy process. Alerting on that
+// ratio pages constantly and means nothing.
+//
+// used/limit is the ratio that actually predicts an OOM kill.
+export const nodejsHeapSizeLimit = new Gauge({
+  name: 'nodejs_heap_size_limit_bytes',
+  help: 'Maximum heap size V8 will grow to before an out-of-memory failure.',
+  registers: [register],
+  collect() {
+    this.set(getHeapStatistics().heap_size_limit);
+  },
+});
 
 // Latency buckets in seconds — spread across the range we care about
 // (sub-100ms healthy ... multi-second slow) so Prometheus can compute

@@ -1,4 +1,26 @@
 groups:
+  # The dead-man's switch. Every other rule in this file is evaluated by the
+  # Prometheus running beside the services it watches, on the same Railway
+  # project — so a project- or region-level failure takes the alerting down
+  # with the thing being alerted on, and does it silently. MonitoringComponentDown
+  # cannot cover this: Prometheus cannot alert on its own death.
+  #
+  # Watchdog fires continuously and forever, on purpose. Alertmanager forwards
+  # it to an external heartbeat service (see monitoring/production/README.md),
+  # and that service pages when the heartbeat STOPS. Silence is the signal.
+  - name: apsaratalent-watchdog
+    rules:
+      - alert: Watchdog
+        expr: vector(1)
+        labels:
+          severity: none
+        annotations:
+          summary: 'Monitoring pipeline is alive'
+          description: >-
+            Always firing. If this stops arriving at the external heartbeat,
+            Prometheus or Alertmanager is down and no other alert in this file
+            can reach you — treat it as a critical page, not as noise.
+
   - name: apsaratalent-availability
     rules:
       - alert: ServiceDown
@@ -108,12 +130,23 @@ groups:
           summary: 'High CPU in {{ $labels.service }}'
           description: '{{ $labels.service }} has used >0.85 CPU cores for 10 minutes (current: {{ $value | printf "%.2f" }} cores).'
 
-      # Heap pressure — used heap near the total V8 has grown to (GC thrash / OOM risk).
+      # Heap pressure, measured against the OOM ceiling.
+      #
+      # This deliberately divides by nodejs_heap_size_LIMIT_bytes, not
+      # _total_bytes. `total` is only what V8 has grown to so far, and it tracks
+      # the live set closely — every healthy service here sits at 85-96% of it,
+      # so the total-based version of this rule fired permanently on a perfectly
+      # healthy fleet (observed 2026-08-07, the first day these metrics ever
+      # reached Prometheus). `limit` is the ceiling the process dies at.
+      #
+      # nodejs_heap_size_limit_bytes is exported by libs/common/src/metrics.
+      # If a service predates it the expression returns no data and the alert
+      # stays silent, which is the correct failure direction for a pager.
       - alert: HighHeapUsage
         expr: |
           nodejs_heap_size_used_bytes{job=~"apsaratalent.*"}
             /
-          nodejs_heap_size_total_bytes{job=~"apsaratalent.*"}
+          nodejs_heap_size_limit_bytes{job=~"apsaratalent.*"}
             > 0.9
         for: 10m
         labels:

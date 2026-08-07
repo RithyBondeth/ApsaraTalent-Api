@@ -26,32 +26,48 @@ scrape_configs:
       - targets: ['blackbox-exporter.railway.internal:9115']
         labels: { service: blackbox-exporter }
 
+  # The gateway's private hostname is apsaratalent-api, NOT api-gateway. Railway
+  # sets each service's RAILWAY_PRIVATE_DOMAIN independently of its display
+  # name, and this one does not match. Scraping api-gateway.railway.internal
+  # returns "no such host" — verify with:
+  #   railway variables --service "API Gateway" --json | grep PRIVATE_DOMAIN
   - job_name: apsaratalent-gateway
     metrics_path: /metrics
     authorization:
       type: Bearer
       credentials_file: /tmp/apsara-metrics-token
     static_configs:
-      - targets: ['api-gateway.railway.internal:3000']
+      - targets: ['apsaratalent-api.railway.internal:3000']
         labels: { service: api-gateway }
 
+  # Port 8080, not 9101-9107. Railway injects PORT=8080 into every service, and
+  # main.ts resolves its HTTP port as `Number(process.env.PORT) || metricsPort`
+  # — so the platform's value always wins over the image's ENV PORT. The
+  # 9101-9107 scheme still applies to LOCAL development (see
+  # monitoring/prometheus.yml), where all six processes share one host and do
+  # need distinct ports. In production each service is its own container with
+  # its own IP, so they can all use the same port.
+  #
+  # Scraping 9101-9107 here produced "connection refused" on all six targets,
+  # which meant no application metric ever reached Prometheus and no
+  # application-level alert in alerts.yml could ever fire.
   - job_name: apsaratalent-services
     metrics_path: /metrics
     authorization:
       type: Bearer
       credentials_file: /tmp/apsara-metrics-token
     static_configs:
-      - targets: ['auth-service.railway.internal:9101']
+      - targets: ['auth-service.railway.internal:8080']
         labels: { service: auth-service }
-      - targets: ['user-service.railway.internal:9102']
+      - targets: ['user-service.railway.internal:8080']
         labels: { service: user-service }
-      - targets: ['resume-builder-service.railway.internal:9103']
+      - targets: ['resume-builder-service.railway.internal:8080']
         labels: { service: resume-builder-service }
-      - targets: ['chat-service.railway.internal:9104']
+      - targets: ['chat-service.railway.internal:8080']
         labels: { service: chat-service }
-      - targets: ['job-service.railway.internal:9105']
+      - targets: ['job-service.railway.internal:8080']
         labels: { service: job-service }
-      - targets: ['notification-service.railway.internal:9107']
+      - targets: ['notification-service.railway.internal:8080']
         labels: { service: notification-service }
 
   - job_name: apsaratalent-readiness
@@ -59,7 +75,7 @@ scrape_configs:
     params:
       module: [http_2xx]
     static_configs:
-      - targets: ['http://api-gateway.railway.internal:3000/health/ready']
+      - targets: ['http://apsaratalent-api.railway.internal:3000/health/ready']
         labels: { service: api-gateway-private-readiness }
       - targets: ['__PUBLIC_API_HEALTH_URL__']
         labels: { service: api-gateway-public-readiness }

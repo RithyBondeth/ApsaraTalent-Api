@@ -91,6 +91,37 @@ describe('Health controllers', () => {
     jest.restoreAllMocks();
   });
 
+  // The deploy workflow stamps SENTRY_RELEASE explicitly because `railway up`
+  // leaves RAILWAY_GIT_COMMIT_SHA empty. If a stale RAILWAY_GIT_COMMIT_SHA ever
+  // outranked it, /health/live would report a different build than Sentry and
+  // the release verification would compare against the wrong value.
+  it('reports the release CI stamped, not a stale Railway commit SHA', () => {
+    process.env.SENTRY_RELEASE = 'ci-sha';
+    process.env.RAILWAY_GIT_COMMIT_SHA = 'stale-railway-sha';
+    const controller = new HealthController(
+      health as any,
+      database as any,
+      redis as any,
+      internal as any,
+    );
+    expect(controller.checkLiveness().release).toBe('ci-sha');
+    delete process.env.SENTRY_RELEASE;
+    delete process.env.RAILWAY_GIT_COMMIT_SHA;
+  });
+
+  it('reports "unknown" when no release source is set', () => {
+    delete process.env.SENTRY_RELEASE;
+    delete process.env.RAILWAY_GIT_COMMIT_SHA;
+    delete process.env.GITHUB_SHA;
+    const controller = new HealthController(
+      health as any,
+      database as any,
+      redis as any,
+      internal as any,
+    );
+    expect(controller.checkLiveness().release).toBe('unknown');
+  });
+
   it('checks auth database, user-service connectivity, and readiness marker', async () => {
     await new AuthHealthController(
       health as any,
