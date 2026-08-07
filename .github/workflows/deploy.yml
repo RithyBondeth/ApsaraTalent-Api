@@ -196,7 +196,7 @@ jobs:
       # docker ecosystem bumps the base image TAG; it cannot tell you the image
       # you are about to ship has a known CVE.
       - name: Scan image for vulnerabilities
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: apsaratalent/${{ matrix.service }}:${{ github.sha }}
           format: sarif
@@ -216,7 +216,7 @@ jobs:
       # is nothing anyone can do about it; a CRITICAL that HAS a fix is one base
       # image bump away and should stop the line.
       - name: Fail on fixable critical vulnerabilities
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: apsaratalent/${{ matrix.service }}:${{ github.sha }}
           format: table
@@ -327,7 +327,7 @@ jobs:
       # arrive entirely through base image bumps — exactly the class npm audit
       # cannot see.
       - name: Scan image for vulnerabilities
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: apsaratalent/monitoring-${{ matrix.service }}:${{ github.sha }}
           format: sarif
@@ -343,7 +343,7 @@ jobs:
           category: monitoring-${{ matrix.service }}
 
       - name: Fail on fixable critical vulnerabilities
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: apsaratalent/monitoring-${{ matrix.service }}:${{ github.sha }}
           format: table
