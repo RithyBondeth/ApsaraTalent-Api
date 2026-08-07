@@ -1,0 +1,73 @@
+name: Back up uploaded files
+
+# R2 has no object versioning, and Bucket Lock cannot go on the live bucket
+# because it blocks the application's own deletes. So the only thing protecting
+# user resumes and avatars from a bad delete is this job copying them into a
+# locked bucket the app cannot reach.
+#
+# Append-only by design: it never deletes from the backup bucket.
+
+on:
+  schedule:
+    # 18:00 UTC == 01:00 Asia/Phnom_Penh, after the working day.
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: List what would be copied, copy nothing
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: storage-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Copy uploads into the locked backup bucket
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+      R2_LIVE_BUCKET: ${{ secrets.R2_LIVE_BUCKET }}
+      R2_BACKUP_BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
+      R2_BACKUP_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+      R2_BACKUP_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Back up
+        run: >-
+          node scripts/ci/backup-storage.mjs
+          ${{ inputs.dry_run && '--dry-run' || '' }}
+
+      # A backup job that fails quietly is indistinguishable from one that never
+      # ran, and you find out when you need to restore. This is the one place
+      # where silence must not be mistaken for success.
+      - name: Explain a failure
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo "### 🚨 Uploaded files were NOT backed up"
+            echo ""
+            echo "R2 has no versioning, so this job is the only copy of user"
+            echo "resumes and avatars outside the live bucket. Until it succeeds,"
+            echo "a delete — from a bug, a bad migration, or a leaked key — is"
+            echo "permanent."
+            echo ""
+            echo "If the step reported missing configuration, the bucket or token"
+            echo "does not exist yet: see docs/STORAGE.md — \"Backups\"."
+          } >> "$GITHUB_STEP_SUMMARY"

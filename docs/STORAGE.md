@@ -108,21 +108,34 @@ private. Example policy:
 Verify before continuing: a public object returns 200 anonymously, and an object
 under `resumes/` returns 403. Step 3 checks this automatically once files exist.
 
-**Turn on object versioning before uploading anything.** This is the step that
-makes the bucket a *backup* rather than just a more durable disk. Without it,
-the bucket survives hardware failure but not a bad `delete` — from a bug, a
-mis-scoped credential, or a person. With versioning on, a delete writes a
-marker and the previous version is still recoverable.
+### ⚠️ Never put a Bucket Lock rule on the live bucket
 
-- **AWS S3**: bucket → Properties → Bucket Versioning → Enable.
-- **Cloudflare R2**: enabled per bucket under Settings.
-- **Backblaze B2**: "Keep all versions" lifecycle setting.
+R2 offers **Bucket Lock** (retention), not object versioning. It is tempting to
+read "prevents deletions" as "protects my data". On the live bucket it does the
+opposite of what you want: it blocks the application's own deletes, which is the
+bug this whole migration exists to fix.
 
-Then add a lifecycle rule expiring **noncurrent** versions after 30–90 days, so
-old versions do not accumulate cost forever. Do not expire current versions.
+Confirmed in production on 2026-08-07 — with a lock rule active, `DeleteObject`
+returned:
 
-The application never needs versioning to be on — it is purely a recovery
-property, which is exactly why it gets skipped and why it belongs here.
+```
+HTTP 409 ObjectLockedByBucketPolicy
+"The object is locked by the bucket policy."
+```
+
+Two things saved that situation, and neither should be relied on again:
+
+- the retention default is **`Indefinite`**, which would have made every object
+  written under it undeletable *forever*, by anyone, including Cloudflare
+  support. Always choose a finite period.
+- R2 evaluates the policy at delete time rather than stamping it onto each
+  object, so removing the rule restored normal deletes and nothing was lost.
+
+**Bucket Lock belongs only on the backup bucket.** See "Backups" below.
+
+Since neither versioning nor lock is available on the live bucket, recovery from
+a bad delete comes entirely from the backup job. That is not a nice-to-have
+here; it is the only copy.
 
 ### 2. Copy existing files into the bucket
 
@@ -209,6 +222,49 @@ cutover) — that is expected and informational. What matters is that nothing on
 the volume is missing from the bucket.
 
 ---
+
+## Backups
+
+The live bucket has no versioning and no lock, so it holds exactly one copy of
+every user resume and avatar. `.github/workflows/storage-backup.yml` runs nightly
+and copies objects into a second, locked bucket the application cannot reach.
+
+| Bucket | Lock | Who can write |
+|---|---|---|
+| `apsaratalent-uploads` | none | the app — read, write, delete |
+| `apsaratalent-uploads-backup` | **30 days** | the backup job only |
+
+Three properties make this work, and removing any one of them defeats it:
+
+1. **Append-only.** The job never deletes from the backup bucket. A mirror that
+   propagated deletions would faithfully replicate the disaster it exists to
+   prevent.
+2. **A separate token.** The app's credentials must have no access to the backup
+   bucket, so a leaked or compromised app key cannot destroy the backups along
+   with the originals. This is the property versioning could not have given you.
+3. **A finite lock.** 30 days is long enough to notice a bad delete and short
+   enough that mistakes age out. Never `Indefinite`.
+
+### Setting it up
+
+1. Create `apsaratalent-uploads-backup` in the same region.
+2. On that bucket only: Bucket Lock Rules → enable, retention **30 days**.
+3. Create a second Account API Token, Object Read & Write, scoped to **both**
+   buckets — it reads live and writes backup.
+4. Add repository secrets: `R2_ENDPOINT`, `R2_LIVE_BUCKET`, `R2_BACKUP_BUCKET`,
+   `R2_BACKUP_ACCESS_KEY_ID`, `R2_BACKUP_SECRET_ACCESS_KEY`.
+5. Run the workflow manually with **dry run** checked, then for real.
+
+### Restoring
+
+Objects keep their original keys in the backup bucket, so recovery is a copy in
+the other direction — no transformation, no manifest to interpret. For a single
+file, copy that key back. For a bulk restore, reverse the buckets in
+`scripts/ci/backup-storage.mjs`.
+
+**Rehearse it before you need it.** An untested backup is a belief, not a
+backup — the same lesson the rollback workflow taught on 2026-08-07, when its
+first real exercise revealed it had never been able to work.
 
 ## Local development
 
