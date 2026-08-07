@@ -219,6 +219,24 @@ are rolling back all API services or one.
 The dashboard path still works if the workflow itself is broken: Railway
 service → **Deployments** → last known-good → **Redeploy**.
 
+#### A deploy that stopped part-way is not automatically a rollback
+
+A release is eleven sequential `railway up` calls. If one fails, the job stops
+there: the services before it are on the new revision, the rest are on the old
+one, and the verification step never runs. The failure summary reports what the
+gateway is actually serving so you are not guessing.
+
+**Re-running the failed job is usually the right move, not rolling back.**
+`railway up` is idempotent, so a re-run simply finishes the sequence. Reach for
+rollback only when the new revision is the problem — not when the deploy was
+merely interrupted.
+
+`scripts/ci/railway-up.sh` already retries transport failures three times with
+backoff (a Railway API timeout aborted a release this way on 2026-08-07). A
+step that fails *after* those retries is either a genuine build failure — the
+wrapper says so explicitly and does not retry — or Railway itself is degraded;
+check <https://status.railway.com> before re-running.
+
 `restartPolicyType = "ON_FAILURE"` with 10 retries means a service
 crash-looping on bad config will retry and then stay down. The checked-in
 Railway configs also allow a 20-second rollout overlap and a 30-second graceful
