@@ -53,7 +53,14 @@ ENV SENTRY_RELEASE=${SENTRY_RELEASE}
 ENV NODE_ENV=production
 ENV RESUME_SERVICE_PORT=3003
 ENV RESUME_SERVICE_METRICS_PORT=9103
-ENV PORT=9103
+# Railway injects PORT=8080 into every service and main.ts resolves its HTTP
+# port as `Number(process.env.PORT) || metricsPort`, so the platform's value
+# always won over an ENV PORT of 9103 here. Pinning 8080 makes the image agree
+# with the platform instead of silently disagreeing with it, and keeps the
+# Prometheus target correct even if Railway stops injecting PORT.
+# The 9101-9107 scheme still applies to local development, where all six
+# processes share one host — see monitoring/prometheus.yml.
+ENV PORT=8080
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
@@ -71,7 +78,7 @@ COPY --from=builder --chown=node:node /app/package.json ./
 
 USER node
 
-EXPOSE 3003 9103
+EXPOSE 3003 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=3 \
   CMD wget -q -O /dev/null "http://127.0.0.1:${PORT}/health/ready" || exit 1

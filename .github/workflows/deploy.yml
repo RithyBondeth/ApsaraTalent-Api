@@ -42,7 +42,8 @@ jobs:
             -e '-----BEGIN [A-Z ]*PRIVATE KEY-----' \
             -e "(SECRET|PASSWORD|TOKEN|API_KEY)[A-Z_]*[[:space:]]*[:=][[:space:]]*[\"']?[A-Za-z0-9/+_-]{24,}" \
             -e "(postgres(ql)?|mysql|mongodb(\\+srv)?|redis|rediss|amqps?)://[^[:space:]\"']+:[^[:space:]\"']+@" \
-            -- 'apps/**' 'libs/**' 'scripts/**' 'migrations/**' 'test/**' '*.ts' '*.js' '*.mjs' '*.json' '*.yml' '*.toml' \
+            -e '(hc-ping\.com|nosnch\.in|cronitor\.link|betterstack\.com/api/v[0-9]+/heartbeat)/[A-Za-z0-9/_-]{8,}' \
+            -- 'apps/**' 'libs/**' 'scripts/**' 'migrations/**' 'test/**' '*.ts' '*.js' '*.mjs' '*.json' '*.yml' '*.toml' '*.md' \
             ':!*.spec.ts' ':!package-lock.json' ':!test/e2e/e2e.env'; then
             echo "::error::Possible hard-coded credential above. Move it to an environment variable."
             exit 1
@@ -164,6 +165,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [secrets, dependencies, lint, test, build]
+    permissions:
+      contents: read
+      # Required to publish scan results to the repository's Security tab.
+      security-events: write
     strategy:
       fail-fast: false
       matrix:
@@ -184,6 +189,41 @@ jobs:
           --file apps/${{ matrix.service }}/Dockerfile
           --tag apsaratalent/${{ matrix.service }}:${{ github.sha }}
           .
+
+      # The image is scanned, not merely built. `npm audit` sees the JavaScript
+      # dependency tree only — nothing before this step looks at the Alpine base
+      # layer or at what actually lands in the shipped filesystem. Dependabot's
+      # docker ecosystem bumps the base image TAG; it cannot tell you the image
+      # you are about to ship has a known CVE.
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: apsaratalent/${{ matrix.service }}:${{ github.sha }}
+          format: sarif
+          output: trivy-${{ matrix.service }}.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+
+      - name: Upload scan results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-${{ matrix.service }}.sarif
+          category: container-${{ matrix.service }}
+
+      # Reported above, enforced here — and deliberately narrower than the
+      # report. An unfixable advisory must never block a release, because there
+      # is nothing anyone can do about it; a CRITICAL that HAS a fix is one base
+      # image bump away and should stop the line.
+      - name: Fail on fixable critical vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: apsaratalent/${{ matrix.service }}:${{ github.sha }}
+          format: table
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+          skip-setup-trivy: true
 
   monitoring:
     name: Validate monitoring configuration
@@ -217,12 +257,36 @@ jobs:
       - name: Validate Alertmanager configurations
         shell: bash
         run: |
+          watchdog_url_file="$RUNNER_TEMP/alertmanager-watchdog-url"
+          printf 'https://example.invalid/heartbeat' > "$watchdog_url_file"
+          chmod 600 "$watchdog_url_file"
+
           docker run --rm \
             -v "$PWD/monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro" \
             --entrypoint /bin/amtool \
             prom/alertmanager:v0.33.1 check-config /etc/alertmanager/alertmanager.yml
+
+          # With the dead-man's switch enabled.
           docker run --rm \
             -v "$PWD/monitoring/production/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro" \
+            -v "$watchdog_url_file:/tmp/apsara-watchdog-url:ro" \
+            --entrypoint /bin/amtool \
+            prom/alertmanager:v0.33.1 check-config /etc/alertmanager/alertmanager.yml
+
+          # And the variant entrypoint.sh produces when WATCHDOG_HEARTBEAT_URL
+          # is unset. This is the whole reason the markers exist: if the strip
+          # ever leaves invalid YAML, Alertmanager fails to start and the stack
+          # is deaf — so the stripped form is validated here, not discovered in
+          # production. Kept byte-identical to the entrypoint's sed expression.
+          stripped="$RUNNER_TEMP/alertmanager-no-watchdog.yml"
+          sed '/# WATCHDOG-WEBHOOK-BEGIN/,/# WATCHDOG-WEBHOOK-END/d' \
+            monitoring/production/alertmanager/alertmanager.yml > "$stripped"
+          if grep -q 'webhook_configs' "$stripped"; then
+            echo "::error::Stripping the watchdog block left a webhook behind."
+            exit 1
+          fi
+          docker run --rm \
+            -v "$stripped:/etc/alertmanager/alertmanager.yml:ro" \
             --entrypoint /bin/amtool \
             prom/alertmanager:v0.33.1 check-config /etc/alertmanager/alertmanager.yml
 
@@ -239,6 +303,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [secrets, dependencies, lint, monitoring]
+    permissions:
+      contents: read
+      security-events: write
     strategy:
       fail-fast: false
       matrix:
@@ -252,6 +319,35 @@ jobs:
           --file monitoring/production/${{ matrix.service }}/Dockerfile
           --tag apsaratalent/monitoring-${{ matrix.service }}:${{ github.sha }}
           .
+
+      # These four are upstream images with a config layer on top, so their CVEs
+      # arrive entirely through base image bumps — exactly the class npm audit
+      # cannot see.
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: apsaratalent/monitoring-${{ matrix.service }}:${{ github.sha }}
+          format: sarif
+          output: trivy-monitoring-${{ matrix.service }}.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+
+      - name: Upload scan results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-monitoring-${{ matrix.service }}.sarif
+          category: monitoring-${{ matrix.service }}
+
+      - name: Fail on fixable critical vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: apsaratalent/monitoring-${{ matrix.service }}:${{ github.sha }}
+          format: table
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+          skip-setup-trivy: true
 
   release-preflight:
     name: Validate production release destination

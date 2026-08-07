@@ -5,6 +5,18 @@ route:
   group_interval: 5m
   repeat_interval: 4h
   routes:
+    # The dead-man's switch, matched before the severity routes below. Watchdog
+    # fires continuously by design, so it must never reach Telegram — it goes to
+    # the external heartbeat and nowhere else. repeat_interval is what actually
+    # drives the heartbeat: Alertmanager re-sends it every minute, and the
+    # external service pages when a beat is missed.
+    - matchers:
+        - alertname = "Watchdog"
+      receiver: watchdog
+      group_wait: 0s
+      group_interval: 1m
+      repeat_interval: 1m
+
     - matchers:
         - severity = "critical"
       receiver: operations
@@ -22,6 +34,20 @@ receivers:
           {{ range .Alerts }}{{ .Annotations.summary }}
           {{ .Annotations.description }}
           {{ end }}
+
+  # A receiver with no configs discards whatever reaches it. When
+  # WATCHDOG_HEARTBEAT_URL is unset the entrypoint deletes the marked block
+  # below, leaving exactly that — which turns the dead-man's switch off without
+  # letting the always-firing Watchdog fall through to Telegram every minute.
+  #
+  # Keep the markers on their own lines; entrypoint.sh deletes the range between
+  # them verbatim.
+  - name: watchdog
+    # WATCHDOG-WEBHOOK-BEGIN
+    webhook_configs:
+      - url_file: /tmp/apsara-watchdog-url
+        send_resolved: false
+    # WATCHDOG-WEBHOOK-END
 
 inhibit_rules:
   - source_matchers: [severity = "critical", alertname = "ServiceDown"]
