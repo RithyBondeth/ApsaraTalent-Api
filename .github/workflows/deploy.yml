@@ -224,6 +224,9 @@ jobs:
           ignore-unfixed: true
           exit-code: '1'
           skip-setup-trivy: true
+          # Exceptions apply to the GATE only — the SARIF report above is
+          # unfiltered. See .trivy-gate-ignore for why an entry is allowed.
+          trivyignores: .trivy-gate-ignore
 
   monitoring:
     name: Validate monitoring configuration
@@ -348,6 +351,7 @@ jobs:
           ignore-unfixed: true
           exit-code: '1'
           skip-setup-trivy: true
+          trivyignores: .trivy-gate-ignore
 
   release-preflight:
     name: Validate production release destination

@@ -1,0 +1,30 @@
+# Vulnerabilities that BLOCK a release are listed here as exceptions.
+#
+# This file is deliberately NOT named `.trivyignore`. Trivy auto-loads that name
+# from the working directory, which would also hide these findings from the
+# SARIF report uploaded to the Security tab. The split is the point:
+#
+#   report  -> everything, always, in the Security tab
+#   gate    -> everything except what is listed here
+#
+# Only one thing belongs in this file: a vulnerability in a base image we do not
+# build, where no fixed image has been published yet. Trivy marks those "fixed"
+# because the upstream *library* has a fix — but a Go binary compiled into
+# grafana/grafana or prom/blackbox-exporter cannot be upgraded by us. Blocking
+# on those converts "upstream has not released" into "we cannot deploy".
+#
+# Anything in our own dependency tree does NOT belong here. Fix it instead.
+#
+# Every entry needs an expiry. When it lapses the finding blocks again, which
+# forces a recheck rather than letting an exception become permanent.
+
+# prom/blackbox-exporter:v0.28.0 is the latest published release (checked
+# 2026-08-07) and still vendors google.golang.org/grpc v1.77.0. Nothing to
+# upgrade to. Recheck when v0.29.0 ships.
+CVE-2026-33186 exp:2026-11-07
+
+# grafana/grafana vendors github.com/getkin/kin-openapi. 13.1.3 is the newest
+# published tag (checked 2026-08-07) and the base image was bumped 13.1.1 ->
+# 13.1.3 for this. If that bump already carries kin-openapi >= 0.144.0 this
+# entry matches nothing and is simply dead — remove it at the next review.
+GHSA-r277-6w6q-xmqw exp:2026-11-07
