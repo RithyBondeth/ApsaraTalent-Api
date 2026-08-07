@@ -18,13 +18,25 @@
 # Every entry needs an expiry. When it lapses the finding blocks again, which
 # forces a recheck rather than letting an exception become permanent.
 
-# prom/blackbox-exporter:v0.28.0 is the latest published release (checked
-# 2026-08-07) and still vendors google.golang.org/grpc v1.77.0. Nothing to
-# upgrade to. Recheck when v0.29.0 ships.
+# --- prom/blackbox-exporter:v0.28.0 ---------------------------------------
+# v0.28.0 (released 2025-12-06) is the latest upstream release, confirmed
+# against the GitHub releases API on 2026-08-07. It is 8 months old and was
+# compiled with Go 1.25.5, so its vendored libraries and stdlib are frozen at
+# that point. There is no newer image to move to.
+#
+# Both entries below are in the prober binary. Blackbox makes outbound HTTP(S)
+# probes to our own public health endpoints; it accepts no inbound traffic, has
+# no public domain, and handles no user data or credentials. That is why these
+# are acceptable to carry rather than urgent.
+#
+# TWO CVEs from one stale image is a pattern, not bad luck. If a third appears
+# before v0.29.0 ships, build the exporter from pinned upstream source on a
+# current Go toolchain instead of continuing to annotate this file.
+
+# Vendored google.golang.org/grpc v1.77.0.
 CVE-2026-33186 exp:2026-11-07
 
-# grafana/grafana vendors github.com/getkin/kin-openapi. 13.1.3 is the newest
-# published tag (checked 2026-08-07) and the base image was bumped 13.1.1 ->
-# 13.1.3 for this. If that bump already carries kin-openapi >= 0.144.0 this
-# entry matches nothing and is simply dead — remove it at the next review.
-GHSA-r277-6w6q-xmqw exp:2026-11-07
+# Go stdlib v1.25.5 — crypto/tls certificate validation on session resumption.
+# Would require an attacker positioned between the prober and our own health
+# endpoints, to make a failing probe look healthy.
+CVE-2025-68121 exp:2026-11-07
