@@ -88,11 +88,19 @@ async function neon(path, { method = 'GET', body } = {}) {
   throw new Error(`Neon API ${method} ${path} failed: ${lastError}`);
 }
 
-/** Schema-qualified row counts, the cheapest meaningful "is the data there". */
-const COUNT_SQL = `
-  SELECT relname AS table, n_live_tup AS rows
-  FROM pg_stat_user_tables
-  ORDER BY relname
+// Real COUNT(*), not pg_stat_user_tables.n_live_tup.
+//
+// n_live_tup is a statistics estimate maintained by autovacuum/ANALYZE. A
+// freshly created Neon branch has no statistics gathered yet, so EVERY table
+// reads as 0 rows no matter what it actually contains — which made the first
+// drill run report 20 tables as "empty in restore" when the data was there all
+// along. At this database size (13 MB, 27 tables) counting for real costs
+// milliseconds and cannot lie.
+const TABLES_SQL = `
+  SELECT table_name
+  FROM information_schema.tables
+  WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+  ORDER BY table_name
 `;
 
 async function inspect(connectionString, label) {
@@ -107,7 +115,17 @@ async function inspect(connectionString, label) {
   await client.connect();
   const connectedMs = Date.now() - startedAt;
   try {
-    const tables = await client.query(COUNT_SQL);
+    const names = await client.query(TABLES_SQL);
+    const counts = [];
+    for (const { table_name: name } of names.rows) {
+      // Identifier is quoted, and comes from information_schema rather than
+      // anything user-supplied.
+      const { rows } = await client.query(
+        `SELECT count(*)::int AS rows FROM "${name.replace(/"/g, '""')}"`,
+      );
+      counts.push({ table: name, rows: rows[0].rows });
+    }
+    const tables = { rows: counts };
     const size = await client.query(
       'SELECT pg_size_pretty(pg_database_size(current_database())) AS size',
     );
