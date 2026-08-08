@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { AddChatAudio1773705600000 } from './1773705600000-AddChatAudio';
 import { AddNotifications1773705601000 } from './1773705601000-AddNotifications';
 import { AddPgvectorCareerScope1778889600000 } from './1778889600000-AddPgvectorCareerScope';
@@ -9,6 +11,13 @@ import { AddExperienceCompany1783987200000 } from './1783987200000-AddExperience
 import { AddResumeTemplateKey1783987201000 } from './1783987201000-AddResumeTemplateKey';
 import { HashRefreshTokens1784073600000 } from './1784073600000-HashRefreshTokens';
 import { AddJobSearchColumns1785316800000 } from './1785316800000-AddJobSearchColumns';
+
+// Read rather than imported: the tsconfig does not enable resolveJsonModule,
+// and reading it the same way scripts/ci/migration-rehearsal.mjs does keeps
+// the two consumers honest about sharing one file.
+const irreversible: Record<string, string> = JSON.parse(
+  readFileSync(join(__dirname, 'irreversible.json'), 'utf8'),
+);
 
 describe('database migration contracts', () => {
   const migrations = [
@@ -38,9 +47,30 @@ describe('database migration contracts', () => {
     },
   );
 
-  const irreversible = ['experience normalization', 'hash refresh tokens'];
+  // Keyed by class name, so this reads the same list the rehearsal script
+  // reads — `constructor.name` avoids inventing a third naming scheme
+  // alongside the file names and the friendly labels above.
+  const isIrreversible = (migration: object) =>
+    Object.prototype.hasOwnProperty.call(
+      irreversible,
+      migration.constructor.name,
+    );
 
-  it.each(migrations.filter(([name]) => !irreversible.includes(name)))(
+  // Without this the list rots silently: a renamed or deleted migration would
+  // leave a key matching nothing, and its rollback would quietly start being
+  // skipped by both consumers for a migration that no longer exists.
+  it('lists only real migrations as irreversible', () => {
+    const known = new Set(migrations.map(([, m]) => m.constructor.name));
+    const declared = Object.keys(irreversible).filter(
+      (key) => !key.startsWith('$'),
+    );
+    expect(declared.length).toBeGreaterThan(0);
+    for (const name of declared) {
+      expect(known).toContain(name);
+    }
+  });
+
+  it.each(migrations.filter(([, migration]) => !isIrreversible(migration)))(
     '%s migration provides executable rollback SQL',
     async (_name, migration) => {
       const query = jest.fn().mockResolvedValue(undefined);
