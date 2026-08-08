@@ -403,11 +403,75 @@ jobs:
             fi
           done
 
+  migration-rehearsal:
+    name: Rehearse migrations against production data
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: [release-preflight]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Runs on a copy-on-write branch of production, so this is read-only with
+      # respect to the live database and costs seconds regardless of size.
+      #
+      # Deliberately placed BEFORE `migrate`, and gating it. The restore point
+      # that job takes is recovery; this is prevention — and the Neon
+      # point-in-time window behind that restore point is 1 day, so a migration
+      # that fails on real rows is much cheaper to discover here.
+      #
+      # No DATABASE_URL: the script sets it per command to the branch it created,
+      # which is what makes it structurally unable to migrate production.
+      - name: Rehearse this release's migrations
+        run: npm run db:rehearse
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+
+      - name: Explain a failure
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo "### ❌ Migrations did not survive rehearsal"
+            echo ""
+            echo "This release's migrations were applied to a copy-on-write branch of"
+            echo "production and something failed. **Production was not touched** and"
+            echo "no migration ran against it — the \`migrate\` job never started."
+            echo ""
+            echo "The step above names the phase. What each one means:"
+            echo ""
+            echo "- **Forward** — the migration does not apply to the rows that are"
+            echo "  actually in production. A NOT NULL over existing nulls, a UNIQUE"
+            echo "  index over duplicates, a narrowing that overflows. Unit tests"
+            echo "  cannot see this; they run against a mocked QueryRunner."
+            echo "- **Reverse** — \`down()\` is broken. Fix it before shipping: it is"
+            echo "  the first move in docs/RUNBOOK.md §5, and a rollback you cannot"
+            echo "  perform is not a rollback."
+            echo "- **Re-apply** — the migration is reversible once but not twice,"
+            echo "  so revert-fix-redeploy would fail on the redeploy."
+            echo ""
+            echo "Reproduce locally against your own Neon branch:"
+            echo ""
+            echo '```bash'
+            echo "REHEARSAL_KEEP_BRANCH=1 npm run db:rehearse"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
   migrate:
     name: Run production database migrations
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [release-preflight]
+    needs: [release-preflight, migration-rehearsal]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v7

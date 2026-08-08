@@ -18,15 +18,46 @@ a `migrations` table so the database knows what has and hasn't run.
 | `npm run migration:create migrations/DescribeTheChange` | Scaffold a new empty migration |
 | `npm run migration:baseline` | Dry run: show what baselining would record |
 | `npm run migration:baseline -- --apply` | Record migrations as applied **without running them** |
+| `npm run db:rehearse` | Apply, revert and re-apply pending migrations on a throwaway branch of production |
 
-All of these read `DATABASE_URL`. `dotenv` does **not** override variables that
-are already set, so an explicit `DATABASE_URL=... npm run migration:run` always
-wins over `.env`.
+All of these read `DATABASE_URL`, except `db:rehearse` — see below. `dotenv`
+does **not** override variables that are already set, so an explicit
+`DATABASE_URL=... npm run migration:run` always wins over `.env`.
 
 > **Always check which database you are pointed at before running anything.**
 > With no `DATABASE_URL` in the environment, these commands silently fall back
 > to whatever is in `.env` — which is very likely not the one you meant.
 > `migration:baseline` prints its target host and database for this reason.
+
+## Rehearsing before you migrate
+
+`npm run db:rehearse` answers the question the unit tests cannot: *will this
+migration apply to the rows that are actually in production?*
+`migrations.spec.ts` calls `up()` and `down()` against a mocked QueryRunner, so
+it proves the SQL exists but never executes it. A NOT NULL over existing nulls,
+a UNIQUE index over duplicates, or a backfill that overflows only fails on real
+rows.
+
+It reads `NEON_API_KEY` and `NEON_PROJECT_ID`, **not** `DATABASE_URL`. It
+branches production copy-on-write, then sets `DATABASE_URL` itself per command
+to point at that branch — which is what makes it structurally unable to migrate
+production, and why it is safe to run by hand at any time. The branch and its
+compute are deleted on the way out, including when a phase fails; pass
+`REHEARSAL_KEEP_BRANCH=1` to keep it for inspection.
+
+Three phases run, in order: `migration:run`, then `migration:revert` once per
+pending migration, then `migration:run` again. The last one matters because
+revert-fix-redeploy is the sequence RUNBOOK §5 prescribes, and a `down()` that
+drops a column while leaving its index behind is reversible exactly once.
+
+The revert phase is skipped when this release includes a migration listed as
+intentionally irreversible (`NormalizeExperienceLevels`, `HashRefreshTokens`) —
+reverting past one proves nothing, and for the second it would mean writing
+plaintext refresh tokens back. That list is duplicated in
+`scripts/ci/migration-rehearsal.mjs`; keep it in step with the `irreversible`
+array in `migrations.spec.ts`.
+
+This runs in CI on every push to `main`, gating the `migrate` job.
 
 ## First-time rollout against the existing production database
 
