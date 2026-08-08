@@ -29,6 +29,14 @@ Required configuration:
   exporter `9115`, and Grafana `3000`.
 - Add persistent Railway volumes at `/prometheus`, `/alertmanager`, and
   `/var/lib/grafana` respectively.
+- **Nothing baked into the image may live under a volume mount path.** A Railway
+  volume shadows whatever the image placed there. Grafana's dashboards were
+  originally copied to `/var/lib/grafana/dashboards` — directly under its volume
+  — so they disappeared at runtime and the provisioned dashboard never once
+  loaded, while Grafana logged `failed to walk provisioned dashboards` every 30
+  seconds. They now live at `/etc/grafana/dashboards`, which is not a mount
+  point. The same rule applies to any config added to Prometheus or Alertmanager
+  under `/prometheus` or `/alertmanager`.
 - Do not create public domains for Prometheus, Alertmanager, or blackbox. If a
   Grafana domain is required, protect it with TLS and strong authentication.
 - Leave `PORT` **unset** on the six internal API services. Railway injects
