@@ -15,7 +15,7 @@ empty database → row counts, index counts, the `migrations` table and a
 
 | Store | Contains | Survives redeploy? | Backed up? |
 | --- | --- | --- | --- |
-| **Neon Postgres** | All application data, incl. `refreshToken` on `user` | Yes | Neon PITR (⚠️ retention unconfirmed) + manual `pg_dump` |
+| **Neon Postgres** | All application data, incl. `refreshToken` on `user` | Yes | Neon PITR (**1 day**) + nightly off-Neon `pg_dump` into the locked bucket |
 | **Railway volume** on api-gateway, `/app/storage` | Uploaded resumes, cover letters, chat attachments, avatars, company images | Yes, if the volume is mounted | ❌ **NO** |
 | **Redis** | Cache, AI quota counters, rate-limit windows, Socket.IO adapter | No | Not needed — see below |
 | **Vercel** (web) | Built frontend only | n/a | n/a (immutable deployments) |
@@ -117,7 +117,13 @@ confirm (a) the current **history retention window** on your plan, and (b) that
 PITR is enabled for this project. Free/lower tiers have a short window. Write the
 actual number here:
 
-Neon history retention: ____________  (checked by ________ on ____________)
+Neon history retention: **1 day** (checked automatically by the daily
+`Infrastructure drift` workflow — first measured 2026-08-08)
+
+⚠️ **One day is short.** Anything noticed more than 24 hours after it
+happened cannot be recovered from Neon at all. The nightly off-Neon dump
+(§2) is the only thing covering a longer window. Raising this requires a
+Neon plan change.
 
 ---
 
@@ -296,33 +302,58 @@ including why `down()` must never use `CONCURRENTLY`.
 These are known gaps, not solved problems. Do not read this runbook as evidence
 they are handled.
 
-1. **The `/app/storage` volume has no backups — mitigation built, not yet
-   enabled.** Object-storage support is merged and verified; production is still
-   on `STORAGE_DRIVER=local`. Follow [STORAGE.md](./STORAGE.md) to copy the
-   volume into a bucket and flip the driver. Until then, a volume failure is
-   still unrecoverable data loss — this is the largest remaining exposure in the
-   system, larger than anything in the deploy pipeline.
+1. **No staging environment — a deliberate decision, not an oversight.**
+   `develop` deploys nowhere and `main` goes straight to production. A staging
+   environment would roughly double the Railway bill and the number of things
+   that can silently drift, for a single maintainer, at a scale where the
+   database is 13 MB and traffic is minimal. That trade does not pay off yet.
 
-   The cutover is now gated: `npm run storage:verify` proves every file copied
-   byte-for-byte and that private objects are not anonymously readable, so step
-   3 is a check rather than a spot-check. Enable **bucket versioning before
-   uploading** — without it the bucket is durable storage, not a backup, and a
-   bad delete is still unrecoverable.
-2. **Neon retention window is unconfirmed.** Fill in the blank in §2. PITR you
-   have not checked is not a backup strategy.
-3. **No restore has been rehearsed against real production data.** The procedure
-   here is verified against a representative schema, not against prod's size.
-   Restore timing on a real dataset is unknown — schedule a drill into a scratch
-   Neon branch and record how long it took.
-4. **Staging provisioning is unconfirmed.** The manual load workflow now
-   accepts only the repository's `STAGING_API_URL` variable, but this does not
-   create or validate the provider environment. Confirm the environment exists
-   before relying on it.
-5. **Off-Neon backups are still manual.** Every production migration now takes an
-   automatic Neon restore point (§2), so the migration path is covered. But every
-   restore point lives inside the same Neon project as the data — a project-level
-   or account-level loss takes both. `scripts/db/backup-db.sh` is the only copy
-   that leaves Neon, and it still must be run by a person. Schedule it.
-6. **The Railway rollback path is unrehearsed.** The workflow's dry run is safe
-   and free — run it once against production now, so the first time anyone reads
-   its output is not during an incident.
+   What it costs today: changes are first exercised on live traffic, and the web
+   app's preview deployments point at the production API and write to production
+   data — previews need an API and there is no other one. While one person is the
+   only one clicking previews, that is a nuisance rather than an incident.
+
+   Migrations — the change type most worth rehearsing — can be rehearsed without
+   staging, by pointing a local run at a throwaway Neon branch:
+
+   ```bash
+   DATABASE_URL="<neon-branch-url>" npm run migration:run
+   ```
+
+   **Revisit when any of these becomes true:** someone other than the maintainer
+   deploys or tests; customers are demoed on real infrastructure; a bad migration
+   would mean an apology rather than a shrug.
+
+   The staging load-test workflow was removed on 2026-08-08 rather than left
+   pointing at an environment that never existed. `scripts/load/smoke-load.mjs`
+   remains and runs against localhost.
+
+2. **The alert thresholds are barely tested.** Application metrics first reached
+   Prometheus on 2026-08-07, so every threshold in `monitoring/alerts.yml` is a
+   guess with about a day of evidence behind it. `HighHeapUsage` was already
+   wrong enough to fire permanently on a healthy fleet. Expect others to be, and
+   re-tune after a week of real data rather than trusting them.
+
+3. **The container CI builds is not the container that ships.** CI builds all 11
+   images, verifies they build, then discards them; Railway rebuilds from source
+   on deploy. What was tested and what runs are different artifacts.
+
+---
+
+### Closed on 2026-08-07/08 — recorded because each was believed to be fine
+
+- **Storage had no backups.** Files now live in Cloudflare R2 with a nightly
+  append-only copy into a 30-day-locked bucket the application cannot reach.
+  Proven end to end: a file deleted from live remained recoverable from backup.
+- **Deletes silently did nothing.** `user-service` had no access to the storage
+  volume, so every delete was a no-op. Fixed by the move to object storage.
+- **The rollback workflow could never have run.** It looked for a second
+  `SUCCESS` deployment, but Railway marks superseded deployments `REMOVED`, so
+  the target never existed. Fixed, and since exercised for real with
+  `apply=true`.
+- **Neon retention was unconfirmed.** Measured: 1 day, now reported daily.
+- **No restore had ever been performed.** A weekly drill branches production at
+  a point in time, verifies schema and row counts against live, reports the
+  restore time, and deletes the branch.
+- **Off-Neon backups were manual, and were not happening.** Now nightly into the
+  locked bucket.

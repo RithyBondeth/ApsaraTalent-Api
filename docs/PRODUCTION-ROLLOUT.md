@@ -42,7 +42,6 @@ single migration runs.
 API repository variables:
 
 - `PRODUCTION_API_URL`: public HTTPS origin of `api-gateway`.
-- `STAGING_API_URL`: the only origin authorized for manual load tests.
 
 Web repository secrets:
 

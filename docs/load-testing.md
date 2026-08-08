@@ -36,11 +36,11 @@ Important environment variables:
 - `LOAD_MAX_P95_MS`: maximum p95 latency; defaults to `1000`.
 - `LOAD_MIN_RPS`: minimum aggregate requests per second; defaults to `1`.
 - `LOAD_EXPECTED_STATUSES`: accepted HTTP statuses; defaults to `200`.
-- `LOAD_AUTHORIZATION` and `LOAD_COOKIE`: optional staging credentials.
+- `LOAD_AUTHORIZATION` and `LOAD_COOKIE`: optional credentials for the target.
 
 Remote targets are refused unless `LOAD_ALLOW_REMOTE=1` is set. Only run
 against infrastructure you own or have explicit authorization to test. Prefer
-the manually triggered staging workflow, which can be protected with GitHub
+a manually triggered workflow, which can be protected with GitHub
 environment approvals and stores the result as an artifact.
 
 Start with a small concurrency and short duration. Observe database, Redis,
