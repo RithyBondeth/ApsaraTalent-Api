@@ -402,10 +402,20 @@ try {
     console.log(`  ${' '.repeat(4)}  ${seconds(total).padStart(7)}  TOTAL`);
 
     if (process.env.GITHUB_STEP_SUMMARY) {
+      // Named from our own configuration rather than from `parent.name`, which
+      // arrived in a Neon API response. Writing HTTP response data to a file is
+      // a real taint flow (CodeQL js/http-to-file-access), and a branch name
+      // this script did not choose would also be free to inject markdown into
+      // the job summary. When NEON_PARENT_BRANCH is set the two are identical
+      // by construction — the branch is looked up *by* that name above.
+      const parentLabel = process.env.NEON_PARENT_BRANCH?.trim()
+        ? `\`${process.env.NEON_PARENT_BRANCH.trim()}\``
+        : 'the production default branch';
+
       const lines = [
         '### Migration rehearsal',
         '',
-        `Rehearsed against a copy-on-write branch of \`${parent.name}\`.`,
+        `Rehearsed against a copy-on-write branch of ${parentLabel}.`,
         '',
         '| Phase | Result | Time |',
         '| --- | --- | --- |',
