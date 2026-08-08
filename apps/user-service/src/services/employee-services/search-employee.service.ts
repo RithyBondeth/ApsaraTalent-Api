@@ -178,7 +178,8 @@ export class SearchEmployeeService implements ISearchEmployeeService {
         ];
         const field = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
         const order = (sortOrder?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC') as
-          'ASC' | 'DESC';
+          | 'ASC'
+          | 'DESC';
 
         if (field === 'yearsOfExperience') {
           qb.orderBy(
