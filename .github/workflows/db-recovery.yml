@@ -1,0 +1,136 @@
+name: Database backup and restore drill
+
+# Two things RUNBOOK §7 listed as open, both because they needed a person to
+# remember: an off-Neon copy of the data, and a restore that has actually been
+# performed.
+#
+# The backup matters more than it looks. Neon's point-in-time window is 1 day
+# (measured 2026-08-08), and every Neon restore point lives inside the same Neon
+# project as the data — so a project-level loss takes both. These dumps are the
+# only copy that leaves Neon, and the only thing covering anything older than
+# 24 hours.
+#
+# The drill matters because an untested restore is a belief. On 2026-08-07 every
+# safety mechanism in this system that had never been exercised turned out to be
+# broken. The database restore was the last one left.
+
+on:
+  schedule:
+    # Backup nightly at 17:00 UTC (00:00 Asia/Phnom_Penh), an hour before the
+    # file backup so the two do not contend for the runner or the network.
+    - cron: '0 17 * * *'
+    # Drill weekly, Sunday 03:00 UTC. Neon branches are copy-on-write, so this
+    # costs seconds — there is no reason for it to be rarer than this.
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+    inputs:
+      job:
+        description: Which to run
+        type: choice
+        options: [both, backup, drill]
+        default: both
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-recovery
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Off-Neon database backup
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: >-
+      github.event_name == 'schedule' && github.event.schedule == '0 17 * * *'
+      || (github.event_name == 'workflow_dispatch' && inputs.job != 'drill')
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+      S3_BACKUP_BUCKET: ${{ secrets.S3_BACKUP_BUCKET }}
+      S3_BACKUP_ACCESS_KEY_ID: ${{ secrets.S3_BACKUP_ACCESS_KEY_ID }}
+      S3_BACKUP_SECRET_ACCESS_KEY: ${{ secrets.S3_BACKUP_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # backup-db.sh already handles the trap here: pg_dump refuses to run
+      # against a server newer than itself, and Neon upgrades faster than any
+      # pinned client. It falls back to running pg_dump inside a Postgres image.
+      - name: Dump the database
+        run: ./scripts/db/backup-db.sh ./backups
+
+      - name: Upload to the locked backup bucket
+        shell: bash
+        run: |
+          dump=$(ls -t ./backups/* | head -n1)
+          echo "Uploading $dump"
+          node scripts/ci/upload-db-backup.mjs "$dump"
+
+      - name: Explain a failure
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo "### 🚨 The database was NOT backed up"
+            echo ""
+            echo "Neon's point-in-time window is **1 day**, and its restore points"
+            echo "live inside the same Neon project as the data. These dumps are the"
+            echo "only copy that leaves Neon and the only thing covering anything"
+            echo "older than 24 hours."
+            echo ""
+            echo "Until this succeeds, a loss noticed more than a day late is"
+            echo "unrecoverable."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  drill:
+    name: Restore drill
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: >-
+      github.event_name == 'schedule' && github.event.schedule == '0 3 * * 0'
+      || (github.event_name == 'workflow_dispatch' && inputs.job != 'backup')
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Branches production at a point in time, verifies it, reports how long a
+      # real restore takes, then deletes the branch. Never touches live.
+      - name: Rehearse a restore
+        run: node scripts/ci/db-restore-drill.mjs
+
+      - name: Explain a failure
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo "### ⚠️ The restore drill did not pass"
+            echo ""
+            echo "This is the rehearsal, not the emergency — which is the point."
+            echo "Whatever failed here would have failed during a real incident,"
+            echo "with production down and someone under pressure."
+            echo ""
+            echo "If a drill branch was left behind it is named"
+            echo "\`ci-restore-drill/<timestamp>\` and is safe to delete."
+          } >> "$GITHUB_STEP_SUMMARY"
