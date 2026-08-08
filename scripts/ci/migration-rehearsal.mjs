@@ -41,8 +41,7 @@
  *   REHEARSAL_KEEP_BRANCH           set to 1 to leave the branch for inspection
  */
 import { spawn } from 'node:child_process';
-import { readdirSync } from 'node:fs';
-import { appendFileSync } from 'node:fs';
+import { appendFileSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { Client } from 'pg';
 
@@ -57,18 +56,16 @@ const PREFIX = 'ci-migration-rehearsal/';
 // Migrations whose `down()` is deliberately a no-op, so reverting past them
 // proves nothing and the revert phase is skipped when one is in this release.
 //
-// This list is the second copy of the one in `migrations/migrations.spec.ts`
-// (`irreversible`), which names them in prose. Keep the two in step; better
-// still, give the migration classes a static marker both can read.
-//
-//   NormalizeExperienceLevels — the original free-text experience levels are
-//     gone once normalized; there is nothing to restore them from.
-//   HashRefreshTokens         — reversing it would write bearer credentials
-//     back in plaintext, which is the vulnerability it exists to remove.
-const IRREVERSIBLE = new Set([
-  'NormalizeExperienceLevels1781136000000',
-  'HashRefreshTokens1784073600000',
-]);
+// Single source of truth, shared with `migrations/migrations.spec.ts` — which
+// skips the rollback-SQL contract for the same entries, and asserts every key
+// names a migration that exists. `$comment` is documentation, not a class.
+const IRREVERSIBLE = new Set(
+  Object.keys(
+    JSON.parse(
+      readFileSync(new URL('../../migrations/irreversible.json', import.meta.url), 'utf8'),
+    ),
+  ).filter((key) => !key.startsWith('$')),
+);
 
 const apiKey = process.env.NEON_API_KEY?.trim();
 const projectId = process.env.NEON_PROJECT_ID?.trim();
