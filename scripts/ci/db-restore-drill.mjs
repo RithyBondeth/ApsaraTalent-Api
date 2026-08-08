@@ -28,7 +28,8 @@
  */
 import { Client } from 'pg';
 
-const API_BASE = process.env.NEON_API_BASE || 'https://console.neon.tech/api/v2';
+const API_BASE =
+  process.env.NEON_API_BASE || 'https://console.neon.tech/api/v2';
 
 // Reserved namespace, mirroring create-restore-point.mjs. Cleanup only ever
 // considers branches under this prefix, so a human's branch is never at risk.
@@ -133,7 +134,7 @@ async function inspect(connectionString, label) {
       // TypeORM's table. Missing means the restore produced an empty database,
       // which is the failure mode that matters most and is easy to miss when
       // only counting rows.
-      "SELECT count(*)::int AS applied FROM migrations",
+      'SELECT count(*)::int AS applied FROM migrations',
     );
     return {
       label,
@@ -174,12 +175,17 @@ try {
   });
   branchId = created.branch?.id;
   timings.createBranchMs = Date.now() - t0;
-  console.log(`  branch created in ${(timings.createBranchMs / 1000).toFixed(1)}s  (${branchId})`);
+  console.log(
+    `  branch created in ${(timings.createBranchMs / 1000).toFixed(1)}s  (${branchId})`,
+  );
 
   const uri =
     created.connection_uris?.[0]?.connection_uri ||
-    (await neon(`/branches/${encodeURIComponent(branchId)}/connection_uri?database_name=neondb&role_name=neondb_owner`))
-      ?.uri;
+    (
+      await neon(
+        `/branches/${encodeURIComponent(branchId)}/connection_uri?database_name=neondb&role_name=neondb_owner`,
+      )
+    )?.uri;
   if (!uri) {
     throw new Error(
       'Neon did not return a connection URI for the restored branch. The branch ' +
@@ -196,11 +202,15 @@ try {
   console.log(
     `  restored: ${restored.tables.size} tables, ${restored.migrations} migrations applied, ${restored.size}`,
   );
-  console.log(`  connected in ${restored.connectedMs}ms, verified in ${(timings.verifyMs / 1000).toFixed(1)}s`);
+  console.log(
+    `  connected in ${restored.connectedMs}ms, verified in ${(timings.verifyMs / 1000).toFixed(1)}s`,
+  );
 
   const problems = [];
   if (restored.tables.size === 0) {
-    problems.push('restored branch has no tables — the restore produced an empty database');
+    problems.push(
+      'restored branch has no tables — the restore produced an empty database',
+    );
   }
   if (restored.migrations !== live.migrations) {
     problems.push(
@@ -216,13 +226,17 @@ try {
     // an earlier point in time, so it should be <= live, never wildly above.
     const restoredRows = restored.tables.get(table);
     if (liveRows > 0 && restoredRows === 0) {
-      problems.push(`table empty in restore but has ${liveRows} rows live: ${table}`);
+      problems.push(
+        `table empty in restore but has ${liveRows} rows live: ${table}`,
+      );
     }
   }
 
   console.log('\n--- restore drill ---');
   console.log(`  recovered to:     ${recoverTo}`);
-  console.log(`  branch created:   ${(timings.createBranchMs / 1000).toFixed(1)}s`);
+  console.log(
+    `  branch created:   ${(timings.createBranchMs / 1000).toFixed(1)}s`,
+  );
   console.log(`  connect + verify: ${(timings.verifyMs / 1000).toFixed(1)}s`);
   console.log(
     `  TOTAL:            ${((timings.createBranchMs + timings.verifyMs) / 1000).toFixed(1)}s  <-- this is your restore time`,
@@ -235,13 +249,17 @@ try {
     for (const p of problems) console.error(`  - ${p}`);
     process.exitCode = 1;
   } else {
-    console.log('\nRestore verified: schema and data are present and consistent with live.');
+    console.log(
+      '\nRestore verified: schema and data are present and consistent with live.',
+    );
   }
 } finally {
   // Always clean up. A drill that leaves branches behind stops being run.
   if (branchId) {
     try {
-      await neon(`/branches/${encodeURIComponent(branchId)}`, { method: 'DELETE' });
+      await neon(`/branches/${encodeURIComponent(branchId)}`, {
+        method: 'DELETE',
+      });
       console.log(`\nCleaned up drill branch ${branchId}`);
     } catch (error) {
       console.error(

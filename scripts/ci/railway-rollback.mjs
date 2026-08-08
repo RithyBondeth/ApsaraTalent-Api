@@ -19,7 +19,8 @@
  *   GITHUB_STEP_SUMMARY  When set, the plan/result table is appended to it.
  */
 
-const ENDPOINT = process.env.RAILWAY_API_URL || 'https://backboard.railway.com/graphql/v2';
+const ENDPOINT =
+  process.env.RAILWAY_API_URL || 'https://backboard.railway.com/graphql/v2';
 
 // Rollback order mirrors deploy order: internal services first, the public
 // gateway last, so the front door is the last thing to change in either
@@ -35,7 +36,12 @@ const API_SERVICES = [
   'API Gateway',
 ];
 
-const MONITORING_SERVICES = ['alertmanager', 'blackbox-exporter', 'prometheus', 'grafana'];
+const MONITORING_SERVICES = [
+  'alertmanager',
+  'blackbox-exporter',
+  'prometheus',
+  'grafana',
+];
 
 const token = process.env.RAILWAY_TOKEN?.trim();
 if (!token) {
@@ -92,7 +98,9 @@ async function graphql(query, variables = {}) {
 
     const payload = await response.json();
     if (payload.errors?.length) {
-      throw new Error(`Railway API error: ${payload.errors.map((e) => e.message).join('; ')}`);
+      throw new Error(
+        `Railway API error: ${payload.errors.map((e) => e.message).join('; ')}`,
+      );
     }
     return payload.data;
   }
@@ -103,7 +111,14 @@ async function graphql(query, variables = {}) {
 // A project token already carries its project and environment; resolving them
 // this way means no extra secrets and no chance of pointing at the wrong
 // environment by hand.
-const context = await graphql(`query { projectToken { projectId environmentId } }`);
+const context = await graphql(`
+  query {
+    projectToken {
+      projectId
+      environmentId
+    }
+  }
+`);
 const projectId = context?.projectToken?.projectId;
 const environmentId = context?.projectToken?.environmentId;
 
@@ -115,20 +130,32 @@ if (!projectId || !environmentId) {
 }
 
 const project = await graphql(
-  `query ($id: String!) {
-    project(id: $id) {
-      name
-      services { edges { node { id name } } }
+  `
+    query ($id: String!) {
+      project(id: $id) {
+        name
+        services {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+      }
     }
-  }`,
+  `,
   { id: projectId },
 );
 
-const services = (project?.project?.services?.edges ?? []).map((edge) => edge.node);
-console.log(`Project: ${project?.project?.name} (environment ${environmentId})`);
+const services = (project?.project?.services?.edges ?? []).map(
+  (edge) => edge.node,
+);
+console.log(
+  `Project: ${project?.project?.name} (environment ${environmentId})`,
+);
 
-const targetNames =
-  requested === 'all' ? API_SERVICES : [requested];
+const targetNames = requested === 'all' ? API_SERVICES : [requested];
 
 const resolved = targetNames.map((name) => {
   const match = services.find((service) => service.name === name);
@@ -144,11 +171,20 @@ const resolved = targetNames.map((name) => {
 /** The deployment currently serving traffic, and the one before it. */
 async function previousSuccessfulDeployment(serviceId) {
   const data = await graphql(
-    `query ($first: Int!, $input: DeploymentListInput!) {
-      deployments(first: $first, input: $input) {
-        edges { node { id status createdAt meta } }
+    `
+      query ($first: Int!, $input: DeploymentListInput!) {
+        deployments(first: $first, input: $input) {
+          edges {
+            node {
+              id
+              status
+              createdAt
+              meta
+            }
+          }
+        }
       }
-    }`,
+    `,
     { first: 20, input: { projectId, environmentId, serviceId } },
   );
 
@@ -177,14 +213,20 @@ async function previousSuccessfulDeployment(serviceId) {
 
 const plan = [];
 for (const service of resolved) {
-  const { current, target, considered } = await previousSuccessfulDeployment(service.id);
+  const { current, target, considered } = await previousSuccessfulDeployment(
+    service.id,
+  );
   plan.push({ service, current, target, considered });
 }
 
 const rows = plan.map(({ service, current, target }) => ({
   Service: service.name,
-  Current: current ? `${current.id.slice(0, 12)} (${current.createdAt})` : 'none',
-  'Roll back to': target ? `${target.id.slice(0, 12)} (${target.createdAt})` : '⚠️ no earlier deployment',
+  Current: current
+    ? `${current.id.slice(0, 12)} (${current.createdAt})`
+    : 'none',
+  'Roll back to': target
+    ? `${target.id.slice(0, 12)} (${target.createdAt})`
+    : '⚠️ no earlier deployment',
 }));
 console.table(rows);
 
@@ -198,16 +240,28 @@ if (unrollable.length > 0) {
 }
 
 if (!apply) {
-  console.log('\nDRY RUN — nothing was changed. Re-run with APPLY=1 to roll back.');
+  console.log(
+    '\nDRY RUN — nothing was changed. Re-run with APPLY=1 to roll back.',
+  );
   process.exit(0);
 }
 
 const results = [];
 for (const { service, target } of plan) {
   try {
-    await graphql(`mutation ($id: String!) { deploymentRollback(id: $id) }`, { id: target.id });
+    await graphql(
+      `
+        mutation ($id: String!) {
+          deploymentRollback(id: $id)
+        }
+      `,
+      { id: target.id },
+    );
     console.log(`Rolled back ${service.name} -> ${target.id}`);
-    results.push({ Service: service.name, Result: `rolled back to ${target.id.slice(0, 12)}` });
+    results.push({
+      Service: service.name,
+      Result: `rolled back to ${target.id.slice(0, 12)}`,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`FAILED to roll back ${service.name}: ${message}`);
@@ -232,7 +286,9 @@ if (process.env.GITHUB_STEP_SUMMARY) {
 
 const failures = results.filter((row) => row.Result.startsWith('FAILED'));
 if (failures.length > 0) {
-  throw new Error(`${failures.length} service(s) did not roll back. Finish them in the Railway dashboard.`);
+  throw new Error(
+    `${failures.length} service(s) did not roll back. Finish them in the Railway dashboard.`,
+  );
 }
 
 console.log('\nRollback complete. Verify /health/ready before standing down.');
