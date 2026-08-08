@@ -131,13 +131,32 @@ if (pending.length === 0) {
       copied += 1;
       console.log(`  copied      ${key}`);
     } catch (error) {
+      const name = error?.name || '';
+
       // An object already under retention cannot be overwritten. That is the
-      // lock doing its job, not a failure — the older copy is still there.
-      if (/ObjectLocked|AccessDenied|PreconditionFailed/i.test(error?.name || '')) {
+      // lock doing its job — but only when a copy genuinely already exists.
+      // Requiring backup.has(key) is what keeps this from excusing a failure
+      // that left nothing behind.
+      if (/ObjectLocked|PreconditionFailed/i.test(name) && backup.has(key)) {
         console.log(`  retained    ${key} (immutable copy already in backup)`);
         continue;
       }
-      failures.push(`${key}: ${error?.name || error}`);
+
+      // AccessDenied was originally treated as benign here, alongside the lock.
+      // It is the opposite: it means the token cannot write, so NOTHING is
+      // being backed up — and the job would have reported success while copying
+      // nothing at all. Found on 2026-08-08 with a token issued as "Object Read
+      // only". A backup that lies about succeeding is worse than no backup,
+      // because it stops anyone looking.
+      if (/AccessDenied|Unauthorized|InvalidAccessKeyId|SignatureDoesNotMatch/i.test(name)) {
+        failures.push(
+          `${key}: ${name} — the backup token cannot write to ${backupBucket}. ` +
+            'It needs Object Read & Write, not Read only.',
+        );
+        continue;
+      }
+
+      failures.push(`${key}: ${name || error}`);
     }
   }
   if (!dryRun) console.log(`\ncopied ${copied} of ${pending.length}`);
