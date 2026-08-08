@@ -473,6 +473,23 @@ jobs:
     timeout-minutes: 20
     needs: [release-preflight, migration-rehearsal]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # The gate goes HERE, not on `deploy`, because this is the first job that
+    # writes to production and the only one whose effects a rollback cannot
+    # fully undo. Gating `deploy` instead would ask for approval after the
+    # schema had already changed.
+    #
+    # One approval covers the whole production phase — `deploy` needs this job,
+    # so there is no second prompt. And because `migration-rehearsal` runs
+    # before it, the rehearsal result is already visible when the decision is
+    # made: you are approving a migration that has been proven to apply to a
+    # copy of the real data.
+    #
+    # `prevent_self_review` is deliberately false on this environment. GitHub
+    # forbids approving your own pull request but permits approving your own
+    # deployment, which is the only reason this is usable by one person. It is
+    # not a second pair of eyes — it is a deliberate stop between merging and
+    # migrating production.
+    environment: production-release
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
