@@ -48,7 +48,7 @@ const isLocalTarget = ['localhost', '127.0.0.1', '::1'].includes(
 );
 if (!isLocalTarget && process.env.LOAD_ALLOW_REMOTE !== '1') {
   throw new Error(
-    'Remote load testing is disabled. Set LOAD_ALLOW_REMOTE=1 only for an authorized staging target.',
+    'Remote load testing is disabled. Set LOAD_ALLOW_REMOTE=1 only for a target you are authorized to load.',
   );
 }
 

@@ -302,11 +302,31 @@ including why `down()` must never use `CONCURRENTLY`.
 These are known gaps, not solved problems. Do not read this runbook as evidence
 they are handled.
 
-1. **No staging environment.** `develop` deploys nowhere and `main` goes straight
-   to production, so every change is first exercised on live traffic. It is also
-   why the web app's preview deployments point at the production API and write to
-   production data — previews need an API and there is no other one. This is now
-   the largest structural gap in the system.
+1. **No staging environment — a deliberate decision, not an oversight.**
+   `develop` deploys nowhere and `main` goes straight to production. A staging
+   environment would roughly double the Railway bill and the number of things
+   that can silently drift, for a single maintainer, at a scale where the
+   database is 13 MB and traffic is minimal. That trade does not pay off yet.
+
+   What it costs today: changes are first exercised on live traffic, and the web
+   app's preview deployments point at the production API and write to production
+   data — previews need an API and there is no other one. While one person is the
+   only one clicking previews, that is a nuisance rather than an incident.
+
+   Migrations — the change type most worth rehearsing — can be rehearsed without
+   staging, by pointing a local run at a throwaway Neon branch:
+
+   ```bash
+   DATABASE_URL="<neon-branch-url>" npm run migration:run
+   ```
+
+   **Revisit when any of these becomes true:** someone other than the maintainer
+   deploys or tests; customers are demoed on real infrastructure; a bad migration
+   would mean an apology rather than a shrug.
+
+   The staging load-test workflow was removed on 2026-08-08 rather than left
+   pointing at an environment that never existed. `scripts/load/smoke-load.mjs`
+   remains and runs against localhost.
 
 2. **The alert thresholds are barely tested.** Application metrics first reached
    Prometheus on 2026-08-07, so every threshold in `monitoring/alerts.yml` is a
