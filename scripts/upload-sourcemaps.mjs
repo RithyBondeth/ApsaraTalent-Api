@@ -32,7 +32,9 @@ if (!token || !org || !project) {
     !org && 'SENTRY_ORG',
     !project && 'SENTRY_PROJECT',
   ].filter(Boolean);
-  console.log(`[sentry] skipping source map upload — missing ${missing.join(', ')}`);
+  console.log(
+    `[sentry] skipping source map upload — missing ${missing.join(', ')}`,
+  );
   process.exit(0);
 }
 
@@ -42,14 +44,18 @@ if (!existsSync(distDir)) {
 }
 
 // Same resolution order as instrument.ts, so events and artifacts line up.
-const release = process.env.SENTRY_RELEASE || process.env.RAILWAY_GIT_COMMIT_SHA;
+const release =
+  process.env.SENTRY_RELEASE || process.env.RAILWAY_GIT_COMMIT_SHA;
 
 // sentry-cli auto-reads .env and warns when it cannot parse it; we already
 // loaded it above and pass everything explicitly, so turn that off.
 const env = { ...process.env, SENTRY_LOAD_DOTENV: '0' };
 
 function run(args) {
-  const res = spawnSync('npx', ['sentry-cli', ...args], { stdio: 'inherit', env });
+  const res = spawnSync('npx', ['sentry-cli', ...args], {
+    stdio: 'inherit',
+    env,
+  });
   if (res.status !== 0) {
     console.error(`[sentry] command failed: sentry-cli ${args.join(' ')}`);
     process.exit(res.status ?? 1);

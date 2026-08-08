@@ -19,7 +19,7 @@
     "start:prod": "npm run start:production",
     "start:prod:api": "cross-env NODE_ENV=production node --enable-source-maps dist/apps/api-gateway/main.js",
     "lint": "npm run lint:check -- --fix",
-    "lint:check": "eslint \"apps/**/*.ts\" \"libs/**/*.ts\" \"test/**/*.ts\" \"migrations/**/*.ts\" \"scripts/**/*.ts\" \"data-source.ts\"",
+    "lint:check": "eslint \"apps/**/*.ts\" \"libs/**/*.ts\" \"test/**/*.ts\" \"migrations/**/*.ts\" \"scripts/**/*.ts\" \"scripts/**/*.mjs\" \"test/**/*.mjs\" \"data-source.ts\"",
     "test": "cross-env NODE_ENV=test jest",
     "test:ci": "cross-env NODE_ENV=test jest --runInBand",
     "test:watch": "jest --watch",

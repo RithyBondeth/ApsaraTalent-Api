@@ -98,7 +98,9 @@ for (const service of MUST_BE_PUBLIC) {
 const fingerprint = (value) =>
   createHash('sha256').update(value).digest('hex').slice(0, 8);
 
-const prometheusToken = (readVariables('prometheus').METRICS_TOKEN || '').trim();
+const prometheusToken = (
+  readVariables('prometheus').METRICS_TOKEN || ''
+).trim();
 if (!prometheusToken) {
   failures.push(
     'prometheus is missing METRICS_TOKEN — it cannot authenticate to any /metrics endpoint.',
@@ -182,7 +184,9 @@ if (neonKey && neonProject) {
     );
   }
 } else {
-  notes.push('neon: retention not checked — NEON_API_KEY/NEON_PROJECT_ID unset');
+  notes.push(
+    'neon: retention not checked — NEON_API_KEY/NEON_PROJECT_ID unset',
+  );
 }
 
 for (const note of notes) console.log(`  ${note}`);

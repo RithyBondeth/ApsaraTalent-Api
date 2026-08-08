@@ -46,7 +46,8 @@ import { appendFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { Client } from 'pg';
 
-const API_BASE = process.env.NEON_API_BASE || 'https://console.neon.tech/api/v2';
+const API_BASE =
+  process.env.NEON_API_BASE || 'https://console.neon.tech/api/v2';
 const REPO_ROOT = fileURLToPath(new URL('../..', import.meta.url));
 
 // Reserved namespace, mirroring create-restore-point.mjs and
@@ -104,7 +105,11 @@ async function neon(path, { method = 'GET', body } = {}) {
     }
     // 423 Locked means another project operation is in flight; 429 and 5xx are
     // likewise transient. Same policy as create-restore-point.mjs.
-    if (response.status === 423 || response.status === 429 || response.status >= 500) {
+    if (
+      response.status === 423 ||
+      response.status === 429 ||
+      response.status >= 500
+    ) {
       lastError = `HTTP ${response.status}`;
       await new Promise((r) => setTimeout(r, attempt * 3_000));
       continue;
@@ -184,7 +189,10 @@ function redact(text, uri) {
   return text
     .split(uri)
     .join('postgresql://[redacted]')
-    .replace(/(postgres(?:ql)?:\/\/)[^:@\s]+:[^@\s]+@/g, '$1[redacted]:[redacted]@');
+    .replace(
+      /(postgres(?:ql)?:\/\/)[^:@\s]+:[^@\s]+@/g,
+      '$1[redacted]:[redacted]@',
+    );
 }
 
 /**
@@ -213,7 +221,11 @@ function runMigrationCommand(script, uri) {
     });
 
     child.on('error', (error) => {
-      resolve({ ok: false, ms: Date.now() - startedAt, output: String(error.message) });
+      resolve({
+        ok: false,
+        ms: Date.now() - startedAt,
+        output: String(error.message),
+      });
     });
     child.on('close', (code) => {
       resolve({
@@ -252,7 +264,9 @@ async function phase(title, script) {
     return true;
   }
 
-  console.error(`::error::${title} failed (exit ${result.code}) after ${seconds(result.ms)}.`);
+  console.error(
+    `::error::${title} failed (exit ${result.code}) after ${seconds(result.ms)}.`,
+  );
   process.exitCode = 1;
   return false;
 }
@@ -266,7 +280,9 @@ try {
   const parentName = process.env.NEON_PARENT_BRANCH?.trim();
   const parent = parentName
     ? branches.find((branch) => branch.name === parentName)
-    : branches.find((branch) => branch.default === true || branch.primary === true);
+    : branches.find(
+        (branch) => branch.default === true || branch.primary === true,
+      );
 
   if (!parent) {
     throw new Error(
@@ -276,7 +292,9 @@ try {
     );
   }
 
-  console.log(`Branching "${parent.name}" (${parent.id}) as "${branchName}"...`);
+  console.log(
+    `Branching "${parent.name}" (${parent.id}) as "${branchName}"...`,
+  );
 
   // A read_write endpoint, unlike create-restore-point.mjs: a restore point is
   // storage-only because nothing connects to it, whereas this branch exists
@@ -315,7 +333,9 @@ try {
   // ------------------------------------------------------------ pending ----
   const onDisk = migrationsOnDisk();
   const applied = await appliedTimestamps(uri);
-  const pending = onDisk.filter((migration) => !applied.has(migration.timestamp));
+  const pending = onDisk.filter(
+    (migration) => !applied.has(migration.timestamp),
+  );
 
   console.log(
     `\n${onDisk.length} migration(s) on disk, ${applied.size} applied to production, ` +
@@ -337,7 +357,9 @@ try {
       console.log(`  pending: ${migration.name}`);
     }
 
-    const blocked = pending.filter((migration) => IRREVERSIBLE.has(migration.name));
+    const blocked = pending.filter((migration) =>
+      IRREVERSIBLE.has(migration.name),
+    );
 
     // ------------------------------------------------------------ forward ----
     let advanced = await phase(
@@ -349,7 +371,9 @@ try {
     // exiting 0 having skipped the pending set.
     if (advanced) {
       const after = await appliedTimestamps(uri);
-      const missing = pending.filter((migration) => !after.has(migration.timestamp));
+      const missing = pending.filter(
+        (migration) => !after.has(migration.timestamp),
+      );
       if (missing.length > 0) {
         console.error(
           `::error::migration:run exited 0 but did not record: ${missing.map((m) => m.name).join(', ')}`,
@@ -357,7 +381,9 @@ try {
         process.exitCode = 1;
         advanced = false;
       } else {
-        console.log(`  all ${pending.length} migration(s) recorded in the migrations table`);
+        console.log(
+          `  all ${pending.length} migration(s) recorded in the migrations table`,
+        );
       }
     }
 
@@ -368,14 +394,25 @@ try {
       console.log(
         `\n--- Reverse: skipped ---\n  ${blocked
           .map((m) => m.name)
-          .join(', ')} is intentionally irreversible, so reverting past it would ` +
+          .join(
+            ', ',
+          )} is intentionally irreversible, so reverting past it would ` +
           'prove nothing. Forward path above is still verified.',
       );
-      phases.push({ title: 'Reverse: skipped (irreversible migration in release)', ok: true, ms: 0 });
+      phases.push({
+        title: 'Reverse: skipped (irreversible migration in release)',
+        ok: true,
+        ms: 0,
+      });
     } else if (advanced) {
       for (let i = pending.length; i >= 1; i -= 1) {
         const target = pending[i - 1];
-        if (!(await phase(`Reverse: reverting ${target.name}`, 'migration:revert'))) {
+        if (
+          !(await phase(
+            `Reverse: reverting ${target.name}`,
+            'migration:revert',
+          ))
+        ) {
           advanced = false;
           break;
         }
@@ -387,7 +424,10 @@ try {
       // a `down()` that drops a column but leaves its index behind fails the
       // second `up()`, and nothing before this step would catch it.
       if (advanced) {
-        await phase('Re-apply: running the forward path a second time', 'migration:run');
+        await phase(
+          'Re-apply: running the forward path a second time',
+          'migration:run',
+        );
       }
     }
   }
@@ -396,7 +436,9 @@ try {
   if (phases.length > 0) {
     console.log('\n--- migration rehearsal ---');
     for (const entry of phases) {
-      console.log(`  ${entry.ok ? 'ok  ' : 'FAIL'}  ${seconds(entry.ms).padStart(7)}  ${entry.title}`);
+      console.log(
+        `  ${entry.ok ? 'ok  ' : 'FAIL'}  ${seconds(entry.ms).padStart(7)}  ${entry.title}`,
+      );
     }
     const total = phases.reduce((sum, entry) => sum + entry.ms, 0);
     console.log(`  ${' '.repeat(4)}  ${seconds(total).padStart(7)}  TOTAL`);
@@ -420,7 +462,8 @@ try {
         '| Phase | Result | Time |',
         '| --- | --- | --- |',
         ...phases.map(
-          (entry) => `| ${entry.title} | ${entry.ok ? 'pass' : '**FAIL**'} | ${seconds(entry.ms)} |`,
+          (entry) =>
+            `| ${entry.title} | ${entry.ok ? 'pass' : '**FAIL**'} | ${seconds(entry.ms)} |`,
         ),
         '',
         `Total ${seconds(total)}. Production was not touched.`,
@@ -436,7 +479,9 @@ try {
         'happened in the `migrate` job, against live data.',
     );
   } else if (phases.length > 0) {
-    console.log('\nRehearsal passed. These migrations apply to production-shaped data.');
+    console.log(
+      '\nRehearsal passed. These migrations apply to production-shaped data.',
+    );
   }
   // No `else`: a release with no pending migrations already said so, and must
   // not print a pass line claiming migrations were verified against real data.
@@ -445,7 +490,9 @@ try {
   // branch limit and starts failing every release.
   if (branchId && !keepBranch) {
     try {
-      await neon(`/branches/${encodeURIComponent(branchId)}`, { method: 'DELETE' });
+      await neon(`/branches/${encodeURIComponent(branchId)}`, {
+        method: 'DELETE',
+      });
       console.log(`\nDeleted rehearsal branch ${branchName} (${branchId})`);
     } catch (error) {
       console.error(
