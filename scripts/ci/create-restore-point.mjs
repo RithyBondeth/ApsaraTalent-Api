@@ -167,10 +167,30 @@ console.log(
 );
 
 if (process.env.GITHUB_OUTPUT) {
+  // `$GITHUB_OUTPUT` is parsed line by line as `key=value`, so a value
+  // containing a newline does not write a newline — it writes a new OUTPUT.
+  // `branchId` arrives in a Neon API response, which makes this the one place
+  // in this script where remote data reaches a file that later becomes
+  // workflow state (CodeQL js/http-to-file-access).
+  //
+  // Neon ids and this script's own branch names are single-line tokens, so
+  // anything else means the control plane returned something unexpected and
+  // the release should stop rather than write it.
+  const assertSingleLineToken = (label, value) => {
+    if (!/^[A-Za-z0-9._/-]+$/.test(value)) {
+      throw new Error(
+        `Refusing to write ${label} to GITHUB_OUTPUT: expected a single-line ` +
+          `token, got ${JSON.stringify(String(value).slice(0, 80))}.`,
+      );
+    }
+    return value;
+  };
+
   const { appendFileSync } = await import('node:fs');
   appendFileSync(
     process.env.GITHUB_OUTPUT,
-    `branch-id=${branchId}\nbranch-name=${name}\n`,
+    `branch-id=${assertSingleLineToken('branch-id', branchId)}\n` +
+      `branch-name=${assertSingleLineToken('branch-name', name)}\n`,
   );
 }
 
