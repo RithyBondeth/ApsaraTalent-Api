@@ -169,6 +169,8 @@ jobs:
       contents: read
       # Required to publish scan results to the repository's Security tab.
       security-events: write
+      # Required to push the built image to GHCR.
+      packages: write
     strategy:
       fail-fast: false
       matrix:
@@ -183,12 +185,25 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Tagged with the commit SHA and pushed on main, so the artifact that was
+      # built, scanned and (soon) deployed is one immutable thing rather than
+      # three separate rebuilds that happen to come from the same source.
       - name: Build production container
         run: >-
           docker build
           --file apps/${{ matrix.service }}/Dockerfile
-          --tag apsaratalent/${{ matrix.service }}:${{ github.sha }}
+          --tag ghcr.io/rithybondeth/apsaratalent-${{ matrix.service }}:${{ github.sha }}
           .
+
+      # Only from main. A pull request builds and scans the identical image but
+      # must not be able to publish one.
+      - name: Publish to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker push "ghcr.io/rithybondeth/apsaratalent-${{ matrix.service }}:${{ github.sha }}"
+          docker logout ghcr.io
 
       # The image is scanned, not merely built. `npm audit` sees the JavaScript
       # dependency tree only — nothing before this step looks at the Alpine base
@@ -198,7 +213,7 @@ jobs:
       - name: Scan image for vulnerabilities
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: apsaratalent/${{ matrix.service }}:${{ github.sha }}
+          image-ref: ghcr.io/rithybondeth/apsaratalent-${{ matrix.service }}:${{ github.sha }}
           format: sarif
           output: trivy-${{ matrix.service }}.sarif
           severity: HIGH,CRITICAL
@@ -218,7 +233,7 @@ jobs:
       - name: Fail on fixable critical vulnerabilities
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: apsaratalent/${{ matrix.service }}:${{ github.sha }}
+          image-ref: ghcr.io/rithybondeth/apsaratalent-${{ matrix.service }}:${{ github.sha }}
           format: table
           severity: CRITICAL
           ignore-unfixed: true
@@ -309,6 +324,7 @@ jobs:
     permissions:
       contents: read
       security-events: write
+      packages: write
     strategy:
       fail-fast: false
       matrix:
@@ -320,8 +336,16 @@ jobs:
         run: >-
           docker build
           --file monitoring/production/${{ matrix.service }}/Dockerfile
-          --tag apsaratalent/monitoring-${{ matrix.service }}:${{ github.sha }}
+          --tag ghcr.io/rithybondeth/apsaratalent-monitoring-${{ matrix.service }}:${{ github.sha }}
           .
+
+      - name: Publish to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker push "ghcr.io/rithybondeth/apsaratalent-monitoring-${{ matrix.service }}:${{ github.sha }}"
+          docker logout ghcr.io
 
       # These four are upstream images with a config layer on top, so their CVEs
       # arrive entirely through base image bumps — exactly the class npm audit
@@ -329,7 +353,7 @@ jobs:
       - name: Scan image for vulnerabilities
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: apsaratalent/monitoring-${{ matrix.service }}:${{ github.sha }}
+          image-ref: ghcr.io/rithybondeth/apsaratalent-monitoring-${{ matrix.service }}:${{ github.sha }}
           format: sarif
           output: trivy-monitoring-${{ matrix.service }}.sarif
           severity: HIGH,CRITICAL
@@ -345,7 +369,7 @@ jobs:
       - name: Fail on fixable critical vulnerabilities
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: apsaratalent/monitoring-${{ matrix.service }}:${{ github.sha }}
+          image-ref: ghcr.io/rithybondeth/apsaratalent-monitoring-${{ matrix.service }}:${{ github.sha }}
           format: table
           severity: CRITICAL
           ignore-unfixed: true
