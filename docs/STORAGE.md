@@ -303,8 +303,8 @@ bucket addressing by default.
 | `libs/common/src/storage/serve-storage-object.ts` | Redirect-vs-stream policy |
 | `libs/common/src/storage/storage.registry.ts` | Static handle for multer (which cannot use DI) |
 | `apps/api-gateway/src/storage/controllers/public-storage.controller.ts` | Serves `/storage/<folder>/<path>` |
-| `scripts/db/migrate-storage-to-s3.ts` | Volume → bucket copy |
-| `scripts/db/verify-storage-migration.ts` | Proves the copy is complete and the access boundary holds |
+| `scripts/storage/migrate-storage-to-s3.ts` | Volume → bucket copy |
+| `scripts/storage/verify-storage-migration.ts` | Proves the copy is complete and the access boundary holds |
 
 ### Gotcha: multer and dependency injection
 
