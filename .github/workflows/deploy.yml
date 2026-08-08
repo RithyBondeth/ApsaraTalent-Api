@@ -529,42 +529,46 @@ jobs:
               --skip-deploys
           done
 
-      # Internal services go first; the public gateway switches last. Attached
-      # mode streams the complete Railway build/deploy result and fails CI when
-      # a service does not become active. These are the service names shown in
-      # Railway Architecture; GitHub prefixes deployment labels separately.
+      # Internal services go first; the public gateway switches last.
+      #
+      # Each step deploys the image built and scanned by the `containers` job —
+      # the same artifact, not a rebuild — then waits for that deployment to
+      # reach SUCCESS. The wait is explicit because `railway redeploy` returns
+      # immediately (~3.7s, measured 2026-08-08); without it a release would
+      # report success the moment Railway accepted the deploy rather than when
+      # the service was serving.
       - name: Deploy auth service
-        run: scripts/ci/railway-up.sh "Auth Service"
+        run: scripts/ci/railway-deploy-image.sh "Auth Service" ghcr.io/rithybondeth/apsaratalent-auth-service:${{ github.sha }}
 
       - name: Deploy user service
-        run: scripts/ci/railway-up.sh "User Service"
+        run: scripts/ci/railway-deploy-image.sh "User Service" ghcr.io/rithybondeth/apsaratalent-user-service:${{ github.sha }}
 
       - name: Deploy resume builder service
-        run: scripts/ci/railway-up.sh "Resume Builder Service"
+        run: scripts/ci/railway-deploy-image.sh "Resume Builder Service" ghcr.io/rithybondeth/apsaratalent-resume-builder-service:${{ github.sha }}
 
       - name: Deploy chat service
-        run: scripts/ci/railway-up.sh "Chat Service"
+        run: scripts/ci/railway-deploy-image.sh "Chat Service" ghcr.io/rithybondeth/apsaratalent-chat-service:${{ github.sha }}
 
       - name: Deploy job service
-        run: scripts/ci/railway-up.sh "Job Service"
+        run: scripts/ci/railway-deploy-image.sh "Job Service" ghcr.io/rithybondeth/apsaratalent-job-service:${{ github.sha }}
 
       - name: Deploy notification service
-        run: scripts/ci/railway-up.sh "Notification Service"
+        run: scripts/ci/railway-deploy-image.sh "Notification Service" ghcr.io/rithybondeth/apsaratalent-notification-service:${{ github.sha }}
 
       - name: Deploy Alertmanager
-        run: scripts/ci/railway-up.sh alertmanager
+        run: scripts/ci/railway-deploy-image.sh alertmanager ghcr.io/rithybondeth/apsaratalent-monitoring-alertmanager:${{ github.sha }}
 
       - name: Deploy blackbox exporter
-        run: scripts/ci/railway-up.sh blackbox-exporter
+        run: scripts/ci/railway-deploy-image.sh blackbox-exporter ghcr.io/rithybondeth/apsaratalent-monitoring-blackbox:${{ github.sha }}
 
       - name: Deploy Prometheus
-        run: scripts/ci/railway-up.sh prometheus
+        run: scripts/ci/railway-deploy-image.sh prometheus ghcr.io/rithybondeth/apsaratalent-monitoring-prometheus:${{ github.sha }}
 
       - name: Deploy Grafana
-        run: scripts/ci/railway-up.sh grafana
+        run: scripts/ci/railway-deploy-image.sh grafana ghcr.io/rithybondeth/apsaratalent-monitoring-grafana:${{ github.sha }}
 
       - name: Deploy API gateway
-        run: scripts/ci/railway-up.sh "API Gateway"
+        run: scripts/ci/railway-deploy-image.sh "API Gateway" ghcr.io/rithybondeth/apsaratalent-api-gateway:${{ github.sha }}
 
       # EXPECTED_RELEASE makes this prove the NEW revision is serving. Without
       # it, a `railway up` that silently changed nothing left the previous

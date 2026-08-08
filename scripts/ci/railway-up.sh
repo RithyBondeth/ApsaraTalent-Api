@@ -18,6 +18,9 @@
 # times; retrying it just burns ten minutes and buries the real error. Only
 # transport-shaped failures are retried.
 #
+# Retained as the fallback for the image-based deploy path: reverting
+# deploy.yml to call this restores the previous behaviour without needing GHCR.
+#
 # Usage:  scripts/ci/railway-up.sh "Auth Service"
 # Env:    RAILWAY_UP_ATTEMPTS (default 3)
 
