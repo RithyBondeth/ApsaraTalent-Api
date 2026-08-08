@@ -24,7 +24,8 @@
  *                             so later steps can reference the restore point.
  */
 
-const API_BASE = process.env.NEON_API_BASE || 'https://console.neon.tech/api/v2';
+const API_BASE =
+  process.env.NEON_API_BASE || 'https://console.neon.tech/api/v2';
 
 // Reserved namespace. Pruning only ever considers branches under this prefix,
 // so a human-created branch can never be deleted by this script.
@@ -45,7 +46,9 @@ if (!apiKey || !projectId) {
 const keepRaw = process.env.RESTORE_POINT_KEEP?.trim() || '10';
 const keep = Number.parseInt(keepRaw, 10);
 if (!Number.isInteger(keep) || keep < 0) {
-  throw new Error(`RESTORE_POINT_KEEP must be a non-negative integer, got "${keepRaw}".`);
+  throw new Error(
+    `RESTORE_POINT_KEEP must be a non-negative integer, got "${keepRaw}".`,
+  );
 }
 
 /**
@@ -89,13 +92,18 @@ async function neon(path, { method = 'GET', body } = {}) {
       );
     }
     if (response.status === 404) {
-      throw new Error(`Neon project "${projectId}" not found (HTTP 404). Check NEON_PROJECT_ID.`);
+      throw new Error(
+        `Neon project "${projectId}" not found (HTTP 404). Check NEON_PROJECT_ID.`,
+      );
     }
 
     const detail = (await response.text()).slice(0, 500);
     lastError = `HTTP ${response.status}: ${detail}`;
 
-    const retryable = response.status === 423 || response.status === 429 || response.status >= 500;
+    const retryable =
+      response.status === 423 ||
+      response.status === 429 ||
+      response.status >= 500;
     if (!retryable) break;
 
     await new Promise((resolve) => setTimeout(resolve, attempt * 3_000));
@@ -111,7 +119,9 @@ const { branches = [] } = await neon('/branches');
 const parentName = process.env.NEON_PARENT_BRANCH?.trim();
 const parent = parentName
   ? branches.find((branch) => branch.name === parentName)
-  : branches.find((branch) => branch.default === true || branch.primary === true);
+  : branches.find(
+      (branch) => branch.default === true || branch.primary === true,
+    );
 
 if (!parent) {
   throw new Error(
@@ -121,11 +131,20 @@ if (!parent) {
   );
 }
 
-const label = (process.env.RESTORE_POINT_LABEL || process.env.GITHUB_SHA || 'manual').slice(0, 12);
-const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
+const label = (
+  process.env.RESTORE_POINT_LABEL ||
+  process.env.GITHUB_SHA ||
+  'manual'
+).slice(0, 12);
+const stamp = new Date()
+  .toISOString()
+  .replace(/[-:]/g, '')
+  .replace(/\.\d+Z$/, 'Z');
 const name = `${PREFIX}${stamp}-${label}`;
 
-console.log(`Creating restore point "${name}" from "${parent.name}" (${parent.id})...`);
+console.log(
+  `Creating restore point "${name}" from "${parent.name}" (${parent.id})...`,
+);
 
 // No `endpoints` — a storage-only branch. Nothing connects to a restore point
 // until someone deliberately attaches a compute during recovery, and computes
@@ -137,15 +156,22 @@ const created = await neon('/branches', {
 
 const branchId = created?.branch?.id;
 if (!branchId) {
-  throw new Error(`Neon accepted the request but returned no branch id: ${JSON.stringify(created).slice(0, 300)}`);
+  throw new Error(
+    `Neon accepted the request but returned no branch id: ${JSON.stringify(created).slice(0, 300)}`,
+  );
 }
 
 console.log(`Restore point ready: ${name} (${branchId})`);
-console.log(`Recover with: neon branches restore ${parent.name} ${branchId}  # or use the Neon console`);
+console.log(
+  `Recover with: neon branches restore ${parent.name} ${branchId}  # or use the Neon console`,
+);
 
 if (process.env.GITHUB_OUTPUT) {
   const { appendFileSync } = await import('node:fs');
-  appendFileSync(process.env.GITHUB_OUTPUT, `branch-id=${branchId}\nbranch-name=${name}\n`);
+  appendFileSync(
+    process.env.GITHUB_OUTPUT,
+    `branch-id=${branchId}\nbranch-name=${name}\n`,
+  );
 }
 
 // Neon enforces a per-project branch limit. Without pruning, this script would
@@ -159,22 +185,31 @@ if (keep === 0) {
 const { branches: current = [] } = await neon('/branches');
 const ours = current
   .filter((branch) => branch.name.startsWith(PREFIX) && branch.id !== branchId)
-  .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  .sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  );
 
 // `keep` counts the restore point we just made, so retain keep-1 older ones.
 const stale = ours.slice(Math.max(keep - 1, 0));
 if (stale.length === 0) {
-  console.log(`Retention satisfied: ${ours.length + 1} restore point(s), keeping ${keep}.`);
+  console.log(
+    `Retention satisfied: ${ours.length + 1} restore point(s), keeping ${keep}.`,
+  );
   process.exit(0);
 }
 
 for (const branch of stale) {
   try {
-    await neon(`/branches/${encodeURIComponent(branch.id)}`, { method: 'DELETE' });
+    await neon(`/branches/${encodeURIComponent(branch.id)}`, {
+      method: 'DELETE',
+    });
     console.log(`Pruned old restore point ${branch.name} (${branch.id})`);
   } catch (error) {
     // A restore point we could not delete is not a reason to block a release.
     // The next run retries, and the branch limit is not yet reached.
-    console.warn(`Could not prune ${branch.name}: ${error instanceof Error ? error.message : error}`);
+    console.warn(
+      `Could not prune ${branch.name}: ${error instanceof Error ? error.message : error}`,
+    );
   }
 }

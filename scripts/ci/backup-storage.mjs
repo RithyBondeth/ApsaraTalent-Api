@@ -59,8 +59,12 @@ const missing = [
 if (missing.length > 0) {
   // Loud, not fatal-by-accident: a missing backup is a real problem, but it
   // should read as "not configured yet", not as a mysterious crash.
-  console.error(`Storage backup is not configured. Missing: ${missing.join(', ')}`);
-  console.error('See docs/STORAGE.md — "Backups" — for how to create the bucket and token.');
+  console.error(
+    `Storage backup is not configured. Missing: ${missing.join(', ')}`,
+  );
+  console.error(
+    'See docs/STORAGE.md — "Backups" — for how to create the bucket and token.',
+  );
   process.exit(1);
 }
 
@@ -109,7 +113,9 @@ const pending = [...live.entries()].filter(
 if (pending.length === 0) {
   console.log('\nBackup is already current. Nothing to copy.');
 } else {
-  console.log(`\n${dryRun ? 'would copy' : 'copying'} ${pending.length} object(s):`);
+  console.log(
+    `\n${dryRun ? 'would copy' : 'copying'} ${pending.length} object(s):`,
+  );
   let copied = 0;
   const failures = [];
   for (const [key] of pending) {
@@ -148,7 +154,11 @@ if (pending.length === 0) {
       // nothing at all. Found on 2026-08-08 with a token issued as "Object Read
       // only". A backup that lies about succeeding is worse than no backup,
       // because it stops anyone looking.
-      if (/AccessDenied|Unauthorized|InvalidAccessKeyId|SignatureDoesNotMatch/i.test(name)) {
+      if (
+        /AccessDenied|Unauthorized|InvalidAccessKeyId|SignatureDoesNotMatch/i.test(
+          name,
+        )
+      ) {
         failures.push(
           `${key}: ${name} — the backup token cannot write to ${backupBucket}. ` +
             'It needs Object Read & Write, not Read only.',

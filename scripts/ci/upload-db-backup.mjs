@@ -24,7 +24,8 @@ import { basename } from 'node:path';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
 const file = process.argv[2];
-if (!file) throw new Error('Usage: node scripts/ci/upload-db-backup.mjs <dump-file>');
+if (!file)
+  throw new Error('Usage: node scripts/ci/upload-db-backup.mjs <dump-file>');
 
 const endpoint = process.env.S3_ENDPOINT?.trim();
 const bucket = process.env.S3_BACKUP_BUCKET?.trim();
@@ -38,14 +39,18 @@ const missing = [
   !secretAccessKey && 'S3_BACKUP_SECRET_ACCESS_KEY',
 ].filter(Boolean);
 if (missing.length) {
-  throw new Error(`Database backup upload is not configured. Missing: ${missing.join(', ')}`);
+  throw new Error(
+    `Database backup upload is not configured. Missing: ${missing.join(', ')}`,
+  );
 }
 
 const { size } = await stat(file);
 if (size === 0) {
   // A zero-byte dump is the worst outcome: it uploads fine, looks like a
   // backup, and restores nothing.
-  throw new Error(`${file} is empty. pg_dump produced no output — do not treat this as a backup.`);
+  throw new Error(
+    `${file} is empty. pg_dump produced no output — do not treat this as a backup.`,
+  );
 }
 
 // Date-prefixed so the bucket sorts chronologically and a human can find
@@ -58,7 +63,9 @@ const s3 = new S3Client({
   credentials: { accessKeyId, secretAccessKey },
 });
 
-console.log(`Uploading ${(size / 1024 / 1024).toFixed(1)} MB -> ${bucket}/${key}`);
+console.log(
+  `Uploading ${(size / 1024 / 1024).toFixed(1)} MB -> ${bucket}/${key}`,
+);
 
 try {
   await s3.send(

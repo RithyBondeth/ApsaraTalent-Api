@@ -121,7 +121,11 @@ async function collect() {
 /** Turn SDK failures into something actionable at 3am. */
 function explain(error) {
   const name = error?.name || '';
-  if (/CredentialsProviderError|InvalidAccessKeyId|SignatureDoesNotMatch/i.test(name)) {
+  if (
+    /CredentialsProviderError|InvalidAccessKeyId|SignatureDoesNotMatch/i.test(
+      name,
+    )
+  ) {
     return new Error(
       `S3 credentials rejected or missing (${name}). Set S3_ACCESS_KEY_ID and ` +
         'S3_SECRET_ACCESS_KEY on this service — see docs/STORAGE.md §4. ' +
@@ -146,7 +150,10 @@ async function head(key) {
   try {
     return await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
   } catch (error) {
-    if (error?.$metadata?.httpStatusCode === 404 || error?.name === 'NotFound') {
+    if (
+      error?.$metadata?.httpStatusCode === 404 ||
+      error?.name === 'NotFound'
+    ) {
       return null;
     }
     throw explain(error);
@@ -297,4 +304,6 @@ if (problems.length > 0) {
   process.exit(1);
 }
 
-console.log(`\nVerified ${files.length} files. Safe to proceed to STORAGE.md §4.`);
+console.log(
+  `\nVerified ${files.length} files. Safe to proceed to STORAGE.md §4.`,
+);
