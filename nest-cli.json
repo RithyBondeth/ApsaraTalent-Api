@@ -1,24 +1,15 @@
 {
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
-  "sourceRoot": "apps/AparaTalent/src",
+  "sourceRoot": "apps/api-gateway/src",
   "compilerOptions": {
     "deleteOutDir": true,
     "webpack": true,
-    "tsConfigPath": "apps/AparaTalent/tsconfig.app.json"
+    "tsConfigPath": "apps/api-gateway/tsconfig.app.json"
   },
   "monorepo": true,
   "root": "apps/AparaTalent",
   "projects": {
-    "AparaTalent": {
-      "type": "application",
-      "root": "apps/AparaTalent",
-      "entryFile": "main",
-      "sourceRoot": "apps/AparaTalent/src",
-      "compilerOptions": {
-        "tsConfigPath": "apps/AparaTalent/tsconfig.app.json"
-      }
-    },
     "api-gateway": {
       "type": "application",
       "root": "apps/api-gateway",
