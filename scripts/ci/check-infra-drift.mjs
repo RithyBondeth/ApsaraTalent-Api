@@ -190,6 +190,75 @@ const TRIGGERLESS_SERVICES = [
   'blackbox-exporter',
 ];
 
+// Zero-downtime settings. railway.toml has always asked for these, and until
+// 2026-08-09 not one service had them: `railwayConfigFile` is null on every
+// service, so Railway never read that file — and now that seven services deploy
+// from an image there is no repo for it to read at all. They are set directly
+// on each service instead, which makes them dashboard-only state and therefore
+// this script's business.
+//
+// Without overlapSeconds a new instance replaces the old one before it is
+// serving, and without drainingSeconds in-flight requests are cut rather than
+// finished. Both are silent: deploys look identical either way, and the only
+// evidence is requests failing during a release.
+const ZERO_DOWNTIME_SERVICES = [
+  'API Gateway',
+  'Auth Service',
+  'User Service',
+  'Resume Builder Service',
+  'Chat Service',
+  'Job Service',
+  'Notification Service',
+];
+const EXPECTED_OVERLAP_SECONDS = 20;
+const EXPECTED_DRAINING_SECONDS = 30;
+
+// These two are the only place this script needs Railway's own identifiers.
+// Resolved from the project rather than hard-coded, so a recreated service
+// cannot leave a stale UUID silently checking nothing.
+const PROJECT_ID =
+  process.env.RAILWAY_PROJECT_ID || '25a2e450-b6e7-430c-868c-5adb27de4d2c';
+const ENVIRONMENT_ID =
+  process.env.RAILWAY_ENV_ID || 'db8b2f83-a515-4555-986a-3c79c2bb052c';
+
+function railwayApi(query, variables) {
+  const result = spawnSync(
+    'railway',
+    ['api', query, '--variables', JSON.stringify(variables), '--compact'],
+    { encoding: 'utf8', timeout: 60_000 },
+  );
+  const start = result.stdout.search(/[[{]/);
+  if (start === -1) {
+    throw new Error(
+      `railway api returned no JSON: ${(result.stderr || result.stdout || '').slice(0, 200)}`,
+    );
+  }
+  const body = JSON.parse(result.stdout.slice(start));
+  if (body.errors) {
+    throw new Error(
+      `railway api: ${body.errors
+        .map((e) => e.message)
+        .join('; ')
+        .slice(0, 200)}`,
+    );
+  }
+  return body.data;
+}
+
+const serviceIds = new Map(
+  railwayApi(
+    `query ($id: String!) { project(id: $id) { services { edges { node { id name } } } } }`,
+    { id: PROJECT_ID },
+  ).project.services.edges.map((edge) => [edge.node.name, edge.node.id]),
+);
+
+const GRACEFUL_QUERY = `query ($serviceId: String!, $environmentId: String!) {
+  serviceInstance(serviceId: $serviceId, environmentId: $environmentId) {
+    overlapSeconds
+    drainingSeconds
+  }
+}`;
+
 // Asserts what actually RAN, not what is configured. A configured source that
 // has never deployed proves nothing, and the deployment record is the same
 // place the rollback path reads from.
@@ -298,6 +367,40 @@ if (gitTriggered.length) {
 } else {
   notes.push(
     `no git-triggered deployments in the last ${GIT_TRIGGER_WINDOW} per service — CI is the only path to production`,
+  );
+}
+
+const missingZeroDowntime = [];
+for (const service of ZERO_DOWNTIME_SERVICES) {
+  const serviceId = serviceIds.get(service);
+  const instance = serviceId
+    ? railwayApi(GRACEFUL_QUERY, { serviceId, environmentId: ENVIRONMENT_ID })
+        .serviceInstance
+    : null;
+
+  if (!instance) {
+    missingZeroDowntime.push(`${service} (could not be read)`);
+  } else if (
+    instance.overlapSeconds !== EXPECTED_OVERLAP_SECONDS ||
+    instance.drainingSeconds !== EXPECTED_DRAINING_SECONDS
+  ) {
+    missingZeroDowntime.push(
+      `${service} (overlap=${instance.overlapSeconds}, draining=${instance.drainingSeconds})`,
+    );
+  }
+}
+
+if (missingZeroDowntime.length) {
+  failures.push(
+    `Zero-downtime settings are wrong on: ${missingZeroDowntime.join('; ')}. ` +
+      `Expected overlapSeconds=${EXPECTED_OVERLAP_SECONDS} and ` +
+      `drainingSeconds=${EXPECTED_DRAINING_SECONDS}. Without them a release ` +
+      `replaces an instance before it is serving and cuts in-flight requests, ` +
+      `which looks identical to a healthy deploy from the outside.`,
+  );
+} else {
+  notes.push(
+    `zero-downtime: overlap=${EXPECTED_OVERLAP_SECONDS}s draining=${EXPECTED_DRAINING_SECONDS}s on all ${ZERO_DOWNTIME_SERVICES.length} application services`,
   );
 }
 

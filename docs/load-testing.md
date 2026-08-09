@@ -29,12 +29,26 @@ Run it locally the same way CI does:
 E2E_LOAD=1 npm run test:e2e
 ```
 
-**The thresholds are a starting point, not a calibrated gate.** `LOAD_MAX_P95_MS`
-is 2000ms, which catches a hot path that has gone seconds slow or that errors
-under concurrency — it will not catch a regression from 50ms to 150ms. After the
-first green run, take the p95 the harness prints and set the threshold to
-roughly 3x it, then tighten as the number settles. Every value is overridable
-from the workflow, so calibrating is a one-line change.
+`LOAD_MAX_P95_MS` is **500ms**, calibrated from three consecutive hosted-runner
+releases rather than guessed:
+
+| run | p95 | errors |
+| --- | --- | --- |
+| 1 | 111.0ms | 0.37% |
+| 2 | 169.1ms | 0.26% |
+| 3 | 110.4ms | 0 |
+
+500ms is roughly 3x the worst of those. The spread between 110ms and 169ms under
+identical conditions is why the multiple is 3x and not 1.5x — a shared runner
+varies by half again on its own.
+
+**Know what this endpoint costs before raising concurrency.** `/health/ready`
+pings the database, Redis *and* all six internal services over TCP, so every
+request fans out to eight dependencies. At ~287 rps that is ~2,300 backend
+operations per second, and the occasional 503 in the runs above is that fan-out
+saturating rather than an application fault — production probes this endpoint
+every 15-30 seconds, not 287 times a second. The 1% error tolerance stays a real
+gate: it is what would catch readiness genuinely breaking.
 
 Do not tighten past what a shared runner can hold. A flaky gate is worse than no
 gate: people rerun it until it passes, and learn to ignore the one signal it
