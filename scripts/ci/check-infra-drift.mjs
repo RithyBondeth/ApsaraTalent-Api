@@ -149,6 +149,78 @@ if (!watchdog) {
   notes.push('alertmanager: dead-man’s switch armed');
 }
 
+// Services deliberately deployed from a pre-built image rather than rebuilt by
+// Railway, mapped to the image repository each one must be running.
+//
+// This is dashboard-only state with no representation in the repository, which
+// puts it in exactly the category this script exists for. If a source is
+// reverted to the git repo — by hand, or by the GitHub integration
+// reconnecting — then `redeploy --from-source` starts building from source
+// again. The release still goes green, the deploy step still passes, and the
+// guarantee that the artifact Trivy scanned is the artifact serving is silently
+// gone. Nothing else would ever say so.
+//
+// Keep in step with the deploy steps in .github/workflows/deploy.yml that call
+// railway-deploy-from-source.sh. A service listed here whose step still calls
+// railway-up.sh would fail this check, which is the correct direction to be
+// wrong in.
+const IMAGE_SOURCED = {
+  'Notification Service':
+    'ghcr.io/rithybondeth/apsaratalent-notification-service',
+};
+
+// Asserts what actually RAN, not what is configured. A configured source that
+// has never deployed proves nothing, and the deployment record is the same
+// place the rollback path reads from.
+function latestDeploymentMeta(service) {
+  const result = spawnSync(
+    'railway',
+    ['deployment', 'list', '--service', service, '--limit', '1', '--json'],
+    { encoding: 'utf8', timeout: 60_000 },
+  );
+  if (result.status !== 0) {
+    throw new Error(
+      `railway deployment list failed for "${service}": ${result.stderr?.trim() || result.error?.message || 'unknown error'}`,
+    );
+  }
+  // The CLI intermittently prefixes stdout with an update banner, so take the
+  // JSON rather than assuming it is alone. Same hazard as digest-probe.mjs.
+  const start = result.stdout.search(/[[{]/);
+  if (start === -1) {
+    throw new Error(`railway returned no JSON for "${service}"`);
+  }
+  const parsed = JSON.parse(result.stdout.slice(start));
+  const list = Array.isArray(parsed)
+    ? parsed
+    : parsed.deployments || parsed.data || [];
+  return list[0] || null;
+}
+
+for (const [service, expectedRepository] of Object.entries(IMAGE_SOURCED)) {
+  const deployment = latestDeploymentMeta(service);
+  const image = deployment?.meta?.image;
+
+  if (!deployment) {
+    failures.push(
+      `${service}: no deployments found — cannot verify its source.`,
+    );
+  } else if (!image) {
+    failures.push(
+      `${service} last deployed from SOURCE, not from ${expectedRepository}. ` +
+        `Railway rebuilt it, so the image Trivy scanned is not what is running. ` +
+        `Set the service source back to the image in the Railway dashboard.`,
+    );
+  } else if (!image.startsWith(`${expectedRepository}:`)) {
+    failures.push(
+      `${service} is running ${image}, expected ${expectedRepository}:<tag>.`,
+    );
+  } else {
+    notes.push(
+      `${service}: running ${image} (digest ${(deployment.meta.imageDigest || 'unknown').slice(0, 19)}...)`,
+    );
+  }
+}
+
 // Neon's point-in-time-recovery window is the whole database recovery story
 // between nightly dumps, and RUNBOOK §7 has carried "retention window is
 // unconfirmed" as an open item — "PITR you have not checked is not a backup
