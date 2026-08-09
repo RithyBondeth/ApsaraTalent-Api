@@ -1,0 +1,68 @@
+name: Rehearse migrations
+
+# The rehearsal inside deploy.yml only runs on a push to main, which means a
+# migration is first proven against real data at RELEASE time — after review,
+# after merge, with the approval gate the only thing left between it and
+# production.
+#
+# This runs the same rehearsal against any ref on demand, so a migration can be
+# proven while it is still a pull request and still cheap to change.
+#
+# It is safe to run at any time and against any branch: db:rehearse never
+# receives DATABASE_URL. It branches production copy-on-write, sets
+# DATABASE_URL itself to point at that branch, and deletes it on the way out —
+# including when a phase fails. Production is never written to.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Neon enforces a per-project branch limit, and every rehearsal creates one.
+  # Serialising them also keeps this from racing the rehearsal inside a release.
+  group: migration-rehearsal
+  cancel-in-progress: false
+
+jobs:
+  rehearse:
+    name: Rehearse ${{ github.ref_name }} against production data
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Rehearse this branch's migrations
+        run: npm run db:rehearse
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+
+      - name: Explain a failure
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo "### ❌ These migrations did not survive rehearsal"
+            echo ""
+            echo "Applied to a copy-on-write branch of production. **Production was"
+            echo "not touched** — this workflow never receives DATABASE_URL."
+            echo ""
+            echo "- **Forward** failed: the migration does not apply to the rows that"
+            echo "  are actually in production. Unit tests cannot see this; they run"
+            echo "  against a mocked QueryRunner."
+            echo "- **Reverse** failed: \`down()\` is broken. It is the first move in"
+            echo "  docs/RUNBOOK.md §5, so fix it before merging."
+            echo "- **Re-apply** failed: reversible once but not twice, so"
+            echo "  revert-fix-redeploy would fail on the redeploy."
+          } >> "$GITHUB_STEP_SUMMARY"
