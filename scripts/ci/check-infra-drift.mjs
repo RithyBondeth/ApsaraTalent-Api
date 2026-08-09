@@ -174,6 +174,10 @@ const IMAGE_SOURCED = {
   'Job Service': 'ghcr.io/rithybondeth/apsaratalent-job-service',
   'Notification Service':
     'ghcr.io/rithybondeth/apsaratalent-notification-service',
+  alertmanager: 'ghcr.io/rithybondeth/apsaratalent-monitoring-alertmanager',
+  'blackbox-exporter': 'ghcr.io/rithybondeth/apsaratalent-monitoring-blackbox',
+  prometheus: 'ghcr.io/rithybondeth/apsaratalent-monitoring-prometheus',
+  grafana: 'ghcr.io/rithybondeth/apsaratalent-monitoring-grafana',
 };
 
 // The services that had a GitHub deployment trigger before 2026-08-09.

@@ -133,10 +133,10 @@ jobs:
       # validates the harness configuration but sends no requests, so until now
       # nothing has ever measured whether a change made a hot path slower.
       #
-      # Thresholds are deliberately loose (see test/e2e/run-e2e.mjs): a shared
-      # runner cannot support a tight latency gate without becoming flaky, and a
-      # gate people rerun until it passes is worse than no gate. This catches a
-      # hot path becoming several times slower or erroring under concurrency.
+      # The p95 threshold is calibrated from three hosted-runner releases (see
+      # test/e2e/run-e2e.mjs). It is 3x the worst observed, because a shared runner
+      # varies by half again on its own and a gate that fails on runner weather is
+      # one people rerun until it passes.
       - name: Run isolated end-to-end tests and load phase
         run: npm run test:e2e
         env:
@@ -679,16 +679,16 @@ jobs:
         run: scripts/ci/railway-deploy-from-source.sh "Notification Service"
 
       - name: Deploy Alertmanager
-        run: scripts/ci/railway-up.sh alertmanager
+        run: scripts/ci/railway-deploy-from-source.sh alertmanager
 
       - name: Deploy blackbox exporter
-        run: scripts/ci/railway-up.sh blackbox-exporter
+        run: scripts/ci/railway-deploy-from-source.sh blackbox-exporter
 
       - name: Deploy Prometheus
-        run: scripts/ci/railway-up.sh prometheus
+        run: scripts/ci/railway-deploy-from-source.sh prometheus
 
       - name: Deploy Grafana
-        run: scripts/ci/railway-up.sh grafana
+        run: scripts/ci/railway-deploy-from-source.sh grafana
 
       - name: Deploy API gateway
         run: scripts/ci/railway-deploy-from-source.sh "API Gateway"
