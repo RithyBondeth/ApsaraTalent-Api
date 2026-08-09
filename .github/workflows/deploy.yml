@@ -128,8 +128,19 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-      - name: Run isolated end-to-end tests
+      # E2E_LOAD adds a load phase inside the same run, against the same
+      # already-standing isolated stack. `test:load:check` in the build job
+      # validates the harness configuration but sends no requests, so until now
+      # nothing has ever measured whether a change made a hot path slower.
+      #
+      # Thresholds are deliberately loose (see test/e2e/run-e2e.mjs): a shared
+      # runner cannot support a tight latency gate without becoming flaky, and a
+      # gate people rerun until it passes is worse than no gate. This catches a
+      # hot path becoming several times slower or erroring under concurrency.
+      - name: Run isolated end-to-end tests and load phase
         run: npm run test:e2e
+        env:
+          E2E_LOAD: '1'
 
   build:
     name: Typecheck and build every service
