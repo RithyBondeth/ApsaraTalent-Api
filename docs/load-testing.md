@@ -42,13 +42,27 @@ releases rather than guessed:
 identical conditions is why the multiple is 3x and not 1.5x — a shared runner
 varies by half again on its own.
 
-**Know what this endpoint costs before raising concurrency.** `/health/ready`
-pings the database, Redis *and* all six internal services over TCP, so every
-request fans out to eight dependencies. At ~287 rps that is ~2,300 backend
-operations per second, and the occasional 503 in the runs above is that fan-out
-saturating rather than an application fault — production probes this endpoint
-every 15-30 seconds, not 287 times a second. The 1% error tolerance stays a real
-gate: it is what would catch readiness genuinely breaking.
+**Concurrency is 5, and that is deliberate.** `/health/ready` pings the database,
+Redis *and* all six internal services over TCP, so every request fans out to
+eight dependencies. It ran at concurrency 20 for five releases, which was ~2,300
+backend operations per second, and the internal pings intermittently timed out:
+
+| run | error rate |
+| --- | --- |
+| 1 | 0.37% |
+| 2 | 0.26% |
+| 3 | 0% |
+| 4 | 0.26% |
+| 5 | **3.3%** — failed the release |
+
+The 1% tolerance sits inside that spread, so run 5 failed a release for runner
+contention rather than for anything in the code. Concurrency 5 keeps the real
+dependency fan-out in the measurement — the reason this endpoint was chosen —
+while staying off the saturation cliff. Nothing in production probes readiness
+more than every 15-30 seconds, so 20 was never a realistic shape of load.
+
+The 1% error tolerance stays a real gate. At this concurrency a 503 should mean
+readiness is genuinely broken.
 
 Do not tighten past what a shared runner can hold. A flaky gate is worse than no
 gate: people rerun it until it passes, and learn to ignore the one signal it
