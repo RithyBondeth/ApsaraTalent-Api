@@ -629,8 +629,21 @@ jobs:
       - name: Deploy job service
         run: scripts/ci/railway-up.sh "Job Service"
 
+      # CANARY — the only service on the image path. The other ten still
+      # rebuild via `railway up`, deliberately: converting all eleven at once is
+      # how #78 failed, and this one is the safest to be wrong about because
+      # nothing in the gateway request path calls into it.
+      #
+      # Its source was pointed at :main by hand, with account credentials. The
+      # project token used here cannot change a source (that IS what broke #78)
+      # but it can deploy, which is the whole basis of this approach.
+      #
+      # If this misbehaves, the fallback is one dashboard change — set the
+      # source back to the repo with builder RAILPACK and dockerfilePath
+      # /apps/notification-service/Dockerfile — and revert this step to
+      # `scripts/ci/railway-up.sh "Notification Service"`.
       - name: Deploy notification service
-        run: scripts/ci/railway-up.sh "Notification Service"
+        run: scripts/ci/railway-deploy-from-source.sh "Notification Service"
 
       - name: Deploy Alertmanager
         run: scripts/ci/railway-up.sh alertmanager
