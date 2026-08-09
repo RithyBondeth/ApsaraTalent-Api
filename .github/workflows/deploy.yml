@@ -691,7 +691,7 @@ jobs:
         run: scripts/ci/railway-up.sh grafana
 
       - name: Deploy API gateway
-        run: scripts/ci/railway-up.sh "API Gateway"
+        run: scripts/ci/railway-deploy-from-source.sh "API Gateway"
 
       # EXPECTED_RELEASE makes this prove the NEW revision is serving. Without
       # it, a `railway up` that silently changed nothing left the previous
