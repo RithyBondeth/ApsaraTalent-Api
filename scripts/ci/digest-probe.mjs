@@ -116,12 +116,27 @@ function gql(query, variables = {}) {
     throw new Error(`Railway API call failed: ${detail.slice(0, 400)}`);
   }
 
-  let body;
-  try {
-    body = JSON.parse(stdout);
-  } catch {
-    throw new Error(`Railway API returned non-JSON: ${stdout.slice(0, 200)}`);
-  }
+  // The CLI intermittently writes banners to stdout — an update notice, a
+  // missing-agent-tooling notice — mixed in with the payload. Parsing the whole
+  // stream would then throw at an arbitrary point in the experiment and strand
+  // a half-created service, so pull the JSON out rather than assuming it is
+  // alone. `--compact` puts it on one line; take the last line that parses.
+  const body = (() => {
+    const lines = stdout
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith('{') || line.startsWith('['));
+    for (const line of lines.reverse()) {
+      try {
+        return JSON.parse(line);
+      } catch {
+        continue;
+      }
+    }
+    throw new Error(
+      `Railway API returned no parsable JSON. Output was: ${stdout.slice(0, 300)}`,
+    );
+  })();
   if (body.errors) {
     throw new Error(
       `Railway API: ${body.errors
@@ -239,6 +254,9 @@ try {
     {
       input: {
         projectId: PROJECT_ID,
+        // Scoped explicitly rather than left to default, so the probe cannot
+        // materialise in an environment nobody was looking at.
+        environmentId: ENVIRONMENT_ID,
         name: serviceName,
         source: { image: IMAGE_A },
       },
@@ -264,9 +282,19 @@ try {
       input: { source: { image: IMAGE_B } },
     },
   );
+  // serviceInstanceDeployV2, NOT serviceInstanceRedeploy. They are different
+  // operations and the difference is the whole experiment: `redeploy` re-runs
+  // the PREVIOUS deployment's image, so the first attempt at this probe saw
+  // deployment 2 come back on nginx:1.29 after the source had been moved to
+  // 1.28. `deploy` resolves the current source.
+  //
+  // This matters for the real thing too: option 2 in #79 describes CI calling
+  // `redeploy --from-source` after pushing a new image to a mutable tag. If
+  // that maps to serviceInstanceRedeploy, it would redeploy the OLD image and
+  // the release would silently ship nothing.
   gql(
     `mutation ($environmentId: String!, $serviceId: String!) {
-      serviceInstanceRedeploy(environmentId: $environmentId, serviceId: $serviceId)
+      serviceInstanceDeployV2(environmentId: $environmentId, serviceId: $serviceId)
     }`,
     { environmentId: ENVIRONMENT_ID, serviceId },
   );
