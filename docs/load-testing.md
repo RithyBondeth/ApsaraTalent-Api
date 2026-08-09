@@ -10,6 +10,36 @@ Validate the configuration without sending requests:
 npm run test:load:check
 ```
 
+## In CI
+
+Every push and pull request runs a load phase inside the end-to-end run, against
+the same isolated stack the e2e specs use — the gateway on `127.0.0.1:13000`,
+backed by the throwaway Postgres and Redis on 15432/16379. It runs there because
+that is the only point at which the stack is already standing; a separate job
+would have to build all of it again to measure the same thing.
+
+It probes `/health/ready` rather than `/health`, because readiness touches the
+database and Redis and so measures the path a real request depends on. A
+liveness handler returns a constant and would stay fast no matter what
+regressed.
+
+Run it locally the same way CI does:
+
+```bash
+E2E_LOAD=1 npm run test:e2e
+```
+
+**The thresholds are a starting point, not a calibrated gate.** `LOAD_MAX_P95_MS`
+is 2000ms, which catches a hot path that has gone seconds slow or that errors
+under concurrency — it will not catch a regression from 50ms to 150ms. After the
+first green run, take the p95 the harness prints and set the threshold to
+roughly 3x it, then tighten as the number settles. Every value is overridable
+from the workflow, so calibrating is a one-line change.
+
+Do not tighten past what a shared runner can hold. A flaky gate is worse than no
+gate: people rerun it until it passes, and learn to ignore the one signal it
+exists to give.
+
 Run the default local health test:
 
 ```bash

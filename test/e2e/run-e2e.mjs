@@ -306,6 +306,50 @@ try {
       },
     },
   );
+
+  // The load harness has existed since the start but has never actually run in
+  // CI — only `test:load:check`, which validates configuration and sends no
+  // requests. So nothing has ever measured whether a change makes a hot path
+  // slower, and a 3x regression would reach production unnoticed.
+  //
+  // It runs HERE, inside the e2e run, because this is the only place the stack
+  // is already standing: same isolated Postgres and Redis on 15432/16379, same
+  // gateway on 13000, torn down by the same `finally`. A separate CI job would
+  // have to build all of that a second time to measure the same thing.
+  //
+  // Opt-in so a local `npm run test:e2e` does not get slower by default.
+  if (process.env.E2E_LOAD === '1') {
+    process.stdout.write('\nRunning load phase against the e2e gateway...\n');
+    await run(process.execPath, [join(root, 'scripts/load/smoke-load.mjs')], {
+      env: {
+        ...process.env,
+        ...env,
+        LOAD_BASE_URL: 'http://127.0.0.1:13000',
+        // Readiness, not liveness: /health/ready touches the database and
+        // Redis, so this measures the path a real request depends on rather
+        // than a constant handler that would stay fast whatever regressed.
+        LOAD_PATHS: process.env.LOAD_PATHS ?? '/health/ready',
+        LOAD_CONCURRENCY: process.env.LOAD_CONCURRENCY ?? '20',
+        LOAD_DURATION_SECONDS: process.env.LOAD_DURATION_SECONDS ?? '20',
+        // A STARTING point, not a calibrated gate, and loose enough that it
+        // should be described honestly: 2000ms catches a hot path that has
+        // gone seconds slow or that errors under concurrency. It will NOT
+        // catch a 3x regression from 50ms to 150ms.
+        //
+        // Calibrate after the first green run. The harness prints p95 in its
+        // JSON summary, so take the observed value against the real gateway
+        // and set LOAD_MAX_P95_MS to roughly 3x it, then tighten as the
+        // number settles — the same ratchet idea as strict-null-baseline.json.
+        //
+        // Do not tighten past what a shared runner can hold. A flaky gate
+        // that people rerun until it passes is worse than no gate, because it
+        // teaches everyone to ignore the signal it exists to give.
+        LOAD_MAX_P95_MS: process.env.LOAD_MAX_P95_MS ?? '2000',
+        LOAD_MAX_ERROR_RATE: process.env.LOAD_MAX_ERROR_RATE ?? '0.01',
+        LOAD_MIN_RPS: process.env.LOAD_MIN_RPS ?? '20',
+      },
+    });
+  }
 } catch (error) {
   exitCode = 1;
   process.stderr.write(
