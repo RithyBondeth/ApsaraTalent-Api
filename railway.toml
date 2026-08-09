@@ -46,6 +46,15 @@ builder = "DOCKERFILE"
 # - blackbox-exporter -> railway/blackbox-exporter.toml
 # - Grafana           -> railway/grafana.toml
 
+# NOTE: Railway does not read this section. `railwayConfigFile` is unset on
+# every service, and seven services now deploy from a GHCR image where there is
+# no repository to read a config file from at all. Until 2026-08-09 that meant
+# overlapSeconds and drainingSeconds had never applied to anything — deploys
+# replaced an instance before it was serving and cut in-flight requests.
+#
+# They are now set directly on each service instead, and asserted by
+# scripts/ci/check-infra-drift.mjs so they cannot silently revert. This block is
+# kept as the documented intent; the drift check is what enforces it.
 [deploy]
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10

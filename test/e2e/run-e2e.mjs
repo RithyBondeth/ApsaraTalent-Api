@@ -331,20 +331,31 @@ try {
         LOAD_PATHS: process.env.LOAD_PATHS ?? '/health/ready',
         LOAD_CONCURRENCY: process.env.LOAD_CONCURRENCY ?? '20',
         LOAD_DURATION_SECONDS: process.env.LOAD_DURATION_SECONDS ?? '20',
-        // A STARTING point, not a calibrated gate, and loose enough that it
-        // should be described honestly: 2000ms catches a hot path that has
-        // gone seconds slow or that errors under concurrency. It will NOT
-        // catch a 3x regression from 50ms to 150ms.
+        // Calibrated from three consecutive hosted-runner releases rather
+        // than guessed:
         //
-        // Calibrate after the first green run. The harness prints p95 in its
-        // JSON summary, so take the observed value against the real gateway
-        // and set LOAD_MAX_P95_MS to roughly 3x it, then tighten as the
-        // number settles — the same ratchet idea as strict-null-baseline.json.
+        //   p95 111.0ms   0.37% errors
+        //   p95 169.1ms   0.26% errors
+        //   p95 110.4ms   0    errors
         //
-        // Do not tighten past what a shared runner can hold. A flaky gate
-        // that people rerun until it passes is worse than no gate, because it
-        // teaches everyone to ignore the signal it exists to give.
-        LOAD_MAX_P95_MS: process.env.LOAD_MAX_P95_MS ?? '2000',
+        // 500ms is ~3x the worst of those. The spread between 110ms and 169ms
+        // in identical conditions is why it is 3x and not 1.5x: a shared
+        // runner varies by half again on its own, and a gate that fails on
+        // runner weather is one people rerun until it passes, which teaches
+        // everyone to ignore the signal it exists to give.
+        //
+        // Down from the 2000ms placeholder, which had an 18x margin and would
+        // have caught almost nothing.
+        //
+        // Note what this endpoint costs before loosening concurrency:
+        // /health/ready pings the database, Redis AND all six internal
+        // services over TCP, so every request fans out to eight dependencies.
+        // At ~287 rps that is ~2,300 backend operations per second, and the
+        // occasional 503 in the runs above is that fan-out saturating — not
+        // an application fault. Production probes this endpoint every 15-30s.
+        // The 1% error tolerance is deliberately kept as a real gate: it is
+        // what would catch readiness genuinely breaking.
+        LOAD_MAX_P95_MS: process.env.LOAD_MAX_P95_MS ?? '500',
         LOAD_MAX_ERROR_RATE: process.env.LOAD_MAX_ERROR_RATE ?? '0.01',
         LOAD_MIN_RPS: process.env.LOAD_MIN_RPS ?? '20',
       },
