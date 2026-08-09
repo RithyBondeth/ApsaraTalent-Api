@@ -169,13 +169,35 @@ const IMAGE_SOURCED = {
     'ghcr.io/rithybondeth/apsaratalent-notification-service',
 };
 
+// The services that had a GitHub deployment trigger before 2026-08-09.
+// alertmanager, grafana, prometheus and Redis never had one, which is why they
+// were the only services deploying once per release.
+const TRIGGERLESS_SERVICES = [
+  'API Gateway',
+  'Auth Service',
+  'User Service',
+  'Resume Builder Service',
+  'Chat Service',
+  'Job Service',
+  'Notification Service',
+  'blackbox-exporter',
+];
+
 // Asserts what actually RAN, not what is configured. A configured source that
 // has never deployed proves nothing, and the deployment record is the same
 // place the rollback path reads from.
-function latestDeploymentMeta(service) {
+function listDeployments(service, limit = 1) {
   const result = spawnSync(
     'railway',
-    ['deployment', 'list', '--service', service, '--limit', '1', '--json'],
+    [
+      'deployment',
+      'list',
+      '--service',
+      service,
+      '--limit',
+      String(limit),
+      '--json',
+    ],
     { encoding: 'utf8', timeout: 60_000 },
   );
   if (result.status !== 0) {
@@ -190,11 +212,13 @@ function latestDeploymentMeta(service) {
     throw new Error(`railway returned no JSON for "${service}"`);
   }
   const parsed = JSON.parse(result.stdout.slice(start));
-  const list = Array.isArray(parsed)
+  return Array.isArray(parsed)
     ? parsed
     : parsed.deployments || parsed.data || [];
-  return list[0] || null;
 }
+
+const latestDeploymentMeta = (service) =>
+  listDeployments(service, 1)[0] || null;
 
 for (const [service, expectedRepository] of Object.entries(IMAGE_SOURCED)) {
   const deployment = latestDeploymentMeta(service);
@@ -219,6 +243,55 @@ for (const [service, expectedRepository] of Object.entries(IMAGE_SOURCED)) {
       `${service}: running ${image} (digest ${(deployment.meta.imageDigest || 'unknown').slice(0, 19)}...)`,
     );
   }
+}
+
+// Railway's GitHub integration deployed every service on push to main, one
+// second after the merge, with checkSuites=false — so production ran new code
+// before the tests finished, before the migration rehearsal, and before the
+// approval gate. The gate protected the migrations, which only run in CI, but
+// not the application code, and nothing said so: every release simply deployed
+// twice and the second one overwrote the first.
+//
+// Eight triggers were deleted on 2026-08-09. CI is now the only path to
+// production, matching `git.deploymentEnabled.main: false` on the web side.
+//
+// Asserted by symptom rather than by configuration. Reading the triggers
+// themselves needs `railway api`, and it is unknown whether the project token
+// this job runs with may call it — whereas `railway deployment list` is the
+// command the deploy path already uses. A git-triggered deployment is
+// unmistakable in the record: it carries commitHash, repo and branch, while a
+// CI deployment carries none of them.
+// Deployments before this are history, not drift: every service legitimately
+// has git-triggered deployments from before the triggers were removed, and
+// failing on those would make this check permanently red and therefore ignored.
+const TRIGGERS_REMOVED_AT = Date.parse('2026-08-09T09:20:00Z');
+const GIT_TRIGGER_WINDOW = 10;
+const gitTriggered = [];
+
+for (const service of TRIGGERLESS_SERVICES) {
+  const recent = listDeployments(service, GIT_TRIGGER_WINDOW);
+  const offenders = recent.filter(
+    (d) => d?.meta?.commitHash && Date.parse(d.createdAt) > TRIGGERS_REMOVED_AT,
+  );
+  if (offenders.length) {
+    const newest = offenders[0];
+    gitTriggered.push(
+      `${service} (latest ${newest.createdAt}, commit ${String(newest.meta.commitHash).slice(0, 8)})`,
+    );
+  }
+}
+
+if (gitTriggered.length) {
+  failures.push(
+    `Railway deployed these services from git, not from CI: ${gitTriggered.join('; ')}. ` +
+      `A deployment trigger has been re-added, so production is being deployed on push — ` +
+      `before tests, before the migration rehearsal, and before the approval gate. ` +
+      `Remove it under the service's Settings > Source in the Railway dashboard.`,
+  );
+} else {
+  notes.push(
+    `no git-triggered deployments in the last ${GIT_TRIGGER_WINDOW} per service — CI is the only path to production`,
+  );
 }
 
 // Neon's point-in-time-recovery window is the whole database recovery story
