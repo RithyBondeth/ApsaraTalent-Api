@@ -197,12 +197,26 @@ jobs:
 
       # Only from main. A pull request builds and scans the identical image but
       # must not be able to publish one.
+      #
+      # Two tags, one image. The SHA tag is the immutable identity and stays the
+      # thing Trivy scans below. `:main` is a moving pointer to the same digest,
+      # and exists because a Railway service source has to be set by hand with
+      # account credentials — the CI project token cannot change it (#78). A
+      # service pinned to `:main` can therefore be pointed once and then
+      # redeployed by CI forever.
+      #
+      # Moving the tag is safe for recovery: the digest probe established that
+      # Railway records the RESOLVED digest per deployment and rolls back to
+      # that, not to whatever the tag points at now. See scripts/ci/digest-probe.mjs.
       - name: Publish to GHCR
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
         run: |
+          image="ghcr.io/rithybondeth/apsaratalent-${{ matrix.service }}"
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-          docker push "ghcr.io/rithybondeth/apsaratalent-${{ matrix.service }}:${{ github.sha }}"
+          docker push "${image}:${{ github.sha }}"
+          docker tag "${image}:${{ github.sha }}" "${image}:main"
+          docker push "${image}:main"
           docker logout ghcr.io
 
       # The image is scanned, not merely built. `npm audit` sees the JavaScript
@@ -339,12 +353,16 @@ jobs:
           --tag ghcr.io/rithybondeth/apsaratalent-monitoring-${{ matrix.service }}:${{ github.sha }}
           .
 
+      # Same two-tag scheme as the application services above.
       - name: Publish to GHCR
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
         run: |
+          image="ghcr.io/rithybondeth/apsaratalent-monitoring-${{ matrix.service }}"
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-          docker push "ghcr.io/rithybondeth/apsaratalent-monitoring-${{ matrix.service }}:${{ github.sha }}"
+          docker push "${image}:${{ github.sha }}"
+          docker tag "${image}:${{ github.sha }}" "${image}:main"
+          docker push "${image}:main"
           docker logout ghcr.io
 
       # These four are upstream images with a config layer on top, so their CVEs
