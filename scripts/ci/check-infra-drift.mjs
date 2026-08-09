@@ -165,6 +165,12 @@ if (!watchdog) {
 // railway-up.sh would fail this check, which is the correct direction to be
 // wrong in.
 const IMAGE_SOURCED = {
+  'Auth Service': 'ghcr.io/rithybondeth/apsaratalent-auth-service',
+  'User Service': 'ghcr.io/rithybondeth/apsaratalent-user-service',
+  'Resume Builder Service':
+    'ghcr.io/rithybondeth/apsaratalent-resume-builder-service',
+  'Chat Service': 'ghcr.io/rithybondeth/apsaratalent-chat-service',
+  'Job Service': 'ghcr.io/rithybondeth/apsaratalent-job-service',
   'Notification Service':
     'ghcr.io/rithybondeth/apsaratalent-notification-service',
 };
