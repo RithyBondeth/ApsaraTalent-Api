@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { RpcException } from '@nestjs/microservices';
 import { UserService } from './user.service';
+import { generateUserKey } from '@app/common/redis/redis-keys.util';
 
 describe('UserService', () => {
   const users = {
@@ -12,12 +13,6 @@ describe('UserService', () => {
   const scopes = { find: jest.fn(), createQueryBuilder: jest.fn() };
   const logger = { info: jest.fn(), warn: jest.fn(), error: jest.fn() };
   const redis = {
-    generateListKey: jest.fn(() => 'users'),
-    generateUserKey: jest.fn((_type, id) => `user:${id}`),
-    generateEmployeeFavoritesKey: jest.fn(() => 'employee-favorites'),
-    generateEmployeeFavoriteCountKey: jest.fn(() => 'employee-favorite-count'),
-    generateCompanyFavoritesKey: jest.fn(() => 'company-favorites'),
-    generateCompanyFavoriteCountKey: jest.fn(() => 'company-favorite-count'),
     get: jest.fn(),
     set: jest.fn(),
     del: jest.fn(),
@@ -114,7 +109,7 @@ describe('UserService', () => {
     });
     expect(result.id).toBe('user-1');
     expect(redis.set).toHaveBeenCalledWith(
-      'user:user-1',
+      generateUserKey('detail', 'user-1'),
       result,
       expect.any(Number),
     );
@@ -204,9 +199,13 @@ describe('UserService', () => {
   it('clears every current-user cache namespace', async () => {
     await service.clearCurrentUserCache({ userId: 'user-1' });
     expect(redis.del).toHaveBeenCalledTimes(3);
-    expect(redis.generateUserKey).toHaveBeenCalledWith('detail', 'user-1');
-    expect(redis.generateUserKey).toHaveBeenCalledWith('profile', 'user-1');
-    expect(redis.generateUserKey).toHaveBeenCalledWith('settings', 'user-1');
+    expect(redis.del).toHaveBeenCalledWith(generateUserKey('detail', 'user-1'));
+    expect(redis.del).toHaveBeenCalledWith(
+      generateUserKey('profile', 'user-1'),
+    );
+    expect(redis.del).toHaveBeenCalledWith(
+      generateUserKey('settings', 'user-1'),
+    );
   });
 
   it('treats cache warming failure as non-fatal', async () => {

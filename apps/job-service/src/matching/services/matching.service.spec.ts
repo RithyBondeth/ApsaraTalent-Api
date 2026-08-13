@@ -1,6 +1,8 @@
 import 'reflect-metadata';
 import { MatchingService } from './matching.service';
-import { createMatchingFixtures, expectRpc } from './matching-test-fixtures';
+import { MatchingQueryService } from './matching-query.service';
+import { computeSkillScore } from '../utils/matching-score.util';
+import { createMatchingFixtures, expectRpc } from '../matching-test-fixtures';
 
 describe('MatchingService', () => {
   const {
@@ -29,6 +31,14 @@ describe('MatchingService', () => {
     logger as any,
     redis as any,
     notifications as any,
+  );
+
+  // Read-side methods moved to MatchingQueryService; it shares the same
+  // repository, logger and cache fixtures, so behaviour under test is unchanged.
+  const queryService = new MatchingQueryService(
+    matching as any,
+    logger as any,
+    redis as any,
   );
 
   beforeEach(() => {
@@ -170,7 +180,7 @@ describe('MatchingService', () => {
     const cached = [{ id: 'company-1' }];
     redis.get.mockResolvedValue(cached);
     await expect(
-      service.findCurrentEmployeeMatching({ eid: 'employee-1' }),
+      queryService.findCurrentEmployeeMatching({ eid: 'employee-1' }),
     ).resolves.toBe(cached);
     expect(matching.find).not.toHaveBeenCalled();
   });
@@ -179,7 +189,7 @@ describe('MatchingService', () => {
     matching.find.mockResolvedValue([
       { company, skillScore: 50, isMatched: true },
     ]);
-    const result = await service.findCurrentEmployeeMatching({
+    const result = await queryService.findCurrentEmployeeMatching({
       eid: 'employee-1',
     });
     expect(result[0].skillScore).toBe(50);
@@ -188,7 +198,7 @@ describe('MatchingService', () => {
 
   it('counts and caches company matches', async () => {
     matching.count.mockResolvedValue(7);
-    const result = await service.findCurrentCompanyMatchingCount({
+    const result = await queryService.findCurrentCompanyMatchingCount({
       cid: 'company-1',
     });
     expect(result.count).toBe(7);
@@ -200,10 +210,10 @@ describe('MatchingService', () => {
       .mockResolvedValueOnce([{ company }])
       .mockResolvedValueOnce([{ employee }]);
     await expect(
-      service.findCurrentEmployeeLiked({ eid: 'employee-1' }),
+      queryService.findCurrentEmployeeLiked({ eid: 'employee-1' }),
     ).resolves.toEqual([expect.objectContaining({ id: 'company-1' })]);
     await expect(
-      service.findCurrentCompanyLiked({ cid: 'company-1' }),
+      queryService.findCurrentCompanyLiked({ cid: 'company-1' }),
     ).resolves.toEqual([expect.objectContaining({ id: 'employee-1' })]);
     expect(redis.set).toHaveBeenCalledTimes(2);
   });
@@ -212,7 +222,7 @@ describe('MatchingService', () => {
     matching.find.mockResolvedValueOnce([
       { employee, skillScore: 75, isMatched: true },
     ]);
-    const matches = await service.findCurrentCompanyMatching({
+    const matches = await queryService.findCurrentCompanyMatching({
       cid: 'company-1',
     });
     expect(matches[0]).toEqual(
@@ -221,27 +231,27 @@ describe('MatchingService', () => {
 
     matching.count.mockResolvedValueOnce(6);
     await expect(
-      service.findCurrentEmployeeMatchingCount({ eid: 'employee-1' }),
+      queryService.findCurrentEmployeeMatchingCount({ eid: 'employee-1' }),
     ).resolves.toEqual(expect.objectContaining({ count: 6 }));
   });
 
   it('wraps list and count database failures consistently', async () => {
     matching.find.mockRejectedValueOnce(new Error('list failed'));
     await expectRpc(
-      service.findCurrentCompanyMatching({ cid: 'company-1' }),
+      queryService.findCurrentCompanyMatching({ cid: 'company-1' }),
       500,
       'list failed',
     );
     matching.count.mockRejectedValueOnce(new Error('count failed'));
     await expectRpc(
-      service.findCurrentEmployeeMatchingCount({ eid: 'employee-1' }),
+      queryService.findCurrentEmployeeMatchingCount({ eid: 'employee-1' }),
       500,
       'count failed',
     );
   });
 
   it('computes skill scores for exact, partial, and unavailable data', () => {
-    const compute = (service as any).computeSkillScore.bind(service);
+    const compute = computeSkillScore as (e: any, c: any) => number | null;
     expect(compute(employee, company)).toBe(50);
     expect(compute({ ...employee, skills: [] }, company)).toBeNull();
     expect(compute(employee, { ...company, openPositions: [] })).toBeNull();
@@ -315,7 +325,7 @@ describe('MatchingService', () => {
     ],
   ])('contains null repository results in %s', async (method, dto, message) => {
     matching.find.mockResolvedValueOnce(null);
-    await expectRpc((service as any)[method](dto), 500, message);
+    await expectRpc((queryService as any)[method](dto), 500, message);
   });
 
   it('contains email failures after reciprocal matches', async () => {
@@ -351,7 +361,7 @@ describe('MatchingService', () => {
   });
 
   it('covers ignored and empty skill requirements', () => {
-    const compute = (service as any).computeSkillScore.bind(service);
+    const compute = computeSkillScore as (e: any, c: any) => number | null;
     expect(
       compute(employee, {
         ...company,
@@ -367,7 +377,7 @@ describe('MatchingService', () => {
   it('wraps company-count database failures', async () => {
     matching.count.mockRejectedValueOnce(new Error('company count failed'));
     await expectRpc(
-      service.findCurrentCompanyMatchingCount({ cid: 'company-1' }),
+      queryService.findCurrentCompanyMatchingCount({ cid: 'company-1' }),
       500,
       'company count failed',
     );
@@ -408,7 +418,7 @@ describe('MatchingService', () => {
   ])('returns %s directly from cache', async (method, dto) => {
     const cached = { cached: method };
     redis.get.mockResolvedValueOnce(cached);
-    await expect((service as any)[method](dto)).resolves.toBe(cached);
+    await expect((queryService as any)[method](dto)).resolves.toBe(cached);
   });
 
   it('uses fallback messages for malformed matching repository failures', async () => {
@@ -469,7 +479,7 @@ describe('MatchingService', () => {
       } else {
         matching.find.mockRejectedValueOnce(null);
       }
-      await expectRpc((service as any)[method](dto), 500, message);
+      await expectRpc((queryService as any)[method](dto), 500, message);
     },
   );
 
@@ -479,12 +489,12 @@ describe('MatchingService', () => {
       .mockResolvedValueOnce([{ employee, isMatched: true }]);
 
     await expect(
-      service.findCurrentEmployeeMatching({ eid: 'employee-1' }),
+      queryService.findCurrentEmployeeMatching({ eid: 'employee-1' }),
     ).resolves.toEqual([
       expect.objectContaining({ id: 'company-1', skillScore: null }),
     ]);
     await expect(
-      service.findCurrentCompanyMatching({ cid: 'company-1' }),
+      queryService.findCurrentCompanyMatching({ cid: 'company-1' }),
     ).resolves.toEqual([
       expect.objectContaining({ id: 'employee-1', skillScore: null }),
     ]);
@@ -534,7 +544,7 @@ describe('MatchingService', () => {
   );
 
   it('ignores unnamed employee skills when calculating a score', () => {
-    const compute = (service as any).computeSkillScore.bind(service);
+    const compute = computeSkillScore as (e: any, c: any) => number | null;
     expect(
       compute(
         {

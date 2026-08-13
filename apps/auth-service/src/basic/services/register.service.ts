@@ -1,12 +1,8 @@
-import { CareerScope } from '@app/common/database/entities/career-scope.entity';
-import { Benefit } from '@app/common/database/entities/company/benefit.entity';
 import { Company } from '@app/common/database/entities/company/company.entity';
 import { Job } from '@app/common/database/entities/company/job.entity';
-import { Value } from '@app/common/database/entities/company/value.entity';
 import { Education } from '@app/common/database/entities/employee/education.entity';
 import { Employee } from '@app/common/database/entities/employee/employee.entity';
 import { Experience } from '@app/common/database/entities/employee/experience.entity';
-import { Skill } from '@app/common/database/entities/employee/skill.entity';
 import { Social } from '@app/common/database/entities/social.entity';
 import { User } from '@app/common/database/entities/user.entity';
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
@@ -24,7 +20,7 @@ import {
   UserResponseDTO,
 } from '@app/contracts/dtos/user';
 import { PinoLogger } from 'nestjs-pino';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { IRegisterService } from '@app/contracts/interfaces/service/auth-service.interface';
 import {
   CompanyRegisterDTO,
@@ -32,6 +28,12 @@ import {
   EmployeeRegisterDTO,
   EmployeeRegisterResponseDTO,
 } from '@app/contracts';
+import {
+  findOrCreateBenefits,
+  findOrCreateCareerScopes,
+  findOrCreateSkills,
+  findOrCreateValues,
+} from '../utils/reference-data.util';
 
 @Injectable()
 export class RegisterService implements IRegisterService {
@@ -43,80 +45,6 @@ export class RegisterService implements IRegisterService {
     private readonly logger: PinoLogger,
     private readonly dataSource: DataSource,
   ) {}
-
-  // ── Helper: Bulk find-or-create for lookup entities ──────────────
-  private async findOrCreateBenefits(
-    labels: string[],
-    queryRunner: import('typeorm').QueryRunner,
-  ): Promise<Benefit[]> {
-    if (!labels.length) return [];
-    const existing = await queryRunner.manager.find(Benefit, {
-      where: { label: In(labels) },
-    });
-    const existingLabels = new Set(existing.map((b) => b.label));
-    const toCreate = labels
-      .filter((l) => !existingLabels.has(l))
-      .map((l) => queryRunner.manager.create(Benefit, { label: l }));
-    const created = toCreate.length
-      ? await queryRunner.manager.save(Benefit, toCreate)
-      : [];
-    return [...existing, ...created];
-  }
-
-  private async findOrCreateValues(
-    labels: string[],
-    queryRunner: import('typeorm').QueryRunner,
-  ): Promise<Value[]> {
-    if (!labels.length) return [];
-    const existing = await queryRunner.manager.find(Value, {
-      where: { label: In(labels) },
-    });
-    const existingLabels = new Set(existing.map((v) => v.label));
-    const toCreate = labels
-      .filter((l) => !existingLabels.has(l))
-      .map((l) => queryRunner.manager.create(Value, { label: l }));
-    const created = toCreate.length
-      ? await queryRunner.manager.save(Value, toCreate)
-      : [];
-    return [...existing, ...created];
-  }
-
-  private async findOrCreateCareerScopes(
-    names: string[],
-    queryRunner: import('typeorm').QueryRunner,
-  ): Promise<CareerScope[]> {
-    if (!names.length) return [];
-    const existing = await queryRunner.manager.find(CareerScope, {
-      where: { name: In(names) },
-    });
-    const existingNames = new Set(existing.map((cs) => cs.name));
-    const toCreate = names
-      .filter((n) => !existingNames.has(n))
-      .map((n) => queryRunner.manager.create(CareerScope, { name: n }));
-    const created = toCreate.length
-      ? await queryRunner.manager.save(CareerScope, toCreate)
-      : [];
-    return [...existing, ...created];
-  }
-
-  private async findOrCreateSkills(
-    skills: { name: string; description?: string }[],
-    queryRunner: import('typeorm').QueryRunner,
-  ): Promise<Skill[]> {
-    if (!skills.length) return [];
-    const names = skills.map((s) => s.name);
-    const existing = await queryRunner.manager.find(Skill, {
-      where: { name: In(names) },
-    });
-    const existingNames = new Set(existing.map((s) => s.name));
-    const toCreate = skills
-      .filter((s) => !existingNames.has(s.name))
-      .map((s) => queryRunner.manager.create(Skill, s));
-    const created = toCreate.length
-      ? await queryRunner.manager.save(Skill, toCreate)
-      : [];
-    return [...existing, ...created];
-  }
 
   async companyRegister(
     companyRegisterDTO: CompanyRegisterDTO,
@@ -179,17 +107,17 @@ export class RegisterService implements IRegisterService {
             return jobs.length ? queryRunner.manager.save(Job, jobs) : [];
           })(),
           // Benefits — bulk find-or-create (1-2 queries instead of N)
-          this.findOrCreateBenefits(
+          findOrCreateBenefits(
             companyRegisterDTO.benefits?.map((b) => b.label) || [],
             queryRunner,
           ),
           // Values — bulk find-or-create
-          this.findOrCreateValues(
+          findOrCreateValues(
             companyRegisterDTO.values?.map((v) => v.label) || [],
             queryRunner,
           ),
           // Career scopes — bulk find-or-create
-          this.findOrCreateCareerScopes(
+          findOrCreateCareerScopes(
             companyRegisterDTO.careerScopes?.map((c) => c.name) || [],
             queryRunner,
           ),
@@ -373,7 +301,7 @@ export class RegisterService implements IRegisterService {
           return edus.length ? queryRunner.manager.save(Education, edus) : [];
         })(),
         // Skills — bulk find-or-create (1-2 queries instead of N)
-        this.findOrCreateSkills(employeeRegisterDTO.skills || [], queryRunner),
+        findOrCreateSkills(employeeRegisterDTO.skills || [], queryRunner),
         // Experiences — always create new (unique per employee)
         (async () => {
           const exps =
@@ -386,7 +314,7 @@ export class RegisterService implements IRegisterService {
           return exps.length ? queryRunner.manager.save(Experience, exps) : [];
         })(),
         // Career scopes — bulk find-or-create
-        this.findOrCreateCareerScopes(
+        findOrCreateCareerScopes(
           employeeRegisterDTO.careerScopes?.map((c) => c.name) || [],
           queryRunner,
         ),

@@ -59,13 +59,11 @@ describe('Job-service RPC controllers', () => {
   });
 
   it('delegates every matching operation to the owning service', async () => {
-    // MatchingService was split three ways; the owner column is what keeps a
+    // MatchingService was split four ways; the owner column is what keeps a
     // delegation from silently landing on the wrong collaborator.
     const owners = {
-      matching: [
-        'employeeLikes',
-        'companyLikes',
-        'unmatch',
+      matching: ['employeeLikes', 'companyLikes', 'unmatch'],
+      matchingQuery: [
         'findCurrentEmployeeLiked',
         'findCurrentCompanyLiked',
         'findCurrentEmployeeMatching',
@@ -78,11 +76,13 @@ describe('Job-service RPC controllers', () => {
     };
     const services = {
       matching: mockService(owners.matching),
+      matchingQuery: mockService(owners.matchingQuery),
       analytics: mockService(owners.analytics),
       ai: mockService(owners.ai),
     };
     const controller = new MatchingController(
       services.matching as any,
+      services.matchingQuery as any,
       services.analytics as any,
       services.ai as any,
     );

@@ -1,7 +1,12 @@
 import 'reflect-metadata';
 import { UserController } from './user.controller';
 
-type Owner = 'user' | 'favorites' | 'recommendations';
+type Owner =
+  | 'user'
+  | 'favorites'
+  | 'favoritesQuery'
+  | 'employeeRecommendations'
+  | 'companyRecommendations';
 
 describe('User-service RPC controller', () => {
   it('delegates every user action to the owning service', async () => {
@@ -18,26 +23,28 @@ describe('User-service RPC controller', () => {
       ['employeeUnfavoriteCompany', 'employeeUnfavoriteCompany', 'favorites'],
       ['companyUnfavoriteEmployee', 'companyUnfavoriteEmployee', 'favorites'],
       ['companyFavoriteEmployee', 'companyFavoriteEmployee', 'favorites'],
-      ['findAllEmployeeFavorite', 'findAllEmployeeFavorites', 'favorites'],
-      ['findAllCompanyFavorite', 'findAllCompanyFavorites', 'favorites'],
-      ['countCompanyFavorite', 'countCompanyFavorite', 'favorites'],
-      ['countEmployeeFavorite', 'countEmployeeFavorite', 'favorites'],
+      ['findAllEmployeeFavorite', 'findAllEmployeeFavorites', 'favoritesQuery'],
+      ['findAllCompanyFavorite', 'findAllCompanyFavorites', 'favoritesQuery'],
+      ['countCompanyFavorite', 'countCompanyFavorite', 'favoritesQuery'],
+      ['countEmployeeFavorite', 'countEmployeeFavorite', 'favoritesQuery'],
       [
         'getEmployeeRecommendations',
         'getEmployeeRecommendations',
-        'recommendations',
+        'employeeRecommendations',
       ],
       [
         'getCompanyRecommendations',
         'getCompanyRecommendations',
-        'recommendations',
+        'companyRecommendations',
       ],
     ];
 
     const services: Record<Owner, Record<string, jest.Mock>> = {
       user: {},
       favorites: {},
-      recommendations: {},
+      favoritesQuery: {},
+      employeeRecommendations: {},
+      companyRecommendations: {},
     };
     for (const [, serviceMethod, owner] of mappings) {
       services[owner][serviceMethod] = jest.fn().mockResolvedValue({});
@@ -50,7 +57,9 @@ describe('User-service RPC controller', () => {
     const controller = new UserController(
       services.user as any,
       services.favorites as any,
-      services.recommendations as any,
+      services.favoritesQuery as any,
+      services.employeeRecommendations as any,
+      services.companyRecommendations as any,
     );
 
     for (const [controllerMethod, serviceMethod, owner] of mappings) {

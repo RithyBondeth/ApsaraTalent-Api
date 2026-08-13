@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { MatchingAnalyticsService } from './matching-analytics.service';
-import { createMatchingFixtures, expectRpc } from './matching-test-fixtures';
+import { createMatchingFixtures, expectRpc } from '../matching-test-fixtures';
 
 describe('MatchingAnalyticsService', () => {
   const {

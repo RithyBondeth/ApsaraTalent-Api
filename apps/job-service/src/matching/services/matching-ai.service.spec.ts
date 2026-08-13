@@ -1,7 +1,8 @@
 import 'reflect-metadata';
 import { RpcException } from '@nestjs/microservices';
 import { MatchingAiService } from './matching-ai.service';
-import { createMatchingFixtures, expectRpc } from './matching-test-fixtures';
+import { createMatchingFixtures, expectRpc } from '../matching-test-fixtures';
+import { generateMatchingKey } from '@app/common/redis/redis-keys.util';
 
 describe('MatchingAiService', () => {
   const {
@@ -162,9 +163,11 @@ describe('MatchingAiService', () => {
     expect(result.questions[0]).toEqual(
       expect.objectContaining({ category: 'Technical' }),
     );
-    expect(redis.generateMatchingKey).toHaveBeenCalledWith(
-      'ai-interview-prep:employee-1:technical-round',
-      'company-1',
+    expect(redis.get).toHaveBeenCalledWith(
+      generateMatchingKey(
+        'ai-interview-prep:employee-1:technical-round',
+        'company-1',
+      ),
     );
   });
 

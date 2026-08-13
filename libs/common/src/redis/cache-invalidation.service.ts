@@ -4,6 +4,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../database/entities/user.entity';
 import { RedisService } from './redis.service';
+import {
+  generateAuthSessionKey,
+  generateCompanyKey,
+  generateEmployeeKey,
+  generateUserKey,
+} from '@app/common/redis/redis-keys.util';
 
 @Injectable()
 export class CacheInvalidationService {
@@ -21,10 +27,10 @@ export class CacheInvalidationService {
     });
 
     const keysToDelete: string[] = [
-      this.redisService.generateEmployeeKey('detail', employeeId),
+      generateEmployeeKey('detail', employeeId),
       ...users.flatMap((user) => [
-        this.redisService.generateUserKey('detail', user.id),
-        this.redisService.generateAuthSessionKey(user.id),
+        generateUserKey('detail', user.id),
+        generateAuthSessionKey(user.id),
       ]),
     ];
 
@@ -51,10 +57,10 @@ export class CacheInvalidationService {
     });
 
     const keysToDelete: string[] = [
-      this.redisService.generateCompanyKey('detail', companyId),
+      generateCompanyKey('detail', companyId),
       ...users.flatMap((user) => [
-        this.redisService.generateUserKey('detail', user.id),
-        this.redisService.generateAuthSessionKey(user.id),
+        generateUserKey('detail', user.id),
+        generateAuthSessionKey(user.id),
       ]),
     ];
 
@@ -76,15 +82,9 @@ export class CacheInvalidationService {
   async handleUserUpdate(payload: { userId: string }): Promise<void> {
     const { userId } = payload;
     await Promise.all([
-      this.redisService.del(
-        this.redisService.generateUserKey('detail', userId),
-      ),
-      this.redisService.del(
-        this.redisService.generateUserKey('profile', userId),
-      ),
-      this.redisService.del(
-        this.redisService.generateUserKey('settings', userId),
-      ),
+      this.redisService.del(generateUserKey('detail', userId)),
+      this.redisService.del(generateUserKey('profile', userId)),
+      this.redisService.del(generateUserKey('settings', userId)),
     ]);
     this.logger.log(`Invalidated cache for user: ${userId}`);
   }
@@ -94,9 +94,7 @@ export class CacheInvalidationService {
   async handleEmployeeUpdate(payload: { employeeId: string }): Promise<void> {
     const { employeeId } = payload;
     await Promise.all([
-      this.redisService.del(
-        this.redisService.generateEmployeeKey('detail', employeeId),
-      ),
+      this.redisService.del(generateEmployeeKey('detail', employeeId)),
       this.redisService.delPattern('employee:list:*'), // Invalidate all lists
       this.redisService.delPattern('employee:search:*'), // Invalidate searches
     ]);
@@ -109,12 +107,8 @@ export class CacheInvalidationService {
   }): Promise<void> {
     const { employeeId } = payload;
     await Promise.all([
-      this.redisService.del(
-        this.redisService.generateEmployeeKey('favorites', employeeId),
-      ),
-      this.redisService.del(
-        this.redisService.generateEmployeeKey('favorite-count', employeeId),
-      ),
+      this.redisService.del(generateEmployeeKey('favorites', employeeId)),
+      this.redisService.del(generateEmployeeKey('favorite-count', employeeId)),
     ]);
     this.logger.log(`Invalidated favorites cache for employee: ${employeeId}`);
   }
@@ -132,12 +126,8 @@ export class CacheInvalidationService {
   }): Promise<void> {
     const { companyId } = payload;
     await Promise.all([
-      this.redisService.del(
-        this.redisService.generateCompanyKey('favorites', companyId),
-      ),
-      this.redisService.del(
-        this.redisService.generateCompanyKey('favorite-count', companyId),
-      ),
+      this.redisService.del(generateCompanyKey('favorites', companyId)),
+      this.redisService.del(generateCompanyKey('favorite-count', companyId)),
     ]);
     this.logger.log(`Invalidated favorites cache for company: ${companyId}`);
   }

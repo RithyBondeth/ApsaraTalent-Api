@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { RpcException } from '@nestjs/microservices';
 import { FavoritesService } from './favorites.service';
+import { FavoritesQueryService } from './favorites-query.service';
 
 describe('FavoritesService', () => {
   const employeeFavorites = {
@@ -21,12 +22,6 @@ describe('FavoritesService', () => {
   };
   const logger = { info: jest.fn(), warn: jest.fn(), error: jest.fn() };
   const redis = {
-    generateListKey: jest.fn(() => 'users'),
-    generateUserKey: jest.fn((_type, id) => `user:${id}`),
-    generateEmployeeFavoritesKey: jest.fn(() => 'employee-favorites'),
-    generateEmployeeFavoriteCountKey: jest.fn(() => 'employee-favorite-count'),
-    generateCompanyFavoritesKey: jest.fn(() => 'company-favorites'),
-    generateCompanyFavoriteCountKey: jest.fn(() => 'company-favorite-count'),
     get: jest.fn(),
     set: jest.fn(),
     del: jest.fn(),
@@ -40,6 +35,15 @@ describe('FavoritesService', () => {
     logger as any,
     redis as any,
     events as any,
+  );
+
+  // Read-side methods moved to FavoritesQueryService; same repositories, logger
+  // and cache fixtures, so the behaviour under test is unchanged.
+  const queryService = new FavoritesQueryService(
+    employeeFavorites as any,
+    companyFavorites as any,
+    logger as any,
+    redis as any,
   );
 
   beforeEach(() => {
@@ -186,13 +190,13 @@ describe('FavoritesService', () => {
     const cached = [{ id: 'cached' }];
     redis.get.mockResolvedValueOnce(cached);
     await expect(
-      service.findAllEmployeeFavorites({ eid: 'employee-1' }),
+      queryService.findAllEmployeeFavorites({ eid: 'employee-1' }),
     ).resolves.toBe(cached);
 
     redis.get.mockResolvedValueOnce(null);
     employeeFavorites.find.mockResolvedValueOnce([]);
     await expect(
-      service.findAllEmployeeFavorites({ eid: 'employee-1' }),
+      queryService.findAllEmployeeFavorites({ eid: 'employee-1' }),
     ).resolves.toEqual([]);
 
     redis.get.mockResolvedValueOnce(null);
@@ -207,7 +211,7 @@ describe('FavoritesService', () => {
         },
       },
     ]);
-    const result = await service.findAllEmployeeFavorites({
+    const result = await queryService.findAllEmployeeFavorites({
       eid: 'employee-1',
     });
     expect(result[0]).toEqual(
@@ -218,13 +222,13 @@ describe('FavoritesService', () => {
   it('lists company favorites from cache, empty storage, and populated storage', async () => {
     redis.get.mockResolvedValueOnce([{ id: 'cached' }]);
     await expect(
-      service.findAllCompanyFavorites({ cid: 'company-1' }),
+      queryService.findAllCompanyFavorites({ cid: 'company-1' }),
     ).resolves.toEqual([{ id: 'cached' }]);
 
     redis.get.mockResolvedValueOnce(null);
     companyFavorites.find.mockResolvedValueOnce([]);
     await expect(
-      service.findAllCompanyFavorites({ cid: 'company-1' }),
+      queryService.findAllCompanyFavorites({ cid: 'company-1' }),
     ).resolves.toEqual([]);
 
     redis.get.mockResolvedValueOnce(null);
@@ -235,7 +239,9 @@ describe('FavoritesService', () => {
         employee: { id: 'employee-1', user: { id: 'user-1' }, skills: [] },
       },
     ]);
-    const result = await service.findAllCompanyFavorites({ cid: 'company-1' });
+    const result = await queryService.findAllCompanyFavorites({
+      cid: 'company-1',
+    });
     expect(result[0]).toEqual(
       expect.objectContaining({ id: 'favorite-1', userId: 'user-1' }),
     );
@@ -245,20 +251,20 @@ describe('FavoritesService', () => {
     companyFavorites.count.mockResolvedValue(3);
     employeeFavorites.count.mockResolvedValue(4);
     await expect(
-      service.countCompanyFavorite({ cid: 'company-1' }),
+      queryService.countCompanyFavorite({ cid: 'company-1' }),
     ).resolves.toEqual(expect.objectContaining({ count: 3 }));
     await expect(
-      service.countEmployeeFavorite({ eid: 'employee-1' }),
+      queryService.countEmployeeFavorite({ eid: 'employee-1' }),
     ).resolves.toEqual(expect.objectContaining({ count: 4 }));
 
     redis.get
       .mockResolvedValueOnce({ count: 8 })
       .mockResolvedValueOnce({ count: 9 });
     await expect(
-      service.countCompanyFavorite({ cid: 'company-1' }),
+      queryService.countCompanyFavorite({ cid: 'company-1' }),
     ).resolves.toEqual({ count: 8 });
     await expect(
-      service.countEmployeeFavorite({ eid: 'employee-1' }),
+      queryService.countEmployeeFavorite({ eid: 'employee-1' }),
     ).resolves.toEqual({ count: 9 });
   });
 
@@ -309,7 +315,7 @@ describe('FavoritesService', () => {
     employeeFavorites.find.mockRejectedValueOnce(
       new Error('employee list failed'),
     );
-    const employeeList = (await service
+    const employeeList = (await queryService
       .findAllEmployeeFavorites({ eid: 'employee-1' })
       .catch((error) => error)) as RpcException;
     expect(employeeList.getError()).toEqual({
@@ -320,7 +326,7 @@ describe('FavoritesService', () => {
     companyFavorites.find.mockRejectedValueOnce(
       new Error('company list failed'),
     );
-    const companyList = (await service
+    const companyList = (await queryService
       .findAllCompanyFavorites({ cid: 'company-1' })
       .catch((error) => error)) as RpcException;
     expect(companyList.getError()).toEqual({
@@ -331,7 +337,7 @@ describe('FavoritesService', () => {
     companyFavorites.count.mockRejectedValueOnce(
       new Error('company count failed'),
     );
-    const companyCount = (await service
+    const companyCount = (await queryService
       .countCompanyFavorite({ cid: 'company-1' })
       .catch((error) => error)) as RpcException;
     expect(companyCount.getError()).toEqual({
@@ -342,7 +348,7 @@ describe('FavoritesService', () => {
     employeeFavorites.count.mockRejectedValueOnce(
       new Error('employee count failed'),
     );
-    const employeeCount = (await service
+    const employeeCount = (await queryService
       .countEmployeeFavorite({ eid: 'employee-1' })
       .catch((error) => error)) as RpcException;
     expect(employeeCount.getError()).toEqual({
@@ -390,7 +396,7 @@ describe('FavoritesService', () => {
       },
     ]);
     await expect(
-      service.findAllEmployeeFavorites({ eid: 'employee-1' }),
+      queryService.findAllEmployeeFavorites({ eid: 'employee-1' }),
     ).resolves.toEqual([
       expect.objectContaining({ userId: '', company: expect.any(Object) }),
     ]);
@@ -403,7 +409,7 @@ describe('FavoritesService', () => {
       },
     ]);
     await expect(
-      service.findAllCompanyFavorites({ cid: 'company-1' }),
+      queryService.findAllCompanyFavorites({ cid: 'company-1' }),
     ).resolves.toEqual([
       expect.objectContaining({ userId: '', employee: expect.any(Object) }),
     ]);
@@ -420,7 +426,7 @@ describe('FavoritesService', () => {
     });
 
     companyFavorites.find.mockRejectedValueOnce(null);
-    const listFailure = (await service
+    const listFailure = (await queryService
       .findAllCompanyFavorites({ cid: 'company-1' })
       .catch((error) => error)) as RpcException;
     expect(listFailure.getError()).toEqual({
@@ -432,7 +438,7 @@ describe('FavoritesService', () => {
   it('wraps cache population failures from list and count operations', async () => {
     employeeFavorites.find.mockResolvedValueOnce([]);
     redis.set.mockRejectedValueOnce(new Error('cache write failed'));
-    const listFailure = (await service
+    const listFailure = (await queryService
       .findAllEmployeeFavorites({ eid: 'employee-1' })
       .catch((error) => error)) as RpcException;
     expect(listFailure.getError()).toEqual({
@@ -442,7 +448,7 @@ describe('FavoritesService', () => {
 
     companyFavorites.count.mockResolvedValueOnce(1);
     redis.set.mockRejectedValueOnce(new Error('count cache failed'));
-    const countFailure = (await service
+    const countFailure = (await queryService
       .countCompanyFavorite({ cid: 'company-1' })
       .catch((error) => error)) as RpcException;
     expect(countFailure.getError()).toEqual({
@@ -486,21 +492,21 @@ describe('FavoritesService', () => {
 
     employeeFavorites.find.mockRejectedValueOnce(null);
     await expectRpc(
-      service.findAllEmployeeFavorites({ eid: 'employee-1' }),
+      queryService.findAllEmployeeFavorites({ eid: 'employee-1' }),
       500,
       'An error occurred while finding employee favorites.',
     );
 
     companyFavorites.count.mockRejectedValueOnce(null);
     await expectRpc(
-      service.countCompanyFavorite({ cid: 'company-1' }),
+      queryService.countCompanyFavorite({ cid: 'company-1' }),
       500,
       'An error occurred while counting company favorites.',
     );
 
     employeeFavorites.count.mockRejectedValueOnce(null);
     await expectRpc(
-      service.countEmployeeFavorite({ eid: 'employee-1' }),
+      queryService.countEmployeeFavorite({ eid: 'employee-1' }),
       500,
       'An error occurred while counting employee favorites.',
     );

@@ -20,6 +20,7 @@ import {
   AiMatchProfilesResponseDTO,
 } from '@app/contracts/dtos/job/matching/ai-match-profiles.dto';
 import { IMatchingAiService } from '@app/contracts/interfaces/service/job-service.interface';
+import { generateMatchingKey } from '@app/common/redis/redis-keys.util';
 
 /**
  * OpenAI-backed match narration: why two sides fit, profile summaries, and
@@ -47,7 +48,7 @@ export class MatchingAiService implements IMatchingAiService {
   async getAiMatchExplanation(
     aiMatchExplanationDTO: AiMatchExplanationDTO,
   ): Promise<AiMatchExplanationResponseDTO> {
-    const cacheKey = this.redisService.generateMatchingKey(
+    const cacheKey = generateMatchingKey(
       `ai-explanation:${aiMatchExplanationDTO.eid}`,
       aiMatchExplanationDTO.cid,
     );
@@ -204,7 +205,7 @@ export class MatchingAiService implements IMatchingAiService {
     const titleSlug = aiInterviewPrepDTO.interviewTitle
       ? `:${aiInterviewPrepDTO.interviewTitle.toLowerCase().replace(/\s+/g, '-').slice(0, 60)}`
       : '';
-    const cacheKey = this.redisService.generateMatchingKey(
+    const cacheKey = generateMatchingKey(
       `ai-interview-prep:${aiInterviewPrepDTO.eid}${titleSlug}`,
       aiInterviewPrepDTO.cid,
     );

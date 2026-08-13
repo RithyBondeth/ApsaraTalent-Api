@@ -8,7 +8,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import {
-  CompanyResponseDTO,
   EmployeeCompanyFavoriteDTO,
   EmployeeCompanyFavoriteWithFavoriteIdDTO,
   EmployeeFavoriteCompanyResponseDTO,
@@ -17,16 +16,14 @@ import {
   CompanyEmployeeFavoriteWithFavoriteIdDTO,
   CompanyFavoriteEmployeeResponseDTO,
   CompanyUnfavoriteEmployeeResponseDTO,
-  EmployeeFavoritesListItemDTO,
-  CompanyFavoritesListItemDTO,
-  EmployeeFavoriteLookupDTO,
-  CompanyFavoriteLookupDTO,
-  EmployeeResponseDTO,
-  JobPositionResponseDTO,
-  FavoriteCountResponseDTO,
 } from '@app/contracts/dtos/user';
-import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
 import { IFavoritesService } from '@app/contracts/interfaces/service/user-service.interface';
+import {
+  generateCompanyFavoriteCountKey,
+  generateCompanyFavoritesKey,
+  generateEmployeeFavoriteCountKey,
+  generateEmployeeFavoritesKey,
+} from '@app/common/redis/redis-keys.util';
 
 /**
  * Favourite/unfavourite relationships in both directions, plus their counts
@@ -72,18 +69,10 @@ export class FavoritesService implements IFavoritesService {
 
       // Use helper methods for consistent cache invalidation
       await Promise.all([
-        this.redisService.del(
-          this.redisService.generateEmployeeFavoritesKey(eid),
-        ),
-        this.redisService.del(
-          this.redisService.generateEmployeeFavoriteCountKey(eid),
-        ),
-        this.redisService.del(
-          this.redisService.generateCompanyFavoritesKey(cid),
-        ),
-        this.redisService.del(
-          this.redisService.generateCompanyFavoriteCountKey(cid),
-        ),
+        this.redisService.del(generateEmployeeFavoritesKey(eid)),
+        this.redisService.del(generateEmployeeFavoriteCountKey(eid)),
+        this.redisService.del(generateCompanyFavoritesKey(cid)),
+        this.redisService.del(generateCompanyFavoriteCountKey(cid)),
       ]);
 
       // Emit events for other services if needed
@@ -140,18 +129,10 @@ export class FavoritesService implements IFavoritesService {
 
       // Use helper methods for consistent cache invalidation
       await Promise.all([
-        this.redisService.del(
-          this.redisService.generateEmployeeFavoritesKey(eid),
-        ),
-        this.redisService.del(
-          this.redisService.generateEmployeeFavoriteCountKey(eid),
-        ),
-        this.redisService.del(
-          this.redisService.generateCompanyFavoritesKey(cid),
-        ),
-        this.redisService.del(
-          this.redisService.generateCompanyFavoriteCountKey(cid),
-        ),
+        this.redisService.del(generateEmployeeFavoritesKey(eid)),
+        this.redisService.del(generateEmployeeFavoriteCountKey(eid)),
+        this.redisService.del(generateCompanyFavoritesKey(cid)),
+        this.redisService.del(generateCompanyFavoriteCountKey(cid)),
       ]);
 
       // Emit events
@@ -205,18 +186,10 @@ export class FavoritesService implements IFavoritesService {
 
       // Use helper methods for consistent cache invalidation
       await Promise.all([
-        this.redisService.del(
-          this.redisService.generateCompanyFavoritesKey(cid),
-        ),
-        this.redisService.del(
-          this.redisService.generateCompanyFavoriteCountKey(cid),
-        ),
-        this.redisService.del(
-          this.redisService.generateEmployeeFavoritesKey(eid),
-        ),
-        this.redisService.del(
-          this.redisService.generateEmployeeFavoriteCountKey(eid),
-        ),
+        this.redisService.del(generateCompanyFavoritesKey(cid)),
+        this.redisService.del(generateCompanyFavoriteCountKey(cid)),
+        this.redisService.del(generateEmployeeFavoritesKey(eid)),
+        this.redisService.del(generateEmployeeFavoriteCountKey(eid)),
       ]);
 
       // Emit events
@@ -273,18 +246,10 @@ export class FavoritesService implements IFavoritesService {
 
       // Use helper methods for consistent cache invalidation
       await Promise.all([
-        this.redisService.del(
-          this.redisService.generateCompanyFavoritesKey(cid),
-        ),
-        this.redisService.del(
-          this.redisService.generateCompanyFavoriteCountKey(cid),
-        ),
-        this.redisService.del(
-          this.redisService.generateEmployeeFavoritesKey(eid),
-        ),
-        this.redisService.del(
-          this.redisService.generateEmployeeFavoriteCountKey(eid),
-        ),
+        this.redisService.del(generateCompanyFavoritesKey(cid)),
+        this.redisService.del(generateCompanyFavoriteCountKey(cid)),
+        this.redisService.del(generateEmployeeFavoritesKey(eid)),
+        this.redisService.del(generateEmployeeFavoriteCountKey(eid)),
       ]);
 
       // Emit events
@@ -307,199 +272,6 @@ export class FavoritesService implements IFavoritesService {
         message:
           (error as Error)?.message ||
           'An error occurred while unfavoriting employee.',
-      });
-    }
-  }
-
-  async findAllEmployeeFavorites(
-    employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
-  ): Promise<EmployeeFavoritesListItemDTO[]> {
-    const { eid } = employeeFavoriteLookupDTO;
-    const cacheKey = this.redisService.generateEmployeeFavoritesKey(eid);
-    const cached =
-      await this.redisService.get<EmployeeFavoritesListItemDTO[]>(cacheKey);
-
-    if (cached) {
-      this.logger.info(`All employee ${eid} favorites cache HIT`);
-      return cached;
-    }
-
-    this.logger.info(`All employee ${eid} favorites cache MISS`);
-
-    try {
-      const allFavorites = await this.empFavoriteCmpRepository.find({
-        where: { employee: { id: eid } },
-        relations: ['company', 'company.openPositions', 'company.user'],
-      });
-
-      if (!allFavorites || allFavorites.length === 0) {
-        const result: EmployeeFavoritesListItemDTO[] = [];
-        await this.redisService.set(cacheKey, result, CACHE_TTL.SHORT);
-        return result;
-      }
-
-      const result = allFavorites.map(
-        (favorite) =>
-          new EmployeeFavoritesListItemDTO({
-            id: favorite.id,
-            createdAt: favorite.createdAt.toISOString(),
-            userId: favorite.company?.user?.id ?? '',
-            company: new CompanyResponseDTO({
-              ...favorite.company,
-              openPositions: favorite.company?.openPositions?.map(
-                (job) => new JobPositionResponseDTO(job),
-              ),
-            }),
-          }),
-      );
-
-      await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);
-
-      return result;
-    } catch (error) {
-      this.logger.error(
-        (error as Error)?.message ||
-          'An error occurred while finding employee favorites.',
-      );
-      throw new RpcException({
-        statusCode: 500,
-        message:
-          (error as Error)?.message ||
-          'An error occurred while finding employee favorites.',
-      });
-    }
-  }
-
-  async findAllCompanyFavorites(
-    companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
-  ): Promise<CompanyFavoritesListItemDTO[]> {
-    const { cid } = companyFavoriteLookupDTO;
-    const cacheKey = this.redisService.generateCompanyFavoritesKey(cid);
-    const cached =
-      await this.redisService.get<CompanyFavoritesListItemDTO[]>(cacheKey);
-
-    if (cached) {
-      this.logger.info(`All company ${cid} favorites cache HIT`);
-      return cached;
-    }
-
-    this.logger.info(`All company ${cid} favorites cache MISS`);
-
-    try {
-      const allFavorites = await this.cmpFavoriteEmpRepository.find({
-        where: { company: { id: cid } },
-        relations: ['employee', 'employee.skills', 'employee.user'],
-      });
-
-      if (!allFavorites || allFavorites.length === 0) {
-        const result: CompanyFavoritesListItemDTO[] = [];
-        await this.redisService.set(cacheKey, result, CACHE_TTL.SHORT);
-        return result;
-      }
-
-      const result = allFavorites.map(
-        (favorite) =>
-          new CompanyFavoritesListItemDTO({
-            id: favorite.id,
-            createdAt: favorite.createdAt.toISOString(),
-            userId: favorite.employee?.user?.id ?? '',
-            employee: new EmployeeResponseDTO(favorite.employee),
-          }),
-      );
-
-      await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);
-
-      return result;
-    } catch (error) {
-      this.logger.error(
-        (error as Error)?.message ||
-          'An error occurred while finding company favorites.',
-      );
-      throw new RpcException({
-        statusCode: 500,
-        message:
-          (error as Error)?.message ||
-          'An error occurred while finding company favorites.',
-      });
-    }
-  }
-
-  async countCompanyFavorite(
-    companyFavoriteLookupDTO: CompanyFavoriteLookupDTO,
-  ): Promise<FavoriteCountResponseDTO> {
-    const { cid } = companyFavoriteLookupDTO;
-    const cacheKey = this.redisService.generateCompanyFavoriteCountKey(cid);
-    const cached =
-      await this.redisService.get<FavoriteCountResponseDTO>(cacheKey);
-
-    if (cached) {
-      this.logger.info(`Company ${cid} favorite count cache HIT`);
-      return cached;
-    }
-
-    this.logger.info(`Company ${cid} favorite count cache MISS`);
-
-    try {
-      const countAllCompanyFavorites =
-        await this.cmpFavoriteEmpRepository.count({
-          where: { company: { id: cid } },
-        });
-
-      const result = { count: countAllCompanyFavorites };
-
-      await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
-
-      return new FavoriteCountResponseDTO(result);
-    } catch (error) {
-      this.logger.error(
-        (error as Error)?.message ||
-          'An error occurred while counting company favorites.',
-      );
-      throw new RpcException({
-        statusCode: 500,
-        message:
-          (error as Error)?.message ||
-          'An error occurred while counting company favorites.',
-      });
-    }
-  }
-
-  async countEmployeeFavorite(
-    employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
-  ): Promise<FavoriteCountResponseDTO> {
-    const { eid } = employeeFavoriteLookupDTO;
-    const cacheKey = this.redisService.generateEmployeeFavoriteCountKey(eid);
-    const cached =
-      await this.redisService.get<FavoriteCountResponseDTO>(cacheKey);
-
-    if (cached) {
-      this.logger.info(`Employee ${eid} favorite count cache HIT`);
-      return cached;
-    }
-
-    this.logger.info(`Employee ${eid} favorite count cache MISS`);
-
-    try {
-      const countAllEmployeeFavorites =
-        await this.empFavoriteCmpRepository.count({
-          where: { employee: { id: eid } },
-        });
-
-      const result = { count: countAllEmployeeFavorites };
-
-      await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
-
-      return new FavoriteCountResponseDTO(result);
-    } catch (error) {
-      this.logger.error(
-        (error as Error)?.message ||
-          'An error occurred while counting employee favorites.',
-      );
-      throw new RpcException({
-        statusCode: 500,
-        message:
-          (error as Error)?.message ||
-          'An error occurred while counting employee favorites.',
       });
     }
   }

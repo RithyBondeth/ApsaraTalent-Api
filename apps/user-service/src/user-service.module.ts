@@ -62,7 +62,10 @@ import { ModerationService } from './moderation/services/moderation.service';
 import { SupportService } from './support/services/support.service';
 import { UserService } from './users/services/user.service';
 import { FavoritesService } from './users/services/favorites.service';
-import { RecommendationsService } from './users/services/recommendations.service';
+import { FavoritesQueryService } from './users/services/favorites-query.service';
+import { EmployeeRecommendationsService } from './users/services/employee-recommendations.service';
+import { CompanyRecommendationsService } from './users/services/company-recommendations.service';
+import { RecommendationSupportService } from './users/services/recommendation-support.service';
 import {
   I_UPDATE_EMPLOYEE_INFO_SERVICE,
   I_IMAGE_EMPLOYEE_SERVICE,
@@ -74,7 +77,9 @@ import {
   I_SEARCH_EMPLOYEE_SERVICE,
   I_USER_SERVICE,
   I_FAVORITES_SERVICE,
-  I_RECOMMENDATIONS_SERVICE,
+  I_FAVORITES_QUERY_SERVICE,
+  I_EMPLOYEE_RECOMMENDATIONS_SERVICE,
+  I_COMPANY_RECOMMENDATIONS_SERVICE,
   I_OPEN_POSITION_SERVICE,
   I_EXPERIENCE_AND_EDUCATION_SERVICE,
   I_MODERATION_SERVICE,
@@ -160,8 +165,17 @@ import {
     { provide: I_USER_SERVICE, useClass: UserService },
     { provide: I_FAVORITES_SERVICE, useClass: FavoritesService },
     {
-      provide: I_RECOMMENDATIONS_SERVICE,
-      useClass: RecommendationsService,
+      provide: I_FAVORITES_QUERY_SERVICE,
+      useClass: FavoritesQueryService,
+    },
+    RecommendationSupportService,
+    {
+      provide: I_EMPLOYEE_RECOMMENDATIONS_SERVICE,
+      useClass: EmployeeRecommendationsService,
+    },
+    {
+      provide: I_COMPANY_RECOMMENDATIONS_SERVICE,
+      useClass: CompanyRecommendationsService,
     },
     { provide: I_OPEN_POSITION_SERVICE, useClass: OpenPositionService },
     {

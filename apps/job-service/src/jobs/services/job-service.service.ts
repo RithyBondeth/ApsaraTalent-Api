@@ -15,6 +15,10 @@ import {
 import { IJobServiceService } from '@app/contracts/interfaces/service/job-service.interface';
 import { JOB } from '@app/contracts/constants/domain/job.constant';
 import { PaginationDTO } from '@app/contracts';
+import {
+  generateJobListKey,
+  generateJobSearchKey,
+} from '@app/common/redis/redis-keys.util';
 
 @Injectable()
 export class JobService implements IJobServiceService {
@@ -28,7 +32,7 @@ export class JobService implements IJobServiceService {
 
   async findAllJobs(paginationDTO: PaginationDTO): Promise<JobResponseDTO[]> {
     const { skip = 0, limit = 20 } = paginationDTO;
-    const cacheKey = `${this.redisService.generateJobListKey()}:skip:${skip}:limit:${limit}`;
+    const cacheKey = `${generateJobListKey()}:skip:${skip}:limit:${limit}`;
     const cached = await this.redisService.get<JobResponseDTO[]>(cacheKey);
     if (cached) {
       this.logger.info('All jobs cache HIT');
@@ -67,7 +71,7 @@ export class JobService implements IJobServiceService {
       !!searchJobDTO.excludeCompanyIds &&
       searchJobDTO.excludeCompanyIds.length > 0;
 
-    const cacheKey = this.redisService.generateJobSearchKey(searchJobDTO);
+    const cacheKey = generateJobSearchKey(searchJobDTO);
 
     if (!hasExclusions) {
       const cached = await this.redisService.get<SearchJobResult>(cacheKey);

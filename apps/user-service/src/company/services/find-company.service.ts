@@ -16,6 +16,10 @@ import {
 import { PaginationDTO } from '@app/contracts/dtos/shared';
 import { IFindCompanyService } from '@app/contracts/interfaces/service/user-service.interface';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
+import {
+  generateCompanyKey,
+  generateListKey,
+} from '@app/common/redis/redis-keys.util';
 
 @Injectable()
 export class FindCompanyService implements IFindCompanyService {
@@ -71,7 +75,7 @@ export class FindCompanyService implements IFindCompanyService {
     // results never get cached under the shared key (an unblocked user would
     // otherwise stay hidden until TTL; pattern invalidation is a no-op here).
     const hasFilter = excludeCompanyIds.length > 0;
-    const cacheKey = this.redisService.generateListKey('company', {
+    const cacheKey = generateListKey('company', {
       skip,
       limit,
     });
@@ -202,7 +206,7 @@ export class FindCompanyService implements IFindCompanyService {
       }
     }
 
-    const cacheKey = this.redisService.generateCompanyKey('detail', companyId);
+    const cacheKey = generateCompanyKey('detail', companyId);
     const cached = await this.redisService.get<CompanyResponseDTO>(cacheKey);
 
     if (cached) {

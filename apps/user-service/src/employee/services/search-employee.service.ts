@@ -13,6 +13,7 @@ import {
 } from '@app/contracts/dtos/user';
 import { ISearchEmployeeService } from '@app/contracts/interfaces/service/user-service.interface';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
+import { generateSearchKey } from '@app/common/redis/redis-keys.util';
 
 @Injectable()
 export class SearchEmployeeService implements ISearchEmployeeService {
@@ -32,10 +33,7 @@ export class SearchEmployeeService implements ISearchEmployeeService {
       !!searchEmployeeDTO.excludeEmployeeIds &&
       searchEmployeeDTO.excludeEmployeeIds.length > 0;
 
-    const cacheKey = this.redisService.generateSearchKey(
-      'employee',
-      searchEmployeeDTO,
-    );
+    const cacheKey = generateSearchKey('employee', searchEmployeeDTO);
 
     if (!hasExclusions) {
       const cached =

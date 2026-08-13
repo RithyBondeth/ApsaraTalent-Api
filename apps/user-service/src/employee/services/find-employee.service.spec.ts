@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { RpcException } from '@nestjs/microservices';
 import { FindEmployeeService } from './find-employee.service';
+import { generateListKey } from '@app/common/redis/redis-keys.util';
 
 describe('FindEmployeeService', () => {
   const employees = { find: jest.fn(), count: jest.fn() };
@@ -8,8 +9,6 @@ describe('FindEmployeeService', () => {
   const blocks = { find: jest.fn(), exists: jest.fn() };
   const logger = { info: jest.fn(), error: jest.fn() };
   const redis = {
-    generateListKey: jest.fn(() => 'employees'),
-    generateEmployeeKey: jest.fn((_type, id) => `employee:${id}`),
     get: jest.fn(),
     set: jest.fn(),
   };
@@ -166,7 +165,7 @@ describe('FindEmployeeService', () => {
       expect.objectContaining({ id: 'employee-1' }),
     ]);
     expect(redis.set).toHaveBeenCalledWith(
-      'employees',
+      generateListKey('employee', { skip: 5, limit: 2 }),
       expect.any(Array),
       expect.any(Number),
     );

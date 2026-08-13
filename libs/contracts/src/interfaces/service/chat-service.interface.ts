@@ -28,6 +28,7 @@ import {
 } from '@app/contracts/dtos/chat/chat-gateway/mark-as-read.dto';
 
 export const I_CHAT_SERVICE = 'IChatService';
+export const I_CHAT_QUERY_SERVICE = 'IChatQueryService';
 
 export interface IChatService {
   createOrGetChat(
@@ -46,6 +47,10 @@ export interface IChatService {
     deleteMessageDTO: DeleteMessageRpcDTO,
   ): Promise<DeleteMessageResponseDTO>;
   markAsRead(markAsReadDTO: MarkAsReadRpcDTO): Promise<MarkAsReadResponseDTO>;
+}
+
+/** Read side of chat: history, listings, counts and access checks. */
+export interface IChatQueryService {
   getUserByIdForChat(userId: string): Promise<UserResponseDTO>;
   validateChatUsers(
     validateChatUsersDTO: ValidateChatUsersDTO,

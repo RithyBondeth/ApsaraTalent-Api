@@ -4,7 +4,6 @@ import { ConfigModule } from '@app/common/config';
 import { UploadfileModule } from '@app/common/uploadfile/uploadfile.module';
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { AiStreamModule } from './ai-stream/ai-stream.module';
 import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './chat/chat.module';
 import { StorageHttpModule } from './storage/storage-http.module';
@@ -12,7 +11,7 @@ import { HealthModule } from './health/health.module';
 import { JobModule } from './job/job.module';
 import { NotificationModule } from './notification/notification.module';
 import { ResumeBuilderModule } from './resume-builder/resume-builder.module';
-import { SocketModule } from './socket/socket.module';
+import { SocketModule } from './shared/socket/socket.module';
 import { UserModule } from './user/user.module';
 import { MetricsModule } from '@app/common/metrics/metrics.module';
 import { AiQuotaModule } from '@app/common/throttler/ai-quota.module';
@@ -27,7 +26,6 @@ import { AiModule } from './ai/ai.module';
     ScheduleModule.forRoot(),
     ConfigModule,
     LoggerModule,
-    AiStreamModule,
     AiQuotaModule,
     AiModule,
     AuthModule,

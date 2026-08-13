@@ -1,5 +1,7 @@
 import 'reflect-metadata';
-import { RecommendationsService } from './recommendations.service';
+import { EmployeeRecommendationsService } from './employee-recommendations.service';
+import { CompanyRecommendationsService } from './company-recommendations.service';
+import { RecommendationSupportService } from './recommendation-support.service';
 import {
   clampRecoLimit,
   extractKeywords,
@@ -7,9 +9,10 @@ import {
   normalizeDegree,
   toVectorLiteral,
   vectorCentroid,
-} from './recommendations-scoring.util';
+} from '../utils/recommendations-scoring.util';
+import { generateListKey } from '@app/common/redis/redis-keys.util';
 
-describe('RecommendationsService', () => {
+describe('recommendation services', () => {
   const users = {
     createQueryBuilder: jest.fn(),
     count: jest.fn(),
@@ -20,24 +23,28 @@ describe('RecommendationsService', () => {
   const matches = {};
   const logger = { info: jest.fn(), warn: jest.fn(), error: jest.fn() };
   const redis = {
-    generateListKey: jest.fn(() => 'users'),
-    generateUserKey: jest.fn((_type, id) => `user:${id}`),
-    generateEmployeeFavoritesKey: jest.fn(() => 'employee-favorites'),
-    generateEmployeeFavoriteCountKey: jest.fn(() => 'employee-favorite-count'),
-    generateCompanyFavoritesKey: jest.fn(() => 'company-favorites'),
-    generateCompanyFavoriteCountKey: jest.fn(() => 'company-favorite-count'),
     get: jest.fn(),
     set: jest.fn(),
     del: jest.fn(),
     clearUserDetailCache: jest.fn(),
   };
 
-  const service = new RecommendationsService(
+  // One 800-line service became two direction-specific services over a shared
+  // support collaborator; the fixtures below are the same ones it used.
+  const support = new RecommendationSupportService(users as any, scopes as any);
+  const service = new EmployeeRecommendationsService(
     users as any,
-    scopes as any,
     matches as any,
     logger as any,
     redis as any,
+    support,
+  );
+  const companyService = new CompanyRecommendationsService(
+    users as any,
+    matches as any,
+    logger as any,
+    redis as any,
+    support,
   );
 
   beforeEach(() => {
@@ -74,7 +81,6 @@ describe('RecommendationsService', () => {
   }
 
   it('covers recommendation input helpers and block lookup', async () => {
-    const internal = service as any;
     expect(clampRecoLimit(undefined)).toBe(10);
     expect(clampRecoLimit(-4)).toBe(10);
     expect(clampRecoLimit(80)).toBe(50);
@@ -107,8 +113,12 @@ describe('RecommendationsService', () => {
     users.query
       .mockResolvedValueOnce([{ '?column?': 1 }])
       .mockResolvedValueOnce([]);
-    await expect(internal.requesterHasBlocks('user-1')).resolves.toBe(true);
-    await expect(internal.requesterHasBlocks('user-2')).resolves.toBe(false);
+    await expect((support as any).requesterHasBlocks('user-1')).resolves.toBe(
+      true,
+    );
+    await expect((support as any).requesterHasBlocks('user-2')).resolves.toBe(
+      false,
+    );
   });
 
   it('performs nearest-scope vector lookup', async () => {
@@ -127,7 +137,7 @@ describe('RecommendationsService', () => {
       .mockResolvedValue([{ id: 'scope-1' }, { id: 'scope-2' }]);
     scopes.createQueryBuilder.mockReturnValue(qb);
     await expect(
-      (service as any).nearestScopeIds([0.1, 0.2], 2),
+      (support as any).nearestScopeIds([0.1, 0.2], 2),
     ).resolves.toEqual(['scope-1', 'scope-2']);
     expect(qb.setParameter).toHaveBeenCalledWith('qvec', '[0.1,0.2]');
   });
@@ -192,7 +202,7 @@ describe('RecommendationsService', () => {
       .mockReturnValueOnce(builders[4])
       .mockReturnValueOnce(builders[5]);
     jest
-      .spyOn(service as any, 'nearestScopeIds')
+      .spyOn(support as any, 'nearestScopeIds')
       .mockResolvedValue(['scope-1']);
     users.query.mockResolvedValueOnce([]);
     const liked = recommendationBuilder({
@@ -213,7 +223,14 @@ describe('RecommendationsService', () => {
         values: [{ id: 2 }],
       }),
     );
-    expect(redis.set).toHaveBeenCalledWith('users', result, expect.any(Number));
+    expect(redis.set).toHaveBeenCalledWith(
+      generateListKey('employee-recommendations', {
+        employeeId: 'employee-1',
+        limit: 5,
+      }),
+      result,
+      expect.any(Number),
+    );
   });
 
   it('ranks fully stitched employee recommendations for a company', async () => {
@@ -290,7 +307,7 @@ describe('RecommendationsService', () => {
     for (const builder of builders)
       users.createQueryBuilder.mockReturnValueOnce(builder);
     jest
-      .spyOn(service as any, 'nearestScopeIds')
+      .spyOn(support as any, 'nearestScopeIds')
       .mockResolvedValue(['scope-1']);
     users.query.mockResolvedValueOnce([]);
     (matches as any).createQueryBuilder = jest.fn(() =>
@@ -299,7 +316,7 @@ describe('RecommendationsService', () => {
       }),
     );
 
-    const result = await service.getCompanyRecommendations({
+    const result = await companyService.getCompanyRecommendations({
       companyId: 'company-1',
       limit: 5,
       requesterId: 'company-user',
@@ -311,7 +328,14 @@ describe('RecommendationsService', () => {
         skills: [expect.objectContaining({ name: 'TypeScript' })],
       }),
     );
-    expect(redis.set).toHaveBeenCalledWith('users', result, expect.any(Number));
+    expect(redis.set).toHaveBeenCalledWith(
+      generateListKey('company-recommendations', {
+        companyId: 'company-1',
+        limit: 5,
+      }),
+      result,
+      expect.any(Number),
+    );
   });
 
   it('caches an empty unrelated employee recommendation page', async () => {
@@ -366,7 +390,14 @@ describe('RecommendationsService', () => {
     await expect(
       service.getEmployeeRecommendations({ employeeId: 'employee-1' }),
     ).resolves.toEqual([]);
-    expect(redis.set).toHaveBeenCalledWith('users', [], expect.any(Number));
+    expect(redis.set).toHaveBeenCalledWith(
+      generateListKey('employee-recommendations', {
+        employeeId: 'employee-1',
+        limit: 10,
+      }),
+      [],
+      expect.any(Number),
+    );
   });
 
   it('does not cache empty recommendations for a requester with blocks', async () => {
@@ -389,7 +420,7 @@ describe('RecommendationsService', () => {
     );
 
     await expect(
-      service.getCompanyRecommendations({
+      companyService.getCompanyRecommendations({
         companyId: 'company-1',
         requesterId: 'company-user',
       }),
@@ -525,7 +556,7 @@ describe('RecommendationsService', () => {
     );
 
     await expect(
-      service.getCompanyRecommendations({ companyId: 'company-1' }),
+      companyService.getCompanyRecommendations({ companyId: 'company-1' }),
     ).resolves.toHaveLength(1);
   });
 
@@ -537,7 +568,7 @@ describe('RecommendationsService', () => {
     ).resolves.toBe(cached);
     redis.get.mockResolvedValueOnce(cached);
     await expect(
-      service.getCompanyRecommendations({ companyId: 'company-1' }),
+      companyService.getCompanyRecommendations({ companyId: 'company-1' }),
     ).resolves.toBe(cached);
 
     redis.get.mockResolvedValueOnce(null);
@@ -557,7 +588,7 @@ describe('RecommendationsService', () => {
       throw new Error('company recommendation database failed');
     });
     await expect(
-      service.getCompanyRecommendations({ companyId: 'company-1' }),
+      companyService.getCompanyRecommendations({ companyId: 'company-1' }),
     ).resolves.toEqual([]);
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('company recommendation database failed'),
@@ -584,7 +615,7 @@ describe('RecommendationsService', () => {
     );
 
     await expect(
-      service.getCompanyRecommendations({ companyId: 'missing' }),
+      companyService.getCompanyRecommendations({ companyId: 'missing' }),
     ).resolves.toEqual([]);
   });
 
@@ -603,7 +634,7 @@ describe('RecommendationsService', () => {
       throw null;
     });
     await expect(
-      service.getCompanyRecommendations({ companyId: 'company-1' }),
+      companyService.getCompanyRecommendations({ companyId: 'company-1' }),
     ).resolves.toEqual([]);
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Unknown error'),
@@ -697,7 +728,7 @@ describe('RecommendationsService', () => {
       recommendationBuilder({ raw: [{ companyId: null }] }),
     );
     jest
-      .spyOn(service as any, 'nearestScopeIds')
+      .spyOn(support as any, 'nearestScopeIds')
       .mockResolvedValue(['scope-1']);
 
     const result = await service.getEmployeeRecommendations({
@@ -788,11 +819,11 @@ describe('RecommendationsService', () => {
       recommendationBuilder({ raw: [{ employeeId: null }] }),
     );
     jest
-      .spyOn(service as any, 'nearestScopeIds')
+      .spyOn(support as any, 'nearestScopeIds')
       .mockResolvedValue(['scope-1']);
 
     await expect(
-      service.getCompanyRecommendations({
+      companyService.getCompanyRecommendations({
         companyId: 'company-1',
         requesterId: 'company-user',
       }),

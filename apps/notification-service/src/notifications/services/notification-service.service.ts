@@ -23,6 +23,10 @@ import { INotificationService } from '@app/contracts/interfaces/service/notifica
 import { NOTIFICATION } from '@app/contracts/constants/domain/notification.constant';
 import { RedisService } from '@app/common/redis/redis.service';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
+import {
+  generateNotificationListKey,
+  generateNotificationUnreadCountKey,
+} from '@app/common/redis/redis-keys.util';
 
 @Injectable()
 export class NotificationService implements INotificationService {
@@ -136,7 +140,7 @@ export class NotificationService implements INotificationService {
     const skip = (page - 1) * limit;
 
     const unreadOnly = !!listNotificationsDTO.unreadOnly;
-    const cacheKey = this.redisService.generateNotificationListKey(
+    const cacheKey = generateNotificationListKey(
       listNotificationsDTO.userId,
       page,
       limit,
@@ -228,7 +232,7 @@ export class NotificationService implements INotificationService {
   async getUnreadCount(
     notificationUserDTO: NotificationUserDTO,
   ): Promise<UnreadCountResponseDTO> {
-    const cacheKey = this.redisService.generateNotificationUnreadCountKey(
+    const cacheKey = generateNotificationUnreadCountKey(
       notificationUserDTO.userId,
     );
     const cached =

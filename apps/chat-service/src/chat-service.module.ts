@@ -17,9 +17,14 @@ import { TerminusModule } from '@nestjs/terminus';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { ChatService } from './chat/services/chat-service.service';
+import { ChatIdentityService } from './chat/services/chat-identity.service';
+import { ChatQueryService } from './chat/services/chat-query.service';
 import { ChatController } from './chat/controllers/chat-service.controller';
 import { ChatHealthController } from './health/health.controller';
-import { I_CHAT_SERVICE } from '@app/contracts/interfaces/service/chat-service.interface';
+import {
+  I_CHAT_QUERY_SERVICE,
+  I_CHAT_SERVICE,
+} from '@app/contracts/interfaces/service/chat-service.interface';
 
 @Module({
   imports: [
@@ -47,9 +52,14 @@ import { I_CHAT_SERVICE } from '@app/contracts/interfaces/service/chat-service.i
   ],
   controllers: [ChatController, ChatHealthController],
   providers: [
+    ChatIdentityService,
     {
       provide: I_CHAT_SERVICE,
       useClass: ChatService,
+    },
+    {
+      provide: I_CHAT_QUERY_SERVICE,
+      useClass: ChatQueryService,
     },
     RedisCacheHealthIndicator,
   ],

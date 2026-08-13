@@ -6,7 +6,6 @@ describe('SearchEmployeeService', () => {
   const repository = { createQueryBuilder: jest.fn() };
   const logger = { info: jest.fn(), error: jest.fn() };
   const redis = {
-    generateSearchKey: jest.fn(() => 'employee-search'),
     get: jest.fn(),
     set: jest.fn(),
   };

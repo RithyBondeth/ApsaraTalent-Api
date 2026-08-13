@@ -1,6 +1,11 @@
 import 'reflect-metadata';
 import { RpcException } from '@nestjs/microservices';
 import { ResumeTemplateService } from './resume-template.service';
+import {
+  generateTemplateDetailKey,
+  generateTemplateListKey,
+  generateTemplateSearchKey,
+} from '@app/common/redis/redis-keys.util';
 
 describe('ResumeTemplateService', () => {
   const repository = {
@@ -13,9 +18,6 @@ describe('ResumeTemplateService', () => {
   const uploads = { getUploadFile: jest.fn() };
   const logger = { info: jest.fn(), error: jest.fn() };
   const redis = {
-    generateTemplateListKey: jest.fn(() => 'templates'),
-    generateTemplateDetailKey: jest.fn((id) => `template:${id}`),
-    generateTemplateSearchKey: jest.fn(() => 'template-search'),
     get: jest.fn(),
     set: jest.fn(),
     invalidateTemplateCaches: jest.fn(),
@@ -56,7 +58,7 @@ describe('ResumeTemplateService', () => {
     const result = await service.findAllResumeTemplate();
     expect(result).toHaveLength(1);
     expect(redis.set).toHaveBeenCalledWith(
-      'templates',
+      generateTemplateListKey(),
       result,
       expect.any(Number),
     );
@@ -134,7 +136,7 @@ describe('ResumeTemplateService', () => {
       { isPremium: true },
     );
     expect(redis.set).toHaveBeenCalledWith(
-      'template-search',
+      generateTemplateSearchKey({ title: 'classic', isPremium: 'true' }),
       result,
       expect.any(Number),
     );
@@ -170,7 +172,7 @@ describe('ResumeTemplateService', () => {
       title: 'Classic',
     });
     expect(redis.set).toHaveBeenCalledWith(
-      'template:template-1',
+      generateTemplateDetailKey('template-1'),
       expect.anything(),
       expect.any(Number),
     );

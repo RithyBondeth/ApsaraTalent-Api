@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { RpcException } from '@nestjs/microservices';
 import { JobService } from './job-service.service';
+import { generateJobListKey } from '@app/common/redis/redis-keys.util';
 
 describe('JobService', () => {
   const repository = {
@@ -9,8 +10,6 @@ describe('JobService', () => {
   };
   const logger = { setContext: jest.fn(), info: jest.fn(), error: jest.fn() };
   const redis = {
-    generateJobListKey: jest.fn(() => 'jobs'),
-    generateJobSearchKey: jest.fn(() => 'job-search'),
     get: jest.fn(),
     set: jest.fn(),
   };
@@ -38,7 +37,9 @@ describe('JobService', () => {
     await expect(service.findAllJobs({ skip: 20, limit: 10 })).resolves.toBe(
       cached,
     );
-    expect(redis.get).toHaveBeenCalledWith('jobs:skip:20:limit:10');
+    expect(redis.get).toHaveBeenCalledWith(
+      `${generateJobListKey()}:skip:20:limit:10`,
+    );
     expect(repository.find).not.toHaveBeenCalled();
   });
 
@@ -60,7 +61,7 @@ describe('JobService', () => {
       }),
     );
     expect(redis.set).toHaveBeenCalledWith(
-      'jobs:skip:0:limit:20',
+      `${generateJobListKey()}:skip:0:limit:20`,
       result,
       expect.any(Number),
     );

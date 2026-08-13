@@ -19,7 +19,14 @@ describe('ChatController', () => {
     service[method] = jest.fn();
   }
   const logger = { setContext: jest.fn(), info: jest.fn() };
-  const controller = new ChatController(service as any, logger as any);
+  // The controller now takes the write and read services separately; this
+  // suite only asserts delegation, so one mock carrying every method serves as
+  // both collaborators.
+  const controller = new ChatController(
+    service as any,
+    service as any,
+    logger as any,
+  );
 
   beforeEach(() => {
     jest.clearAllMocks();

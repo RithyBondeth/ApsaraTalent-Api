@@ -3,6 +3,12 @@ import { isUuid, resolveUserId, resolveUserIdSafe } from '@app/common';
 import { RpcException } from '@nestjs/microservices';
 import { of } from 'rxjs';
 import { ChatService } from './chat-service.service';
+import { ChatIdentityService } from './chat-identity.service';
+import { ChatQueryService } from './chat-query.service';
+import {
+  generateRecentChatsKey,
+  generateUnreadCountKey,
+} from '@app/common/redis/redis-keys.util';
 
 jest.mock('@app/common', () => ({
   isUuid: jest.fn(() => true),
@@ -28,8 +34,6 @@ describe('ChatService', () => {
     del: jest.fn(),
     get: jest.fn(),
     set: jest.fn(),
-    generateUnreadCountKey: jest.fn((id) => `unread:${id}`),
-    generateRecentChatsKey: jest.fn((id) => `recent:${id}`),
   };
   const logger = {
     setContext: jest.fn(),
@@ -37,13 +41,28 @@ describe('ChatService', () => {
     info: jest.fn(),
     warn: jest.fn(),
   };
-  const service = new ChatService(
-    chats as any,
+  // Identity resolution and block checks now live in ChatIdentityService; it
+  // takes the same user/block repositories the chat service used to hold.
+  const identity = new ChatIdentityService(
     users as any,
     blocks as any,
+    logger as any,
+  );
+  // Read-side methods moved to ChatQueryService, over the same fixtures.
+  const queryService = new ChatQueryService(
+    chats as any,
     userClient as any,
     redis as any,
     logger as any,
+    identity,
+  );
+  const service = new ChatService(
+    chats as any,
+    users as any,
+    userClient as any,
+    redis as any,
+    logger as any,
+    identity,
   );
 
   beforeEach(() => {
@@ -192,14 +211,14 @@ describe('ChatService', () => {
   it('marks only receiver-owned messages read and clears unread cache', async () => {
     chats.update.mockResolvedValue({ affected: 1 });
     await service.markAsRead({ messageId: 'message-1', readerId: 'receiver' });
-    expect(redis.del).toHaveBeenCalledWith('unread:receiver');
+    expect(redis.del).toHaveBeenCalledWith(generateUnreadCountKey('receiver'));
   });
 
   it('validates chat users through the user service', async () => {
     userClient.send
       .mockReturnValueOnce(of({ id: 'sender' }))
       .mockReturnValueOnce(of({ id: 'receiver' }));
-    const result = await service.validateChatUsers({
+    const result = await queryService.validateChatUsers({
       senderId: 'sender',
       receiverId: 'receiver',
     });
@@ -209,12 +228,12 @@ describe('ChatService', () => {
 
   it('uses cached unread counts and caches database counts', async () => {
     redis.get.mockResolvedValueOnce(3);
-    await expect(service.getUnreadCount('user-1')).resolves.toBe(3);
+    await expect(queryService.getUnreadCount('user-1')).resolves.toBe(3);
     chats.count.mockResolvedValue(4);
     redis.get.mockResolvedValueOnce(null);
-    await expect(service.getUnreadCount('user-1')).resolves.toBe(4);
+    await expect(queryService.getUnreadCount('user-1')).resolves.toBe(4);
     expect(redis.set).toHaveBeenCalledWith(
-      'unread:user-1',
+      generateUnreadCountKey('user-1'),
       4,
       expect.any(Number),
     );
@@ -249,7 +268,7 @@ describe('ChatService', () => {
     userClient.send.mockReturnValue(
       of({ id: 'user-1', email: 'person@example.com' }),
     );
-    await expect(service.getUserByIdForChat('user-1')).resolves.toEqual(
+    await expect(queryService.getUserByIdForChat('user-1')).resolves.toEqual(
       expect.objectContaining({ id: 'user-1', email: 'person@example.com' }),
     );
   });
@@ -276,7 +295,7 @@ describe('ChatService', () => {
     userClient.send.mockReturnValue(
       of({ id: 'receiver', email: 'receiver@example.com' }),
     );
-    const result = await service.getChatHistory({
+    const result = await queryService.getChatHistory({
       userId1: 'sender',
       userId2: 'receiver',
       limit: 999,
@@ -296,17 +315,17 @@ describe('ChatService', () => {
 
   it('authorizes attachments only for message participants', async () => {
     await expect(
-      service.canAccessAttachment('', '/storage/file.pdf'),
+      queryService.canAccessAttachment('', '/storage/file.pdf'),
     ).resolves.toBe(false);
     chats.findOne.mockResolvedValue({
       sender: { id: 'sender' },
       receiver: { id: 'receiver' },
     });
     await expect(
-      service.canAccessAttachment('sender', '/storage/file.pdf'),
+      queryService.canAccessAttachment('sender', '/storage/file.pdf'),
     ).resolves.toBe(true);
     await expect(
-      service.canAccessAttachment('outsider', '/storage/file.pdf'),
+      queryService.canAccessAttachment('outsider', '/storage/file.pdf'),
     ).resolves.toBe(false);
   });
 
@@ -323,7 +342,7 @@ describe('ChatService', () => {
 
   it('returns recent chats from cache and from the ordered database query', async () => {
     redis.get.mockResolvedValueOnce([{ id: 'cached-chat' }]);
-    await expect(service.getRecentChats('user-1')).resolves.toEqual([
+    await expect(queryService.getRecentChats('user-1')).resolves.toEqual([
       { id: 'cached-chat' },
     ]);
 
@@ -348,10 +367,10 @@ describe('ChatService', () => {
       },
     ]);
     chats.createQueryBuilder.mockReturnValue(qb);
-    const result = await service.getRecentChats('user-1');
+    const result = await queryService.getRecentChats('user-1');
     expect(result).toHaveLength(1);
     expect(redis.set).toHaveBeenCalledWith(
-      'recent:user-1',
+      generateRecentChatsKey('user-1'),
       expect.any(Array),
       expect.any(Number),
     );
@@ -360,7 +379,7 @@ describe('ChatService', () => {
   it('returns no recent chats when identity resolution yields no UUID', async () => {
     (isUuid as jest.Mock).mockReturnValue(false);
     (resolveUserIdSafe as jest.Mock).mockResolvedValue(null);
-    await expect(service.getRecentChats('bad-id')).resolves.toEqual([]);
+    await expect(queryService.getRecentChats('bad-id')).resolves.toEqual([]);
     expect(chats.createQueryBuilder).not.toHaveBeenCalled();
   });
 
@@ -460,10 +479,10 @@ describe('ChatService', () => {
 
   it('waits for both concurrent user lookups and rejects an absent result', async () => {
     const getUser = jest
-      .spyOn(service, 'getUserByIdForChat')
+      .spyOn(queryService, 'getUserByIdForChat')
       .mockResolvedValueOnce(null as any)
       .mockResolvedValueOnce({ id: 'receiver' } as any);
-    const error = (await service
+    const error = (await queryService
       .validateChatUsers({ senderId: 'sender', receiverId: 'receiver' })
       .catch((caught) => caught)) as RpcException;
     expect(getUser).toHaveBeenCalledTimes(2);
@@ -480,7 +499,7 @@ describe('ChatService', () => {
     chats.find.mockResolvedValueOnce([]);
     userClient.send.mockReturnValueOnce(of({ id: 'canonical-2' }));
 
-    await service.getChatHistory({
+    await queryService.getChatHistory({
       userId1: 'legacy-1',
       userId2: 'legacy-2',
     });
@@ -569,7 +588,7 @@ describe('ChatService', () => {
     );
     userClient.send.mockReturnValue(of({ id: 'receiver' }));
 
-    const result = await service.getChatHistory({
+    const result = await queryService.getChatHistory({
       userId1: 'sender',
       userId2: 'receiver',
     });
@@ -604,9 +623,13 @@ describe('ChatService', () => {
     qb.getMany = jest.fn().mockResolvedValue([]);
     chats.createQueryBuilder.mockReturnValue(qb);
 
-    await expect(service.getRecentChats(' employee-id ')).resolves.toEqual([]);
+    await expect(queryService.getRecentChats(' employee-id ')).resolves.toEqual(
+      [],
+    );
 
-    expect(redis.generateRecentChatsKey).toHaveBeenCalledWith('canonical-user');
+    expect(redis.get).toHaveBeenCalledWith(
+      generateRecentChatsKey('canonical-user'),
+    );
     expect(qb.where).toHaveBeenCalledWith('sender.id IN (:...userIds)', {
       userIds: ['canonical-user'],
     });

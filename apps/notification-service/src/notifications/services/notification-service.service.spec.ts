@@ -1,5 +1,9 @@
 import { RpcException } from '@nestjs/microservices';
 import { NotificationService } from './notification-service.service';
+import {
+  generateNotificationListKey,
+  generateNotificationUnreadCountKey,
+} from '@app/common/redis/redis-keys.util';
 
 describe('NotificationService', () => {
   const notifications = {
@@ -20,8 +24,6 @@ describe('NotificationService', () => {
   };
   const redis = {
     invalidateNotificationCaches: jest.fn(),
-    generateNotificationListKey: jest.fn().mockReturnValue('list-key'),
-    generateNotificationUnreadCountKey: jest.fn().mockReturnValue('count-key'),
     get: jest.fn(),
     set: jest.fn(),
   };
@@ -200,7 +202,7 @@ describe('NotificationService', () => {
       }),
     );
     expect(redis.set).toHaveBeenCalledWith(
-      'list-key',
+      generateNotificationListKey('u1', 1, 100, true),
       result,
       expect.any(Number),
     );
@@ -228,7 +230,7 @@ describe('NotificationService', () => {
     });
     expect(result).toEqual(expect.objectContaining({ unreadCount: 4 }));
     expect(redis.set).toHaveBeenCalledWith(
-      'count-key',
+      generateNotificationUnreadCountKey('u1'),
       result,
       expect.any(Number),
     );

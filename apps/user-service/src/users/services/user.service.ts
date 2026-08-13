@@ -21,6 +21,10 @@ import {
 import { PaginationDTO } from '@app/contracts/dtos/shared';
 import { IUserService } from '@app/contracts/interfaces/service/user-service.interface';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
+import {
+  generateListKey,
+  generateUserKey,
+} from '@app/common/redis/redis-keys.util';
 
 /**
  * Core user reads and cache lifecycle. Favourites and recommendations now live
@@ -56,7 +60,7 @@ export class UserService implements IUserService, OnModuleInit {
 
   async findAllUsers(paginationDTO: PaginationDTO): Promise<UserResponseDTO[]> {
     const { skip = 0, limit = 20 } = paginationDTO;
-    const cacheKey = this.redisService.generateListKey('user', { skip, limit });
+    const cacheKey = generateListKey('user', { skip, limit });
     const cached = await this.redisService.get<UserResponseDTO[]>(cacheKey);
 
     if (cached) {
@@ -168,7 +172,7 @@ export class UserService implements IUserService, OnModuleInit {
 
   async findOneUserByID(userIdDTO: UserIdDTO): Promise<UserResponseDTO> {
     const { userId } = userIdDTO;
-    const cacheKey = this.redisService.generateUserKey('detail', userId);
+    const cacheKey = generateUserKey('detail', userId);
     const cached = await this.redisService.get<UserResponseDTO>(cacheKey);
 
     if (cached) {
@@ -284,7 +288,7 @@ export class UserService implements IUserService, OnModuleInit {
   }
 
   async findAllCareerScopes(): Promise<CareerScopesResponseDTO[]> {
-    const cacheKey = this.redisService.generateListKey('career-scopes', {});
+    const cacheKey = generateListKey('career-scopes', {});
     const cached =
       await this.redisService.get<Partial<CareerScope[]>>(cacheKey);
 
@@ -326,15 +330,9 @@ export class UserService implements IUserService, OnModuleInit {
   async clearCurrentUserCache(userIdDTO: UserIdDTO): Promise<void> {
     const { userId } = userIdDTO;
     await Promise.all([
-      this.redisService.del(
-        this.redisService.generateUserKey('detail', userId),
-      ),
-      this.redisService.del(
-        this.redisService.generateUserKey('profile', userId),
-      ),
-      this.redisService.del(
-        this.redisService.generateUserKey('settings', userId),
-      ),
+      this.redisService.del(generateUserKey('detail', userId)),
+      this.redisService.del(generateUserKey('profile', userId)),
+      this.redisService.del(generateUserKey('settings', userId)),
     ]);
   }
 }

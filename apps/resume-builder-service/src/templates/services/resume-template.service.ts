@@ -15,6 +15,11 @@ import {
 } from '@app/contracts/dtos/resume/template';
 import { IResumeTemplateService } from '@app/contracts/interfaces/service/resume-builder-service.interface';
 import { RESUME } from '@app/contracts';
+import {
+  generateTemplateDetailKey,
+  generateTemplateListKey,
+  generateTemplateSearchKey,
+} from '@app/common/redis/redis-keys.util';
 
 @Injectable()
 export class ResumeTemplateService implements IResumeTemplateService {
@@ -27,7 +32,7 @@ export class ResumeTemplateService implements IResumeTemplateService {
   ) {}
 
   async findAllResumeTemplate(): Promise<ResumeTemplateResponseDTO[]> {
-    const cacheKey = this.redisService.generateTemplateListKey();
+    const cacheKey = generateTemplateListKey();
     const cached =
       await this.redisService.get<ResumeTemplateResponseDTO[]>(cacheKey);
     if (cached) {
@@ -61,7 +66,7 @@ export class ResumeTemplateService implements IResumeTemplateService {
   async findOneResumeTemplate(
     resumeId: string,
   ): Promise<ResumeTemplateResponseDTO> {
-    const cacheKey = this.redisService.generateTemplateDetailKey(resumeId);
+    const cacheKey = generateTemplateDetailKey(resumeId);
     const cached =
       await this.redisService.get<ResumeTemplateResponseDTO>(cacheKey);
     if (cached) {
@@ -150,9 +155,7 @@ export class ResumeTemplateService implements IResumeTemplateService {
   async searchResumeTemplate(
     searchResumeTemplateDTO: SearchResumeTemplateDTO,
   ): Promise<SearchResumeTemplateResponseDTO[]> {
-    const cacheKey = this.redisService.generateTemplateSearchKey(
-      searchResumeTemplateDTO,
-    );
+    const cacheKey = generateTemplateSearchKey(searchResumeTemplateDTO);
     const cached =
       await this.redisService.get<SearchResumeTemplateResponseDTO[]>(cacheKey);
     if (cached) {

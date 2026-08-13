@@ -1,6 +1,28 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Test, TestingModule } from '@nestjs/testing';
 import { RedisService } from './redis.service';
+import {
+  generateAuthSessionKey,
+  generateCompanyFavoriteCountKey,
+  generateCompanyFavoritesKey,
+  generateCompanyKey,
+  generateEmployeeFavoriteCountKey,
+  generateEmployeeFavoritesKey,
+  generateEmployeeKey,
+  generateJobListKey,
+  generateJobSearchKey,
+  generateListKey,
+  generateMatchingKey,
+  generateNotificationListKey,
+  generateNotificationUnreadCountKey,
+  generateRecentChatsKey,
+  generateSearchKey,
+  generateTemplateDetailKey,
+  generateTemplateListKey,
+  generateTemplateSearchKey,
+  generateUnreadCountKey,
+  generateUserKey,
+} from './redis-keys.util';
 
 const PREFIX = 'apsaratalent:user-service';
 
@@ -40,124 +62,120 @@ describe('RedisService', () => {
 
   describe('key generators', () => {
     it('generateUserKey', () => {
-      expect(service.generateUserKey('detail', 'u1')).toBe(
-        `${PREFIX}:user:detail:u1`,
-      );
+      expect(generateUserKey('detail', 'u1')).toBe(`${PREFIX}:user:detail:u1`);
     });
 
     it('generateEmployeeKey', () => {
-      expect(service.generateEmployeeKey('favorites', 'e1')).toBe(
+      expect(generateEmployeeKey('favorites', 'e1')).toBe(
         `${PREFIX}:employee:favorites:e1`,
       );
     });
 
     it('generateCompanyKey', () => {
-      expect(service.generateCompanyKey('detail', 'c1')).toBe(
+      expect(generateCompanyKey('detail', 'c1')).toBe(
         `${PREFIX}:company:detail:c1`,
       );
     });
 
     it('generateListKey serialises filters to JSON', () => {
-      const key = service.generateListKey('employee', { page: 1 });
+      const key = generateListKey('employee', { page: 1 });
       expect(key).toBe(
         `${PREFIX}:employee:list:${JSON.stringify({ page: 1 })}`,
       );
     });
 
     it('generateSearchKey sorts query keys alphabetically', () => {
-      const key = service.generateSearchKey('job', { z: 1, a: 2 });
+      const key = generateSearchKey('job', { z: 1, a: 2 });
       expect(key).toContain(':job:search:');
       expect(key).toContain('"a":2');
       expect(key.indexOf('"a"')).toBeLessThan(key.indexOf('"z"'));
     });
 
     it('generateEmployeeFavoriteCountKey delegates to generateEmployeeKey', () => {
-      expect(service.generateEmployeeFavoriteCountKey('e1')).toBe(
+      expect(generateEmployeeFavoriteCountKey('e1')).toBe(
         `${PREFIX}:employee:favorite-count:e1`,
       );
     });
 
     it('generateCompanyFavoriteCountKey delegates to generateCompanyKey', () => {
-      expect(service.generateCompanyFavoriteCountKey('c1')).toBe(
+      expect(generateCompanyFavoriteCountKey('c1')).toBe(
         `${PREFIX}:company:favorite-count:c1`,
       );
     });
 
     it('generateEmployeeFavoritesKey delegates to generateEmployeeKey', () => {
-      expect(service.generateEmployeeFavoritesKey('e1')).toBe(
+      expect(generateEmployeeFavoritesKey('e1')).toBe(
         `${PREFIX}:employee:favorites:e1`,
       );
     });
 
     it('generateCompanyFavoritesKey delegates to generateCompanyKey', () => {
-      expect(service.generateCompanyFavoritesKey('c1')).toBe(
+      expect(generateCompanyFavoritesKey('c1')).toBe(
         `${PREFIX}:company:favorites:c1`,
       );
     });
 
     it('generateAuthSessionKey', () => {
-      expect(service.generateAuthSessionKey('u1')).toBe(
-        'apsaratalent:auth:session:u1',
-      );
+      expect(generateAuthSessionKey('u1')).toBe('apsaratalent:auth:session:u1');
     });
 
     it('generateJobListKey', () => {
-      expect(service.generateJobListKey()).toBe(
+      expect(generateJobListKey()).toBe(
         'apsaratalent:job-service:job:list:all',
       );
     });
 
     it('generateJobSearchKey sorts query keys', () => {
-      const key = service.generateJobSearchKey({ z: 1, a: 2 });
+      const key = generateJobSearchKey({ z: 1, a: 2 });
       expect(key).toContain('apsaratalent:job-service:job:search:');
       expect(key.indexOf('"a"')).toBeLessThan(key.indexOf('"z"'));
     });
 
     it('generateMatchingKey', () => {
-      expect(service.generateMatchingKey('employee-matching', 'e1')).toBe(
+      expect(generateMatchingKey('employee-matching', 'e1')).toBe(
         'apsaratalent:job-service:matching:employee-matching:e1',
       );
     });
 
     it('generateRecentChatsKey', () => {
-      expect(service.generateRecentChatsKey('u1')).toBe(
+      expect(generateRecentChatsKey('u1')).toBe(
         'apsaratalent:chat-service:chat:recent:u1',
       );
     });
 
     it('generateUnreadCountKey', () => {
-      expect(service.generateUnreadCountKey('u1')).toBe(
+      expect(generateUnreadCountKey('u1')).toBe(
         'apsaratalent:chat-service:chat:unread-count:u1',
       );
     });
 
     it('generateTemplateListKey', () => {
-      expect(service.generateTemplateListKey()).toBe(
+      expect(generateTemplateListKey()).toBe(
         'apsaratalent:resume-service:templates:all',
       );
     });
 
     it('generateTemplateDetailKey', () => {
-      expect(service.generateTemplateDetailKey('t1')).toBe(
+      expect(generateTemplateDetailKey('t1')).toBe(
         'apsaratalent:resume-service:templates:detail:t1',
       );
     });
 
     it('generateTemplateSearchKey', () => {
       const q = { term: 'nurse' };
-      expect(service.generateTemplateSearchKey(q)).toBe(
+      expect(generateTemplateSearchKey(q)).toBe(
         `apsaratalent:resume-service:templates:search:${JSON.stringify(q)}`,
       );
     });
 
     it('generateNotificationUnreadCountKey', () => {
-      expect(service.generateNotificationUnreadCountKey('u1')).toBe(
+      expect(generateNotificationUnreadCountKey('u1')).toBe(
         'apsaratalent:notification-service:unread-count:u1',
       );
     });
 
     it('generateNotificationListKey', () => {
-      expect(service.generateNotificationListKey('u1', 2, 20, false)).toBe(
+      expect(generateNotificationListKey('u1', 2, 20, false)).toBe(
         'apsaratalent:notification-service:list:u1:page:2:limit:20:unread:false',
       );
     });

@@ -1,9 +1,11 @@
-import { ChatService } from './chat-service.service';
+import { ChatQueryService } from './chat-query.service';
 
 describe('chat attachment access', () => {
   const chatRepository = { findOne: jest.fn() };
-  const service = Object.create(ChatService.prototype) as ChatService;
-  (service as any).chatRepository = chatRepository;
+  const queryService = Object.create(
+    ChatQueryService.prototype,
+  ) as ChatQueryService;
+  (queryService as any).chatRepository = chatRepository;
 
   beforeEach(() => jest.clearAllMocks());
 
@@ -14,13 +16,13 @@ describe('chat attachment access', () => {
     });
 
     await expect(
-      service.canAccessAttachment(
+      queryService.canAccessAttachment(
         'sender-1',
         '/chat/attachment/2026-07-13/file.pdf',
       ),
     ).resolves.toBe(true);
     await expect(
-      service.canAccessAttachment(
+      queryService.canAccessAttachment(
         'stranger-1',
         '/chat/attachment/2026-07-13/file.pdf',
       ),
@@ -31,7 +33,7 @@ describe('chat attachment access', () => {
     chatRepository.findOne.mockResolvedValue(null);
 
     await expect(
-      service.canAccessAttachment(
+      queryService.canAccessAttachment(
         'sender-1',
         '/chat/attachment/2026-07-13/missing.pdf',
       ),

@@ -5,7 +5,9 @@ import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-serv
 import { UserResponseDTO } from '@app/contracts/dtos/user';
 import {
   I_CHAT_SERVICE,
+  I_CHAT_QUERY_SERVICE,
   IChatService,
+  IChatQueryService,
 } from '@app/contracts/interfaces/service/chat-service.interface';
 import {
   CreateOrGetChatDTO,
@@ -48,6 +50,8 @@ import {
 export class ChatController implements IChatRpcController {
   constructor(
     @Inject(I_CHAT_SERVICE) private readonly chatService: IChatService,
+    @Inject(I_CHAT_QUERY_SERVICE)
+    private readonly chatQueryService: IChatQueryService,
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(ChatController.name);
@@ -82,7 +86,7 @@ export class ChatController implements IChatRpcController {
     @Payload() userId: string,
   ): Promise<UserResponseDTO> {
     this.logger.info(`[CHAT] getUserByIdForChat: userId=${userId}`);
-    return this.chatService.getUserByIdForChat(userId);
+    return this.chatQueryService.getUserByIdForChat(userId);
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.CAN_ACCESS_ATTACHMENT)
@@ -90,7 +94,7 @@ export class ChatController implements IChatRpcController {
     @Payload() canAccessAttachmentDTO: CanAccessAttachmentDTO,
   ): Promise<CanAccessAttachmentResponseDTO> {
     return new CanAccessAttachmentResponseDTO({
-      canAccess: await this.chatService.canAccessAttachment(
+      canAccess: await this.chatQueryService.canAccessAttachment(
         canAccessAttachmentDTO.userId,
         canAccessAttachmentDTO.attachment,
       ),
@@ -105,7 +109,7 @@ export class ChatController implements IChatRpcController {
       `[CHAT] validateChatUsers: sender=${validateChatUsersDTO.senderId}, receiver=${validateChatUsersDTO.receiverId}`,
     );
     const result =
-      await this.chatService.validateChatUsers(validateChatUsersDTO);
+      await this.chatQueryService.validateChatUsers(validateChatUsersDTO);
     this.logger.info(
       `[CHAT] validateChatUsers OK: sender=${result.sender?.email}, receiver=${result.receiver?.email}`,
     );
@@ -116,12 +120,12 @@ export class ChatController implements IChatRpcController {
   async getChatHistory(
     @Payload() getChatHistoryRpcDTO: GetChatHistoryRpcDTO,
   ): Promise<GetChatHistoryResponseDTO> {
-    return this.chatService.getChatHistory(getChatHistoryRpcDTO);
+    return this.chatQueryService.getChatHistory(getChatHistoryRpcDTO);
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.GET_UNREAD_COUNT)
   async getUnreadCount(@Payload() userId: string): Promise<number> {
-    return await this.chatService.getUnreadCount(userId);
+    return await this.chatQueryService.getUnreadCount(userId);
   }
 
   @MessagePattern(CHAT_SERVICE.ACTIONS.GET_RECENT_CHATS)
@@ -129,7 +133,7 @@ export class ChatController implements IChatRpcController {
     @Payload() userId: string,
   ): Promise<GetRecentChatsResponseDTO[]> {
     this.logger.info(`[CHAT] getRecentChats: userId=${userId}`);
-    const result = await this.chatService.getRecentChats(userId);
+    const result = await this.chatQueryService.getRecentChats(userId);
     this.logger.info(`[CHAT] getRecentChats returned ${result.length} chats`);
     return result;
   }

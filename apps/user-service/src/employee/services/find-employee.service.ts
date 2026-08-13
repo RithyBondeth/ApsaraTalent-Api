@@ -15,6 +15,10 @@ import {
 import { PaginationDTO } from '@app/contracts/dtos/shared';
 import { IFindEmployeeService } from '@app/contracts/interfaces/service/user-service.interface';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
+import {
+  generateEmployeeKey,
+  generateListKey,
+} from '@app/common/redis/redis-keys.util';
 
 @Injectable()
 export class FindEmployeeService implements IFindEmployeeService {
@@ -71,7 +75,7 @@ export class FindEmployeeService implements IFindEmployeeService {
     // unblocked user stays hidden until TTL. (Pattern-based invalidation is a
     // no-op with cache-manager v7, so we cannot rely on clearing it.)
     const hasFilter = excludeEmployeeIds.length > 0;
-    const cacheKey = this.redisService.generateListKey('employee', {
+    const cacheKey = generateListKey('employee', {
       skip,
       limit,
     });
@@ -164,10 +168,7 @@ export class FindEmployeeService implements IFindEmployeeService {
       }
     }
 
-    const cacheKey = this.redisService.generateEmployeeKey(
-      'detail',
-      employeeId,
-    );
+    const cacheKey = generateEmployeeKey('detail', employeeId);
     const cached = await this.redisService.get<EmployeeResponseDTO>(cacheKey);
 
     if (cached) {

@@ -56,8 +56,46 @@ Within a feature, split into `controllers/`, `services/`, `gateways/`, `utils/`,
 or `config/` once there is more than a file or two of a kind; a small feature can
 keep them flat (see `api-gateway/src/ai/` and `api-gateway/src/socket/`).
 
+**Each folder holds only its own kind.** `services/` contains `*.service.ts`
+(and their specs) — nothing else. Pure helper functions go in the feature's
+`utils/` as `*.util.ts`, never alongside the services that call them. Test
+fixtures and other shared test helpers sit at the feature root, e.g.
+`apps/job-service/src/matching/matching-test-fixtures.ts`.
+
+A spec covering several services in one folder may live in that folder
+(`chat-support-services.spec.ts`); a spec spanning features goes to the service root.
+
+### Splitting a service that has outgrown itself
+
+Where a service carried both mutations and cached reads, the reads were moved to
+a sibling `*-query.service.ts` with its own interface and DI token — see
+`MatchingQueryService`, `FavoritesQueryService`, `ChatQueryService`. The RPC
+message patterns stay on the controller, so this is internal wiring only and no
+other service is affected. Follow that shape rather than letting a service grow
+past ~500 lines.
+
+When both halves need the same helpers, extract a small collaborator instead of
+duplicating them (`ChatIdentityService`, `RecommendationSupportService`). Purely
+stateless helpers belong in the feature's `utils/` as plain functions.
+
 Do **not** create top-level `src/controllers/` or `src/services/` folders — that
 is the layer-first shape this repo deliberately moved away from.
+
+### Naming: features vs. deployables
+
+`apps/*-service` names a **deployable process**. A folder inside a service names
+a **feature module**. So `apps/api-gateway/src/auth/` is the gateway's HTTP
+surface for auth and proxies to `apps/auth-service` — do not rename it
+`auth-service/`, which would read as if it were that service.
+
+Six gateway features map 1:1 onto a backend service (`auth`, `user`, `chat`,
+`job`, `notification`, `resume-builder`). The rest are gateway-owned: `health`
+aggregates every backend, `storage` serves uploaded files, `ai` holds the quota
+endpoint and the streaming helper.
+
+`api-gateway/src/shared/` holds infrastructure that other features depend on
+(currently `socket/`). Dependencies point one way: features may import from
+`shared/`, never the reverse, and nothing in `shared/` owns an HTTP route.
 
 Specs live next to the code they test. A spec that genuinely spans features
 (e.g. asserting every RPC controller delegates correctly) belongs at the service

@@ -8,8 +8,6 @@ describe('FindCompanyService', () => {
   const blocks = { find: jest.fn(), exists: jest.fn() };
   const logger = { info: jest.fn(), error: jest.fn() };
   const redis = {
-    generateListKey: jest.fn(() => 'companies'),
-    generateCompanyKey: jest.fn((_type, id) => `company:${id}`),
     get: jest.fn(),
     set: jest.fn(),
   };

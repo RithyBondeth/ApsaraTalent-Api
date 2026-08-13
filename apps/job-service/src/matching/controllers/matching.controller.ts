@@ -18,9 +18,11 @@ import {
 } from '@app/contracts/dtos/job';
 import {
   I_MATCHING_SERVICE,
+  I_MATCHING_QUERY_SERVICE,
   I_MATCHING_ANALYTICS_SERVICE,
   I_MATCHING_AI_SERVICE,
   IMatchingService,
+  IMatchingQueryService,
   IMatchingAnalyticsService,
   IMatchingAiService,
 } from '@app/contracts/interfaces/service/job-service.interface';
@@ -39,6 +41,8 @@ export class MatchingController implements IMatchingRpcController {
   constructor(
     @Inject(I_MATCHING_SERVICE)
     private readonly matchingService: IMatchingService,
+    @Inject(I_MATCHING_QUERY_SERVICE)
+    private readonly matchingQueryService: IMatchingQueryService,
     @Inject(I_MATCHING_ANALYTICS_SERVICE)
     private readonly analyticsService: IMatchingAnalyticsService,
     @Inject(I_MATCHING_AI_SERVICE)
@@ -68,7 +72,7 @@ export class MatchingController implements IMatchingRpcController {
   async findCurrentEmployeeLiked(
     @Payload() employeeMatchLookupDTO: EmployeeMatchingLookupDTO,
   ): Promise<FindCurrentLikeResponseDTO[]> {
-    return this.matchingService.findCurrentEmployeeLiked(
+    return this.matchingQueryService.findCurrentEmployeeLiked(
       employeeMatchLookupDTO,
     );
   }
@@ -77,14 +81,16 @@ export class MatchingController implements IMatchingRpcController {
   async findCurrentCompanyLiked(
     @Payload() companyMatchLookupDTO: CompanyMatchingLookupDTO,
   ): Promise<FindCurrentLikeResponseDTO[]> {
-    return this.matchingService.findCurrentCompanyLiked(companyMatchLookupDTO);
+    return this.matchingQueryService.findCurrentCompanyLiked(
+      companyMatchLookupDTO,
+    );
   }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.FIND_CURRENT_EMPLOYEE_MATCHING)
   async findCurrentEmployeeMatching(
     @Payload() employeeMatchLookupDTO: EmployeeMatchingLookupDTO,
   ): Promise<FindCurrentMatchingResponseDTO[]> {
-    return this.matchingService.findCurrentEmployeeMatching(
+    return this.matchingQueryService.findCurrentEmployeeMatching(
       employeeMatchLookupDTO,
     );
   }
@@ -93,7 +99,7 @@ export class MatchingController implements IMatchingRpcController {
   async findCurrentCompanyMatching(
     @Payload() companyMatchLookupDTO: CompanyMatchingLookupDTO,
   ): Promise<FindCurrentMatchingResponseDTO[]> {
-    return this.matchingService.findCurrentCompanyMatching(
+    return this.matchingQueryService.findCurrentCompanyMatching(
       companyMatchLookupDTO,
     );
   }
@@ -102,7 +108,7 @@ export class MatchingController implements IMatchingRpcController {
   async findCurrentEmployeeMatchingCount(
     @Payload() employeeMatchLookupDTO: EmployeeMatchingLookupDTO,
   ): Promise<MatchCountResponseDTO> {
-    return this.matchingService.findCurrentEmployeeMatchingCount(
+    return this.matchingQueryService.findCurrentEmployeeMatchingCount(
       employeeMatchLookupDTO,
     );
   }
@@ -111,7 +117,7 @@ export class MatchingController implements IMatchingRpcController {
   async findCurrentCompanyMatchingCount(
     @Payload() companyMatchLookupDTO: CompanyMatchingLookupDTO,
   ): Promise<MatchCountResponseDTO> {
-    return this.matchingService.findCurrentCompanyMatchingCount(
+    return this.matchingQueryService.findCurrentCompanyMatchingCount(
       companyMatchLookupDTO,
     );
   }
