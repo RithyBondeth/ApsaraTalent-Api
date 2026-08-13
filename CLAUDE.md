@@ -208,6 +208,12 @@ seconds.** Prefer deploying only the services a change actually touches.
 
 `docs/RUNBOOK.md` covers rollback, and `scripts/ci/railway-rollback.mjs` automates it.
 
+`docs/INFRASTRUCTURE.md` is the index for everything operational — which paths
+each platform reads, and why they cannot be relocated into an `infrastructure/`
+directory. Read it before moving any deployment or monitoring file: several are
+wired by path from the Railway dashboard, so a move fails silently at deploy
+time rather than in CI.
+
 ## Working In This Repo
 
 1. Run `npm run lint:check` and `npm run typecheck` before committing.
