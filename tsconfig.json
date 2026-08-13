@@ -39,12 +39,6 @@
       ],
       "@app/contracts/*": [
         "./libs/contracts/src/*"
-      ],
-      "@app/utils": [
-        "./libs/utils/src"
-      ],
-      "@app/utils/*": [
-        "./libs/utils/src/*"
       ]
     }
   }

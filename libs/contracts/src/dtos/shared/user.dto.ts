@@ -5,7 +5,7 @@ import { EWorkMode } from '@app/common/database/enums/work-mode.enum';
 import { ENoticePeriod } from '@app/common/database/enums/notice-period.enum';
 import { ECompanyType } from '@app/common/database/enums/company-type.enum';
 import { Exclude, Expose, Type } from 'class-transformer';
-import { formatDateToDDMMYYYY } from '@app/utils/functions/date-formatter';
+import { formatDateToDDMMYYYY } from '@app/common/utils/date-formatter.util';
 
 export class SkillResponseDTO {
   id?: string;

@@ -1,7 +1,7 @@
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
 import { EWorkMode } from '@app/common/database/enums/work-mode.enum';
-import { formatDateToDDMMYYYY } from '@app/utils/functions/date-formatter';
+import { formatDateToDDMMYYYY } from '@app/common/utils/date-formatter.util';
 import {
   IsArray,
   IsDateString,

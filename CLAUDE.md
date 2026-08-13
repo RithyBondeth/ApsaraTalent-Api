@@ -4,188 +4,177 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Apsara Talent Platform is a comprehensive NestJS-based talent management platform built as a microservices architecture. The platform facilitates connections between companies and employees through job matching, resume building, and real-time chat functionality.
+Apsara Talent is a NestJS **monorepo**: one HTTP API gateway plus six internal
+microservices that communicate over TCP. The platform connects companies and
+employees through job matching, resume building, and real-time chat.
+
+## Repository Layout
+
+```
+apps/          one folder per deployable service (see table below)
+libs/common    cross-cutting runtime code: database, storage, redis, jwt, guards, utils
+libs/contracts DTOs, service interfaces, and constants shared across services
+migrations/    TypeORM migrations (the only way schema changes reach production)
+scripts/       ci/, db/, storage/, dev/, load/ — operational tooling
+monitoring/    Prometheus, Grafana, Alertmanager configuration
+docs/          INFRASTRUCTURE, RUNBOOK, STORAGE, PRODUCTION-ROLLOUT, load-testing
+test/e2e/      end-to-end suite with its own docker-compose infrastructure
+```
+
+Only `@app/common` and `@app/contracts` exist as path aliases. There is no
+`@app/utils` — shared helper functions live in `libs/common/src/utils/`.
+
+### Services and ports
+
+| Service | Path | Port | Role |
+| --- | --- | --- | --- |
+| API Gateway | `apps/api-gateway` | 3000 | The only HTTP surface; proxies to the TCP services |
+| Auth | `apps/auth-service` | 3001 | Registration, login, 2FA, password recovery, social login |
+| User | `apps/user-service` | 3002 | Employee and company profiles, moderation, support |
+| Resume Builder | `apps/resume-builder-service` | 3003 | Resume/cover-letter generation and templates |
+| Chat | `apps/chat-service` | 3004 | Message persistence |
+| Job | `apps/job-service` | 3005 | Job postings, applications, interviews, matching |
+| Notification | `apps/notification-service` | 3007 | Notifications and push delivery |
+
+## Service Layout Convention
+
+**Group by feature, not by layer.** Every service's `src/` contains feature
+folders plus `health/`, `main.ts`, and the service module:
+
+```
+apps/job-service/src/
+  jobs/         controllers/  services/
+  applications/ controllers/  services/
+  interviews/   controllers/  services/
+  matching/     controllers/  services/
+  health/
+  job-service.module.ts
+  main.ts
+```
+
+Within a feature, split into `controllers/`, `services/`, `gateways/`, `utils/`,
+or `config/` once there is more than a file or two of a kind; a small feature can
+keep them flat (see `api-gateway/src/ai/` and `api-gateway/src/socket/`).
+
+Do **not** create top-level `src/controllers/` or `src/services/` folders — that
+is the layer-first shape this repo deliberately moved away from.
+
+Specs live next to the code they test. A spec that genuinely spans features
+(e.g. asserting every RPC controller delegates correctly) belongs at the service
+root, such as `apps/job-service/src/rpc-controllers.spec.ts`.
+
+DTOs and interfaces do **not** live inside services — they belong in
+`libs/contracts` so both the gateway and the owning service share one definition.
 
 ## Development Commands
 
-### Build and Start
 ```bash
-# Build the entire project
-npm run build
-
-# Start all services in development mode
-npm run start:dev
-
-# Start individual services in development mode
-npm run start:dev:api      # API Gateway
-npm run start:dev:auth     # Authentication Service
-npm run start:dev:users    # User Service
-npm run start:dev:resume   # Resume Builder Service
-npm run start:dev:chat     # Chat Service
-npm run start:dev:job      # Job Service
-
-# Start individual services in production mode
-npm run start:api
-npm run start:auth
-npm run start:users
-npm run start:resume
-npm run start:chat
-npm run start:job
+npm run start:dev              # gateway in watch mode (alias of start:dev:api)
+npm run start:dev:auth         # any one service: :api :auth :users :resume :chat :job :notification
+./scripts/dev/run-dev.sh       # every service, each in its own tmux window (needs zsh + tmux)
 ```
 
-### All services at once (zsh + tmux)
+`run-dev.sh` uses one `apsara-backend` tmux session — `tmux attach -t apsara-backend`
+to reattach, `Ctrl-b w` to switch windows. Re-running it restarts the whole session.
+
 ```bash
-./scripts/dev/run-dev.sh
-```
-Starts every service (gateway + all microservices) in its own tmux window
-inside one `apsara-backend` session — `tmux attach -t apsara-backend` to
-reattach, `Ctrl-b w` to switch windows. Requires `zsh` and `tmux`; re-running
-it kills and restarts the whole session.
-
-### Testing
-```bash
-# Run unit tests
-npm run test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Run end-to-end tests
-npm run test:e2e
-
-# Run tests with coverage
-npm run test:cov
+npm run build                  # gateway only
+npm run build:all              # all seven services
+npm run start:prod             # build, then run the gateway compiled
 ```
 
-### Code Quality
-```bash
-# Lint and fix code
-npm run lint
+### Quality gates
 
-# Format code
-npm run format
+```bash
+npm run lint                   # eslint --fix
+npm run lint:check             # no writes — what CI runs
+npm run typecheck              # tsc --noEmit
+npm run typecheck:strict       # strict-null ratchet; the baseline may only shrink
+npm run test                   # unit tests
+npm run test:cov               # with coverage (thresholds are enforced)
+npm run test:e2e               # end-to-end
+npm run security:audit         # fails on high/critical production advisories
 ```
 
-## Architecture Overview
+Coverage thresholds are enforced in `package.json` (branches 78 / functions 82 /
+lines 89 / statements 88). New code is expected to keep them met.
 
-### Microservices Structure
-The application follows a microservices architecture with the following services:
+### Database
 
-- **API Gateway** (`apps/api-gateway`): Entry point that routes requests to appropriate microservices
-- **Auth Service** (`apps/auth-service`): Handles authentication, registration, password management, and social login
-- **User Service** (`apps/user-service`): Manages user profiles for both employees and companies
-- **Job Service** (`apps/job-service`): Handles job postings and job matching algorithms
-- **Resume Builder Service** (`apps/resume-builder-service`): Manages resume creation and templates
-- **Chat Service** (`apps/chat-service`): Real-time messaging between users
+```bash
+npm run migration:create ./migrations/<Name>
+npm run migration:run
+npm run migration:show
+npm run db:rehearse            # replay migrations against a production-like copy
+```
 
-### Shared Libraries
-- **Common Library** (`libs/common`): Shared utilities, database entities, guards, interceptors, and services used across all microservices
-
-### Database Design
-The application uses PostgreSQL with TypeORM as the ORM. Key entities include:
-
-- **User**: Base user entity with role-based access (Employee/Company)
-- **Employee**: Employee profiles with education, experience, and skills
-- **Company**: Company profiles with jobs, benefits, and values
-- **Job**: Job postings with matching capabilities
-- **Chat**: Real-time messaging functionality
-- **ResumeTemplate**: Template system for resume generation
-
-### Key Technologies
-- **Framework**: NestJS with TypeScript
-- **Database**: PostgreSQL with TypeORM
-- **Authentication**: JWT with Passport strategies (Google, Facebook, LinkedIn, GitHub)
-- **Real-time**: Socket.IO for chat functionality
-- **File Upload**: Multer with image processing via Sharp
-- **Email**: Nodemailer for email services
-- **PDF Generation**: Puppeteer for resume generation
-- **Logging**: Pino logger
-- **Rate Limiting**: NestJS Throttler
+Schema changes reach production **only** through a migration in `migrations/`.
+`DATABASE_SYNCHRONIZE` must never be enabled against production.
 
 ## Environment Configuration
 
-The application uses environment variables managed through ConfigModule. Configuration files are located in `libs/.env`.
+Environment variables load from the **repository root**, in this order:
+`.env.${NODE_ENV}` then `.env` (see `libs/common/src/config/config.module.ts`).
+`.env.example` documents every supported variable, and `npm run check:env`
+validates a file against the Joi schema in `libs/common/src/config/validation.schema.ts`.
 
-### Service Configuration
-All services use environment variables for host and port configuration:
-- `services.apiGateway.port`: API Gateway port
-- `services.auth.host` / `services.auth.port`: Auth Service configuration
-- `services.user.host` / `services.user.port`: User Service configuration
-- `services.resume.host` / `services.resume.port`: Resume Service configuration
-- `services.chat.host` / `services.chat.port`: Chat Service configuration
-- `services.job.host` / `services.job.port`: Job Service configuration
+Never commit a real `.env` — CI actively rejects committed environment files and
+credential-shaped literals.
 
-### Database and Core Configuration
-- `DATABASE_URL`: PostgreSQL connection string
-- `DATABASE_SYNCHRONIZE`: TypeORM synchronization setting
-- `SESSION_SECRET`: Session management secret
-- Social OAuth credentials for various providers (Google, Facebook, LinkedIn, GitHub)
-- `frontend.origin`: CORS configuration for frontend
+## File Storage
 
-## File Upload System
+Uploads go through a storage driver chosen by `STORAGE_DRIVER`:
 
-The platform includes a comprehensive file upload system located in `libs/common/src/uploadfile/`:
-- Profile avatars for employees and companies
-- Company cover images
-- Resume and cover letter uploads
-- Resume template images
+- `local` (default) — writes to `./storage`, for development only; ephemeral in containers.
+- `s3` — any S3-compatible bucket; **this is what production uses**.
 
-Files are stored in the `storage/` directory with organized subdirectories.
+See `docs/STORAGE.md` before touching upload code, and note that the gateway is
+the only image that mounts the storage volume.
 
-## Development Patterns
+## Architecture Notes
 
-### Service Structure
-Each microservice follows a consistent structure:
-- `controllers/`: HTTP request handlers
-- `services/`: Business logic implementation
-- `dtos/`: Data Transfer Objects for validation
-- `interfaces/`: TypeScript interfaces
-- `main.ts`: Service bootstrap file
+### Communication
+- Gateway exposes HTTP/WebSocket; internal services are TCP microservices.
+- Service discovery is environment-variable based (`services.<name>.host` / `.port`).
+- Real-time chat and calls use Socket.IO, in `api-gateway/src/chat/gateways/`.
 
-### Common Library Usage
-Import shared functionality from the common library:
+### Error handling
+- Inside a microservice, throw `RpcException`.
+- The gateway converts those to HTTP via `api-gateway/src/utils/rpc-to-http-exception.filter.ts`.
+- Never let a raw driver or ORM error escape to the client.
+
+### Shared library imports
 ```typescript
 import { DatabaseModule } from '@app/common/database/database.module';
 import { JwtModule } from '@app/common/jwt/jwt.module';
 import { AuthGuard } from '@app/common/guards/auth.guard';
 ```
 
-### Entity Relationships
-The database uses TypeORM relationships:
-- User has OneToOne relationships with Employee and Company
-- Employee has OneToMany relationships with Education, Experience, Skills
-- Company has OneToMany relationships with Jobs, Benefits, Values
-- Favorite systems create ManyToMany relationships between employees and companies
+Note: `libs/common` and `libs/contracts` currently import from each other. Avoid
+deepening that cycle — prefer putting genuinely shared, dependency-free helpers
+in `libs/common/src/utils/`.
 
-## Testing Strategy
+### Database entities
+PostgreSQL via TypeORM, with pgvector for embedding search. Core entities: `User`
+(role-based: Employee or Company), `Employee`, `Company`, `Job`, `Application`,
+`Interview`, `JobMatching`, `CareerScope`, `ResumeTemplate`, and the chat entities.
 
-Tests are configured with Jest and use the following patterns:
-- Unit tests for services and controllers (`*.spec.ts`)
-- End-to-end tests for complete request flows
-- Coverage reports generated in `./coverage` directory
-- Module aliases configured for `@app/common` imports
+## Deployment
 
-## Microservice Communication
+Deploys run on Railway from `main` only, via `.github/workflows/deploy.yml`.
+Each service has its own Dockerfile that runs `npm ci` → `nest build` → 
+`npm prune --omit=dev`, so devDependencies never ship in the runtime image.
 
-### Transport Layer
-- **Protocol**: TCP-based communication between microservices
-- **Service Discovery**: Environment variable-based host/port configuration
-- **API Gateway**: HTTP REST endpoints that proxy to internal TCP services
-- **Real-time**: WebSocket connections via Socket.IO for chat functionality
+**Deploying all seven services at once takes production down for roughly 80
+seconds.** Prefer deploying only the services a change actually touches.
 
-### Error Handling
-- Use `RpcException` for microservice-to-microservice communication errors
-- HTTP exceptions for API Gateway responses
-- Centralized error handling through NestJS exception filters
+`docs/RUNBOOK.md` covers rollback, and `scripts/ci/railway-rollback.mjs` automates it.
 
-## Common Development Tasks
+## Working In This Repo
 
-When working with this codebase:
-1. Always run `npm run lint` before committing changes
-2. Use the shared common library for database entities and utilities
-3. Follow the established DTO pattern for request validation
-4. Implement proper error handling using NestJS exception filters
-5. Use TypeORM decorators consistently for entity definitions
-6. Maintain the microservices separation of concerns
-7. Configure service host/port through environment variables in main.ts files
-8. Import Logger from 'nestjs-pino' for consistent logging across services
+1. Run `npm run lint:check` and `npm run typecheck` before committing.
+2. Put shared types in `libs/contracts`, not in a service.
+3. Follow the feature-first layout above when adding files.
+4. Add a migration for every schema change; never rely on synchronize.
+5. Import `Logger`/`PinoLogger` from `nestjs-pino` for consistent structured logs.
+6. Keep secrets in environment variables — CI will reject hard-coded credentials.

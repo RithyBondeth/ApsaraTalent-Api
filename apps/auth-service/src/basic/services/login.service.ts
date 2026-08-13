@@ -8,7 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
-import { checkEmail } from '@app/utils/functions/check-email';
+import { checkEmail } from '@app/common/utils/check-email.util';
 import { ILoginService } from '@app/contracts/interfaces/service/auth-service.interface';
 import { LoginDTO, LoginResponseDTO } from '@app/contracts';
 import { CacheCleanupService } from '../../shared/services/cache-cleanup.service';

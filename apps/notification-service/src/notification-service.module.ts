@@ -8,9 +8,9 @@ import { Module } from '@nestjs/common';
 import { TerminusModule } from '@nestjs/terminus';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NotificationHealthController } from './health/health.controller';
-import { NotificationController } from './controllers/notification-service.controller';
-import { NotificationService } from './services/notification-service.service';
-import { PushNotificationService } from './services/push-notification.service';
+import { NotificationController } from './notifications/controllers/notification-service.controller';
+import { NotificationService } from './notifications/services/notification-service.service';
+import { PushNotificationService } from './notifications/services/push-notification.service';
 import { I_NOTIFICATION_SERVICE } from '@app/contracts/interfaces/service/notification-service.interface';
 
 @Module({
