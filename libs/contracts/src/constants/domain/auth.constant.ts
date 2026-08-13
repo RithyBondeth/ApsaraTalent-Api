@@ -13,8 +13,8 @@ export const AUTH = {
   OTP_MIN: 100_000,
   /** OTP generation range (random * 900000 keeps it 6 digits) */
   OTP_RANGE: 900_000,
-  /** Timeout for social-auth cache-clear calls — 3 seconds */
-  SOCIAL_AUTH_TIMEOUT: 3_000,
+  /** Maximum time login flows wait for best-effort cache invalidation */
+  CACHE_CLEANUP_TIMEOUT: 3_000,
   /** Timeout for OAuth callback RPC — 10 seconds */
   OAUTH_CALLBACK_TIMEOUT: 10_000,
 } as const;

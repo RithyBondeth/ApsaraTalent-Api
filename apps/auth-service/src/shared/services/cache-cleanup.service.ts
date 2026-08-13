@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PinoLogger } from 'nestjs-pino';
-import { firstValueFrom, timeout } from 'rxjs';
+import { lastValueFrom, timeout } from 'rxjs';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { AUTH } from '@app/contracts/constants/domain/auth.constant';
 
@@ -19,10 +19,11 @@ export class CacheCleanupService {
   async clear(userId: string): Promise<void> {
     try {
       this.logger.info(`[AUTH] Clearing user cache for userId=${userId}`);
-      await firstValueFrom(
-        this.userClient.send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, {
-          userId,
-        }),
+      await lastValueFrom(
+        this.userClient
+          .send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, { userId })
+          .pipe(timeout(AUTH.CACHE_CLEANUP_TIMEOUT)),
+        { defaultValue: undefined },
       );
     } catch (cacheError) {
       this.logger.warn(
@@ -36,10 +37,11 @@ export class CacheCleanupService {
    * This operation does not block the main execution flow.
    */
   clearSafe(userId: string, provider: string): void {
-    firstValueFrom(
+    lastValueFrom(
       this.userClient
         .send(USER_SERVICE.ACTIONS.CLEAR_CURRENT_USER_CACHE, { userId })
-        .pipe(timeout(AUTH.SOCIAL_AUTH_TIMEOUT)),
+        .pipe(timeout(AUTH.CACHE_CLEANUP_TIMEOUT)),
+      { defaultValue: undefined },
     ).catch((err) => {
       this.logger.warn(
         `[AUTH] Cache clear after ${provider} login failed for userId=${userId}: ${(err as Error).message}`,

@@ -6,6 +6,7 @@ import { generateUserKey } from '@app/common/redis/redis-keys.util';
 describe('UserService', () => {
   const users = {
     createQueryBuilder: jest.fn(),
+    findOne: jest.fn(),
     count: jest.fn(),
     update: jest.fn(),
     query: jest.fn(),
@@ -95,18 +96,32 @@ describe('UserService', () => {
   });
 
   it('loads and caches one fully-related user', async () => {
-    const qb = queryBuilder([
-      {
-        id: 'user-1',
-        employee: { id: 'employee-1', skills: [] },
-        company: { id: 'company-1', openPositions: [{ id: 'job-1' }] },
-      },
-    ]);
-    users.createQueryBuilder.mockReturnValue(qb);
-    const result = await service.findOneUserByID({ userId: 'user-1' });
-    expect(qb.where).toHaveBeenCalledWith('user.id = :userId', {
-      userId: 'user-1',
+    users.findOne.mockResolvedValueOnce({
+      id: 'user-1',
+      employee: { id: 'employee-1', skills: [] },
+      company: { id: 'company-1', openPositions: [{ id: 'job-1' }] },
     });
+    const result = await service.findOneUserByID({ userId: 'user-1' });
+
+    const options = users.findOne.mock.calls[0][0];
+    expect(options.where).toEqual({ id: 'user-1' });
+    // Joining every relation in one statement measured ~26s in production and
+    // tripped the gateway's 10s timeout; keep the per-relation strategy.
+    expect(options.relationLoadStrategy).toBe('query');
+    // `password` is a normal column and the result is cached before
+    // serialization, so the select must stay explicit.
+    expect(Object.keys(options.select).sort()).toEqual([
+      'createdAt',
+      'email',
+      'id',
+      'isEmailVerified',
+      'lastLoginAt',
+      'lastLoginMethod',
+      'phone',
+      'profileCompleted',
+      'role',
+    ]);
+    expect(options.select).not.toHaveProperty('password');
     expect(result.id).toBe('user-1');
     expect(redis.set).toHaveBeenCalledWith(
       generateUserKey('detail', 'user-1'),
@@ -121,11 +136,11 @@ describe('UserService', () => {
     await expect(service.findOneUserByID({ userId: 'user-1' })).resolves.toBe(
       cached,
     );
-    expect(users.createQueryBuilder).not.toHaveBeenCalled();
+    expect(users.findOne).not.toHaveBeenCalled();
   });
 
   it('reports missing users and user-query failures as RPC errors', async () => {
-    users.createQueryBuilder.mockReturnValueOnce(queryBuilder([]));
+    users.findOne.mockResolvedValueOnce(null);
     const missing = (await service
       .findOneUserByID({ userId: 'missing' })
       .catch((value) => value)) as RpcException;
@@ -134,9 +149,7 @@ describe('UserService', () => {
       message: 'There is no user with this id',
     });
 
-    users.createQueryBuilder.mockImplementationOnce(() => {
-      throw new Error('query failed');
-    });
+    users.findOne.mockRejectedValueOnce(new Error('query failed'));
     const failed = (await service
       .findOneUserByID({ userId: 'user-1' })
       .catch((value) => value)) as RpcException;

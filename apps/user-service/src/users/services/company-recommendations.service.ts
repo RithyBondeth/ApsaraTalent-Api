@@ -76,6 +76,9 @@ export class CompanyRecommendationsService implements ICompanyRecommendationsSer
       //    Factor 3 (job title embeddings for open positions).
       const companyUser = await this.userRepository
         .createQueryBuilder('user')
+        // Only user.id and the joined company are read; without this the
+        // default selection ships password, refreshToken and otpCode too.
+        .select(['user.id'])
         .leftJoinAndSelect('user.company', 'company')
         .leftJoinAndSelect('company.careerScopes', 'cmpCareerScopes')
         .addSelect('cmpCareerScopes.embedding')
@@ -199,6 +202,7 @@ export class CompanyRecommendationsService implements ICompanyRecommendationsSer
       //    stitched back onto the base employee by user id.
       const baseUsers = await this.userRepository
         .createQueryBuilder('user')
+        .select(['user.id'])
         .innerJoinAndSelect('user.employee', 'employee')
         .addSelect('employee.jobEmbedding')
         .where('user.id IN (:...userIds)', { userIds })
@@ -207,6 +211,7 @@ export class CompanyRecommendationsService implements ICompanyRecommendationsSer
       const [scopeUsers, skillUsers, expUsers, eduUsers] = await Promise.all([
         this.userRepository
           .createQueryBuilder('user')
+          .select(['user.id'])
           .innerJoinAndSelect('user.employee', 'employee')
           .leftJoinAndSelect('employee.careerScopes', 'careerScopes')
           .addSelect('careerScopes.embedding')
@@ -214,18 +219,21 @@ export class CompanyRecommendationsService implements ICompanyRecommendationsSer
           .getMany(),
         this.userRepository
           .createQueryBuilder('user')
+          .select(['user.id'])
           .innerJoinAndSelect('user.employee', 'employee')
           .leftJoinAndSelect('employee.skills', 'skills')
           .where('user.id IN (:...userIds)', { userIds })
           .getMany(),
         this.userRepository
           .createQueryBuilder('user')
+          .select(['user.id'])
           .innerJoinAndSelect('user.employee', 'employee')
           .leftJoinAndSelect('employee.experiences', 'experiences')
           .where('user.id IN (:...userIds)', { userIds })
           .getMany(),
         this.userRepository
           .createQueryBuilder('user')
+          .select(['user.id'])
           .innerJoinAndSelect('user.employee', 'employee')
           .leftJoinAndSelect('employee.educations', 'educations')
           .where('user.id IN (:...userIds)', { userIds })

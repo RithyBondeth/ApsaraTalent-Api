@@ -183,34 +183,50 @@ export class UserService implements IUserService, OnModuleInit {
     this.logger.info(`User ${userId} cache MISS`);
 
     try {
-      const user = await this.userRepository
-        .createQueryBuilder('user')
-        .select([
-          'user.id',
-          'user.role',
-          'user.email',
-          'user.phone',
-          'user.profileCompleted',
-          'user.isEmailVerified',
-          'user.lastLoginAt',
-          'user.lastLoginMethod',
-          'user.createdAt',
-        ])
-        .leftJoinAndSelect('user.employee', 'employee')
-        .leftJoinAndSelect('employee.skills', 'skills')
-        .leftJoinAndSelect('employee.experiences', 'experiences')
-        .leftJoinAndSelect('employee.educations', 'educations')
-        .leftJoinAndSelect('employee.careerScopes', 'empCareerScopes')
-        .leftJoinAndSelect('employee.socials', 'empSocials')
-        .leftJoinAndSelect('user.company', 'company')
-        .leftJoinAndSelect('company.openPositions', 'openPositions')
-        .leftJoinAndSelect('company.careerScopes', 'cmpCareerScopes')
-        .leftJoinAndSelect('company.benefits', 'benefits')
-        .leftJoinAndSelect('company.values', 'companyValues')
-        .leftJoinAndSelect('company.socials', 'cmpSocials')
-        .leftJoinAndSelect('company.images', 'images')
-        .where('user.id = :userId', { userId })
-        .getOne();
+      // One query per relation instead of a single 13-way join.
+      //
+      // Joining eleven one-to-many collections in one statement made Postgres
+      // plan a wide multi-way join: measured at ~26s against production for a
+      // result of only 160 rows, while the gateway gives up at 10s — so this
+      // endpoint always 504'd on a cache miss. The same data loaded with
+      // separate per-relation queries measures ~4.5s.
+      //
+      // `select` is explicit and must stay that way: `password` is a normal
+      // column (not `select: false`), and the DTO below spreads `...user` into
+      // the object that gets written to Redis. Widening this select would put
+      // password hashes in the cache.
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        relationLoadStrategy: 'query',
+        select: {
+          id: true,
+          role: true,
+          email: true,
+          phone: true,
+          profileCompleted: true,
+          isEmailVerified: true,
+          lastLoginAt: true,
+          lastLoginMethod: true,
+          createdAt: true,
+        },
+        relations: {
+          employee: {
+            skills: true,
+            experiences: true,
+            educations: true,
+            careerScopes: true,
+            socials: true,
+          },
+          company: {
+            openPositions: true,
+            careerScopes: true,
+            benefits: true,
+            values: true,
+            socials: true,
+            images: true,
+          },
+        },
+      });
 
       if (!user)
         throw new RpcException({

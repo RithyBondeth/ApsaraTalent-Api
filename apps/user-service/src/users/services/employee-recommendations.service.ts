@@ -80,6 +80,10 @@ export class EmployeeRecommendationsService implements IEmployeeRecommendationsS
       //    `addSelect(...)` overrides select:false to load embedding vectors.
       const employeeUser = await this.userRepository
         .createQueryBuilder('user')
+        // Only `.employee` is read from this row. Without an explicit select
+        // TypeORM ships every user column — password, refreshToken, otpCode,
+        // twoFactorSecret — none of which this endpoint has any use for.
+        .select(['user.id'])
         .leftJoinAndSelect('user.employee', 'employee')
         .addSelect('employee.jobEmbedding')
         .leftJoinAndSelect('employee.careerScopes', 'empCareerScopes')
@@ -192,6 +196,11 @@ export class EmployeeRecommendationsService implements IEmployeeRecommendationsS
       const [scopeUsers, posUsers] = await Promise.all([
         this.userRepository
           .createQueryBuilder('user')
+          // Only `user.company` is read from these rows. Without an explicit
+          // select TypeORM ships every user column — including password,
+          // refreshToken, otpCode and twoFactorSecret — for the whole
+          // candidate pool (up to RECO_POOL_CAP users).
+          .select(['user.id'])
           .innerJoinAndSelect('user.company', 'company')
           .leftJoinAndSelect('company.careerScopes', 'careerScopes')
           .addSelect('careerScopes.embedding')
@@ -199,6 +208,7 @@ export class EmployeeRecommendationsService implements IEmployeeRecommendationsS
           .getMany(),
         this.userRepository
           .createQueryBuilder('user')
+          .select(['user.id'])
           .innerJoinAndSelect('user.company', 'company')
           .leftJoinAndSelect('company.openPositions', 'openPositions')
           .addSelect('openPositions.titleEmbedding')
@@ -364,6 +374,7 @@ export class EmployeeRecommendationsService implements IEmployeeRecommendationsS
       const rankedCompanyIds = ranked.map(({ user }) => user.company.id);
       const bvUsers = await this.userRepository
         .createQueryBuilder('user')
+        .select(['user.id'])
         .innerJoinAndSelect('user.company', 'company')
         .leftJoinAndSelect('company.benefits', 'benefits')
         .leftJoinAndSelect('company.values', 'values')

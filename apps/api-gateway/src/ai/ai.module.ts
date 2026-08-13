@@ -17,4 +17,4 @@ import { AiStreamService } from './services/ai-stream.service';
   providers: [AiStreamService],
   exports: [AiStreamService],
 })
-export class AiModule { }
+export class AiModule {}

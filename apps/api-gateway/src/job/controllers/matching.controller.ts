@@ -50,7 +50,7 @@ export class JobMatchingController implements IMatchingController {
     private readonly aiStream: AiStreamService,
     private readonly aiMatching: AiMatchingService,
     private readonly jobAccess: JobAccessService,
-  ) { }
+  ) {}
 
   @Post('employee/:eid/like/:cid')
   async employeeLikes(

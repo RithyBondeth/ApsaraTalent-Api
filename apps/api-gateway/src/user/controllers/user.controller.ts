@@ -40,6 +40,20 @@ import {
 import { rpcCall } from '../../utils/rpc-call';
 import { UserAccessService } from '../services/user-access.service';
 
+/**
+ * Recommendation feeds score a candidate pool across several queries, so a
+ * cold cache costs one round-trip to Postgres per query. That is fine when the
+ * database is nearby, but this deployment talks to a region where a bare
+ * `SELECT 1` measures 275-850ms, which puts the uncached path around 15s —
+ * past the 10s default and into a 504 the client then retries.
+ *
+ * The work itself completes; only the budget was wrong. Caching makes every
+ * later call fast, so this raised ceiling only ever applies to the first
+ * request for a given user. Put it back to the default once the database is
+ * closer to the API.
+ */
+const RECOMMENDATIONS_TIMEOUT_MS = 30_000;
+
 @Controller('user')
 @UseGuards(AuthGuard)
 export class UserController implements IUserController {
@@ -253,6 +267,7 @@ export class UserController implements IUserController {
         limit: limit ? Number(limit) : 10,
         requesterId: req?.user?.id,
       },
+      RECOMMENDATIONS_TIMEOUT_MS,
     );
   }
 
@@ -271,6 +286,7 @@ export class UserController implements IUserController {
         limit: limit ? Number(limit) : 10,
         requesterId: req?.user?.id,
       },
+      RECOMMENDATIONS_TIMEOUT_MS,
     );
   }
 }

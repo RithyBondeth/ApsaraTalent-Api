@@ -6,7 +6,7 @@ import { Controller, Get, Req, UseGuards } from '@nestjs/common';
 @Controller('ai')
 @UseGuards(AuthGuard)
 export class AiQuotaController {
-  constructor(private readonly aiQuota: AiQuotaService) { }
+  constructor(private readonly aiQuota: AiQuotaService) {}
 
   @Get('quota')
   async getQuota(@Req() req: any): Promise<IAiQuotaUsage> {

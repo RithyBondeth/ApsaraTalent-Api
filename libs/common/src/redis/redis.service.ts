@@ -19,6 +19,8 @@ import {
   generateUserKey,
 } from './redis-keys.util';
 
+const CACHE_OPERATION_TIMEOUT_MS = 1_000;
+
 @Injectable()
 export class RedisService {
   private readonly logger = new Logger(RedisService.name);
@@ -26,11 +28,35 @@ export class RedisService {
 
   constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
 
+  /**
+   * Redis is an optimization, not a request-critical dependency. Keyv's Redis
+   * adapter can keep retrying indefinitely when a local Redis instance is not
+   * running, so bound basic cache operations and let callers use their source
+   * of truth instead.
+   */
+  private async withOperationTimeout<T>(operation: Promise<T>): Promise<T> {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const expiration = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(
+        () => reject(new Error('Redis operation timed out')),
+        CACHE_OPERATION_TIMEOUT_MS,
+      );
+    });
+
+    try {
+      return await Promise.race([operation, expiration]);
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
+    }
+  }
+
   // Cache key generators
   // Operations
   async get<T>(key: string): Promise<T | null> {
     try {
-      const value = await this.cacheManager.get<T>(key);
+      const value = await this.withOperationTimeout(
+        this.cacheManager.get<T>(key),
+      );
       return value || null;
     } catch (error) {
       const errorMessage =
@@ -45,7 +71,7 @@ export class RedisService {
 
   async set<T>(key: string, value: T, ttl?: number): Promise<void> {
     try {
-      await this.cacheManager.set(key, value, ttl);
+      await this.withOperationTimeout(this.cacheManager.set(key, value, ttl));
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -55,7 +81,7 @@ export class RedisService {
 
   async del(key: string): Promise<void> {
     try {
-      await this.cacheManager.del(key);
+      await this.withOperationTimeout(this.cacheManager.del(key));
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -138,7 +164,11 @@ export class RedisService {
           ? () => (this.cacheManager as any).store.getClient()
           : null);
 
-      return getter ? await getter() : null;
+      // delPattern falls back here when getReadyClient() gives up, so this must
+      // be bounded too — otherwise the timeout above just moves the hang.
+      return getter
+        ? await this.withOperationTimeout(Promise.resolve(getter()))
+        : null;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -177,7 +207,12 @@ export class RedisService {
     }
 
     try {
-      await this.connecting;
+      // Bounded for the same reason the basic operations are: node-redis keeps
+      // retrying connect() with backoff when nothing is listening, and every
+      // raw-client path (delPattern, hitRateLimits, getCounter) waits here. An
+      // unbounded wait turns "Redis is down" into a request that hangs until
+      // the caller's own timeout — a 30s page failure instead of a cache miss.
+      await this.withOperationTimeout(this.connecting);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';

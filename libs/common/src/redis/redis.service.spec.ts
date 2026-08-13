@@ -205,6 +205,17 @@ describe('RedisService', () => {
       cacheManager.get.mockRejectedValue('string error');
       await expect(service.get('key')).resolves.toBeNull();
     });
+
+    it('treats an indefinitely pending Redis read as a cache miss', async () => {
+      jest.useFakeTimers();
+      cacheManager.get.mockReturnValue(new Promise(() => undefined));
+
+      const read = service.get('key');
+      await jest.advanceTimersByTimeAsync(1_000);
+
+      await expect(read).resolves.toBeNull();
+      jest.useRealTimers();
+    });
   });
 
   describe('set', () => {
@@ -227,6 +238,17 @@ describe('RedisService', () => {
       cacheManager.set.mockRejectedValue('raw string error');
       await expect(service.set('k', 'v')).resolves.toBeUndefined();
     });
+
+    it('stops waiting for an indefinitely pending Redis write', async () => {
+      jest.useFakeTimers();
+      cacheManager.set.mockReturnValue(new Promise(() => undefined));
+
+      const write = service.set('k', 'v');
+      await jest.advanceTimersByTimeAsync(1_000);
+
+      await expect(write).resolves.toBeUndefined();
+      jest.useRealTimers();
+    });
   });
 
   describe('del', () => {
@@ -243,6 +265,17 @@ describe('RedisService', () => {
     it('handles non-Error exceptions on del', async () => {
       cacheManager.del.mockRejectedValue('raw error');
       await expect(service.del('k')).resolves.toBeUndefined();
+    });
+
+    it('stops waiting for an indefinitely pending Redis delete', async () => {
+      jest.useFakeTimers();
+      cacheManager.del.mockReturnValue(new Promise(() => undefined));
+
+      const deletion = service.del('k');
+      await jest.advanceTimersByTimeAsync(1_000);
+
+      await expect(deletion).resolves.toBeUndefined();
+      jest.useRealTimers();
     });
   });
 
@@ -413,6 +446,31 @@ describe('RedisService', () => {
       const buckets = [{ key: 'k', limit: 5, ttlMs: 60_000 }];
       await service.hitRateLimits(buckets);
       expect(mockClient.connect).toHaveBeenCalled();
+    });
+
+    // Regression: with no Redis listening, node-redis keeps retrying connect()
+    // with backoff. Every raw-client path (delPattern, hitRateLimits,
+    // getCounter) awaits here, so an unbounded wait surfaced as a 30s page
+    // timeout instead of a cache miss.
+    it('gives up on a connect() that never settles instead of hanging', async () => {
+      const mockClient = {
+        isReady: false,
+        isOpen: false,
+        // Never resolves — a dead Redis that keeps retrying.
+        connect: jest.fn(() => new Promise<void>(() => {})),
+      };
+      await setup({ stores: [{ client: mockClient }] });
+      cacheManager.get.mockResolvedValue(0);
+
+      const started = Date.now();
+      const result = await service.hitRateLimits([
+        { key: 'k', limit: 5, ttlMs: 60_000 },
+      ]);
+      const elapsed = Date.now() - started;
+
+      // Fails open (request allowed) and returns promptly rather than hanging.
+      expect(result.allowed).toBe(true);
+      expect(elapsed).toBeLessThan(5_000);
     });
 
     it('returns null if client has no connect function (no redis client)', async () => {
