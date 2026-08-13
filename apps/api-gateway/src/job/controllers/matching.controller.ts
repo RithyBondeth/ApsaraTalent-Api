@@ -33,7 +33,7 @@ import {
 } from '@app/contracts/dtos/job';
 import { rpcCall } from '../../utils/rpc-call';
 import { SocketBroadcastService } from '../../shared/socket/socket-broadcast.service';
-import { AiStreamService } from '../../ai/ai-stream.service';
+import { AiStreamService } from '../../ai/services/ai-stream.service';
 import { AiMatchingService } from '../services/ai-matching.service';
 import { JobAccessService } from '../services/job-access.service';
 import {
@@ -50,7 +50,7 @@ export class JobMatchingController implements IMatchingController {
     private readonly aiStream: AiStreamService,
     private readonly aiMatching: AiMatchingService,
     private readonly jobAccess: JobAccessService,
-  ) {}
+  ) { }
 
   @Post('employee/:eid/like/:cid')
   async employeeLikes(

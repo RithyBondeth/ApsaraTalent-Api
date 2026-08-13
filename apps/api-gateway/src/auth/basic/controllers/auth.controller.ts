@@ -70,7 +70,7 @@ export class AuthController implements IBasicAuthController {
     private readonly resumeParse: ResumeParseService,
     private readonly iceServersService: IceServersService,
     private readonly loginAudit: LoginAuditService,
-  ) {}
+  ) { }
 
   @Post('register-company')
   @HttpCode(HttpStatus.CREATED)

@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { AiModule } from './ai.module';
-import { AiQuotaController } from './ai-quota.controller';
-import { AiStreamService } from './ai-stream.service';
+import { AiQuotaController } from './controllers/ai-quota.controller';
+import { AiStreamService } from './services/ai-stream.service';
 import { SocketModule } from '../shared/socket/socket.module';
 import { SocketBroadcastService } from '../shared/socket/socket-broadcast.service';
 

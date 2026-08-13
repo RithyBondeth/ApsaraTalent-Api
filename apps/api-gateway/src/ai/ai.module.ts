@@ -1,7 +1,7 @@
 import { JwtModule } from '@app/common';
 import { Global, Module } from '@nestjs/common';
-import { AiQuotaController } from './ai-quota.controller';
-import { AiStreamService } from './ai-stream.service';
+import { AiQuotaController } from './controllers/ai-quota.controller';
+import { AiStreamService } from './services/ai-stream.service';
 
 /**
  * AI concerns for the gateway: the per-user quota endpoint, and the streaming
@@ -17,4 +17,4 @@ import { AiStreamService } from './ai-stream.service';
   providers: [AiStreamService],
   exports: [AiStreamService],
 })
-export class AiModule {}
+export class AiModule { }

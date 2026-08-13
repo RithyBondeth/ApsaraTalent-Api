@@ -34,7 +34,7 @@ import {
 import { AiProfileBioService } from '../services/ai-profile-bio.service';
 import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/service-actions/resume-builder-service.constant';
 import { rpcCall } from '../../utils/rpc-call';
-import { AiStreamService } from '../../ai/ai-stream.service';
+import { AiStreamService } from '../../ai/services/ai-stream.service';
 
 @Controller('resume')
 @UseGuards(AuthGuard)
@@ -44,7 +44,7 @@ export class ResumeBuilderController implements IResumeBuilderController {
     private readonly resumeBuilderClient: ClientProxy,
     private readonly aiStream: AiStreamService,
     private readonly aiProfileBio: AiProfileBioService,
-  ) {}
+  ) { }
 
   @Post('generate')
   @UseGuards(AiQuotaGuard)
@@ -55,12 +55,12 @@ export class ResumeBuilderController implements IResumeBuilderController {
   ): Promise<BuildResumeDTO> {
     const aiInput = buildResumeDTO.personalInfo.profilePicture
       ? {
-          ...buildResumeDTO,
-          personalInfo: {
-            ...buildResumeDTO.personalInfo,
-            profilePicture: undefined,
-          },
-        }
+        ...buildResumeDTO,
+        personalInfo: {
+          ...buildResumeDTO.personalInfo,
+          profilePicture: undefined,
+        },
+      }
       : buildResumeDTO;
     const generated = await rpcCall<BuildResumeDTO>(
       this.resumeBuilderClient,
@@ -236,12 +236,12 @@ export class ResumeBuilderController implements IResumeBuilderController {
     const optimizedDTO =
       optimizeResumeDTO.personalInfo?.profilePicture?.startsWith('data:')
         ? {
-            ...optimizeResumeDTO,
-            personalInfo: {
-              ...optimizeResumeDTO.personalInfo,
-              profilePicture: undefined,
-            },
-          }
+          ...optimizeResumeDTO,
+          personalInfo: {
+            ...optimizeResumeDTO.personalInfo,
+            profilePicture: undefined,
+          },
+        }
         : optimizeResumeDTO;
 
     await this.aiStream.pipe(
