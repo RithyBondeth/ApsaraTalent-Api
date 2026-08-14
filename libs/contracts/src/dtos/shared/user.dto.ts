@@ -1,3 +1,4 @@
+import { assignDtoData } from '../../utils/assign-dto-data.util';
 import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
 import { EGender } from '@app/common/database/enums/gender.enum';
@@ -14,7 +15,7 @@ export class SkillResponseDTO {
   description?: string;
 
   constructor(partial: Partial<SkillResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 }
 
@@ -29,7 +30,7 @@ export class ExperienceResponseDTO {
   endDate: Date;
 
   constructor(partial: Partial<ExperienceResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 }
 
@@ -40,7 +41,7 @@ export class EducationResponseDTO {
   year: string;
 
   constructor(partial: Partial<EducationResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 }
 
@@ -50,7 +51,7 @@ export class SocialResponseDTO {
   url: string;
 
   constructor(partial: Partial<SocialResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 }
 
@@ -97,7 +98,7 @@ export class EmployeeResponseDTO {
   updatedAt?: Date;
 
   constructor(partial: Partial<EmployeeResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 }
 
@@ -112,7 +113,7 @@ export class ImageResponseDTO {
   updatedAt: Date;
 
   constructor(partial: Partial<ImageResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 }
 
@@ -145,7 +146,7 @@ export class JobPositionResponseDTO {
   createdAt: Date;
 
   constructor(partial: Partial<JobPositionResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 
   @Expose()
@@ -184,7 +185,7 @@ export class ValuesAndBenefitsResponseDTO {
   label: string;
 
   constructor(partial: Partial<ValuesAndBenefitsResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 }
 
@@ -194,7 +195,7 @@ export class CareerScopesResponseDTO {
   description?: string;
 
   constructor(partial: Partial<CareerScopesResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 }
 
@@ -228,7 +229,7 @@ export class CompanyResponseDTO {
   createdAt: Date;
 
   constructor(partial: Partial<CompanyResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 
   @Expose()
@@ -302,7 +303,7 @@ export class UserResponseDTO {
   updatedAt?: Date;
 
   constructor(partial: Partial<UserResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
     if (this.employee && !(this.employee instanceof EmployeeResponseDTO)) {
       this.employee = new EmployeeResponseDTO(this.employee);
     }

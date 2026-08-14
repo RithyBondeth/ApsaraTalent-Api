@@ -1,3 +1,4 @@
+import { assignDtoData } from '../../../utils/assign-dto-data.util';
 import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
@@ -166,7 +167,7 @@ export class UserInJobResponseDTO {
   createdAt: Date;
 
   constructor(partial: Partial<UserInJobResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 }
 
@@ -196,7 +197,7 @@ export class CompanyInJobResponseDTO {
   user: UserInJobResponseDTO;
 
   constructor(partial: Partial<CompanyInJobResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 }
 
@@ -234,7 +235,7 @@ export class JobResponseDTO {
   isHide: boolean;
 
   constructor(partial: Partial<JobResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 
   @Expose()
