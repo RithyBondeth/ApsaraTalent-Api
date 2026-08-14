@@ -1,0 +1,56 @@
+name: CodeQL
+
+# `npm audit` only reads the dependency tree. This is the only check that reads
+# the application's own code — the JWT and session handling, the four OAuth
+# callbacks, the upload handlers, and the Puppeteer PDF path.
+#
+# The `actions` language matters as much as the TypeScript here: a large amount
+# of this repository's production behaviour lives in the deploy workflows, and
+# nothing else reviews them for injection through untrusted inputs.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Monday 03:00 UTC == 10:00 Asia/Phnom_Penh, alongside the Dependabot
+    # window. The scheduled run is the point of this: it catches advisories
+    # published after a commit landed, which a push-triggered scan never sees.
+    - cron: '0 3 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  analyze:
+    name: Analyze ${{ matrix.language }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      # Required to publish results to the repository's Security tab.
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript, actions]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6
+        with:
+          languages: ${{ matrix.language }}
+          # `security-extended` over the default set. Dial back to `security`
+          # if the first run is noisier than it is useful.
+          queries: security-extended
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6
+        with:
+          category: /language:${{ matrix.language }}

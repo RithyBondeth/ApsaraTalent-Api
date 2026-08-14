@@ -7,10 +7,9 @@ import { RedisService } from './redis.service';
 @Global()
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: './libs/.env',
-    }),
+    // No ConfigModule.forRoot() here. It used to load './libs/.env', a file
+    // that does not exist, and re-registering forRoot only obscured the real
+    // loading order documented in libs/common/src/config/config.module.ts.
     CacheModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

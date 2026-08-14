@@ -138,7 +138,12 @@ async function bootstrap() {
         callback(null, true);
         return;
       }
-      callback(new Error(`CORS: origin ${origin} not allowed`), false);
+      // Deny by omitting the CORS headers, not by raising. Passing an Error
+      // here reaches Express's default handler and answers preflights with 500,
+      // which reports as a server fault rather than a rejected origin. The
+      // browser blocks the request either way; the CSRF middleware above is
+      // what explicitly rejects state-changing cross-origin calls.
+      callback(null, false);
     },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true, // Required for secure cookie transmission

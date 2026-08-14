@@ -85,7 +85,11 @@ export const I_UPLOAD_EMPLOYEE_REFERENCE_SERVICE =
 export const I_SEARCH_EMPLOYEE_SERVICE = 'ISearchEmployeeService';
 export const I_USER_SERVICE = 'IUserService';
 export const I_FAVORITES_SERVICE = 'IFavoritesService';
-export const I_RECOMMENDATIONS_SERVICE = 'IRecommendationsService';
+export const I_FAVORITES_QUERY_SERVICE = 'IFavoritesQueryService';
+export const I_EMPLOYEE_RECOMMENDATIONS_SERVICE =
+  'IEmployeeRecommendationsService';
+export const I_COMPANY_RECOMMENDATIONS_SERVICE =
+  'ICompanyRecommendationsService';
 export const I_OPEN_POSITION_SERVICE = 'IOpenPositionService';
 export const I_EXPERIENCE_AND_EDUCATION_SERVICE =
   'IExperienceAndEducationService';
@@ -191,6 +195,10 @@ export interface IFavoritesService {
   companyFavoriteEmployee(
     companyEmployeeFavoriteDTO: CompanyEmployeeFavoriteDTO,
   ): Promise<CompanyFavoriteEmployeeResponseDTO>;
+}
+
+/** Read side of favourites: cached listings and counts. */
+export interface IFavoritesQueryService {
   findAllEmployeeFavorites(
     employeeFavoriteLookupDTO: EmployeeFavoriteLookupDTO,
   ): Promise<EmployeeFavoritesListItemDTO[]>;
@@ -205,10 +213,13 @@ export interface IFavoritesService {
   ): Promise<FavoriteCountResponseDTO>;
 }
 
-export interface IRecommendationsService {
+export interface IEmployeeRecommendationsService {
   getEmployeeRecommendations(
     employeeRecommendationsDTO: EmployeeRecommendationsDTO,
   ): Promise<CompanyResponseDTO[]>;
+}
+
+export interface ICompanyRecommendationsService {
   getCompanyRecommendations(
     companyRecommendationsDTO: CompanyRecommendationsDTO,
   ): Promise<EmployeeResponseDTO[]>;

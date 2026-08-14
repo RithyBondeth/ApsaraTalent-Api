@@ -1,0 +1,42 @@
+# Vulnerabilities that BLOCK a release are listed here as exceptions.
+#
+# This file is deliberately NOT named `.trivyignore`. Trivy auto-loads that name
+# from the working directory, which would also hide these findings from the
+# SARIF report uploaded to the Security tab. The split is the point:
+#
+#   report  -> everything, always, in the Security tab
+#   gate    -> everything except what is listed here
+#
+# Only one thing belongs in this file: a vulnerability in a base image we do not
+# build, where no fixed image has been published yet. Trivy marks those "fixed"
+# because the upstream *library* has a fix — but a Go binary compiled into
+# grafana/grafana or prom/blackbox-exporter cannot be upgraded by us. Blocking
+# on those converts "upstream has not released" into "we cannot deploy".
+#
+# Anything in our own dependency tree does NOT belong here. Fix it instead.
+#
+# Every entry needs an expiry. When it lapses the finding blocks again, which
+# forces a recheck rather than letting an exception become permanent.
+
+# --- prom/blackbox-exporter:v0.28.0 ---------------------------------------
+# v0.28.0 (released 2025-12-06) is the latest upstream release, confirmed
+# against the GitHub releases API on 2026-08-07. It is 8 months old and was
+# compiled with Go 1.25.5, so its vendored libraries and stdlib are frozen at
+# that point. There is no newer image to move to.
+#
+# Both entries below are in the prober binary. Blackbox makes outbound HTTP(S)
+# probes to our own public health endpoints; it accepts no inbound traffic, has
+# no public domain, and handles no user data or credentials. That is why these
+# are acceptable to carry rather than urgent.
+#
+# TWO CVEs from one stale image is a pattern, not bad luck. If a third appears
+# before v0.29.0 ships, build the exporter from pinned upstream source on a
+# current Go toolchain instead of continuing to annotate this file.
+
+# Vendored google.golang.org/grpc v1.77.0.
+CVE-2026-33186 exp:2026-11-07
+
+# Go stdlib v1.25.5 — crypto/tls certificate validation on session resumption.
+# Would require an attacker positioned between the prober and our own health
+# endpoints, to make a failing probe look healthy.
+CVE-2025-68121 exp:2026-11-07

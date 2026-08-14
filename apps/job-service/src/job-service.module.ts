@@ -26,21 +26,23 @@ import { TerminusModule } from '@nestjs/terminus';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 import { JobHealthController } from './health/health.controller';
-import { ApplicationController } from './controllers/application.controller';
-import { InterviewController } from './controllers/interview.controller';
-import { JobController } from './controllers/job-service.controller';
-import { MatchingController } from './controllers/matching.controller';
-import { ApplicationService } from './services/application.service';
-import { InterviewService } from './services/interview.service';
-import { JobService } from './services/job-service.service';
-import { MatchingService } from './services/matching.service';
-import { MatchingAnalyticsService } from './services/matching-analytics.service';
-import { MatchingAiService } from './services/matching-ai.service';
+import { ApplicationController } from './applications/controllers/application.controller';
+import { InterviewController } from './interviews/controllers/interview.controller';
+import { JobController } from './jobs/controllers/job-service.controller';
+import { MatchingController } from './matching/controllers/matching.controller';
+import { ApplicationService } from './applications/services/application.service';
+import { InterviewService } from './interviews/services/interview.service';
+import { JobService } from './jobs/services/job-service.service';
+import { MatchingService } from './matching/services/matching.service';
+import { MatchingQueryService } from './matching/services/matching-query.service';
+import { MatchingAnalyticsService } from './matching/services/matching-analytics.service';
+import { MatchingAiService } from './matching/services/matching-ai.service';
 import {
   I_APPLICATION_SERVICE,
   I_INTERVIEW_SERVICE,
   I_JOB_SERVICE_SERVICE,
   I_MATCHING_SERVICE,
+  I_MATCHING_QUERY_SERVICE,
   I_MATCHING_ANALYTICS_SERVICE,
   I_MATCHING_AI_SERVICE,
 } from '@app/contracts/interfaces/service/job-service.interface';
@@ -91,6 +93,7 @@ import {
   providers: [
     { provide: I_JOB_SERVICE_SERVICE, useClass: JobService },
     { provide: I_MATCHING_SERVICE, useClass: MatchingService },
+    { provide: I_MATCHING_QUERY_SERVICE, useClass: MatchingQueryService },
     {
       provide: I_MATCHING_ANALYTICS_SERVICE,
       useClass: MatchingAnalyticsService,

@@ -42,7 +42,6 @@ single migration runs.
 API repository variables:
 
 - `PRODUCTION_API_URL`: public HTTPS origin of `api-gateway`.
-- `STAGING_API_URL`: the only origin authorized for manual load tests.
 
 Web repository secrets:
 
@@ -73,11 +72,33 @@ test without changing production.
 
 ## 2. Railway application services
 
-Create the seven services named exactly as CI expects:
+Create seven services whose Railway **display names** are exactly:
 
-- `api-gateway`, `auth-service`, `user-service`,
-  `resume-builder-service`, `chat-service`, `job-service`, and
-  `notification-service`.
+- `API Gateway`, `Auth Service`, `User Service`, `Resume Builder Service`,
+  `Chat Service`, `Job Service`, and `Notification Service`.
+
+These strings are matched verbatim by `railway up --service "..."` in
+`.github/workflows/deploy.yml` and by the choice list in
+`.github/workflows/rollback.yml`. A rename breaks the release, and it breaks it
+mid-deploy — after some services have already switched over.
+
+**Do not assume the private hostname matches the display name.** Railway sets
+each service's `RAILWAY_PRIVATE_DOMAIN` independently, and in this project the
+gateway's is `apsaratalent-api.railway.internal` — *not* `api-gateway`, which
+does not resolve at all. The six internal services do happen to match their
+slugified names, which is exactly what made the gateway's mismatch easy to miss.
+
+Read the real value rather than inferring it:
+
+```bash
+railway variables --service "API Gateway" --json | grep RAILWAY_PRIVATE_DOMAIN
+```
+
+Any hostname in `monitoring/production/prometheus/prometheus.yml` or in a
+Dockerfile default must match that output exactly.
+
+The four monitoring services are lowercase — `prometheus`, `alertmanager`,
+`blackbox-exporter`, `grafana` — and CI targets them in that form.
 
 For each service, set the repository root as build context, the Dockerfile path
 listed in `railway.toml`, and the config file path to
@@ -87,8 +108,13 @@ Copy the required production values from `.env.example` into Railway. In
 particular:
 
 - Use private `*.railway.internal` addresses between services.
-- Set `PORT=9101`, `9102`, `9103`, `9104`, `9105`, and `9107` on the six
-  internal services respectively; their existing RPC ports remain unchanged.
+- **Do not set `PORT` on the six internal services.** Railway injects
+  `PORT=8080` and `main.ts` resolves its HTTP port as
+  `Number(process.env.PORT) || metricsPort`, so the platform's value wins
+  regardless. The images pin `ENV PORT=8080` to match, and
+  `monitoring/production/prometheus/prometheus.yml` scrapes `:8080`.
+  Setting `PORT` per service here would break the Prometheus targets.
+  Their RPC ports (3001–3007) are separate and remain unchanged.
 - Generate one random `METRICS_TOKEN` of at least 32 characters and set it on
   all seven API services and Prometheus.
 - Set `SENTRY_DSN`, `SENTRY_ENVIRONMENT=production`, and a distinct
@@ -106,19 +132,24 @@ Create four more private Railway services named exactly:
 - `prometheus`, `alertmanager`, `blackbox-exporter`, and `grafana`.
 
 Follow `monitoring/production/README.md` for Dockerfile paths, config paths,
-ports, volumes, secrets, and health checks. Alertmanager deliberately refuses
-to start without `ALERTMANAGER_SLACK_WEBHOOK_URL`; Grafana deliberately refuses
-weak or absent administrator credentials.
+ports, volumes, secrets, and health checks. Alertmanager deliberately refuses to
+start without `ALERTMANAGER_TELEGRAM_BOT_TOKEN` and
+`ALERTMANAGER_TELEGRAM_CHAT_ID`; Grafana deliberately refuses weak or absent
+administrator credentials.
 
 After the first deployment:
 
 1. Confirm all seven API scrape targets and the web/API blackbox probes are
    `UP` in Prometheus.
 2. Confirm the provisioned Apsara Talent dashboard loads in Grafana.
-3. Stop one non-production target and verify Slack receives the firing and
+3. Stop one non-production target and verify Telegram receives the firing and
    resolved notifications.
 4. Keep Prometheus, Alertmanager, and blackbox private. Expose Grafana only if
    its login is protected by HTTPS and a strong password.
+5. Configure `WATCHDOG_HEARTBEAT_URL` and prove the dead-man's switch by
+   stopping Alertmanager and confirming the external provider pages you. This
+   whole stack runs inside the same Railway project as the services it watches,
+   so it is the only alert path that survives losing the project.
 
 ## 4. Web and Sentry
 

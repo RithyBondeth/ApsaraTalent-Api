@@ -1,8 +1,11 @@
 # Stage 1: Build
-FROM node:24.18.1-alpine3.23 AS builder
+FROM node:26.7.0-alpine3.23 AS builder
 WORKDIR /app
 
-COPY package*.json ./
+# .npmrc carries legacy-peer-deps=true. Without it `npm ci` here resolves
+# peers strictly while every other environment uses legacy resolution, so a
+# dependency with a peer conflict fails ONLY inside the container build.
+COPY package*.json .npmrc ./
 RUN npm ci
 
 COPY nest-cli.json webpack.config.js ./
@@ -20,6 +23,9 @@ RUN npx nest build resume-builder-service
 ARG SENTRY_AUTH_TOKEN
 ARG SENTRY_ORG
 ARG SENTRY_PROJECT
+# The release these maps are uploaded under. CI passes the commit SHA here;
+# RAILWAY_GIT_COMMIT_SHA remains for Railway's own git-triggered builds.
+ARG SENTRY_RELEASE
 ARG RAILWAY_GIT_COMMIT_SHA
 COPY scripts/upload-sourcemaps.mjs ./scripts/
 RUN node scripts/upload-sourcemaps.mjs ./dist \
@@ -29,19 +35,32 @@ RUN npm prune --omit=dev
 
 # Stage 2: Production
 # Puppeteer requires Chrome dependencies
-FROM node:24.18.1-alpine3.23 AS runner
+FROM node:26.7.0-alpine3.23 AS runner
 WORKDIR /app
 
 # Freeze the release into the image so Sentry events match the source maps
 # uploaded for this same commit in the builder stage. ARGs do not cross stage
 # boundaries, so this must be re-declared here.
-ARG RAILWAY_GIT_COMMIT_SHA
-ENV SENTRY_RELEASE=${RAILWAY_GIT_COMMIT_SHA}
+#
+# This must be SENTRY_RELEASE and not RAILWAY_GIT_COMMIT_SHA: `railway up`
+# (how CI deploys) does not populate RAILWAY_GIT_COMMIT_SHA, so every image
+# built that way shipped with an empty release — no Sentry release, and
+# /health/live reporting "unknown". Railway's own git-triggered builds still
+# set RAILWAY_GIT_COMMIT_SHA, which resolveRelease() falls back to at runtime.
+ARG SENTRY_RELEASE
+ENV SENTRY_RELEASE=${SENTRY_RELEASE}
 
 ENV NODE_ENV=production
 ENV RESUME_SERVICE_PORT=3003
 ENV RESUME_SERVICE_METRICS_PORT=9103
-ENV PORT=9103
+# Railway injects PORT=8080 into every service and main.ts resolves its HTTP
+# port as `Number(process.env.PORT) || metricsPort`, so the platform's value
+# always won over an ENV PORT of 9103 here. Pinning 8080 makes the image agree
+# with the platform instead of silently disagreeing with it, and keeps the
+# Prometheus target correct even if Railway stops injecting PORT.
+# The 9101-9107 scheme still applies to local development, where all six
+# processes share one host — see monitoring/prometheus.yml.
+ENV PORT=8080
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
@@ -59,7 +78,7 @@ COPY --from=builder --chown=node:node /app/package.json ./
 
 USER node
 
-EXPOSE 3003 9103
+EXPOSE 3003 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=3 \
   CMD wget -q -O /dev/null "http://127.0.0.1:${PORT}/health/ready" || exit 1

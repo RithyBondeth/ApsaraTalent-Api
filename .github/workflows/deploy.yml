@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Reject committed environment files
         shell: bash
@@ -42,7 +42,8 @@ jobs:
             -e '-----BEGIN [A-Z ]*PRIVATE KEY-----' \
             -e "(SECRET|PASSWORD|TOKEN|API_KEY)[A-Z_]*[[:space:]]*[:=][[:space:]]*[\"']?[A-Za-z0-9/+_-]{24,}" \
             -e "(postgres(ql)?|mysql|mongodb(\\+srv)?|redis|rediss|amqps?)://[^[:space:]\"']+:[^[:space:]\"']+@" \
-            -- 'apps/**' 'libs/**' 'scripts/**' 'migrations/**' 'test/**' '*.ts' '*.js' '*.mjs' '*.json' '*.yml' '*.toml' \
+            -e '(hc-ping\.com|nosnch\.in|cronitor\.link|betterstack\.com/api/v[0-9]+/heartbeat)/[A-Za-z0-9/_-]{8,}' \
+            -- 'apps/**' 'libs/**' 'scripts/**' 'migrations/**' 'test/**' '*.ts' '*.js' '*.mjs' '*.json' '*.yml' '*.toml' '*.md' \
             ':!*.spec.ts' ':!package-lock.json' ':!test/e2e/e2e.env'; then
             echo "::error::Possible hard-coded credential above. Move it to an environment variable."
             exit 1
@@ -53,10 +54,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -69,7 +70,7 @@ jobs:
 
       - name: Upload dependency audit
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: api-dependency-audit
           path: dependency-audit.json
@@ -81,10 +82,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -104,10 +105,10 @@ jobs:
     timeout-minutes: 35
     needs: [secrets, dependencies, lint]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -120,15 +121,26 @@ jobs:
 
       - name: Upload coverage report
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: api-coverage
           path: coverage/
           if-no-files-found: warn
           retention-days: 14
 
-      - name: Run isolated end-to-end tests
+      # E2E_LOAD adds a load phase inside the same run, against the same
+      # already-standing isolated stack. `test:load:check` in the build job
+      # validates the harness configuration but sends no requests, so until now
+      # nothing has ever measured whether a change made a hot path slower.
+      #
+      # The p95 threshold is calibrated from three hosted-runner releases (see
+      # test/e2e/run-e2e.mjs). It is 3x the worst observed, because a shared runner
+      # varies by half again on its own and a gate that fails on runner weather is
+      # one people rerun until it passes.
+      - name: Run isolated end-to-end tests and load phase
         run: npm run test:e2e
+        env:
+          E2E_LOAD: '1'
 
   build:
     name: Typecheck and build every service
@@ -136,10 +148,10 @@ jobs:
     timeout-minutes: 25
     needs: [secrets, dependencies, lint, test]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -164,6 +176,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [secrets, dependencies, lint, test, build]
+    permissions:
+      contents: read
+      # Required to publish scan results to the repository's Security tab.
+      security-events: write
+      # Required to push the built image to GHCR.
+      packages: write
     strategy:
       fail-fast: false
       matrix:
@@ -176,14 +194,79 @@ jobs:
           - job-service
           - notification-service
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      # Tagged with the commit SHA and pushed on main, so the artifact that was
+      # built, scanned and (soon) deployed is one immutable thing rather than
+      # three separate rebuilds that happen to come from the same source.
       - name: Build production container
         run: >-
           docker build
           --file apps/${{ matrix.service }}/Dockerfile
-          --tag apsaratalent/${{ matrix.service }}:${{ github.sha }}
+          --tag ghcr.io/rithybondeth/apsaratalent-${{ matrix.service }}:${{ github.sha }}
           .
+
+      # Only from main. A pull request builds and scans the identical image but
+      # must not be able to publish one.
+      #
+      # Two tags, one image. The SHA tag is the immutable identity and stays the
+      # thing Trivy scans below. `:main` is a moving pointer to the same digest,
+      # and exists because a Railway service source has to be set by hand with
+      # account credentials — the CI project token cannot change it (#78). A
+      # service pinned to `:main` can therefore be pointed once and then
+      # redeployed by CI forever.
+      #
+      # Moving the tag is safe for recovery: the digest probe established that
+      # Railway records the RESOLVED digest per deployment and rolls back to
+      # that, not to whatever the tag points at now. See scripts/ci/digest-probe.mjs.
+      - name: Publish to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          image="ghcr.io/rithybondeth/apsaratalent-${{ matrix.service }}"
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker push "${image}:${{ github.sha }}"
+          docker tag "${image}:${{ github.sha }}" "${image}:main"
+          docker push "${image}:main"
+          docker logout ghcr.io
+
+      # The image is scanned, not merely built. `npm audit` sees the JavaScript
+      # dependency tree only — nothing before this step looks at the Alpine base
+      # layer or at what actually lands in the shipped filesystem. Dependabot's
+      # docker ecosystem bumps the base image TAG; it cannot tell you the image
+      # you are about to ship has a known CVE.
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ghcr.io/rithybondeth/apsaratalent-${{ matrix.service }}:${{ github.sha }}
+          format: sarif
+          output: trivy-${{ matrix.service }}.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+
+      - name: Upload scan results
+        if: always()
+        uses: github/codeql-action/upload-sarif@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6
+        with:
+          sarif_file: trivy-${{ matrix.service }}.sarif
+          category: container-${{ matrix.service }}
+
+      # Reported above, enforced here — and deliberately narrower than the
+      # report. An unfixable advisory must never block a release, because there
+      # is nothing anyone can do about it; a CRITICAL that HAS a fix is one base
+      # image bump away and should stop the line.
+      - name: Fail on fixable critical vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ghcr.io/rithybondeth/apsaratalent-${{ matrix.service }}:${{ github.sha }}
+          format: table
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+          skip-setup-trivy: true
+          # Exceptions apply to the GATE only — the SARIF report above is
+          # unfiltered. See .trivy-gate-ignore for why an entry is allowed.
+          trivyignores: .trivy-gate-ignore
 
   monitoring:
     name: Validate monitoring configuration
@@ -191,7 +274,7 @@ jobs:
     timeout-minutes: 15
     needs: [secrets, dependencies, lint]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Validate Grafana dashboard JSON
         run: jq empty monitoring/grafana/dashboards/apsaratalent-api.json
@@ -217,12 +300,36 @@ jobs:
       - name: Validate Alertmanager configurations
         shell: bash
         run: |
+          watchdog_url_file="$RUNNER_TEMP/alertmanager-watchdog-url"
+          printf 'https://example.invalid/heartbeat' > "$watchdog_url_file"
+          chmod 600 "$watchdog_url_file"
+
           docker run --rm \
             -v "$PWD/monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro" \
             --entrypoint /bin/amtool \
             prom/alertmanager:v0.33.1 check-config /etc/alertmanager/alertmanager.yml
+
+          # With the dead-man's switch enabled.
           docker run --rm \
             -v "$PWD/monitoring/production/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro" \
+            -v "$watchdog_url_file:/tmp/apsara-watchdog-url:ro" \
+            --entrypoint /bin/amtool \
+            prom/alertmanager:v0.33.1 check-config /etc/alertmanager/alertmanager.yml
+
+          # And the variant entrypoint.sh produces when WATCHDOG_HEARTBEAT_URL
+          # is unset. This is the whole reason the markers exist: if the strip
+          # ever leaves invalid YAML, Alertmanager fails to start and the stack
+          # is deaf — so the stripped form is validated here, not discovered in
+          # production. Kept byte-identical to the entrypoint's sed expression.
+          stripped="$RUNNER_TEMP/alertmanager-no-watchdog.yml"
+          sed '/# WATCHDOG-WEBHOOK-BEGIN/,/# WATCHDOG-WEBHOOK-END/d' \
+            monitoring/production/alertmanager/alertmanager.yml > "$stripped"
+          if grep -q 'webhook_configs' "$stripped"; then
+            echo "::error::Stripping the watchdog block left a webhook behind."
+            exit 1
+          fi
+          docker run --rm \
+            -v "$stripped:/etc/alertmanager/alertmanager.yml:ro" \
             --entrypoint /bin/amtool \
             prom/alertmanager:v0.33.1 check-config /etc/alertmanager/alertmanager.yml
 
@@ -239,19 +346,65 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [secrets, dependencies, lint, monitoring]
+    permissions:
+      contents: read
+      security-events: write
+      packages: write
     strategy:
       fail-fast: false
       matrix:
         service: [prometheus, alertmanager, blackbox, grafana]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Build production monitoring container
         run: >-
           docker build
           --file monitoring/production/${{ matrix.service }}/Dockerfile
-          --tag apsaratalent/monitoring-${{ matrix.service }}:${{ github.sha }}
+          --tag ghcr.io/rithybondeth/apsaratalent-monitoring-${{ matrix.service }}:${{ github.sha }}
           .
+
+      # Same two-tag scheme as the application services above.
+      - name: Publish to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          image="ghcr.io/rithybondeth/apsaratalent-monitoring-${{ matrix.service }}"
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker push "${image}:${{ github.sha }}"
+          docker tag "${image}:${{ github.sha }}" "${image}:main"
+          docker push "${image}:main"
+          docker logout ghcr.io
+
+      # These four are upstream images with a config layer on top, so their CVEs
+      # arrive entirely through base image bumps — exactly the class npm audit
+      # cannot see.
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ghcr.io/rithybondeth/apsaratalent-monitoring-${{ matrix.service }}:${{ github.sha }}
+          format: sarif
+          output: trivy-monitoring-${{ matrix.service }}.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+
+      - name: Upload scan results
+        if: always()
+        uses: github/codeql-action/upload-sarif@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6
+        with:
+          sarif_file: trivy-monitoring-${{ matrix.service }}.sarif
+          category: monitoring-${{ matrix.service }}
+
+      - name: Fail on fixable critical vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ghcr.io/rithybondeth/apsaratalent-monitoring-${{ matrix.service }}:${{ github.sha }}
+          format: table
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+          skip-setup-trivy: true
+          trivyignores: .trivy-gate-ignore
 
   release-preflight:
     name: Validate production release destination
@@ -279,17 +432,98 @@ jobs:
             fi
           done
 
+  migration-rehearsal:
+    name: Rehearse migrations against production data
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: [release-preflight]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Runs on a copy-on-write branch of production, so this is read-only with
+      # respect to the live database and costs seconds regardless of size.
+      #
+      # Deliberately placed BEFORE `migrate`, and gating it. The restore point
+      # that job takes is recovery; this is prevention — and the Neon
+      # point-in-time window behind that restore point is 1 day, so a migration
+      # that fails on real rows is much cheaper to discover here.
+      #
+      # No DATABASE_URL: the script sets it per command to the branch it created,
+      # which is what makes it structurally unable to migrate production.
+      - name: Rehearse this release's migrations
+        run: npm run db:rehearse
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+
+      - name: Explain a failure
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo "### ❌ Migrations did not survive rehearsal"
+            echo ""
+            echo "This release's migrations were applied to a copy-on-write branch of"
+            echo "production and something failed. **Production was not touched** and"
+            echo "no migration ran against it — the \`migrate\` job never started."
+            echo ""
+            echo "The step above names the phase. What each one means:"
+            echo ""
+            echo "- **Forward** — the migration does not apply to the rows that are"
+            echo "  actually in production. A NOT NULL over existing nulls, a UNIQUE"
+            echo "  index over duplicates, a narrowing that overflows. Unit tests"
+            echo "  cannot see this; they run against a mocked QueryRunner."
+            echo "- **Reverse** — \`down()\` is broken. Fix it before shipping: it is"
+            echo "  the first move in docs/RUNBOOK.md §5, and a rollback you cannot"
+            echo "  perform is not a rollback."
+            echo "- **Re-apply** — the migration is reversible once but not twice,"
+            echo "  so revert-fix-redeploy would fail on the redeploy."
+            echo ""
+            echo "Reproduce locally against your own Neon branch:"
+            echo ""
+            echo '```bash'
+            echo "REHEARSAL_KEEP_BRANCH=1 npm run db:rehearse"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
   migrate:
     name: Run production database migrations
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [release-preflight]
+    needs: [release-preflight, migration-rehearsal]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # The gate goes HERE, not on `deploy`, because this is the first job that
+    # writes to production and the only one whose effects a rollback cannot
+    # fully undo. Gating `deploy` instead would ask for approval after the
+    # schema had already changed.
+    #
+    # One approval covers the whole production phase — `deploy` needs this job,
+    # so there is no second prompt. And because `migration-rehearsal` runs
+    # before it, the rehearsal result is already visible when the decision is
+    # made: you are approving a migration that has been proven to apply to a
+    # copy of the real data.
+    #
+    # `prevent_self_review` is deliberately false on this environment. GitHub
+    # forbids approving your own pull request but permits approving your own
+    # deployment, which is the only reason this is usable by one person. It is
+    # not a second pair of eyes — it is a deliberate stop between merging and
+    # migrating production.
+    environment: production-release
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -350,7 +584,7 @@ jobs:
       RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
       PRODUCTION_API_URL: ${{ vars.PRODUCTION_API_URL }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Require deployment configuration
         shell: bash
@@ -365,7 +599,7 @@ jobs:
           fi
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -373,44 +607,110 @@ jobs:
       - name: Install pinned Railway CLI
         run: npm install --global @railway/cli@5.30.4
 
+      # `railway up` does not populate RAILWAY_GIT_COMMIT_SHA — Railway only
+      # injects it for its own git-triggered builds. Without this step every
+      # image shipped with an empty release: Sentry events carried no release,
+      # the source maps uploaded during the container build could not be matched
+      # to them, and /health/live reported "unknown". That last one is why the
+      # verification below could not tell a new revision from the previous one
+      # still serving.
+      #
+      # --skip-deploys is load-bearing: setting a variable normally triggers its
+      # own rollout, which would deploy all seven services at once and take the
+      # gateway down. With it, the value lands on the service and the ordered
+      # `railway up` steps below pick it up.
+      - name: Stamp the release onto every application service
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          for service in \
+            "Auth Service" \
+            "User Service" \
+            "Resume Builder Service" \
+            "Chat Service" \
+            "Job Service" \
+            "Notification Service" \
+            "API Gateway"; do
+            echo "Stamping $service with $RELEASE_SHA"
+            railway variables \
+              --service "$service" \
+              --set "SENTRY_RELEASE=$RELEASE_SHA" \
+              --skip-deploys
+          done
+
       # Internal services go first; the public gateway switches last. Attached
       # mode streams the complete Railway build/deploy result and fails CI when
       # a service does not become active. These are the service names shown in
       # Railway Architecture; GitHub prefixes deployment labels separately.
       - name: Deploy auth service
-        run: railway up --service "Auth Service"
+        run: scripts/ci/railway-deploy-from-source.sh "Auth Service"
 
       - name: Deploy user service
-        run: railway up --service "User Service"
+        run: scripts/ci/railway-deploy-from-source.sh "User Service"
 
       - name: Deploy resume builder service
-        run: railway up --service "Resume Builder Service"
+        run: scripts/ci/railway-deploy-from-source.sh "Resume Builder Service"
 
       - name: Deploy chat service
-        run: railway up --service "Chat Service"
+        run: scripts/ci/railway-deploy-from-source.sh "Chat Service"
 
       - name: Deploy job service
-        run: railway up --service "Job Service"
+        run: scripts/ci/railway-deploy-from-source.sh "Job Service"
 
+      # Was the canary, and shipped three clean releases on the image path
+      # before the five internal services above joined it. The API Gateway and
+      # the four monitoring services are still rebuilt by `railway up` —
+      # converting everything at once is how #78 failed, and the gateway is the
+      # one service where being wrong is immediately user-visible, so it goes
+      # last and on its own.
+      #
+      # Every source here was pointed at :main by hand, with account
+      # credentials. The project token used by this job cannot change a source
+      # (that IS what broke #78) but it can deploy, which is the whole basis of
+      # this approach.
+      #
+      # Fallback for any of these six: set the source back to the repo in the
+      # Railway dashboard with builder RAILPACK and dockerfilePath
+      # /apps/<service>/Dockerfile, and revert that step to
+      # `scripts/ci/railway-up.sh "<Service Name>"`. Per service, no coupling
+      # between them.
       - name: Deploy notification service
-        run: railway up --service "Notification Service"
+        run: scripts/ci/railway-deploy-from-source.sh "Notification Service"
 
       - name: Deploy Alertmanager
-        run: railway up --service alertmanager
+        run: scripts/ci/railway-deploy-from-source.sh alertmanager
 
       - name: Deploy blackbox exporter
-        run: railway up --service blackbox-exporter
+        run: scripts/ci/railway-deploy-from-source.sh blackbox-exporter
 
       - name: Deploy Prometheus
-        run: railway up --service prometheus
+        run: scripts/ci/railway-deploy-from-source.sh prometheus
 
       - name: Deploy Grafana
-        run: railway up --service grafana
+        run: scripts/ci/railway-deploy-from-source.sh grafana
 
       - name: Deploy API gateway
-        run: railway up --service "API Gateway"
+        run: scripts/ci/railway-deploy-from-source.sh "API Gateway"
 
+      # EXPECTED_RELEASE makes this prove the NEW revision is serving. Without
+      # it, a `railway up` that silently changed nothing left the previous
+      # revision answering health checks and the release passed verification.
       - name: Verify production liveness and every readiness dependency
+        env:
+          EXPECTED_RELEASE: ${{ github.sha }}
+        run: node scripts/ci/verify-deployment.mjs "$PRODUCTION_API_URL"
+
+      # A failure part-way through the sequence leaves production on MIXED
+      # revisions and skips the verification above entirely, so without this the
+      # job ends without ever saying what is actually serving. Never gates:
+      # EXPECTED_RELEASE is deliberately unset so this reports rather than
+      # asserts, and continue-on-error keeps it from masking the real failure.
+      - name: Report what production is actually serving
+        if: failure()
+        continue-on-error: true
+        env:
+          DEPLOY_VERIFY_TIMEOUT_MS: "30000"
         run: node scripts/ci/verify-deployment.mjs "$PRODUCTION_API_URL"
 
       # Railway rollback is deliberately not automated here. Rolling back one
@@ -422,10 +722,22 @@ jobs:
         shell: bash
         run: |
           {
-            echo "### ❌ Production verification failed — the new revision is live and unhealthy"
+            echo "### ❌ Release did not complete"
             echo ""
-            echo "Roll back **all** API services together, or none. Mixed revisions"
-            echo "talking over TCP RPC is a second outage."
+            echo "Two different situations end up here — check which one above:"
+            echo ""
+            echo "**A deploy step failed part-way.** Production is on MIXED revisions:"
+            echo "the services listed before the failure are on this release, the rest"
+            echo "are on the previous one. The step above reports what the gateway is"
+            echo "actually serving. If the failure was a Railway transport error, the"
+            echo "wrapper already retried three times — re-running the job is safe and"
+            echo "is usually the fastest fix, because \`railway up\` is idempotent."
+            echo ""
+            echo "**Verification failed after all services deployed.** The new revision"
+            echo "is live and unhealthy."
+            echo ""
+            echo "Either way, roll back **all** API services together, or none. Mixed"
+            echo "revisions talking over TCP RPC is a second outage."
             echo ""
             echo "1. Run the **Roll back Railway services** workflow with"
             echo "   \`service: all\` — it targets the deployment before this one."
@@ -433,4 +745,4 @@ jobs:
             echo "   read docs/RUNBOOK.md §5 *before* reverting it."
             echo "3. Restore point for this release is recorded in the \`migrate\` job summary."
           } >> "$GITHUB_STEP_SUMMARY"
-          echo "::error::Production verification failed. Roll back via the 'Roll back Railway services' workflow (service: all)."
+          echo "::error::Release did not complete. See the job summary — production may be on mixed revisions."

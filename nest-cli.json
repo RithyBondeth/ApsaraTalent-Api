@@ -1,24 +1,25 @@
 {
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
-  "sourceRoot": "apps/AparaTalent/src",
+  "sourceRoot": "apps/api-gateway/src",
   "compilerOptions": {
     "deleteOutDir": true,
     "webpack": true,
-    "tsConfigPath": "apps/AparaTalent/tsconfig.app.json"
+    "tsConfigPath": "apps/api-gateway/tsconfig.app.json",
+    "plugins": [
+      {
+        "name": "@nestjs/swagger",
+        "options": {
+          "dtoFileNameSuffix": [".dto.ts"],
+          "controllerFileNameSuffix": [".controller.ts"],
+          "introspectComments": true
+        }
+      }
+    ]
   },
   "monorepo": true,
-  "root": "apps/AparaTalent",
+  "root": "apps/api-gateway",
   "projects": {
-    "AparaTalent": {
-      "type": "application",
-      "root": "apps/AparaTalent",
-      "entryFile": "main",
-      "sourceRoot": "apps/AparaTalent/src",
-      "compilerOptions": {
-        "tsConfigPath": "apps/AparaTalent/tsconfig.app.json"
-      }
-    },
     "api-gateway": {
       "type": "application",
       "root": "apps/api-gateway",
@@ -62,15 +63,6 @@
       "sourceRoot": "libs/contracts/src",
       "compilerOptions": {
         "tsConfigPath": "libs/contracts/tsconfig.lib.json"
-      }
-    },
-    "utils": {
-      "type": "library",
-      "root": "libs/utils",
-      "entryFile": "index",
-      "sourceRoot": "libs/utils/src",
-      "compilerOptions": {
-        "tsConfigPath": "libs/utils/tsconfig.lib.json"
       }
     },
     "resume-builder-service": {

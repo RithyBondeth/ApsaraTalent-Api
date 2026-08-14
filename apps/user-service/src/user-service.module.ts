@@ -33,36 +33,39 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TerminusModule } from '@nestjs/terminus';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { FindCompanyController } from './controllers/company-controllers/find-company.controller';
-import { ImageCompanyController } from './controllers/company-controllers/image-company.controller';
-import { OpenPositionController } from './controllers/company-controllers/open-position.controller';
-import { UpdateCompanyInfoController } from './controllers/company-controllers/update-company-info.controller';
-import { ExperienceAndEducationController } from './controllers/employee-controllers/experience-education.controller';
-import { FindEmployeeController } from './controllers/employee-controllers/find-employee.controller';
-import { ImageEmployeeController } from './controllers/employee-controllers/image-employee.controller';
-import { SearchEmployeeController } from './controllers/employee-controllers/search-employee.controller';
-import { UpdateEmployeeInfoController } from './controllers/employee-controllers/update-employee-info.controller';
-import { UploadEmployeeReferenceController } from './controllers/employee-controllers/upload-employee-reference.controller';
+import { FindCompanyController } from './company/controllers/find-company.controller';
+import { ImageCompanyController } from './company/controllers/image-company.controller';
+import { OpenPositionController } from './company/controllers/open-position.controller';
+import { UpdateCompanyInfoController } from './company/controllers/update-company-info.controller';
+import { ExperienceAndEducationController } from './employee/controllers/experience-education.controller';
+import { FindEmployeeController } from './employee/controllers/find-employee.controller';
+import { ImageEmployeeController } from './employee/controllers/image-employee.controller';
+import { SearchEmployeeController } from './employee/controllers/search-employee.controller';
+import { UpdateEmployeeInfoController } from './employee/controllers/update-employee-info.controller';
+import { UploadEmployeeReferenceController } from './employee/controllers/upload-employee-reference.controller';
 import { EmailModule } from '@app/common/email/email.module';
-import { ModerationController } from './controllers/moderation/moderation.controller';
-import { SupportController } from './controllers/support/support.controller';
-import { UserController } from './controllers/user.controller';
+import { ModerationController } from './moderation/controllers/moderation.controller';
+import { SupportController } from './support/controllers/support.controller';
+import { UserController } from './users/controllers/user.controller';
 import { UserHealthController } from './health/health.controller';
-import { FindCompanyService } from './services/company-services/find-company.service';
-import { ImageCompanyService } from './services/company-services/image-company.service';
-import { OpenPositionService } from './services/company-services/open-position.service';
-import { UpdateCompanyInfoService } from './services/company-services/update-company-info.service';
-import { ExperienceAndEducationService } from './services/employee-services/experience-education.service';
-import { FindEmployeeService } from './services/employee-services/find-employee.service';
-import { ImageEmployeeService } from './services/employee-services/image-employee.service';
-import { SearchEmployeeService } from './services/employee-services/search-employee.service';
-import { UpdateEmployeeInfoService } from './services/employee-services/update-employee-info.service';
-import { UploadEmployeeReferenceService } from './services/employee-services/upload-employee-reference.service';
-import { ModerationService } from './services/moderation/moderation.service';
-import { SupportService } from './services/support/support.service';
-import { UserService } from './services/user.service';
-import { FavoritesService } from './services/favorites.service';
-import { RecommendationsService } from './services/recommendations.service';
+import { FindCompanyService } from './company/services/find-company.service';
+import { ImageCompanyService } from './company/services/image-company.service';
+import { OpenPositionService } from './company/services/open-position.service';
+import { UpdateCompanyInfoService } from './company/services/update-company-info.service';
+import { ExperienceAndEducationService } from './employee/services/experience-education.service';
+import { FindEmployeeService } from './employee/services/find-employee.service';
+import { ImageEmployeeService } from './employee/services/image-employee.service';
+import { SearchEmployeeService } from './employee/services/search-employee.service';
+import { UpdateEmployeeInfoService } from './employee/services/update-employee-info.service';
+import { UploadEmployeeReferenceService } from './employee/services/upload-employee-reference.service';
+import { ModerationService } from './moderation/services/moderation.service';
+import { SupportService } from './support/services/support.service';
+import { UserService } from './users/services/user.service';
+import { FavoritesService } from './users/services/favorites.service';
+import { FavoritesQueryService } from './users/services/favorites-query.service';
+import { EmployeeRecommendationsService } from './users/services/employee-recommendations.service';
+import { CompanyRecommendationsService } from './users/services/company-recommendations.service';
+import { RecommendationSupportService } from './users/services/recommendation-support.service';
 import {
   I_UPDATE_EMPLOYEE_INFO_SERVICE,
   I_IMAGE_EMPLOYEE_SERVICE,
@@ -74,7 +77,9 @@ import {
   I_SEARCH_EMPLOYEE_SERVICE,
   I_USER_SERVICE,
   I_FAVORITES_SERVICE,
-  I_RECOMMENDATIONS_SERVICE,
+  I_FAVORITES_QUERY_SERVICE,
+  I_EMPLOYEE_RECOMMENDATIONS_SERVICE,
+  I_COMPANY_RECOMMENDATIONS_SERVICE,
   I_OPEN_POSITION_SERVICE,
   I_EXPERIENCE_AND_EDUCATION_SERVICE,
   I_MODERATION_SERVICE,
@@ -160,8 +165,17 @@ import {
     { provide: I_USER_SERVICE, useClass: UserService },
     { provide: I_FAVORITES_SERVICE, useClass: FavoritesService },
     {
-      provide: I_RECOMMENDATIONS_SERVICE,
-      useClass: RecommendationsService,
+      provide: I_FAVORITES_QUERY_SERVICE,
+      useClass: FavoritesQueryService,
+    },
+    RecommendationSupportService,
+    {
+      provide: I_EMPLOYEE_RECOMMENDATIONS_SERVICE,
+      useClass: EmployeeRecommendationsService,
+    },
+    {
+      provide: I_COMPANY_RECOMMENDATIONS_SERVICE,
+      useClass: CompanyRecommendationsService,
     },
     { provide: I_OPEN_POSITION_SERVICE, useClass: OpenPositionService },
     {

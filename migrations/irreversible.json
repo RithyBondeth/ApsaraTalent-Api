@@ -1,0 +1,5 @@
+{
+  "$comment": "Migrations whose down() is deliberately a no-op. Keyed by TypeORM class name; the value is why. Read by migrations.spec.ts (which skips the rollback-SQL contract for these) and by scripts/ci/migration-rehearsal.mjs (which skips its reverse phase when a release contains one). Adding a migration here is a decision that its rollback is impossible or unsafe, not a way to silence a failing test.",
+  "NormalizeExperienceLevels1781136000000": "The original free-text experience levels are gone once normalized. There is nothing left to restore them from.",
+  "HashRefreshTokens1784073600000": "Reversing this would write bearer credentials back in plaintext, which is the vulnerability the migration exists to remove."
+}

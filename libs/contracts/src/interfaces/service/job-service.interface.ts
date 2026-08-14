@@ -40,6 +40,7 @@ import { PaginationDTO } from '@app/contracts/dtos/shared';
 
 export const I_JOB_SERVICE_SERVICE = 'IJobServiceService';
 export const I_MATCHING_SERVICE = 'IMatchingService';
+export const I_MATCHING_QUERY_SERVICE = 'IMatchingQueryService';
 export const I_MATCHING_ANALYTICS_SERVICE = 'IMatchingAnalyticsService';
 export const I_MATCHING_AI_SERVICE = 'IMatchingAiService';
 export const I_INTERVIEW_SERVICE = 'IInterviewService';
@@ -54,6 +55,10 @@ export interface IMatchingService {
   employeeLikes(matchDTO: MatchDTO): Promise<MatchResponseDTO>;
   companyLikes(matchDTO: MatchDTO): Promise<MatchResponseDTO>;
   unmatch(unMatchDTO: UnMatchDTO): Promise<UnMatchResposneDTO>;
+}
+
+/** Read side of matching: cached lists and counts. */
+export interface IMatchingQueryService {
   findCurrentEmployeeLiked(
     employeeMatchLookupDTO: EmployeeMatchingLookupDTO,
   ): Promise<FindCurrentLikeResponseDTO[]>;

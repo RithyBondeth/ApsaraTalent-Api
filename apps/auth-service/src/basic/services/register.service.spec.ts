@@ -1,6 +1,12 @@
 import 'reflect-metadata';
 import { RpcException } from '@nestjs/microservices';
 import { RegisterService } from './register.service';
+import {
+  findOrCreateBenefits,
+  findOrCreateCareerScopes,
+  findOrCreateSkills,
+  findOrCreateValues,
+} from '../utils/reference-data.util';
 
 describe('RegisterService', () => {
   const users = { exists: jest.fn() };
@@ -149,27 +155,26 @@ describe('RegisterService', () => {
   });
 
   it('bulk reuses existing lookup rows and creates only missing values', async () => {
-    const internal = service as any;
     manager.find
       .mockResolvedValueOnce([{ id: 1, label: 'Remote' }])
       .mockResolvedValueOnce([{ id: 2, label: 'Growth' }])
       .mockResolvedValueOnce([{ id: 'scope-1', name: 'Software' }])
       .mockResolvedValueOnce([{ id: 'skill-1', name: 'TypeScript' }]);
-    const benefits = await internal.findOrCreateBenefits(
+    const benefits = await findOrCreateBenefits(
       ['Remote', 'Insurance'],
-      runner,
+      runner as any,
     );
-    const values = await internal.findOrCreateValues(
+    const values = await findOrCreateValues(
       ['Growth', 'Integrity'],
-      runner,
+      runner as any,
     );
-    const scopes = await internal.findOrCreateCareerScopes(
+    const scopes = await findOrCreateCareerScopes(
       ['Software', 'Design'],
-      runner,
+      runner as any,
     );
-    const skills = await internal.findOrCreateSkills(
+    const skills = await findOrCreateSkills(
       [{ name: 'TypeScript' }, { name: 'Node.js', description: 'Backend' }],
-      runner,
+      runner as any,
     );
     expect(benefits).toHaveLength(2);
     expect(values).toHaveLength(2);
@@ -185,15 +190,12 @@ describe('RegisterService', () => {
   });
 
   it('returns empty lookup collections without querying the database', async () => {
-    const internal = service as any;
-    await expect(internal.findOrCreateBenefits([], runner)).resolves.toEqual(
+    await expect(findOrCreateBenefits([], runner as any)).resolves.toEqual([]);
+    await expect(findOrCreateValues([], runner as any)).resolves.toEqual([]);
+    await expect(findOrCreateCareerScopes([], runner as any)).resolves.toEqual(
       [],
     );
-    await expect(internal.findOrCreateValues([], runner)).resolves.toEqual([]);
-    await expect(
-      internal.findOrCreateCareerScopes([], runner),
-    ).resolves.toEqual([]);
-    await expect(internal.findOrCreateSkills([], runner)).resolves.toEqual([]);
+    await expect(findOrCreateSkills([], runner as any)).resolves.toEqual([]);
     expect(manager.find).not.toHaveBeenCalled();
   });
 

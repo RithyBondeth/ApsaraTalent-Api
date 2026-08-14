@@ -22,7 +22,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { rpcCall } from '../../utils/rpc-call';
-import { SocketBroadcastService } from '../../socket/socket-broadcast.service';
+import { SocketBroadcastService } from '../../shared/socket/socket-broadcast.service';
 import { JobAccessService } from '../services/job-access.service';
 import { IInterviewController } from '@app/contracts/interfaces/controller/job-controllers/interview-controller.interface';
 

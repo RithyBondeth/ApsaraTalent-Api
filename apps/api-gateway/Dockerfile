@@ -1,8 +1,11 @@
 # Stage 1: Build
-FROM node:24.18.1-alpine3.23 AS builder
+FROM node:26.7.0-alpine3.23 AS builder
 WORKDIR /app
 
-COPY package*.json ./
+# .npmrc carries legacy-peer-deps=true. Without it `npm ci` here resolves
+# peers strictly while every other environment uses legacy resolution, so a
+# dependency with a peer conflict fails ONLY inside the container build.
+COPY package*.json .npmrc ./
 RUN npm ci
 
 COPY nest-cli.json webpack.config.js ./
@@ -21,6 +24,9 @@ RUN npx nest build api-gateway
 ARG SENTRY_AUTH_TOKEN
 ARG SENTRY_ORG
 ARG SENTRY_PROJECT
+# The release these maps are uploaded under. CI passes the commit SHA here;
+# RAILWAY_GIT_COMMIT_SHA remains for Railway's own git-triggered builds.
+ARG SENTRY_RELEASE
 ARG RAILWAY_GIT_COMMIT_SHA
 COPY scripts/upload-sourcemaps.mjs ./scripts/
 RUN node scripts/upload-sourcemaps.mjs ./dist \
@@ -29,14 +35,20 @@ RUN node scripts/upload-sourcemaps.mjs ./dist \
 RUN npm prune --omit=dev
 
 # Stage 2: Production
-FROM node:24.18.1-alpine3.23 AS runner
+FROM node:26.7.0-alpine3.23 AS runner
 WORKDIR /app
 
 # Freeze the release into the image so Sentry events match the source maps
 # uploaded for this same commit in the builder stage. ARGs do not cross stage
 # boundaries, so this must be re-declared here.
-ARG RAILWAY_GIT_COMMIT_SHA
-ENV SENTRY_RELEASE=${RAILWAY_GIT_COMMIT_SHA}
+#
+# This must be SENTRY_RELEASE and not RAILWAY_GIT_COMMIT_SHA: `railway up`
+# (how CI deploys) does not populate RAILWAY_GIT_COMMIT_SHA, so every image
+# built that way shipped with an empty release — no Sentry release, and
+# /health/live reporting "unknown". Railway's own git-triggered builds still
+# set RAILWAY_GIT_COMMIT_SHA, which resolveRelease() falls back to at runtime.
+ARG SENTRY_RELEASE
+ENV SENTRY_RELEASE=${SENTRY_RELEASE}
 
 ENV NODE_ENV=production
 ENV PORT=3000
@@ -57,6 +69,13 @@ ENV NOTIFICATION_SERVICE_PORT=3007
 COPY --from=builder --chown=node:node /app/dist/apps/api-gateway ./dist/apps/api-gateway
 COPY --from=builder --chown=node:node /app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/package.json ./
+
+# The storage volume is mounted only in this image, and `npm prune --omit=dev`
+# removed ts-node — so the repo's storage:migrate script cannot run where the
+# data actually is. This plain-ESM equivalent ships with the image so the
+# migration is auditable code rather than something fetched at runtime:
+#   railway ssh --service "API Gateway" -- node scripts/storage/migrate-in-container.mjs
+COPY --chown=node:node scripts/storage ./scripts/storage
 
 # Create storage directory for chat file uploads.
 # NOTE: This directory is ephemeral. On Railway, add a Volume mount at /app/storage

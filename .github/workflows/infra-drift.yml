@@ -1,0 +1,74 @@
+name: Infrastructure drift
+
+# Every Railway setting in this project is made by hand in the dashboard:
+# Dockerfile paths, ports, volumes, domains. Nothing in the repository can tell
+# you when reality stops matching the documentation — which is exactly how
+# Prometheus, Alertmanager and blackbox came to be serving publicly with no
+# authentication while monitoring/production/README.md said they were private.
+#
+# This is the smallest thing that closes that loop: a scheduled, read-only
+# assertion that the settings which cannot be code still hold.
+
+on:
+  schedule:
+    # Daily at 02:00 UTC == 09:00 Asia/Phnom_Penh, so a failure is waiting at
+    # the start of the working day rather than overnight.
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: infra-drift
+  cancel-in-progress: false
+
+jobs:
+  drift:
+    name: Verify production matches documented policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      # Optional: reports the Neon point-in-time-recovery window so it stops
+      # being the "unconfirmed" item in RUNBOOK §7. Read-only.
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Require the Railway token
+        shell: bash
+        run: |
+          if [[ -z "$RAILWAY_TOKEN" ]]; then
+            echo "::error::RAILWAY_TOKEN is required to read the production project."
+            exit 1
+          fi
+
+      - name: Install pinned Railway CLI
+        run: npm install --global @railway/cli@5.30.4
+
+      - name: Check for drift
+        run: node scripts/ci/check-infra-drift.mjs
+
+      - name: Explain a failure
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo "### ⚠️ Production infrastructure has drifted"
+            echo ""
+            echo "A setting that exists only in the Railway dashboard no longer"
+            echo "matches \`monitoring/production/README.md\`. The step above names"
+            echo "the service and the command that fixes it."
+            echo ""
+            echo "A public domain on Prometheus, Alertmanager or blackbox is not a"
+            echo "cosmetic problem: the Alertmanager silences API is writable"
+            echo "without authentication, and blackbox \`/probe\` will fetch any URL"
+            echo "given to it **from inside the private network**."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,58 +1,62 @@
 import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  AUTH_CACHE_PREFIX,
+  CACHE_PREFIX,
+  CHAT_CACHE_PREFIX,
+  JOB_CACHE_PREFIX,
+  NOTIFICATION_CACHE_PREFIX,
+  RESUME_CACHE_PREFIX,
+  generateAuthSessionKey,
+  generateCompanyKey,
+  generateEmployeeKey,
+  generateMatchingKey,
+  generateNotificationUnreadCountKey,
+  generateRecentChatsKey,
+  generateTemplateDetailKey,
+  generateTemplateListKey,
+  generateUnreadCountKey,
+  generateUserKey,
+} from './redis-keys.util';
+
+const CACHE_OPERATION_TIMEOUT_MS = 1_000;
 
 @Injectable()
 export class RedisService {
   private readonly logger = new Logger(RedisService.name);
-  private readonly PREFIX = 'apsaratalent:user-service';
+  private readonly PREFIX = CACHE_PREFIX;
 
   constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
 
+  /**
+   * Redis is an optimization, not a request-critical dependency. Keyv's Redis
+   * adapter can keep retrying indefinitely when a local Redis instance is not
+   * running, so bound basic cache operations and let callers use their source
+   * of truth instead.
+   */
+  private async withOperationTimeout<T>(operation: Promise<T>): Promise<T> {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const expiration = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(
+        () => reject(new Error('Redis operation timed out')),
+        CACHE_OPERATION_TIMEOUT_MS,
+      );
+    });
+
+    try {
+      return await Promise.race([operation, expiration]);
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
+    }
+  }
+
   // Cache key generators
-  generateUserKey(type: string, id: string): string {
-    return `${this.PREFIX}:user:${type}:${id}`;
-  }
-
-  generateEmployeeKey(type: string, id: string): string {
-    return `${this.PREFIX}:employee:${type}:${id}`;
-  }
-
-  generateCompanyKey(type: string, id: string): string {
-    return `${this.PREFIX}:company:${type}:${id}`;
-  }
-
-  generateListKey(entity: string, filters: any): string {
-    const filterString = JSON.stringify(filters);
-    return `${this.PREFIX}:${entity}:list:${filterString}`;
-  }
-
-  generateSearchKey(entity: string, query: any): string {
-    const sorted = Object.fromEntries(
-      Object.entries(query).sort(([a], [b]) => a.localeCompare(b)),
-    );
-    return `${this.PREFIX}:${entity}:search:${JSON.stringify(sorted)}`;
-  }
-
-  generateEmployeeFavoriteCountKey(employeeId: string): string {
-    return this.generateEmployeeKey('favorite-count', employeeId);
-  }
-
-  generateCompanyFavoriteCountKey(companyId: string): string {
-    return this.generateCompanyKey('favorite-count', companyId);
-  }
-
-  generateEmployeeFavoritesKey(employeeId: string): string {
-    return this.generateEmployeeKey('favorites', employeeId);
-  }
-
-  generateCompanyFavoritesKey(companyId: string): string {
-    return this.generateCompanyKey('favorites', companyId);
-  }
-
   // Operations
   async get<T>(key: string): Promise<T | null> {
     try {
-      const value = await this.cacheManager.get<T>(key);
+      const value = await this.withOperationTimeout(
+        this.cacheManager.get<T>(key),
+      );
       return value || null;
     } catch (error) {
       const errorMessage =
@@ -67,7 +71,7 @@ export class RedisService {
 
   async set<T>(key: string, value: T, ttl?: number): Promise<void> {
     try {
-      await this.cacheManager.set(key, value, ttl);
+      await this.withOperationTimeout(this.cacheManager.set(key, value, ttl));
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -77,7 +81,7 @@ export class RedisService {
 
   async del(key: string): Promise<void> {
     try {
-      await this.cacheManager.del(key);
+      await this.withOperationTimeout(this.cacheManager.del(key));
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -160,7 +164,11 @@ export class RedisService {
           ? () => (this.cacheManager as any).store.getClient()
           : null);
 
-      return getter ? await getter() : null;
+      // delPattern falls back here when getReadyClient() gives up, so this must
+      // be bounded too — otherwise the timeout above just moves the hang.
+      return getter
+        ? await this.withOperationTimeout(Promise.resolve(getter()))
+        : null;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -199,7 +207,12 @@ export class RedisService {
     }
 
     try {
-      await this.connecting;
+      // Bounded for the same reason the basic operations are: node-redis keeps
+      // retrying connect() with backoff when nothing is listening, and every
+      // raw-client path (delPattern, hitRateLimits, getCounter) waits here. An
+      // unbounded wait turns "Redis is down" into a request that hangs until
+      // the caller's own timeout — a 30s page failure instead of a cache miss.
+      await this.withOperationTimeout(this.connecting);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -386,25 +399,25 @@ export class RedisService {
   async invalidateUser(userId: string): Promise<void> {
     // Instead of pattern deletion, delete specific known keys
     await Promise.all([
-      this.del(this.generateUserKey('detail', userId)),
-      this.del(this.generateUserKey('profile', userId)),
-      this.del(this.generateUserKey('settings', userId)),
+      this.del(generateUserKey('detail', userId)),
+      this.del(generateUserKey('profile', userId)),
+      this.del(generateUserKey('settings', userId)),
     ]);
   }
 
   async invalidateEmployee(employeeId: string): Promise<void> {
     await Promise.all([
-      this.del(this.generateEmployeeKey('detail', employeeId)),
-      this.del(this.generateEmployeeKey('favorites', employeeId)),
-      this.del(this.generateEmployeeKey('favorite-count', employeeId)),
+      this.del(generateEmployeeKey('detail', employeeId)),
+      this.del(generateEmployeeKey('favorites', employeeId)),
+      this.del(generateEmployeeKey('favorite-count', employeeId)),
     ]);
   }
 
   async invalidateCompany(companyId: string): Promise<void> {
     await Promise.all([
-      this.del(this.generateCompanyKey('detail', companyId)),
-      this.del(this.generateCompanyKey('favorites', companyId)),
-      this.del(this.generateCompanyKey('favorite-count', companyId)),
+      this.del(generateCompanyKey('detail', companyId)),
+      this.del(generateCompanyKey('favorites', companyId)),
+      this.del(generateCompanyKey('favorite-count', companyId)),
     ]);
   }
 
@@ -421,37 +434,18 @@ export class RedisService {
 
   // You can also clear profile/settings if you really use them
   async clearUserDetailCache(userId: string): Promise<void> {
-    await this.del(this.generateUserKey('detail', userId));
+    await this.del(generateUserKey('detail', userId));
   }
 
   // ===== AUTH SESSION KEYS =====
-  private readonly AUTH_PREFIX = 'apsaratalent:auth';
-
-  generateAuthSessionKey(userId: string): string {
-    return `${this.AUTH_PREFIX}:session:${userId}`;
-  }
+  private readonly AUTH_PREFIX = AUTH_CACHE_PREFIX;
 
   async invalidateAuthSession(userId: string): Promise<void> {
-    await this.del(this.generateAuthSessionKey(userId));
+    await this.del(generateAuthSessionKey(userId));
   }
 
   // ===== JOB SERVICE KEYS =====
-  private readonly JOB_PREFIX = 'apsaratalent:job-service';
-
-  generateJobListKey(): string {
-    return `${this.JOB_PREFIX}:job:list:all`;
-  }
-
-  generateJobSearchKey(query: any): string {
-    const sorted = Object.fromEntries(
-      Object.entries(query).sort(([a], [b]) => a.localeCompare(b)),
-    );
-    return `${this.JOB_PREFIX}:job:search:${JSON.stringify(sorted)}`;
-  }
-
-  generateMatchingKey(type: string, id: string): string {
-    return `${this.JOB_PREFIX}:matching:${type}:${id}`;
-  }
+  private readonly JOB_PREFIX = JOB_CACHE_PREFIX;
 
   // Invalidate cached job searches and job lists. Job keys live under
   // JOB_PREFIX, so we must pass it explicitly to delPattern.
@@ -464,12 +458,12 @@ export class RedisService {
 
   async invalidateMatchingCaches(eid: string, cid: string): Promise<void> {
     await Promise.all([
-      this.del(this.generateMatchingKey('employee-liked', eid)),
-      this.del(this.generateMatchingKey('company-liked', cid)),
-      this.del(this.generateMatchingKey('employee-matching', eid)),
-      this.del(this.generateMatchingKey('company-matching', cid)),
-      this.del(this.generateMatchingKey('employee-matching-count', eid)),
-      this.del(this.generateMatchingKey('company-matching-count', cid)),
+      this.del(generateMatchingKey('employee-liked', eid)),
+      this.del(generateMatchingKey('company-liked', cid)),
+      this.del(generateMatchingKey('employee-matching', eid)),
+      this.del(generateMatchingKey('company-matching', cid)),
+      this.del(generateMatchingKey('employee-matching-count', eid)),
+      this.del(generateMatchingKey('company-matching-count', cid)),
     ]);
   }
 
@@ -478,76 +472,41 @@ export class RedisService {
   }
 
   // ===== CHAT SERVICE KEYS =====
-  private readonly CHAT_PREFIX = 'apsaratalent:chat-service';
-
-  generateRecentChatsKey(userId: string): string {
-    return `${this.CHAT_PREFIX}:chat:recent:${userId}`;
-  }
-
-  generateUnreadCountKey(userId: string): string {
-    return `${this.CHAT_PREFIX}:chat:unread-count:${userId}`;
-  }
+  private readonly CHAT_PREFIX = CHAT_CACHE_PREFIX;
 
   async invalidateChatCaches(userId1: string, userId2?: string): Promise<void> {
     const deletions = [
-      this.del(this.generateRecentChatsKey(userId1)),
-      this.del(this.generateUnreadCountKey(userId1)),
+      this.del(generateRecentChatsKey(userId1)),
+      this.del(generateUnreadCountKey(userId1)),
     ];
     if (userId2) {
       deletions.push(
-        this.del(this.generateRecentChatsKey(userId2)),
-        this.del(this.generateUnreadCountKey(userId2)),
+        this.del(generateRecentChatsKey(userId2)),
+        this.del(generateUnreadCountKey(userId2)),
       );
     }
     await Promise.all(deletions);
   }
 
   // ===== RESUME SERVICE KEYS =====
-  private readonly RESUME_PREFIX = 'apsaratalent:resume-service';
-
-  generateTemplateListKey(): string {
-    return `${this.RESUME_PREFIX}:templates:all`;
-  }
-
-  generateTemplateDetailKey(templateId: string): string {
-    return `${this.RESUME_PREFIX}:templates:detail:${templateId}`;
-  }
-
-  generateTemplateSearchKey(query: any): string {
-    return `${this.RESUME_PREFIX}:templates:search:${JSON.stringify(query)}`;
-  }
+  private readonly RESUME_PREFIX = RESUME_CACHE_PREFIX;
 
   async invalidateTemplateCaches(templateId?: string): Promise<void> {
-    const deletions: Promise<void>[] = [
-      this.del(this.generateTemplateListKey()),
-    ];
+    const deletions: Promise<void>[] = [this.del(generateTemplateListKey())];
     if (templateId) {
-      deletions.push(this.del(this.generateTemplateDetailKey(templateId)));
+      deletions.push(this.del(generateTemplateDetailKey(templateId)));
     }
     await Promise.all(deletions);
   }
 
   // ── Notification service ────────────────────────────────────────────
-  private readonly NOTIFICATION_PREFIX = 'apsaratalent:notification-service';
-
-  generateNotificationUnreadCountKey(userId: string): string {
-    return `${this.NOTIFICATION_PREFIX}:unread-count:${userId}`;
-  }
-
-  generateNotificationListKey(
-    userId: string,
-    page: number,
-    limit: number,
-    unreadOnly: boolean,
-  ): string {
-    return `${this.NOTIFICATION_PREFIX}:list:${userId}:page:${page}:limit:${limit}:unread:${unreadOnly}`;
-  }
+  private readonly NOTIFICATION_PREFIX = NOTIFICATION_CACHE_PREFIX;
 
   // A user's unread count and every cached list page change together on any
   // create / mark-read / delete, so drop them all for that user at once.
   async invalidateNotificationCaches(userId: string): Promise<void> {
     await Promise.all([
-      this.del(this.generateNotificationUnreadCountKey(userId)),
+      this.del(generateNotificationUnreadCountKey(userId)),
       this.delPattern(`list:${userId}:*`, this.NOTIFICATION_PREFIX),
     ]);
   }

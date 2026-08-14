@@ -13,6 +13,16 @@ const baseUrl = new URL(
 const liveUrl = new URL('/health/live', baseUrl);
 const readyUrl = new URL('/health/ready', baseUrl);
 const deadline = Date.now() + timeoutMs;
+
+// When set, the gateway must be serving exactly this release. "Healthy" alone
+// cannot tell a new revision from the previous one still running, which is the
+// difference between a deploy that landed and one that silently did not — a
+// `railway up` that changes nothing leaves a perfectly healthy origin behind.
+//
+// Deliberately optional: the rollback workflow verifies recovery without
+// knowing which revision it landed on, and must not be forced to guess.
+const expectedRelease = process.env.EXPECTED_RELEASE?.trim();
+
 let lastFailure = 'No request attempted';
 
 while (Date.now() < deadline) {
@@ -25,19 +35,25 @@ while (Date.now() < deadline) {
       liveResponse.json(),
       readyResponse.json(),
     ]);
-    if (
+    const healthy =
       liveResponse.ok &&
       readyResponse.ok &&
       live.status === 'ok' &&
       live.service === 'api-gateway' &&
-      ready.status === 'ok'
-    ) {
+      ready.status === 'ok';
+
+    if (healthy && expectedRelease && live.release !== expectedRelease) {
+      // Healthy, but still the previous revision. Keep polling rather than
+      // declaring success — Railway may not have switched over yet.
+      lastFailure = `serving release ${live.release || 'unknown'}, expected ${expectedRelease}`;
+    } else if (healthy) {
       console.log(
         `Verified ${baseUrl.origin} (release=${live.release || 'unknown'}, all readiness checks up)`,
       );
       process.exit(0);
+    } else {
+      lastFailure = `live=${liveResponse.status} ${JSON.stringify(live)} ready=${readyResponse.status} ${JSON.stringify(ready)}`;
     }
-    lastFailure = `live=${liveResponse.status} ${JSON.stringify(live)} ready=${readyResponse.status} ${JSON.stringify(ready)}`;
   } catch (error) {
     lastFailure = error instanceof Error ? error.message : String(error);
   }
