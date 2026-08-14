@@ -5,7 +5,21 @@ import { FindCompanyService } from './find-company.service';
 describe('FindCompanyService', () => {
   const companies = { find: jest.fn(), count: jest.fn() };
   const users = { findOne: jest.fn() };
-  const blocks = { find: jest.fn(), exists: jest.fn() };
+  // getBlockedCounterpartUserIds reads the FK columns through a query builder
+  // rather than hydrating blocker/blocked. The previous mock resolved `find()`
+  // to rows with those relations populated — a shape TypeORM never actually
+  // returns without `relations`, which is why this suite stayed green while the
+  // filter silently matched nobody in production.
+  const blockRows = jest.fn();
+  const blocks = {
+    exists: jest.fn(),
+    createQueryBuilder: jest.fn(() => ({
+      select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getRawMany: blockRows,
+    })),
+  };
   const logger = { info: jest.fn(), error: jest.fn() };
   const redis = {
     get: jest.fn(),
@@ -22,7 +36,7 @@ describe('FindCompanyService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     redis.get.mockResolvedValue(null);
-    blocks.find.mockResolvedValue([]);
+    blockRows.mockResolvedValue([]);
   });
 
   it('returns an unfiltered company list from cache', async () => {
@@ -33,8 +47,8 @@ describe('FindCompanyService', () => {
   });
 
   it('excludes blocked companies without using the shared cache', async () => {
-    blocks.find.mockResolvedValue([
-      { blocker: { id: 'blocked-user' }, blocked: { id: 'requester' } },
+    blockRows.mockResolvedValue([
+      { blockerId: 'blocked-user', blockedId: 'requester' },
     ]);
     companies.find
       .mockResolvedValueOnce([{ id: 'blocked-company' }])
@@ -155,9 +169,9 @@ describe('FindCompanyService', () => {
   });
 
   it('collects blocks in both directions and maps visible job positions', async () => {
-    blocks.find.mockResolvedValue([
-      { blocker: { id: 'requester' }, blocked: { id: 'blocked-a' } },
-      { blocker: { id: 'blocked-b' }, blocked: { id: 'requester' } },
+    blockRows.mockResolvedValue([
+      { blockerId: 'requester', blockedId: 'blocked-a' },
+      { blockerId: 'blocked-b', blockedId: 'requester' },
     ]);
     companies.find
       .mockResolvedValueOnce([{ id: 'company-blocked' }])

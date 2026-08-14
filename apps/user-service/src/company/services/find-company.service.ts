@@ -41,13 +41,22 @@ export class FindCompanyService implements IFindCompanyService {
   private async getBlockedCounterpartUserIds(
     userId: string,
   ): Promise<string[]> {
-    const rows = await this.blockRepository.find({
-      where: [{ blocker: { id: userId } }, { blocked: { id: userId } }],
-    });
+    // Read the FK columns directly. `find()` with a relation-only `where` joins
+    // for the condition but does not hydrate blocker/blocked, so reading
+    // `row.blocker.id` off the result silently yielded undefined for every row
+    // and this filter never excluded anyone. Same approach as
+    // moderation.service.ts, which is also cheaper — no User rows are loaded
+    // just to collect their ids.
+    const rows = await this.blockRepository
+      .createQueryBuilder('ub')
+      .select('ub."blockerId"', 'blockerId')
+      .addSelect('ub."blockedId"', 'blockedId')
+      .where('ub."blockerId" = :userId OR ub."blockedId" = :userId', { userId })
+      .getRawMany<{ blockerId: string; blockedId: string }>();
     const ids = new Set<string>();
     for (const r of rows) {
-      if (r.blocker?.id && r.blocker.id !== userId) ids.add(r.blocker.id);
-      if (r.blocked?.id && r.blocked.id !== userId) ids.add(r.blocked.id);
+      if (r.blockerId && r.blockerId !== userId) ids.add(r.blockerId);
+      if (r.blockedId && r.blockedId !== userId) ids.add(r.blockedId);
     }
     return [...ids];
   }
