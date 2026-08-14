@@ -1,3 +1,4 @@
+import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
 import { EGender } from '@app/common/database/enums/gender.enum';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
@@ -104,8 +105,10 @@ export class ImageResponseDTO {
   id?: string;
   image: string;
   @Exclude()
+  @ApiHideProperty()
   createdAt: Date;
   @Exclude()
+  @ApiHideProperty()
   updatedAt: Date;
 
   constructor(partial: Partial<ImageResponseDTO>) {
@@ -126,14 +129,19 @@ export class JobPositionResponseDTO {
   openingsCount?: number;
   type: string;
   @Exclude()
+  @ApiHideProperty()
   experienceRequired: string;
   @Exclude()
+  @ApiHideProperty()
   educationRequired: string;
   @Exclude()
+  @ApiHideProperty()
   skillsRequired: string;
   @Exclude()
+  @ApiHideProperty()
   expireDate: Date;
   @Exclude()
+  @ApiHideProperty()
   createdAt: Date;
 
   constructor(partial: Partial<JobPositionResponseDTO>) {
@@ -141,26 +149,31 @@ export class JobPositionResponseDTO {
   }
 
   @Expose()
+  @ApiProperty({ type: String })
   get experience(): string {
     return this.experienceRequired;
   }
 
   @Expose()
+  @ApiProperty({ type: String })
   get education(): string {
     return this.educationRequired;
   }
 
   @Expose()
+  @ApiProperty({ type: [String] })
   get skills(): string[] {
     return this.skillsRequired.split(',').map((s) => s.trim());
   }
 
   @Expose()
+  @ApiProperty({ type: String, nullable: true })
   get deadlineDate(): string | null {
     return this.expireDate ? formatDateToDDMMYYYY(this.expireDate) : null;
   }
 
   @Expose()
+  @ApiProperty({ type: String, nullable: true })
   get postedDate(): string | null {
     return this.createdAt ? formatDateToDDMMYYYY(this.createdAt) : null;
   }
@@ -219,6 +232,7 @@ export class CompanyResponseDTO {
   }
 
   @Expose()
+  @ApiProperty({ type: [String] })
   get availableTimes(): string[] {
     return [...(new Set(this.openPositions?.map((job) => job.type)) || [])];
   }
@@ -229,33 +243,51 @@ export class UserResponseDTO {
   role: EUserRole;
   email?: string;
   @Exclude()
+  @ApiHideProperty()
   password?: string;
   phone?: string;
   @Exclude()
+  @ApiHideProperty()
   otpCode?: string;
   @Exclude()
+  @ApiHideProperty()
   otpCodeExpires?: Date;
   @Exclude()
+  @ApiHideProperty()
   pushNotificationToken?: string;
   @Exclude()
+  @ApiHideProperty()
   resetPasswordToken?: string;
   @Exclude()
+  @ApiHideProperty()
   resetPasswordExpires?: Date;
   @Exclude()
+  @ApiHideProperty()
   refreshToken?: string;
   isEmailVerified?: boolean;
+  // Declared because it is in the SAFE_USER_FIELDS allowlist and therefore
+  // genuinely part of the response. It reached clients anyway — the constructor
+  // Object.assigns whatever it is given — but an undeclared field is a contract
+  // nothing type-checks, and the web depends on this one for onboarding routing.
+  profileCompleted?: boolean;
   @Exclude()
+  @ApiHideProperty()
   emailVerificationToken?: string;
   isTwoFactorEnabled?: boolean;
   @Exclude()
+  @ApiHideProperty()
   twoFactorSecret?: string;
   @Exclude()
+  @ApiHideProperty()
   facebookId?: string;
   @Exclude()
+  @ApiHideProperty()
   googleId?: string;
   @Exclude()
+  @ApiHideProperty()
   linkedinId?: string;
   @Exclude()
+  @ApiHideProperty()
   githubId?: string;
   @Type(() => EmployeeResponseDTO)
   employee?: EmployeeResponseDTO;

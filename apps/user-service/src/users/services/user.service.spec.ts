@@ -95,6 +95,37 @@ describe('UserService', () => {
     });
   });
 
+  it('omits the profile that does not match the role', async () => {
+    // An employee has no company row. Constructing CompanyResponseDTO
+    // unconditionally spread `undefined` into `{}`, which is truthy — so
+    // `if (user.company)` on the client saw every employee as having a
+    // company. The empty object was cached with the response too.
+    users.findOne.mockResolvedValueOnce({
+      id: 'user-1',
+      role: 'employee',
+      employee: { id: 'employee-1', skills: [] },
+      company: undefined,
+    });
+
+    const result = await service.findOneUserByID({ userId: 'user-1' });
+
+    expect(result.company).toBeUndefined();
+    expect(result.employee).toBeDefined();
+
+    // And the mirror case, so neither branch can regress on its own.
+    users.findOne.mockResolvedValueOnce({
+      id: 'user-2',
+      role: 'company',
+      employee: undefined,
+      company: { id: 'company-1', openPositions: [] },
+    });
+
+    const companyUser = await service.findOneUserByID({ userId: 'user-2' });
+
+    expect(companyUser.employee).toBeUndefined();
+    expect(companyUser.company).toBeDefined();
+  });
+
   it('loads and caches one fully-related user', async () => {
     users.findOne.mockResolvedValueOnce({
       id: 'user-1',

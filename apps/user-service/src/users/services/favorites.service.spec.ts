@@ -387,7 +387,10 @@ describe('FavoritesService', () => {
     expect(events.emit).not.toHaveBeenCalled();
   });
 
-  it('handles missing nested relations in populated favorite lists', async () => {
+  it('omits a missing nested relation instead of emitting an empty object', async () => {
+    // A favorite whose related profile is gone must not serialize as `{}`:
+    // that is truthy, so any `if (favorite.company)` check on the client would
+    // treat a deleted company as a live one.
     employeeFavorites.find.mockResolvedValueOnce([
       {
         id: 'employee-favorite',
@@ -398,7 +401,7 @@ describe('FavoritesService', () => {
     await expect(
       queryService.findAllEmployeeFavorites({ eid: 'employee-1' }),
     ).resolves.toEqual([
-      expect.objectContaining({ userId: '', company: expect.any(Object) }),
+      expect.objectContaining({ userId: '', company: undefined }),
     ]);
 
     companyFavorites.find.mockResolvedValueOnce([
@@ -411,7 +414,7 @@ describe('FavoritesService', () => {
     await expect(
       queryService.findAllCompanyFavorites({ cid: 'company-1' }),
     ).resolves.toEqual([
-      expect.objectContaining({ userId: '', employee: expect.any(Object) }),
+      expect.objectContaining({ userId: '', employee: undefined }),
     ]);
   });
 

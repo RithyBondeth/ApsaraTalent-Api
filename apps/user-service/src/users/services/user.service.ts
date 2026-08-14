@@ -111,12 +111,18 @@ export class UserService implements IUserService, OnModuleInit {
             employee: user.employee
               ? new EmployeeResponseDTO(user.employee)
               : undefined,
-            company: new CompanyResponseDTO({
-              ...user.company,
-              openPositions: user.company?.openPositions?.map(
-                (job) => new JobPositionResponseDTO(job),
-              ),
-            }),
+            // Guarded like `employee` above. Constructing this unconditionally
+            // spread `undefined` into an empty object, so every employee's
+            // payload carried `company: {}` — truthy, and indistinguishable
+            // from a real company to any `if (user.company)` check.
+            company: user.company
+              ? new CompanyResponseDTO({
+                  ...user.company,
+                  openPositions: user.company.openPositions?.map(
+                    (job) => new JobPositionResponseDTO(job),
+                  ),
+                })
+              : undefined,
           }),
       );
 
@@ -239,12 +245,17 @@ export class UserService implements IUserService, OnModuleInit {
         employee: user.employee
           ? new EmployeeResponseDTO(user.employee)
           : undefined,
-        company: new CompanyResponseDTO({
-          ...user.company,
-          openPositions: user.company?.openPositions?.map(
-            (job) => new JobPositionResponseDTO(job),
-          ),
-        }),
+        // Guarded like `employee` above — see findAllUsers for why. This path
+        // is the one behind GET /user/current-user, and the empty object was
+        // being cached for CACHE_TTL.LONG along with the rest of the response.
+        company: user.company
+          ? new CompanyResponseDTO({
+              ...user.company,
+              openPositions: user.company.openPositions?.map(
+                (job) => new JobPositionResponseDTO(job),
+              ),
+            })
+          : undefined,
       });
 
       await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);

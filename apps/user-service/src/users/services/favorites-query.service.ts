@@ -73,12 +73,18 @@ export class FavoritesQueryService implements IFavoritesQueryService {
             id: favorite.id,
             createdAt: favorite.createdAt.toISOString(),
             userId: favorite.company?.user?.id ?? '',
-            company: new CompanyResponseDTO({
-              ...favorite.company,
-              openPositions: favorite.company?.openPositions?.map(
-                (job) => new JobPositionResponseDTO(job),
-              ),
-            }),
+            // The surrounding expression already treats `favorite.company` as
+            // possibly-missing (`favorite.company?.user?.id ?? ''`), so the
+            // spread is guarded the same way rather than turning a missing
+            // company into a truthy `{}`.
+            company: favorite.company
+              ? new CompanyResponseDTO({
+                  ...favorite.company,
+                  openPositions: favorite.company.openPositions?.map(
+                    (job) => new JobPositionResponseDTO(job),
+                  ),
+                })
+              : undefined,
           }),
       );
 
@@ -132,7 +138,12 @@ export class FavoritesQueryService implements IFavoritesQueryService {
             id: favorite.id,
             createdAt: favorite.createdAt.toISOString(),
             userId: favorite.employee?.user?.id ?? '',
-            employee: new EmployeeResponseDTO(favorite.employee),
+            // Guarded for the same reason as the company side above: the
+            // surrounding expression already treats this as possibly-missing,
+            // and `new EmployeeResponseDTO(undefined)` yields a truthy `{}`.
+            employee: favorite.employee
+              ? new EmployeeResponseDTO(favorite.employee)
+              : undefined,
           }),
       );
 
