@@ -7,11 +7,13 @@ import { Social } from '@app/common/database/entities/social.entity';
 import { User } from '@app/common/database/entities/user.entity';
 import { EmbeddingService } from '@app/common/embedding/embedding.service';
 import { CacheInvalidationService } from '@app/common/redis/cache-invalidation.service';
+import { resolveOrCreateByKey } from '@app/common/utils/resolve-or-create-by-key.util';
+import { upsertOwnedRows } from '@app/common/utils/upsert-owned-rows.util';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
-import { Repository } from 'typeorm';
+import { DeepPartial, Repository } from 'typeorm';
 import {
   UpdateEmployeeInfoRpcDTO,
   UpdateEmployeeInfoResponseDTO,
@@ -122,33 +124,25 @@ export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
          2️⃣ SKILLS (M2M SAFE) by name
       ======================================================= */
       if (Array.isArray(skills)) {
+        const wanted = new Map<string, DeepPartial<Skill>>();
         const finalIds: string[] = [];
 
         for (const s of skills) {
-          const id = s?.id;
-          const name = (s?.name ?? '').trim();
-
-          if (id) {
-            finalIds.push(id);
+          if (s?.id) {
+            finalIds.push(s.id);
             continue;
           }
-          if (!name) continue;
-
-          const existing = await this.skillRepository.findOne({
-            where: { name },
-          });
-          if (existing) {
-            finalIds.push(existing.id);
-          } else {
-            const created = await this.skillRepository.save(
-              this.skillRepository.create({
-                name,
-                description: s?.description ?? null,
-              }),
-            );
-            finalIds.push(created.id);
-          }
+          const name = (s?.name ?? '').trim();
+          if (!name || wanted.has(name)) continue;
+          wanted.set(name, { description: s?.description ?? null });
         }
+
+        const { resolved } = await resolveOrCreateByKey(
+          this.skillRepository,
+          'name',
+          wanted,
+        );
+        finalIds.push(...resolved.map((row) => row.id));
 
         const uniqueFinalIds = Array.from(new Set(finalIds));
         const currentIds = new Set((employee.skills ?? []).map((x) => x.id));
@@ -174,6 +168,7 @@ export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
          3️⃣ CAREER SCOPES (M2M SAFE) by name
       ======================================================= */
       if (Array.isArray(careerScopes)) {
+        const wanted = new Map<string, DeepPartial<CareerScope>>();
         const finalIds: string[] = [];
 
         for (const cs of careerScopes) {
@@ -181,40 +176,34 @@ export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
             finalIds.push(cs.id);
             continue;
           }
-
           const name = (cs?.name ?? '').trim();
-          if (!name) continue;
+          if (!name || wanted.has(name)) continue;
+          wanted.set(name, { description: cs?.description ?? null });
+        }
 
-          const existing = await this.careerScopeRepository.findOne({
-            where: { name },
-          });
-          if (existing) {
-            finalIds.push(existing.id);
-          } else {
-            const created = await this.careerScopeRepository.save(
-              this.careerScopeRepository.create({
-                name,
-                description: cs?.description ?? null,
-              }),
+        const { resolved, created } = await resolveOrCreateByKey(
+          this.careerScopeRepository,
+          'name',
+          wanted,
+        );
+        finalIds.push(...resolved.map((row) => row.id));
+
+        // Generate and persist the semantic embedding asynchronously, for the
+        // newly created scopes only. Fire-and-forget: don't block the response.
+        for (const row of created) {
+          this.embeddingService
+            .embedAsVector(row.name)
+            .then((vector) =>
+              this.careerScopeRepository.query(
+                `UPDATE career_scope SET embedding = $1::vector WHERE id = $2`,
+                [vector, row.id],
+              ),
+            )
+            .catch((err: Error) =>
+              this.logger.warn(
+                `Failed to embed career scope "${row.name}": ${err.message}`,
+              ),
             );
-            finalIds.push(created.id);
-
-            // Generate and persist the semantic embedding asynchronously.
-            // Fire-and-forget: don't block the profile update response.
-            this.embeddingService
-              .embedAsVector(name)
-              .then((vector) =>
-                this.careerScopeRepository.query(
-                  `UPDATE career_scope SET embedding = $1::vector WHERE id = $2`,
-                  [vector, created.id],
-                ),
-              )
-              .catch((err: Error) =>
-                this.logger.warn(
-                  `Failed to embed career scope "${name}": ${err.message}`,
-                ),
-              );
-          }
         }
 
         const uniqueFinalIds = Array.from(new Set(finalIds));
@@ -244,27 +233,10 @@ export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
          4️⃣ EXPERIENCES (O2M) upsert + scoped delete
       ======================================================= */
       if (Array.isArray(experiences)) {
-        for (const expDto of experiences) {
-          if (expDto?.id) {
-            const existing = await this.experienceRepository.findOne({
-              where: { id: expDto.id, employee: { id: employeeId } },
-            });
-
-            if (existing) {
-              const updateData = { ...expDto };
-              delete updateData.id;
-              Object.assign(existing, updateData);
-              await this.experienceRepository.save(existing);
-            }
-          } else {
-            await this.experienceRepository.save(
-              this.experienceRepository.create({
-                ...expDto,
-                employee,
-              }),
-            );
-          }
-        }
+        await upsertOwnedRows(this.experienceRepository, experiences, {
+          ownerWhere: { employee: { id: employeeId } },
+          ownerValue: { employee },
+        });
       }
 
       if (
@@ -284,27 +256,10 @@ export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
          5️⃣ EDUCATIONS (O2M) upsert + scoped delete
       ======================================================= */
       if (Array.isArray(educations)) {
-        for (const eduDto of educations) {
-          if (eduDto?.id) {
-            const existing = await this.educationRepository.findOne({
-              where: { id: eduDto.id, employee: { id: employeeId } },
-            });
-
-            if (existing) {
-              const updateData = { ...eduDto };
-              delete updateData.id;
-              Object.assign(existing, updateData);
-              await this.educationRepository.save(existing);
-            }
-          } else {
-            await this.educationRepository.save(
-              this.educationRepository.create({
-                ...eduDto,
-                employee,
-              }),
-            );
-          }
-        }
+        await upsertOwnedRows(this.educationRepository, educations, {
+          ownerWhere: { employee: { id: employeeId } },
+          ownerValue: { employee },
+        });
       }
 
       if (
@@ -324,27 +279,10 @@ export class UpdateEmployeeInfoService implements IUpdateEmployeeInfoService {
          6️⃣ SOCIALS (O2M) upsert + scoped delete
       ======================================================= */
       if (Array.isArray(socials)) {
-        for (const socialDto of socials) {
-          if (socialDto?.id) {
-            const existing = await this.socialRepository.findOne({
-              where: { id: socialDto.id, employee: { id: employeeId } },
-            });
-
-            if (existing) {
-              const updateData = { ...socialDto };
-              delete updateData.id;
-              Object.assign(existing, updateData);
-              await this.socialRepository.save(existing);
-            }
-          } else {
-            await this.socialRepository.save(
-              this.socialRepository.create({
-                ...socialDto,
-                employee,
-              }),
-            );
-          }
-        }
+        await upsertOwnedRows(this.socialRepository, socials, {
+          ownerWhere: { employee: { id: employeeId } },
+          ownerValue: { employee },
+        });
 
         if (Array.isArray(socialIdsToDelete) && socialIdsToDelete.length > 0) {
           await this.socialRepository

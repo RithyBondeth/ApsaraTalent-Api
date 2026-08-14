@@ -11,6 +11,9 @@ describe('UpdateEmployeeInfoService', () => {
   };
   const repository = {
     findOne: jest.fn(),
+    // Lookup and ownership resolution are batched: one `find` per collection
+    // instead of a `findOne` per submitted row.
+    find: jest.fn(),
     findBy: jest.fn(),
     create: jest.fn((data) => data),
     save: jest.fn(),
@@ -40,6 +43,7 @@ describe('UpdateEmployeeInfoService', () => {
     employeeRepo.save.mockImplementation(async (value) => value);
     userRepo.save.mockImplementation(async (value) => value);
     repository.create.mockImplementation((data) => data);
+    repository.find.mockResolvedValue([]);
     repository.save.mockImplementation(async (value) => value);
     embedding.embedAsVector.mockResolvedValue('[0.1,0.2]');
   });
@@ -167,18 +171,23 @@ describe('UpdateEmployeeInfoService', () => {
     employeeRepo.findOne
       .mockResolvedValueOnce(employee)
       .mockResolvedValueOnce(employee);
-    repository.findOne
-      .mockResolvedValueOnce({ id: 'skill-existing', name: 'TypeScript' })
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ id: 'scope-existing', name: 'Engineering' })
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ id: 'exp-1', title: 'Junior' })
-      .mockResolvedValueOnce({ id: 'edu-1', degree: 'Bachelor' })
-      .mockResolvedValueOnce({ id: 'social-1', url: 'old' });
+    // One batched lookup per collection, in the order the service resolves
+    // them: skills, career scopes, then the owned experience/education/social
+    // rows. Names absent from a result are the ones that get created.
+    repository.find
+      .mockResolvedValueOnce([{ id: 'skill-existing', name: 'TypeScript' }])
+      .mockResolvedValueOnce([{ id: 'scope-existing', name: 'Engineering' }])
+      .mockResolvedValueOnce([{ id: 'exp-1', title: 'Junior' }])
+      .mockResolvedValueOnce([{ id: 'edu-1', degree: 'Bachelor' }])
+      .mockResolvedValueOnce([{ id: 'social-1', url: 'old' }]);
     repository.save.mockImplementation(async (value: any) => {
-      if (value.name === 'NestJS') return { ...value, id: 'skill-new' };
-      if (value.name === 'Design') return { ...value, id: 'scope-new' };
-      return value;
+      const rows = Array.isArray(value) ? value : [value];
+      const saved = rows.map((row: any) => {
+        if (row.name === 'NestJS') return { ...row, id: 'skill-new' };
+        if (row.name === 'Design') return { ...row, id: 'scope-new' };
+        return row;
+      });
+      return Array.isArray(value) ? saved : saved[0];
     });
 
     const skillRelation = relationQueryBuilder();
@@ -299,8 +308,8 @@ describe('UpdateEmployeeInfoService', () => {
       careerScopes: [],
     };
     employeeRepo.findOne.mockResolvedValue(employee);
-    repository.findOne.mockResolvedValue(null);
-    repository.save.mockResolvedValue({ id: 'scope-new', name: 'Design' });
+    repository.find.mockResolvedValue([]);
+    repository.save.mockResolvedValue([{ id: 'scope-new', name: 'Design' }]);
     employeeRepo.createQueryBuilder.mockReturnValue(relationQueryBuilder());
     embedding.embedAsVector.mockRejectedValue(new Error('embedding offline'));
 

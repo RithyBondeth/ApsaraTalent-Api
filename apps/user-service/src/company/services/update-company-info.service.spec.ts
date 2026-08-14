@@ -10,6 +10,9 @@ describe('UpdateCompanyInfoService', () => {
   };
   const repository = {
     findOne: jest.fn(),
+    // Lookup and ownership resolution are batched: one `find` per collection
+    // instead of a `findOne` per submitted row.
+    find: jest.fn(),
     create: jest.fn((data) => data),
     save: jest.fn(),
     delete: jest.fn(),
@@ -41,6 +44,7 @@ describe('UpdateCompanyInfoService', () => {
     userRepo.save.mockImplementation(async (value) => value);
     userRepo.find.mockResolvedValue([{ id: 'user-1' }]);
     repository.create.mockImplementation((data) => data);
+    repository.find.mockResolvedValue([]);
     repository.save.mockImplementation(async (value) => value);
     embedding.embedAsVector.mockResolvedValue('[0.1,0.2]');
   });
@@ -162,21 +166,25 @@ describe('UpdateCompanyInfoService', () => {
       .mockResolvedValueOnce(company)
       .mockResolvedValueOnce(freshCompany);
 
-    repository.findOne
-      .mockResolvedValueOnce({ id: 2, label: 'Health' })
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ id: 11, label: 'Integrity' })
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ id: 'job-1', title: 'Developer' })
-      .mockResolvedValueOnce({ id: 'scope-existing', name: 'Engineering' })
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ id: 'social-1', url: 'old' });
+    // One batched lookup per collection, in the order the service resolves
+    // them: benefits, values, owned jobs, career scopes, owned socials. Labels
+    // and names absent from a result are the ones that get created.
+    repository.find
+      .mockResolvedValueOnce([{ id: 2, label: 'Health' }])
+      .mockResolvedValueOnce([{ id: 11, label: 'Integrity' }])
+      .mockResolvedValueOnce([{ id: 'job-1', title: 'Developer' }])
+      .mockResolvedValueOnce([{ id: 'scope-existing', name: 'Engineering' }])
+      .mockResolvedValueOnce([{ id: 'social-1', url: 'old' }]);
     repository.save.mockImplementation(async (value: any) => {
-      if (value.label === 'Remote') return { ...value, id: 3 };
-      if (value.label === 'Growth') return { ...value, id: 12 };
-      if (value.name === 'Design') return { ...value, id: 'scope-new' };
-      if (value.title === 'Designer') return { ...value, id: 'job-new' };
-      return value;
+      const rows = Array.isArray(value) ? value : [value];
+      const saved = rows.map((row: any) => {
+        if (row.label === 'Remote') return { ...row, id: 3 };
+        if (row.label === 'Growth') return { ...row, id: 12 };
+        if (row.name === 'Design') return { ...row, id: 'scope-new' };
+        if (row.title === 'Designer') return { ...row, id: 'job-new' };
+        return row;
+      });
+      return Array.isArray(value) ? saved : saved[0];
     });
 
     const relationQbs = [
@@ -250,11 +258,15 @@ describe('UpdateCompanyInfoService', () => {
     };
     companyRepo.findOne.mockResolvedValue(company);
     companyRepo.createQueryBuilder.mockReturnValue(relationQueryBuilder());
-    repository.findOne.mockResolvedValue(null);
-    repository.save.mockImplementation(async (value: any) => ({
-      id: value.title ? 'job-new' : 'scope-new',
-      ...value,
-    }));
+    repository.find.mockResolvedValue([]);
+    repository.save.mockImplementation(async (value: any) => {
+      const rows = Array.isArray(value) ? value : [value];
+      const saved = rows.map((row: any) => ({
+        id: row.title ? 'job-new' : 'scope-new',
+        ...row,
+      }));
+      return Array.isArray(value) ? saved : saved[0];
+    });
     embedding.embedAsVector.mockRejectedValue(new Error('embedding offline'));
 
     await expect(

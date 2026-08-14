@@ -7,11 +7,13 @@ import { Social } from '@app/common/database/entities/social.entity';
 import { User } from '@app/common/database/entities/user.entity';
 import { EmbeddingService } from '@app/common/embedding/embedding.service';
 import { CacheInvalidationService } from '@app/common/redis/cache-invalidation.service';
+import { resolveOrCreateByKey } from '@app/common/utils/resolve-or-create-by-key.util';
+import { upsertOwnedRows } from '@app/common/utils/upsert-owned-rows.util';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
-import { Repository } from 'typeorm';
+import { DeepPartial, In, Repository } from 'typeorm';
 import {
   UpdateCompanyInfoRpcDTO,
   CompanyResponseDTO,
@@ -99,6 +101,7 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
       ======================================================= */
       if (Array.isArray(benefits)) {
         const finalIds: number[] = [];
+        const wanted = new Map<string, DeepPartial<Benefit>>();
 
         for (const b of benefits) {
           const id = b?.id;
@@ -109,22 +112,17 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
             continue;
           }
 
-          if (!label) continue;
-
           // prevent duplicates by label
-          const existing = await this.benefitRepository.findOne({
-            where: { label },
-          });
-
-          if (existing) {
-            finalIds.push(existing.id);
-          } else {
-            const created = await this.benefitRepository.save(
-              this.benefitRepository.create({ label }),
-            );
-            finalIds.push(created.id);
-          }
+          if (!label || wanted.has(label)) continue;
+          wanted.set(label, {});
         }
+
+        const { resolved } = await resolveOrCreateByKey(
+          this.benefitRepository,
+          'label',
+          wanted,
+        );
+        finalIds.push(...resolved.map((row) => row.id));
 
         const uniqueFinalIds = Array.from(new Set(finalIds));
 
@@ -153,6 +151,7 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
       ======================================================= */
       if (Array.isArray(values)) {
         const finalIds: number[] = [];
+        const wanted = new Map<string, DeepPartial<Value>>();
 
         for (const v of values) {
           const id = v?.id;
@@ -163,21 +162,16 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
             continue;
           }
 
-          if (!label) continue;
-
-          const existing = await this.valueRepository.findOne({
-            where: { label },
-          });
-
-          if (existing) {
-            finalIds.push(existing.id);
-          } else {
-            const created = await this.valueRepository.save(
-              this.valueRepository.create({ label }),
-            );
-            finalIds.push(created.id);
-          }
+          if (!label || wanted.has(label)) continue;
+          wanted.set(label, {});
         }
+
+        const { resolved } = await resolveOrCreateByKey(
+          this.valueRepository,
+          'label',
+          wanted,
+        );
+        finalIds.push(...resolved.map((row) => row.id));
 
         const uniqueFinalIds = Array.from(new Set(finalIds));
 
@@ -204,63 +198,81 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
          4️⃣ JOBS (ONE-TO-MANY)
       ======================================================= */
       if (Array.isArray(jobs)) {
+        // Ownership is resolved for the whole batch in one query rather than
+        // one per job. This loop does not use upsertOwnedRows because re-embed
+        // needs the title as it was BEFORE the patch, which is only observable
+        // here.
+        const submittedIds = jobs
+          .map((jobDto) => jobDto?.id)
+          .filter((id): id is string => Boolean(id));
+
+        const ownedById = new Map<string, Job>();
+        if (submittedIds.length > 0) {
+          const owned = await this.jobRepository.find({
+            where: { id: In(submittedIds), company: { id: companyId } },
+          });
+          for (const row of owned) ownedById.set(row.id, row);
+        }
+
+        // Titles needing an embedding, collected during the pass and flushed
+        // after the save so a failed write never triggers a stale embedding.
+        const toEmbed: { id: string; title: string }[] = [];
+        const pending: Job[] = [];
+        const createdJobs: Job[] = [];
+
         for (const jobDto of jobs) {
           const jobId = jobDto?.id;
 
           if (jobId) {
-            const existing = await this.jobRepository.findOne({
-              where: { id: jobId, company: { id: companyId } },
-            });
+            const existing = ownedById.get(jobId);
+            if (!existing) continue;
 
-            if (existing) {
-              const previousTitle = existing.title;
-              const updateData = { ...jobDto };
-              delete updateData.id;
-              Object.assign(existing, updateData);
-              await this.jobRepository.save(existing);
+            const previousTitle = existing.title;
+            const updateData = { ...jobDto };
+            delete updateData.id;
+            Object.assign(existing, updateData);
+            pending.push(existing);
 
-              // Re-embed when title changes.
-              if (updateData.title && updateData.title !== previousTitle) {
-                this.embeddingService
-                  .embedAsVector(updateData.title as string)
-                  .then((vector) =>
-                    this.jobRepository.query(
-                      `UPDATE job SET "titleEmbedding" = $1::vector WHERE id = $2`,
-                      [vector, jobId],
-                    ),
-                  )
-                  .catch((err: Error) =>
-                    this.logger.warn(
-                      `Failed to embed job title "${updateData.title as string}": ${err.message}`,
-                    ),
-                  );
-              }
+            // Re-embed when title changes.
+            if (updateData.title && updateData.title !== previousTitle) {
+              toEmbed.push({ id: jobId, title: updateData.title as string });
             }
           } else {
-            const created = (await this.jobRepository.save(
-              this.jobRepository.create({
-                ...jobDto,
-                company,
-              }),
-            )) as unknown as Job;
-
-            // Fire-and-forget: embed the new job title for semantic recommendation matching.
-            if (created.title) {
-              this.embeddingService
-                .embedAsVector(created.title)
-                .then((vector) =>
-                  this.jobRepository.query(
-                    `UPDATE job SET "titleEmbedding" = $1::vector WHERE id = $2`,
-                    [vector, created.id],
-                  ),
-                )
-                .catch((err: Error) =>
-                  this.logger.warn(
-                    `Failed to embed job title "${created.title}": ${err.message}`,
-                  ),
-                );
-            }
+            const entity = this.jobRepository.create({
+              ...jobDto,
+              company,
+            }) as unknown as Job;
+            createdJobs.push(entity);
+            pending.push(entity);
           }
+        }
+
+        if (pending.length > 0) {
+          // save() writes generated ids back onto the entities it was given, so
+          // createdJobs holds the new ids afterwards — the saved array cannot be
+          // indexed against `jobs`, whose skipped rows never entered `pending`.
+          await this.jobRepository.save(pending);
+
+          for (const row of createdJobs) {
+            if (row.title) toEmbed.push({ id: row.id, title: row.title });
+          }
+        }
+
+        // Fire-and-forget: embed titles for semantic recommendation matching.
+        for (const { id, title } of toEmbed) {
+          this.embeddingService
+            .embedAsVector(title)
+            .then((vector) =>
+              this.jobRepository.query(
+                `UPDATE job SET "titleEmbedding" = $1::vector WHERE id = $2`,
+                [vector, id],
+              ),
+            )
+            .catch((err: Error) =>
+              this.logger.warn(
+                `Failed to embed job title "${title}": ${err.message}`,
+              ),
+            );
         }
       }
 
@@ -279,44 +291,41 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
       ======================================================= */
       if (Array.isArray(careerScopes)) {
         const finalIds: string[] = [];
+        const wanted = new Map<string, DeepPartial<CareerScope>>();
 
         for (const cs of careerScopes) {
           if (cs.id) {
             finalIds.push(cs.id);
             continue;
           }
+          const name = (cs.name ?? '').trim();
+          if (!name || wanted.has(name)) continue;
+          wanted.set(name, { description: cs.description ?? null });
+        }
 
-          const existing = await this.careerScopeRepository.findOne({
-            where: { name: cs.name },
-          });
+        const { resolved, created } = await resolveOrCreateByKey(
+          this.careerScopeRepository,
+          'name',
+          wanted,
+        );
+        finalIds.push(...resolved.map((row) => row.id));
 
-          if (existing) {
-            finalIds.push(existing.id);
-          } else {
-            const created = await this.careerScopeRepository.save(
-              this.careerScopeRepository.create({
-                name: cs.name,
-                description: cs.description ?? null,
-              }),
+        // Generate and persist the semantic embedding asynchronously, for the
+        // newly created scopes only. Fire-and-forget: don't block the response.
+        for (const row of created) {
+          this.embeddingService
+            .embedAsVector(row.name)
+            .then((vector) =>
+              this.careerScopeRepository.query(
+                `UPDATE career_scope SET embedding = $1::vector WHERE id = $2`,
+                [vector, row.id],
+              ),
+            )
+            .catch((err: Error) =>
+              this.logger.warn(
+                `Failed to embed career scope "${row.name}": ${err.message}`,
+              ),
             );
-            finalIds.push(created.id);
-
-            // Generate and persist the semantic embedding asynchronously.
-            // Fire-and-forget: don't block the profile update response.
-            this.embeddingService
-              .embedAsVector(cs.name)
-              .then((vector) =>
-                this.careerScopeRepository.query(
-                  `UPDATE career_scope SET embedding = $1::vector WHERE id = $2`,
-                  [vector, created.id],
-                ),
-              )
-              .catch((err: Error) =>
-                this.logger.warn(
-                  `Failed to embed career scope "${cs.name}": ${err.message}`,
-                ),
-              );
-          }
         }
 
         const uniqueFinalIds = Array.from(new Set(finalIds));
@@ -346,27 +355,10 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
          6️⃣ SOCIALS (O2M)
       ======================================================= */
       if (Array.isArray(socials)) {
-        for (const socialDto of socials) {
-          if (socialDto.id) {
-            const existing = await this.socialRepository.findOne({
-              where: { id: socialDto.id, company: { id: companyId } },
-            });
-
-            if (existing) {
-              const updateData = { ...socialDto };
-              delete updateData.id;
-              Object.assign(existing, updateData);
-              await this.socialRepository.save(existing);
-            }
-          } else {
-            await this.socialRepository.save(
-              this.socialRepository.create({
-                ...socialDto,
-                company,
-              }),
-            );
-          }
-        }
+        await upsertOwnedRows(this.socialRepository, socials, {
+          ownerWhere: { company: { id: companyId } },
+          ownerValue: { company },
+        });
       }
 
       if (Array.isArray(socialIdsToDelete) && socialIdsToDelete.length > 0) {
