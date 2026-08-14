@@ -19,6 +19,7 @@ import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
 import {
   generateCompanyKey,
   generateListKey,
+  fingerprintIds,
 } from '@app/common/redis/redis-keys.util';
 
 @Injectable()
@@ -80,22 +81,26 @@ export class FindCompanyService implements IFindCompanyService {
       excludeCompanyIds = blockedCompanies.map((c) => c.id);
     }
 
-    // Bypass the cache (read + write) when a block filter is active so filtered
-    // results never get cached under the shared key (an unblocked user would
-    // otherwise stay hidden until TTL; pattern invalidation is a no-op here).
+    // Filtered results are cached under a key derived from the exclusion set
+    // rather than skipping the cache, so a user who has blocked anyone is not
+    // condemned to the full uncached query on every page load. Blocking and
+    // unblocking both clear `company:list:*` (moderation.service.ts), which
+    // covers these keys too, so an unblocked profile reappears immediately
+    // rather than waiting out the TTL — the concern that motivated the bypass.
     const hasFilter = excludeCompanyIds.length > 0;
+    const excludeFingerprint = fingerprintIds(excludeCompanyIds);
     const cacheKey = generateListKey('company', {
       skip,
       limit,
+      // Omitted entirely when nothing is excluded, so the unfiltered key is
+      // byte-identical to the one already in Redis.
+      ...(excludeFingerprint ? { exclude: excludeFingerprint } : {}),
     });
 
-    if (!hasFilter) {
-      const cached =
-        await this.redisService.get<CompanyResponseDTO[]>(cacheKey);
-      if (cached) {
-        this.logger.info('All Companies cache HIT');
-        return cached;
-      }
+    const cached = await this.redisService.get<CompanyResponseDTO[]>(cacheKey);
+    if (cached) {
+      this.logger.info('All Companies cache HIT');
+      return cached;
     }
 
     this.logger.info('All Companies cache MISS');
@@ -131,9 +136,7 @@ export class FindCompanyService implements IFindCompanyService {
         return new CompanyResponseDTO(transformedCompany);
       });
 
-      if (!hasFilter) {
-        await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);
-      }
+      await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);
 
       return result;
     } catch (error) {

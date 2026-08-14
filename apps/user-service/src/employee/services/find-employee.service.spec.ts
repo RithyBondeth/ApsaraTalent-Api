@@ -47,7 +47,7 @@ describe('FindEmployeeService', () => {
     expect(employees.find).not.toHaveBeenCalled();
   });
 
-  it('excludes blocks in either direction and bypasses shared cache', async () => {
+  it('caches blocked-filtered results under a key of their own', async () => {
     blockRows.mockResolvedValue([
       { blockerId: 'requester', blockedId: 'blocked-user' },
     ]);
@@ -56,8 +56,29 @@ describe('FindEmployeeService', () => {
       .mockResolvedValueOnce([{ id: 'visible', firstname: 'Visible' }]);
     const result = await service.findAll({ requesterId: 'requester' });
     expect(result).toHaveLength(1);
-    expect(redis.get).not.toHaveBeenCalled();
-    expect(redis.set).not.toHaveBeenCalled();
+
+    // Filtered pages used to skip the cache entirely, so anyone who had
+    // blocked someone paid the full uncached query on every load. They are
+    // cached now, but never under the shared key — that would hide the blocked
+    // employee from everyone.
+    const [readKey] = redis.get.mock.calls[0];
+    const [writeKey] = redis.set.mock.calls[0];
+    expect(readKey).toBe(writeKey);
+    expect(readKey).toContain('exclude');
+    expect(readKey).not.toBe(
+      generateListKey('employee', { skip: 0, limit: 10 }),
+    );
+  });
+
+  it('leaves the unfiltered key untouched when nothing is excluded', async () => {
+    // Users with no blocks must keep hitting the shared entry, byte-identical
+    // to the key that is already live in Redis.
+    employees.find.mockResolvedValueOnce([{ id: 'visible' }]);
+    await service.findAll({ requesterId: 'requester', skip: 0, limit: 10 });
+
+    const [readKey] = redis.get.mock.calls[0];
+    expect(readKey).toBe(generateListKey('employee', { skip: 0, limit: 10 }));
+    expect(readKey).not.toContain('exclude');
   });
 
   it('hides a blocked profile with a 404 response', async () => {
@@ -201,7 +222,8 @@ describe('FindEmployeeService', () => {
         where: expect.objectContaining({ user: expect.any(Object) }),
       }),
     );
-    expect(redis.get).not.toHaveBeenCalled();
+    // A block found from the reverse side still isolates the cache entry.
+    expect(redis.get.mock.calls[0][0]).toContain('exclude');
   });
 
   it('preserves a missing employee detail as a 404 without a requester', async () => {

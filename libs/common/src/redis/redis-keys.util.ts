@@ -5,6 +5,7 @@
  * a key do not have to inject the cache client, and so every key shape for the
  * platform is readable in one place.
  */
+import { createHash } from 'crypto';
 
 /** Cache namespaces, one per owning service. */
 export const CACHE_PREFIX = 'apsaratalent:user-service';
@@ -29,6 +30,25 @@ export function generateCompanyKey(type: string, id: string): string {
 export function generateListKey(entity: string, filters: any): string {
   const filterString = JSON.stringify(filters);
   return `${CACHE_PREFIX}:${entity}:list:${filterString}`;
+}
+
+/**
+ * Stable short fingerprint of an exclusion set, for cache keys.
+ *
+ * Feed listings used to bypass the cache entirely whenever a block filter was
+ * active, so every user who had ever blocked someone paid the full uncached
+ * query on every page load. Keying by the exclusion set instead lets those
+ * responses be cached safely: order-independent, so two users who block the
+ * same profiles share one entry, and an empty set returns null so the
+ * overwhelming majority keep the exact key they had before.
+ *
+ * Only ever an input to a cache key — never an identifier or a security
+ * boundary — so a short digest is enough.
+ */
+export function fingerprintIds(ids: readonly string[]): string | null {
+  if (ids.length === 0) return null;
+  const canonical = [...new Set(ids)].sort().join(',');
+  return createHash('sha1').update(canonical).digest('hex').slice(0, 16);
 }
 
 export function generateSearchKey(entity: string, query: any): string {

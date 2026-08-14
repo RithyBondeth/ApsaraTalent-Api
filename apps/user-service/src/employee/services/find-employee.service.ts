@@ -18,6 +18,7 @@ import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
 import {
   generateEmployeeKey,
   generateListKey,
+  fingerprintIds,
 } from '@app/common/redis/redis-keys.util';
 
 @Injectable()
@@ -79,23 +80,26 @@ export class FindEmployeeService implements IFindEmployeeService {
       excludeEmployeeIds = blockedEmployees.map((e) => e.id);
     }
 
-    // When a block filter is active we BYPASS the cache (read + write) so that
-    // filtered results never get stored under a shared key — otherwise an
-    // unblocked user stays hidden until TTL. (Pattern-based invalidation is a
-    // no-op with cache-manager v7, so we cannot rely on clearing it.)
+    // Filtered results are cached under a key derived from the exclusion set
+    // rather than skipping the cache, so a user who has blocked anyone is not
+    // condemned to the full uncached query on every page load. Blocking and
+    // unblocking both clear `employee:list:*` (moderation.service.ts), which
+    // covers these keys too, so an unblocked profile reappears immediately
+    // rather than waiting out the TTL — the concern that motivated the bypass.
     const hasFilter = excludeEmployeeIds.length > 0;
+    const excludeFingerprint = fingerprintIds(excludeEmployeeIds);
     const cacheKey = generateListKey('employee', {
       skip,
       limit,
+      // Omitted entirely when nothing is excluded, so the unfiltered key is
+      // byte-identical to the one already in Redis.
+      ...(excludeFingerprint ? { exclude: excludeFingerprint } : {}),
     });
 
-    if (!hasFilter) {
-      const cached =
-        await this.redisService.get<EmployeeResponseDTO[]>(cacheKey);
-      if (cached) {
-        this.logger.info('All employees list cache HIT');
-        return cached;
-      }
+    const cached = await this.redisService.get<EmployeeResponseDTO[]>(cacheKey);
+    if (cached) {
+      this.logger.info('All employees list cache HIT');
+      return cached;
     }
 
     this.logger.info('All employees cache MISS');
@@ -124,9 +128,7 @@ export class FindEmployeeService implements IFindEmployeeService {
 
       const result = employees.map((emp) => new EmployeeResponseDTO(emp));
 
-      if (!hasFilter) {
-        await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);
-      }
+      await this.redisService.set(cacheKey, result, CACHE_TTL.MEDIUM);
 
       return result;
     } catch (error) {

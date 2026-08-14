@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { RpcException } from '@nestjs/microservices';
 import { FindCompanyService } from './find-company.service';
+import { generateListKey } from '@app/common/redis/redis-keys.util';
 
 describe('FindCompanyService', () => {
   const companies = { find: jest.fn(), count: jest.fn() };
@@ -46,7 +47,7 @@ describe('FindCompanyService', () => {
     expect(companies.find).not.toHaveBeenCalled();
   });
 
-  it('excludes blocked companies without using the shared cache', async () => {
+  it('caches blocked-filtered results under a key of their own', async () => {
     blockRows.mockResolvedValue([
       { blockerId: 'blocked-user', blockedId: 'requester' },
     ]);
@@ -54,8 +55,29 @@ describe('FindCompanyService', () => {
       .mockResolvedValueOnce([{ id: 'blocked-company' }])
       .mockResolvedValueOnce([{ id: 'visible', name: 'Visible' }]);
     await service.findAll({ requesterId: 'requester' });
-    expect(redis.get).not.toHaveBeenCalled();
-    expect(redis.set).not.toHaveBeenCalled();
+
+    // Filtered pages used to skip the cache entirely, so anyone who had
+    // blocked a company paid the full uncached query on every load. They are
+    // cached now, but never under the shared key — that would hide the blocked
+    // company from everyone.
+    const [readKey] = redis.get.mock.calls[0];
+    const [writeKey] = redis.set.mock.calls[0];
+    expect(readKey).toBe(writeKey);
+    expect(readKey).toContain('exclude');
+
+    const unfilteredKey = generateListKey('company', { skip: 0, limit: 10 });
+    expect(readKey).not.toBe(unfilteredKey);
+  });
+
+  it('leaves the unfiltered key untouched when nothing is excluded', async () => {
+    // Users with no blocks must keep hitting the shared entry, byte-identical
+    // to the key that is already live in Redis.
+    companies.find.mockResolvedValueOnce([{ id: 'visible' }]);
+    await service.findAll({ requesterId: 'requester', skip: 0, limit: 10 });
+
+    const [readKey] = redis.get.mock.calls[0];
+    expect(readKey).toBe(generateListKey('company', { skip: 0, limit: 10 }));
+    expect(readKey).not.toContain('exclude');
   });
 
   it('hides a company profile blocked in either direction', async () => {
@@ -187,8 +209,8 @@ describe('FindCompanyService', () => {
     expect(result[0].openPositions?.[0]).toEqual(
       expect.objectContaining({ id: 'job-1' }),
     );
-    expect(redis.get).not.toHaveBeenCalled();
-    expect(redis.set).not.toHaveBeenCalled();
+    // Blocks in both directions still produce one isolated cache entry.
+    expect(redis.set.mock.calls[0][0]).toContain('exclude');
   });
 
   it('preserves a missing-company 404 without a requester', async () => {
