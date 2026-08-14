@@ -1,0 +1,46 @@
+# Local development infrastructure.
+#
+# Mirrors test/e2e/docker-compose.e2e.yml, with two deliberate differences:
+# named volumes instead of tmpfs (so your data survives a restart), and Redis on
+# the default 6379 that .env already expects.
+#
+#   docker compose -f docker-compose.dev.yml up -d
+#   npm run migration:run && npm run seed
+#
+# Postgres is on 5433, not 5432: a Homebrew PostgreSQL already holds 5432 on
+# this machine, and it has no pgvector, so it cannot run these migrations. The
+# pgvector/pgvector image can, and this way both can run side by side.
+#
+# Ports are bound to 127.0.0.1 so neither service is reachable off this machine.
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: apsara_talent
+      POSTGRES_USER: apsara
+      POSTGRES_PASSWORD: apsara
+    ports:
+      - '127.0.0.1:5433:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U apsara -d apsara_talent']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - apsara-dev-pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '127.0.0.1:6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - apsara-dev-redisdata:/data
+
+volumes:
+  apsara-dev-pgdata:
+  apsara-dev-redisdata:

@@ -51,6 +51,7 @@
     "migration:show": "npm run typeorm -- migration:show",
     "migration:create": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:create",
     "migration:baseline": "ts-node -r tsconfig-paths/register scripts/db/baseline-migrations.ts",
+    "db:bootstrap-local": "ts-node -r tsconfig-paths/register scripts/db/bootstrap-local.ts",
     "db:backup": "./scripts/db/backup-db.sh",
     "db:restore-point": "node --env-file-if-exists=.env scripts/ci/create-restore-point.mjs",
     "db:rehearse": "node --env-file-if-exists=.env scripts/ci/migration-rehearsal.mjs",
