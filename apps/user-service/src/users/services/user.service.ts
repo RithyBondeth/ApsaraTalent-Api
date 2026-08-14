@@ -177,7 +177,19 @@ export class UserService implements IUserService, OnModuleInit {
   }
 
   async findOneUserByID(userIdDTO: UserIdDTO): Promise<UserResponseDTO> {
-    const { userId } = userIdDTO;
+    const { userId } = userIdDTO ?? {};
+
+    // A missing id must fail loudly. `findOne({ where: { id: undefined } })`
+    // drops the condition and returns an arbitrary row, so a caller that sent
+    // the wrong payload shape silently received someone else's account — and
+    // it was then cached under a shared key for everyone.
+    if (!userId) {
+      throw new RpcException({
+        statusCode: 400,
+        message: 'A user id is required.',
+      });
+    }
+
     const cacheKey = generateUserKey('detail', userId);
     const cached = await this.redisService.get<UserResponseDTO>(cacheKey);
 

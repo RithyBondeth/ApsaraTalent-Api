@@ -135,6 +135,21 @@ describe('chat support services', () => {
       );
     });
 
+    it('asks user-service with the DTO shape its handler destructures', async () => {
+      // Sending a bare string made the handler read `undefined` for the id.
+      // `findOne` drops an undefined condition and returns whichever user is
+      // first, so every incoming call and chat notification was attributed to
+      // the same arbitrary person. The mock never checked the payload, which
+      // is why the suite stayed green through it.
+      users.send.mockReturnValueOnce(of({ company: { name: 'Apsara' } }));
+
+      await service.getCallerProfile('caller-42');
+
+      const [, payload] = users.send.mock.calls[0];
+      expect(payload).toEqual({ userId: 'caller-42' });
+      expect(typeof payload).not.toBe('string');
+    });
+
     it('covers missing, email, username, and default profile fallbacks', async () => {
       users.send
         .mockReturnValueOnce(of(null))

@@ -34,7 +34,12 @@ export class ChatNotificationService implements IChatNotificationService {
       const user = await rpcCall<UserResponseDTO>(
         this.userServiceClient,
         USER_SERVICE.ACTIONS.FIND_ONE_BY_ID,
-        userId,
+        // Must be the DTO, not a bare string: the handler destructures
+        // `{ userId }`, so a string yielded `undefined`, and `findOne` with an
+        // undefined id drops the condition and returns whichever user happens
+        // to be first. Every incoming call and chat notification was therefore
+        // attributed to the same arbitrary person.
+        { userId },
       );
       if (!user) return { name: 'Unknown', avatar: CHAT.DEFAULT_AVATAR_PATH };
 
