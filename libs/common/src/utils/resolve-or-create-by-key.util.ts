@@ -25,7 +25,11 @@ import {
 export async function resolveOrCreateByKey<T extends ObjectLiteral>(
   repository: Repository<T>,
   column: keyof T & string,
-  wanted: ReadonlyMap<string, DeepPartial<T>>,
+  // NoInfer so T is fixed by the repository alone. Without it TypeScript also
+  // infers from this argument, unifies T with DeepPartial<Entity>, and every
+  // field on the returned rows becomes optional — callers reading `row.id` then
+  // see `number | undefined` for a column the entity declares as required.
+  wanted: ReadonlyMap<string, DeepPartial<NoInfer<T>>>,
 ): Promise<{ resolved: T[]; created: T[] }> {
   if (wanted.size === 0) return { resolved: [], created: [] };
 
@@ -41,11 +45,15 @@ export async function resolveOrCreateByKey<T extends ObjectLiteral>(
 
   if (missing.size === 0) return { resolved: existing, created: [] };
 
-  const created = await repository.save(
+  // `save()` is typed as returning `DeepPartial<T> & T`, which leaves every
+  // field looking optional to callers reading `row.id` or `row.name`. These are
+  // freshly persisted rows, so they are complete entities — narrowing here
+  // keeps that assertion in one place instead of at each call site.
+  const created = (await repository.save(
     [...missing.entries()].map(([key, extra]) =>
       repository.create({ ...extra, [column]: key } as DeepPartial<T>),
     ),
-  );
+  )) as T[];
 
   return { resolved: [...existing, ...created], created };
 }
