@@ -139,9 +139,12 @@ describe('API gateway startup wiring', () => {
     const allowed = jest.fn();
     cors.origin('https://app.example.com', allowed);
     expect(allowed).toHaveBeenCalledWith(null, true);
+    // Denied by omitting the CORS headers, not by raising: passing an Error
+    // reaches Express's default handler and answers preflights with 500, which
+    // reports a rejected origin as a server fault.
     const denied = jest.fn();
     cors.origin('https://evil.example.com', denied);
-    expect(denied).toHaveBeenCalledWith(expect.any(Error), false);
+    expect(denied).toHaveBeenCalledWith(null, false);
 
     const staticOptions = app.useStaticAssets.mock.calls[0][1];
     const response = { setHeader: jest.fn() };
