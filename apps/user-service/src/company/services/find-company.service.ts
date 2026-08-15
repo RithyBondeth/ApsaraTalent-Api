@@ -36,6 +36,25 @@ export class FindCompanyService implements IFindCompanyService {
   ) {}
 
   /**
+   * Build the response DTO, including the nested position DTOs.
+   *
+   * `@Type(() => JobPositionResponseDTO)` on `openPositions` only takes effect
+   * under class-transformer's own `plainToInstance`, not a hand-written
+   * constructor, so the nested instances have to be created explicitly or their
+   * `@Expose()` accessors never exist. One place for it, since both the cache
+   * hit and the cache miss need exactly the same shape.
+   */
+  private toCompanyResponse(source: object): CompanyResponseDTO {
+    const { openPositions } = source as { openPositions?: unknown[] | null };
+    return new CompanyResponseDTO({
+      ...source,
+      openPositions: (openPositions ?? []).map(
+        (job) => new JobPositionResponseDTO(job as never),
+      ),
+    } as never);
+  }
+
+  /**
    * User ids blocked in either direction with `userId` — used to hide blocked
    * profiles from feed listings (mutual invisibility).
    */
@@ -223,7 +242,16 @@ export class FindCompanyService implements IFindCompanyService {
 
     if (cached) {
       this.logger.info(`Company ${companyId} cache HIT`);
-      return cached;
+      // Rebuilt rather than returned as-is. Redis holds whatever
+      // JSON.stringify produced from the DTO instance, and that skips
+      // prototype accessors — so the cached copy has `experienceRequired` but
+      // not the `experience` the API actually publishes. Returning it raw made
+      // a cache hit answer with a different shape than a miss: the derived
+      // fields (experience, education, skills, deadlineDate, postedDate)
+      // silently vanished, and the internal column names leaked in their
+      // place. Reconstructing restores the getters from the raw fields the
+      // cache did keep.
+      return this.toCompanyResponse(cached);
     }
 
     this.logger.info(`Company ${companyId} cache MISS`);
@@ -254,13 +282,9 @@ export class FindCompanyService implements IFindCompanyService {
         });
       }
 
-      const result = new CompanyResponseDTO({
+      const result = this.toCompanyResponse({
         ...user.company,
         email: user.email,
-        openPositions:
-          user.company.openPositions?.map(
-            (job) => new JobPositionResponseDTO(job),
-          ) ?? [],
       });
 
       await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);

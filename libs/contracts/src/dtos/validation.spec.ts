@@ -162,13 +162,15 @@ describe('request DTO transformation and validation', () => {
       careerScopes: [{ name: '', description: 12 }],
       socials: [{ platform: 12, url: false }],
       websiteUrl: 'not-a-url',
-      companyType: 'invalid',
+      // Free text by design — not one of the suggested types, still accepted.
+      companyType: 'Agricultural Cooperative',
     });
 
     expect(dto.companySize).toBe(25);
     expect(dto.foundedYear).toBe(2020);
     const errors = await validate(dto);
-    expect(errors.map((error) => error.property)).toEqual(
+    const failed = errors.map((error) => error.property);
+    expect(failed).toEqual(
       expect.arrayContaining([
         'jobs',
         'benefits',
@@ -176,9 +178,25 @@ describe('request DTO transformation and validation', () => {
         'careerScopes',
         'socials',
         'websiteUrl',
-        'companyType',
       ]),
     );
+    expect(failed).not.toContain('companyType');
+  });
+
+  it('caps a free-text company type at the stored column width', async () => {
+    const dto = plainToInstance(CompanyRegisterDTO, {
+      authEmail: true,
+      email: 'company@example.com',
+      password: 'Strong!Password123',
+      description: 'Technology company',
+      industry: 'Technology',
+      companySize: '25',
+      foundedYear: '2020',
+      companyType: 'x'.repeat(51),
+    });
+
+    const errors = await validate(dto);
+    expect(errors.map((error) => error.property)).toContain('companyType');
   });
 
   it('transforms and validates nested employee registration data', async () => {

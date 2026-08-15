@@ -1,5 +1,5 @@
 import { EWorkMode } from '@app/common/database/enums/work-mode.enum';
-import { ECompanyType } from '@app/common/database/enums/company-type.enum';
+import { COMPANY_TYPE_MAX_LENGTH } from '@app/common/database/enums/company-type.enum';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -15,6 +15,7 @@ import {
   IsString,
   IsStrongPassword,
   IsUrl,
+  MaxLength,
   ValidateNested,
 } from 'class-validator';
 import { LoginResponseDTO } from './login.dto';
@@ -105,9 +106,11 @@ export class CompanyRegisterDTO {
   @IsOptional()
   websiteUrl?: string;
 
-  @IsEnum(ECompanyType)
+  // Free text: `ECompanyType` is the suggested set, not the allowed one.
+  @IsString()
+  @MaxLength(COMPANY_TYPE_MAX_LENGTH)
   @IsOptional()
-  companyType?: ECompanyType;
+  companyType?: string;
 }
 
 class JobDTO {
@@ -160,6 +163,13 @@ class JobDTO {
   @IsString()
   @IsOptional()
   location?: string;
+
+  // Same shape as `EmployeeRegisterDTO.languages`, so the two sides compare
+  // directly when matching a candidate to a role.
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  languagesRequired?: string[];
 
   @IsInt()
   @IsPositive()

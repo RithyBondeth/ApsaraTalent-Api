@@ -3,7 +3,9 @@ import { Job } from '@app/common/database/entities/company/job.entity';
 import { Education } from '@app/common/database/entities/employee/education.entity';
 import { Employee } from '@app/common/database/entities/employee/employee.entity';
 import { Experience } from '@app/common/database/entities/employee/experience.entity';
+import { Skill } from '@app/common/database/entities/employee/skill.entity';
 import { Social } from '@app/common/database/entities/social.entity';
+import { parseSkillList } from '@app/common/utils/skill.util';
 import { User } from '@app/common/database/entities/user.entity';
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
 import { EmailService } from '@app/common/email/email.service';
@@ -95,16 +97,37 @@ export class RegisterService implements IRegisterService {
       // ── Parallel: create all related entities at once ────────────
       const [newJobs, newBenefits, newValues, newCareerScopes, newSocials] =
         await Promise.all([
-          // Jobs
+          // Jobs — each one's required skills are resolved onto the shared
+          // `skill` table, the same rows employees are tagged with. The legacy
+          // `skillsRequired` string is written too until a later release drops
+          // it (see JobSkillsRelation migration).
           (async () => {
-            const jobs =
-              companyRegisterDTO.jobs?.map((job) =>
-                queryRunner.manager.create(Job, {
-                  ...job,
-                  company: newCompany,
-                }),
-              ) || [];
-            return jobs.length ? queryRunner.manager.save(Job, jobs) : [];
+            const submitted = companyRegisterDTO.jobs ?? [];
+            if (!submitted.length) return [];
+
+            // One find-or-create for every job's skills at once, rather than
+            // one round trip per position.
+            const allSkillNames = submitted.flatMap((job) =>
+              parseSkillList(job.skillsRequired),
+            );
+            const skillRows = await findOrCreateSkills(
+              [...new Set(allSkillNames)].map((name) => ({ name })),
+              queryRunner,
+            );
+            const skillByName = new Map(
+              skillRows.map((skill) => [skill.name, skill]),
+            );
+
+            const jobs = submitted.map((job) =>
+              queryRunner.manager.create(Job, {
+                ...job,
+                company: newCompany,
+                requiredSkills: parseSkillList(job.skillsRequired)
+                  .map((name) => skillByName.get(name))
+                  .filter((skill): skill is Skill => Boolean(skill)),
+              }),
+            );
+            return queryRunner.manager.save(Job, jobs);
           })(),
           // Benefits — bulk find-or-create (1-2 queries instead of N)
           findOrCreateBenefits(

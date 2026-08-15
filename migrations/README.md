@@ -51,11 +51,14 @@ revert-fix-redeploy is the sequence RUNBOOK §5 prescribes, and a `down()` that
 drops a column while leaving its index behind is reversible exactly once.
 
 The revert phase is skipped when this release includes a migration listed as
-intentionally irreversible (`NormalizeExperienceLevels`, `HashRefreshTokens`) —
-reverting past one proves nothing, and for the second it would mean writing
-plaintext refresh tokens back. That list is duplicated in
-`scripts/ci/migration-rehearsal.mjs`; keep it in step with the `irreversible`
-array in `migrations.spec.ts`.
+intentionally irreversible — reverting past one proves nothing, and for
+`HashRefreshTokens` it would mean writing plaintext refresh tokens back.
+
+That list lives in one place, `migrations/irreversible.json`, keyed by TypeORM
+class name. Both consumers read that file directly: `migrations.spec.ts` skips
+its rollback-SQL contract for those entries, and
+`scripts/ci/migration-rehearsal.mjs` skips its reverse phase. There is no second
+copy to keep in step — add the key to the JSON and both follow.
 
 This runs in CI on every push to `main`, gating the `migrate` job.
 

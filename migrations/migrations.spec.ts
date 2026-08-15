@@ -11,6 +11,10 @@ import { AddExperienceCompany1783987200000 } from './1783987200000-AddExperience
 import { AddResumeTemplateKey1783987201000 } from './1783987201000-AddResumeTemplateKey';
 import { HashRefreshTokens1784073600000 } from './1784073600000-HashRefreshTokens';
 import { AddJobSearchColumns1785316800000 } from './1785316800000-AddJobSearchColumns';
+import { FlexibleCompanyTypeAndJobLanguages1786500000000 } from './1786500000000-FlexibleCompanyTypeAndJobLanguages';
+import { NormalizeEmploymentTypes1786500001000 } from './1786500001000-NormalizeEmploymentTypes';
+import { JobSkillsRelation1786500002000 } from './1786500002000-JobSkillsRelation';
+import { AddMatchScore1786500003000 } from './1786500003000-AddMatchScore';
 
 // Read rather than imported: the tsconfig does not enable resolveJsonModule,
 // and reading it the same way scripts/ci/migration-rehearsal.mjs does keeps
@@ -32,6 +36,16 @@ describe('database migration contracts', () => {
     ['resume template key', new AddResumeTemplateKey1783987201000()],
     ['hash refresh tokens', new HashRefreshTokens1784073600000()],
     ['job search columns', new AddJobSearchColumns1785316800000()],
+    [
+      'flexible company type and job languages',
+      new FlexibleCompanyTypeAndJobLanguages1786500000000(),
+    ],
+    [
+      'employment type normalization',
+      new NormalizeEmploymentTypes1786500001000(),
+    ],
+    ['job skills relation', new JobSkillsRelation1786500002000()],
+    ['match score column', new AddMatchScore1786500003000()],
   ] as const;
 
   it.each(migrations)(

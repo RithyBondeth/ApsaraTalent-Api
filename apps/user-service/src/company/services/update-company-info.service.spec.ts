@@ -25,8 +25,11 @@ describe('UpdateCompanyInfoService', () => {
     invalidateCompanyCache: jest.fn(),
   };
   const embedding = { embedAsVector: jest.fn() };
+  // Positional order: company, benefit, value, job, skill, careerScope,
+  // social, user, then the three collaborators.
   const service = new UpdateCompanyInfoService(
     companyRepo as any,
+    repository as any,
     repository as any,
     repository as any,
     repository as any,
