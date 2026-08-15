@@ -1,6 +1,7 @@
 import { Company } from '@app/common/database/entities/company/company.entity';
 import { Employee } from '@app/common/database/entities/employee/employee.entity';
 import { RedisService } from '@app/common/redis/redis.service';
+import { getJobSkillNames } from '@app/common/utils/skill.util';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -97,7 +98,7 @@ export class MatchingAiService implements IMatchingAiService {
         location: company.location,
         openPositions: (company.openPositions ?? []).map((j) => ({
           title: j.title,
-          skillsRequired: j.skillsRequired,
+          skillsRequired: getJobSkillNames(j).join(', '),
           experienceRequired: j.experienceRequired,
           type: j.type,
         })),
@@ -190,7 +191,7 @@ export class MatchingAiService implements IMatchingAiService {
         location: company.location,
         openPositions: (company.openPositions ?? []).map((j) => ({
           title: j.title,
-          skillsRequired: j.skillsRequired,
+          skillsRequired: getJobSkillNames(j).join(', '),
           experienceRequired: j.experienceRequired,
           type: j.type,
         })),
@@ -257,7 +258,7 @@ export class MatchingAiService implements IMatchingAiService {
         description: company.description,
         openPositions: (company.openPositions ?? []).map((j) => ({
           title: j.title,
-          skillsRequired: j.skillsRequired,
+          skillsRequired: getJobSkillNames(j).join(', '),
           experienceRequired: j.experienceRequired,
           type: j.type,
         })),

@@ -221,6 +221,7 @@ export class JobResponseDTO {
   salaryCurrency?: string;
   workMode?: EWorkMode;
   location?: string;
+  languagesRequired?: string[];
   openingsCount?: number;
   @Exclude()
   @ApiHideProperty()

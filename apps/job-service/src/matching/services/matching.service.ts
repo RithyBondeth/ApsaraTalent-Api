@@ -14,7 +14,10 @@ import { Logger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { MatchDTO, MatchResponseDTO } from '@app/contracts/dtos/job';
 import { IMatchingService } from '@app/contracts/interfaces/service/job-service.interface';
-import { computeSkillScore } from '../utils/matching-score.util';
+import {
+  computeMatchScore,
+  computeSkillScore,
+} from '../utils/matching-score.util';
 import {
   UnMatchDTO,
   UnMatchResposneDTO,
@@ -62,7 +65,7 @@ export class MatchingService implements IMatchingService {
         }),
         this.companyRepo.findOne({
           where: { id: matchDTO.cid },
-          relations: ['user', 'openPositions'],
+          relations: ['user', 'openPositions', 'openPositions.requiredSkills'],
         }),
       ]);
 
@@ -82,6 +85,7 @@ export class MatchingService implements IMatchingService {
       });
 
       const skillScore = computeSkillScore(employee, company);
+      const matchScore = computeMatchScore(employee, company).score;
 
       if (!match) {
         match = this.jobMatchingRepo.create({
@@ -91,10 +95,12 @@ export class MatchingService implements IMatchingService {
           companyLiked: false,
           isMatched: false,
           skillScore,
+          matchScore,
         });
       } else {
         match.employeeLiked = true;
         match.skillScore = skillScore;
+        match.matchScore = matchScore;
       }
 
       const becameMatched =
@@ -269,7 +275,7 @@ export class MatchingService implements IMatchingService {
         }),
         this.companyRepo.findOne({
           where: { id: matchDTO.cid },
-          relations: ['user', 'openPositions'],
+          relations: ['user', 'openPositions', 'openPositions.requiredSkills'],
         }),
       ]);
 
@@ -289,6 +295,7 @@ export class MatchingService implements IMatchingService {
       });
 
       const skillScore = computeSkillScore(employee, company);
+      const matchScore = computeMatchScore(employee, company).score;
 
       if (!match) {
         match = this.jobMatchingRepo.create({
@@ -298,10 +305,12 @@ export class MatchingService implements IMatchingService {
           companyLiked: true,
           isMatched: false,
           skillScore,
+          matchScore,
         });
       } else {
         match.companyLiked = true;
         match.skillScore = skillScore;
+        match.matchScore = matchScore;
       }
 
       const becameMatched =

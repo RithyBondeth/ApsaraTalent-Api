@@ -5,7 +5,6 @@ import { EGender } from '@app/common/database/enums/gender.enum';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { EWorkMode } from '@app/common/database/enums/work-mode.enum';
 import { ENoticePeriod } from '@app/common/database/enums/notice-period.enum';
-import { ECompanyType } from '@app/common/database/enums/company-type.enum';
 import { Exclude, Expose, Type } from 'class-transformer';
 import { formatDateToDDMMYYYY } from '@app/common/utils/date-formatter.util';
 
@@ -127,6 +126,7 @@ export class JobPositionResponseDTO {
   salaryCurrency?: string;
   workMode?: EWorkMode;
   location?: string;
+  languagesRequired?: string[];
   openingsCount?: number;
   type: string;
   @Exclude()
@@ -212,7 +212,7 @@ export class CompanyResponseDTO {
   phone?: string;
   email?: string;
   websiteUrl?: string;
-  companyType?: ECompanyType;
+  companyType?: string;
   @Type(() => ImageResponseDTO)
   images?: ImageResponseDTO[];
   @Type(() => JobPositionResponseDTO)

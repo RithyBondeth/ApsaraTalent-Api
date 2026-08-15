@@ -3,11 +3,13 @@ import { Benefit } from '@app/common/database/entities/company/benefit.entity';
 import { Company } from '@app/common/database/entities/company/company.entity';
 import { Job } from '@app/common/database/entities/company/job.entity';
 import { Value } from '@app/common/database/entities/company/value.entity';
+import { Skill } from '@app/common/database/entities/employee/skill.entity';
 import { Social } from '@app/common/database/entities/social.entity';
 import { User } from '@app/common/database/entities/user.entity';
 import { EmbeddingService } from '@app/common/embedding/embedding.service';
 import { CacheInvalidationService } from '@app/common/redis/cache-invalidation.service';
 import { resolveOrCreateByKey } from '@app/common/utils/resolve-or-create-by-key.util';
+import { parseSkillList } from '@app/common/utils/skill.util';
 import { upsertOwnedRows } from '@app/common/utils/upsert-owned-rows.util';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
@@ -32,6 +34,8 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
     @InjectRepository(Value)
     private readonly valueRepository: Repository<Value>,
     @InjectRepository(Job) private readonly jobRepository: Repository<Job>,
+    @InjectRepository(Skill)
+    private readonly skillRepository: Repository<Skill>,
     @InjectRepository(CareerScope)
     private readonly careerScopeRepository: Repository<CareerScope>,
     @InjectRepository(Social)
@@ -41,6 +45,26 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
     private readonly cacheInvalidationService: CacheInvalidationService,
     private readonly embeddingService: EmbeddingService,
   ) {}
+
+  /**
+   * Resolves skill names onto the shared `skill` table, creating any that do
+   * not exist, and returns them keyed by name for linking to jobs. One SELECT
+   * plus at most one INSERT for the whole batch, however many positions were
+   * submitted.
+   */
+  private async resolveSkills(names: string[]): Promise<Map<string, Skill>> {
+    const wanted = new Map(
+      [...new Set(names)].map((name) => [name, {} as DeepPartial<Skill>]),
+    );
+    if (!wanted.size) return new Map();
+
+    const { resolved } = await resolveOrCreateByKey(
+      this.skillRepository,
+      'name',
+      wanted,
+    );
+    return new Map(resolved.map((skill) => [skill.name, skill]));
+  }
 
   async updateCompanyInfo(
     updateCompanyInfoRpcDTO: UpdateCompanyInfoRpcDTO,
@@ -210,6 +234,9 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
         if (submittedIds.length > 0) {
           const owned = await this.jobRepository.find({
             where: { id: In(submittedIds), company: { id: companyId } },
+            // Loaded so TypeORM can diff the join table on save; without it a
+            // skill removed from a position would linger.
+            relations: ['requiredSkills'],
           });
           for (const row of owned) ownedById.set(row.id, row);
         }
@@ -219,6 +246,18 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
         const toEmbed: { id: string; title: string }[] = [];
         const pending: Job[] = [];
         const createdJobs: Job[] = [];
+
+        // Resolve every submitted skill name onto the shared `skill` table in
+        // one pass, so each job can be linked without a round trip per row.
+        // The legacy `skillsRequired` string is still assigned alongside it
+        // until a later release drops the column.
+        const skillByName = await this.resolveSkills(
+          jobs.flatMap((jobDto) => parseSkillList(jobDto?.skillsRequired)),
+        );
+        const relationFor = (skillsRequired?: string) =>
+          parseSkillList(skillsRequired)
+            .map((name) => skillByName.get(name))
+            .filter((skill): skill is Skill => Boolean(skill));
 
         for (const jobDto of jobs) {
           const jobId = jobDto?.id;
@@ -231,6 +270,11 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
             const updateData = { ...jobDto };
             delete updateData.id;
             Object.assign(existing, updateData);
+            // Only replace the relation when this patch actually carried
+            // skills; an unrelated field edit must not clear them.
+            if (updateData.skillsRequired !== undefined) {
+              existing.requiredSkills = relationFor(updateData.skillsRequired);
+            }
             pending.push(existing);
 
             // Re-embed when title changes.
@@ -241,6 +285,7 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
             const entity = this.jobRepository.create({
               ...jobDto,
               company,
+              requiredSkills: relationFor(jobDto?.skillsRequired),
             }) as unknown as Job;
             createdJobs.push(entity);
             pending.push(entity);

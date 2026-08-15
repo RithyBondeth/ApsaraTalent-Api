@@ -23,6 +23,10 @@ import {
   vectorCentroid,
 } from '../utils/recommendations-scoring.util';
 import { generateListKey } from '@app/common/redis/redis-keys.util';
+import {
+  getJobSkillNames,
+  normalizeSkillName,
+} from '@app/common/utils/skill.util';
 import { RecommendationSupportService } from './recommendation-support.service';
 import {
   CompanyRecommendationsDTO,
@@ -93,11 +97,10 @@ export class CompanyRecommendationsService implements ICompanyRecommendationsSer
       // Aggregate required skills across all open positions
       const allRequiredSkills = new Set<string>();
       for (const job of jobs) {
-        (job.skillsRequired ?? '')
-          .split(',')
-          .map((s) => s.trim().toLowerCase())
+        getJobSkillNames(job)
+          .map(normalizeSkillName)
           .filter(Boolean)
-          .forEach((s) => allRequiredSkills.add(s));
+          .forEach((skill) => allRequiredSkills.add(skill));
       }
 
       // Highest education required across all jobs
@@ -271,7 +274,7 @@ export class CompanyRecommendationsService implements ICompanyRecommendationsSer
       const jobTextCorpus = jobs
         .map(
           (j) =>
-            `${j.title ?? ''} ${j.description ?? ''} ${j.skillsRequired ?? ''}`,
+            `${j.title ?? ''} ${j.description ?? ''} ${getJobSkillNames(j).join(' ')}`,
         )
         .join(' ')
         .toLowerCase();

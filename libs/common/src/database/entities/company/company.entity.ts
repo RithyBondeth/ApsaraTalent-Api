@@ -9,7 +9,6 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { ECompanyType } from '../../enums/company-type.enum';
 import { CareerScope } from '../career-scope.entity';
 import { Social } from '../social.entity';
 import { User } from '../user.entity';
@@ -61,12 +60,11 @@ export class Company {
   @Column({ nullable: true })
   websiteUrl: string | null;
 
-  @Column({
-    type: 'enum',
-    enum: ECompanyType,
-    nullable: true,
-  })
-  companyType: ECompanyType | null;
+  // Free text, not an enum: `ECompanyType` is the suggested set the UI offers
+  // first, but employers outside it (cooperatives, MFIs, social enterprises)
+  // may write their own rather than be forced into a wrong bucket.
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  companyType: string | null;
 
   @OneToMany(() => Job, (job) => job.company, { cascade: true })
   openPositions: Job[];

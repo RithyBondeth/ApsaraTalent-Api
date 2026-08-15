@@ -2,6 +2,10 @@ import 'reflect-metadata';
 import { RpcException } from '@nestjs/microservices';
 import { FindCompanyService } from './find-company.service';
 import { generateListKey } from '@app/common/redis/redis-keys.util';
+import {
+  CompanyResponseDTO,
+  JobPositionResponseDTO,
+} from '@app/contracts/dtos/user';
 
 describe('FindCompanyService', () => {
   const companies = { find: jest.fn(), count: jest.fn() };
@@ -148,17 +152,41 @@ describe('FindCompanyService', () => {
     });
   });
 
-  it('returns cached counts and company details', async () => {
+  it('returns cached counts', async () => {
     redis.get.mockResolvedValueOnce({ totalCompanies: 4 });
     await expect(service.countAllCompanies()).resolves.toEqual({
       totalCompanies: 4,
     });
-    redis.get.mockResolvedValueOnce({ id: 'company-1' });
-    await expect(
-      service.findOneById({ companyId: 'company-1' }),
-    ).resolves.toEqual({
+  });
+
+  // Redis holds whatever JSON.stringify made of the DTO, which drops prototype
+  // accessors — so the cached copy carries `experienceRequired` but not the
+  // `experience` the API publishes. Returning it raw made a cache hit answer
+  // with a different shape than a miss: the derived fields disappeared and the
+  // internal column names leaked in their place. The cached value has to be
+  // rebuilt into a DTO so the accessors come back.
+  it('rebuilds a cached company so derived fields survive the hit', async () => {
+    redis.get.mockResolvedValueOnce({
       id: 'company-1',
+      openPositions: [
+        {
+          id: 'job-1',
+          title: 'Engineer',
+          experienceRequired: '3 - 5 years',
+          educationRequired: 'Bachelor',
+          skillsRequired: 'TypeScript, React',
+        },
+      ],
     });
+
+    const result = await service.findOneById({ companyId: 'company-1' });
+
+    expect(result).toBeInstanceOf(CompanyResponseDTO);
+    const [position] = result.openPositions ?? [];
+    expect(position).toBeInstanceOf(JobPositionResponseDTO);
+    expect(position.experience).toBe('3 - 5 years');
+    expect(position.education).toBe('Bachelor');
+    expect(position.skills).toEqual(['TypeScript', 'React']);
   });
 
   it('hides a missing target owner and allows the owner without block lookup', async () => {

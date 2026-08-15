@@ -46,7 +46,11 @@ export class MatchingQueryService implements IMatchingQueryService {
           employee: { id: employeeMatchingLookupDTO.eid },
           employeeLiked: true,
         },
-        relations: ['company', 'company.openPositions'],
+        relations: [
+          'company',
+          'company.openPositions',
+          'company.openPositions.requiredSkills',
+        ],
       });
 
       if (!employeeLiked)
@@ -136,7 +140,10 @@ export class MatchingQueryService implements IMatchingQueryService {
           employee: { id: employeeMatchingLookupDTO.eid },
           isMatched: true,
         },
-        relations: ['company.openPositions'],
+        relations: [
+          'company.openPositions',
+          'company.openPositions.requiredSkills',
+        ],
       });
 
       if (!currentEmployeeMatching)
@@ -148,6 +155,7 @@ export class MatchingQueryService implements IMatchingQueryService {
       const result = currentEmployeeMatching.map((match) => {
         const dto = new FindCurrentMatchingResponseDTO(match.company as any);
         dto.skillScore = match.skillScore ?? null;
+        dto.matchScore = match.matchScore ?? null;
         return dto;
       });
       await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
@@ -195,6 +203,7 @@ export class MatchingQueryService implements IMatchingQueryService {
       const result = currentCompanyMatching.map((match) => {
         const dto = new FindCurrentMatchingResponseDTO(match.employee as any);
         dto.skillScore = match.skillScore ?? null;
+        dto.matchScore = match.matchScore ?? null;
         return dto;
       });
       await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);

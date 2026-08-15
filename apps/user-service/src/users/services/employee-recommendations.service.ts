@@ -24,6 +24,10 @@ import {
   vectorCentroid,
 } from '../utils/recommendations-scoring.util';
 import { generateListKey } from '@app/common/redis/redis-keys.util';
+import {
+  getJobSkillNames,
+  skillOverlapRatio,
+} from '@app/common/utils/skill.util';
 import { RecommendationSupportService } from './recommendation-support.service';
 import {
   CompanyResponseDTO,
@@ -255,15 +259,11 @@ export class EmployeeRecommendationsService implements IEmployeeRecommendationsS
         if (empSkillNames.length > 0 && jobs.length > 0) {
           let bestRatio = 0;
           for (const job of jobs) {
-            const required = (job.skillsRequired ?? '')
-              .split(',')
-              .map((s) => s.trim().toLowerCase())
-              .filter(Boolean);
-            if (required.length === 0) continue;
-            const matched = required.filter((r) =>
-              empSkillNames.includes(r),
-            ).length;
-            bestRatio = Math.max(bestRatio, matched / required.length);
+            const ratio = skillOverlapRatio(
+              empSkillNames,
+              getJobSkillNames(job),
+            );
+            if (ratio !== null) bestRatio = Math.max(bestRatio, ratio);
           }
           score += bestRatio * 30;
         }
@@ -301,7 +301,7 @@ export class EmployeeRecommendationsService implements IEmployeeRecommendationsS
           let bestDescScore = 0;
           for (const job of jobs) {
             const jobText =
-              `${job.title ?? ''} ${job.description ?? ''} ${job.skillsRequired ?? ''}`.toLowerCase();
+              `${job.title ?? ''} ${job.description ?? ''} ${getJobSkillNames(job).join(' ')}`.toLowerCase();
             const matched = empDescWords.filter((w) =>
               jobText.includes(w),
             ).length;
