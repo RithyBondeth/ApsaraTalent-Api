@@ -5,7 +5,17 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "webpack": true,
-    "tsConfigPath": "apps/api-gateway/tsconfig.app.json"
+    "tsConfigPath": "apps/api-gateway/tsconfig.app.json",
+    "plugins": [
+      {
+        "name": "@nestjs/swagger",
+        "options": {
+          "dtoFileNameSuffix": [".dto.ts"],
+          "controllerFileNameSuffix": [".controller.ts"],
+          "introspectComments": true
+        }
+      }
+    ]
   },
   "monorepo": true,
   "root": "apps/api-gateway",
@@ -53,15 +63,6 @@
       "sourceRoot": "libs/contracts/src",
       "compilerOptions": {
         "tsConfigPath": "libs/contracts/tsconfig.lib.json"
-      }
-    },
-    "utils": {
-      "type": "library",
-      "root": "libs/utils",
-      "entryFile": "index",
-      "sourceRoot": "libs/utils/src",
-      "compilerOptions": {
-        "tsConfigPath": "libs/utils/tsconfig.lib.json"
       }
     },
     "resume-builder-service": {

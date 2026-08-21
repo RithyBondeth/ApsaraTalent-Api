@@ -107,12 +107,16 @@ describe('UserController', () => {
       client,
       USER_SERVICE.ACTIONS.GET_EMPLOYEE_RECOMMENDATIONS,
       { employeeId: 'employee-1', limit: 7, requesterId: 'user-1' },
+      // Recommendation feeds run past the 10s default on a cold cache when the
+      // database is far away; assert the raised budget is actually passed.
+      expect.any(Number),
     );
     await controller.getCompanyRecommendations('company-1', undefined, req);
     expect(rpcCall).toHaveBeenLastCalledWith(
       client,
       USER_SERVICE.ACTIONS.GET_COMPANY_RECOMMENDATIONS,
       { companyId: 'company-1', limit: 10, requesterId: 'user-1' },
+      expect.any(Number),
     );
   });
 });

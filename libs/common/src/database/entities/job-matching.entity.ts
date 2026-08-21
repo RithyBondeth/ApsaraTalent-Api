@@ -30,8 +30,16 @@ export class JobMatching {
   @Column({ default: false })
   isMatched: boolean;
 
+  /** Skill overlap alone, 0–100. Kept as its own number for continuity. */
   @Column({ type: 'smallint', nullable: true })
   skillScore: number | null;
+
+  /**
+   * Overall fit, 0–100, weighting skills, experience, employment type, work
+   * mode, languages and location. Null when nothing could be compared.
+   */
+  @Column({ type: 'smallint', nullable: true })
+  matchScore: number | null;
 
   @CreateDateColumn()
   createdAt: Date;

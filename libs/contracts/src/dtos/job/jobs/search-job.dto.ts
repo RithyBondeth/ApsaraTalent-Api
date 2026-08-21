@@ -1,7 +1,9 @@
+import { assignDtoData } from '../../../utils/assign-dto-data.util';
+import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
 import { EWorkMode } from '@app/common/database/enums/work-mode.enum';
-import { formatDateToDDMMYYYY } from '@app/utils/functions/date-formatter';
+import { formatDateToDDMMYYYY } from '@app/common/utils/date-formatter.util';
 import {
   IsArray,
   IsDateString,
@@ -104,48 +106,68 @@ export class SearchJobDTO {
 export class UserInJobResponseDTO {
   id: string;
   @Exclude()
+  @ApiHideProperty()
   role: EUserRole;
   @Exclude()
+  @ApiHideProperty()
   email: string | null;
   @Exclude()
+  @ApiHideProperty()
   password: string | null;
   @Exclude()
+  @ApiHideProperty()
   phone: string | null;
   @Exclude()
+  @ApiHideProperty()
   otpCode: string | null;
   @Exclude()
+  @ApiHideProperty()
   otpCodeExpires: Date | null;
   @Exclude()
+  @ApiHideProperty()
   pushNotificationToken: string | null;
   @Exclude()
+  @ApiHideProperty()
   profileCompleted: boolean;
   @Exclude()
+  @ApiHideProperty()
   resetPasswordToken: string | null;
   @Exclude()
+  @ApiHideProperty()
   resetPasswordExpires: Date | null;
   @Exclude()
+  @ApiHideProperty()
   refreshToken: string | null;
   @Exclude()
+  @ApiHideProperty()
   isEmailVerified: boolean;
   @Exclude()
+  @ApiHideProperty()
   emailVerificationToken: string | null;
   @Exclude()
+  @ApiHideProperty()
   isTwoFactorEnabled: boolean;
   @Exclude()
+  @ApiHideProperty()
   twoFactorSecret: string | null;
   @Exclude()
+  @ApiHideProperty()
   facebookId: string | null;
   @Exclude()
+  @ApiHideProperty()
   googleId: string | null;
   @Exclude()
+  @ApiHideProperty()
   linkedinId: string | null;
   @Exclude()
+  @ApiHideProperty()
   githubId: string | null;
   @Exclude()
+  @ApiHideProperty()
   createdAt: Date;
 
   constructor(partial: Partial<UserInJobResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 }
 
@@ -153,24 +175,29 @@ export class CompanyInJobResponseDTO {
   id: string;
   name: string;
   @Exclude()
+  @ApiHideProperty()
   description: string;
   @Exclude()
+  @ApiHideProperty()
   phone: string;
   avatar: string;
   @Exclude()
+  @ApiHideProperty()
   cover: string;
   companySize: number;
   industry: string;
   location: string;
   @Exclude()
+  @ApiHideProperty()
   foundedYear: number;
   @Exclude()
+  @ApiHideProperty()
   createdAt: Date;
   @Type(() => UserInJobResponseDTO)
   user: UserInJobResponseDTO;
 
   constructor(partial: Partial<CompanyInJobResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 }
 
@@ -180,10 +207,13 @@ export class JobResponseDTO {
   description: string;
   type: string;
   @Exclude()
+  @ApiHideProperty()
   experienceRequired: string;
   @Exclude()
+  @ApiHideProperty()
   educationRequired: string;
   @Exclude()
+  @ApiHideProperty()
   skillsRequired: string;
   salary: string;
   salaryMin?: number;
@@ -191,11 +221,14 @@ export class JobResponseDTO {
   salaryCurrency?: string;
   workMode?: EWorkMode;
   location?: string;
+  languagesRequired?: string[];
   openingsCount?: number;
   @Exclude()
+  @ApiHideProperty()
   @Transform(({ value }) => (value ? value.toISOString() : null))
   expireDate: Date;
   @Exclude()
+  @ApiHideProperty()
   @Transform(({ value }) => (value ? value.toISOString() : null))
   createdAt: Date;
   @Type(() => CompanyInJobResponseDTO)
@@ -203,25 +236,29 @@ export class JobResponseDTO {
   isHide: boolean;
 
   constructor(partial: Partial<JobResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 
   @Expose()
+  @ApiProperty({ type: String })
   get experience(): string {
     return this.experienceRequired;
   }
 
   @Expose()
+  @ApiProperty({ type: String })
   get education(): string {
     return this.educationRequired;
   }
 
   @Expose()
+  @ApiProperty({ type: [String] })
   get skills(): string[] {
     return this.skillsRequired.split(',').map((s) => s.trim());
   }
 
   @Expose()
+  @ApiProperty({ type: String, nullable: true })
   get deadlineDate(): string | null {
     return this.expireDate
       ? formatDateToDDMMYYYY(new Date(this.expireDate))
@@ -229,6 +266,7 @@ export class JobResponseDTO {
   }
 
   @Expose()
+  @ApiProperty({ type: String, nullable: true })
   get postedDate(): string | null {
     return this.createdAt
       ? formatDateToDDMMYYYY(new Date(this.createdAt))

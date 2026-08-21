@@ -34,7 +34,7 @@ import {
 import { AiProfileBioService } from '../services/ai-profile-bio.service';
 import { RESUME_BUILDER_SERVICE } from '@app/contracts/constants/service-actions/resume-builder-service.constant';
 import { rpcCall } from '../../utils/rpc-call';
-import { AiStreamService } from '../../ai-stream/ai-stream.service';
+import { AiStreamService } from '../../ai/services/ai-stream.service';
 
 @Controller('resume')
 @UseGuards(AuthGuard)

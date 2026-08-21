@@ -11,7 +11,7 @@ import {
   HealthIndicatorService,
   TypeOrmHealthIndicator,
 } from '@nestjs/terminus';
-import { PushNotificationService } from '../services/push-notification.service';
+import { PushNotificationService } from '../notifications/services/push-notification.service';
 import { IHealthRpcController } from '@app/contracts';
 
 @Controller('health')

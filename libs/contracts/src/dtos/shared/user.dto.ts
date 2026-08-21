@@ -1,11 +1,12 @@
+import { assignDtoData } from '../../utils/assign-dto-data.util';
+import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
 import { EGender } from '@app/common/database/enums/gender.enum';
 import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { EWorkMode } from '@app/common/database/enums/work-mode.enum';
 import { ENoticePeriod } from '@app/common/database/enums/notice-period.enum';
-import { ECompanyType } from '@app/common/database/enums/company-type.enum';
 import { Exclude, Expose, Type } from 'class-transformer';
-import { formatDateToDDMMYYYY } from '@app/utils/functions/date-formatter';
+import { formatDateToDDMMYYYY } from '@app/common/utils/date-formatter.util';
 
 export class SkillResponseDTO {
   id?: string;
@@ -13,7 +14,7 @@ export class SkillResponseDTO {
   description?: string;
 
   constructor(partial: Partial<SkillResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 }
 
@@ -28,7 +29,7 @@ export class ExperienceResponseDTO {
   endDate: Date;
 
   constructor(partial: Partial<ExperienceResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 }
 
@@ -39,7 +40,7 @@ export class EducationResponseDTO {
   year: string;
 
   constructor(partial: Partial<EducationResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 }
 
@@ -49,7 +50,7 @@ export class SocialResponseDTO {
   url: string;
 
   constructor(partial: Partial<SocialResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 }
 
@@ -96,7 +97,7 @@ export class EmployeeResponseDTO {
   updatedAt?: Date;
 
   constructor(partial: Partial<EmployeeResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 }
 
@@ -104,12 +105,14 @@ export class ImageResponseDTO {
   id?: string;
   image: string;
   @Exclude()
+  @ApiHideProperty()
   createdAt: Date;
   @Exclude()
+  @ApiHideProperty()
   updatedAt: Date;
 
   constructor(partial: Partial<ImageResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 }
 
@@ -123,44 +126,55 @@ export class JobPositionResponseDTO {
   salaryCurrency?: string;
   workMode?: EWorkMode;
   location?: string;
+  languagesRequired?: string[];
   openingsCount?: number;
   type: string;
   @Exclude()
+  @ApiHideProperty()
   experienceRequired: string;
   @Exclude()
+  @ApiHideProperty()
   educationRequired: string;
   @Exclude()
+  @ApiHideProperty()
   skillsRequired: string;
   @Exclude()
+  @ApiHideProperty()
   expireDate: Date;
   @Exclude()
+  @ApiHideProperty()
   createdAt: Date;
 
   constructor(partial: Partial<JobPositionResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 
   @Expose()
+  @ApiProperty({ type: String })
   get experience(): string {
     return this.experienceRequired;
   }
 
   @Expose()
+  @ApiProperty({ type: String })
   get education(): string {
     return this.educationRequired;
   }
 
   @Expose()
+  @ApiProperty({ type: [String] })
   get skills(): string[] {
     return this.skillsRequired.split(',').map((s) => s.trim());
   }
 
   @Expose()
+  @ApiProperty({ type: String, nullable: true })
   get deadlineDate(): string | null {
     return this.expireDate ? formatDateToDDMMYYYY(this.expireDate) : null;
   }
 
   @Expose()
+  @ApiProperty({ type: String, nullable: true })
   get postedDate(): string | null {
     return this.createdAt ? formatDateToDDMMYYYY(this.createdAt) : null;
   }
@@ -171,7 +185,7 @@ export class ValuesAndBenefitsResponseDTO {
   label: string;
 
   constructor(partial: Partial<ValuesAndBenefitsResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 }
 
@@ -181,7 +195,7 @@ export class CareerScopesResponseDTO {
   description?: string;
 
   constructor(partial: Partial<CareerScopesResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 }
 
@@ -198,7 +212,7 @@ export class CompanyResponseDTO {
   phone?: string;
   email?: string;
   websiteUrl?: string;
-  companyType?: ECompanyType;
+  companyType?: string;
   @Type(() => ImageResponseDTO)
   images?: ImageResponseDTO[];
   @Type(() => JobPositionResponseDTO)
@@ -215,10 +229,11 @@ export class CompanyResponseDTO {
   createdAt: Date;
 
   constructor(partial: Partial<CompanyResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
   }
 
   @Expose()
+  @ApiProperty({ type: [String] })
   get availableTimes(): string[] {
     return [...(new Set(this.openPositions?.map((job) => job.type)) || [])];
   }
@@ -229,33 +244,51 @@ export class UserResponseDTO {
   role: EUserRole;
   email?: string;
   @Exclude()
+  @ApiHideProperty()
   password?: string;
   phone?: string;
   @Exclude()
+  @ApiHideProperty()
   otpCode?: string;
   @Exclude()
+  @ApiHideProperty()
   otpCodeExpires?: Date;
   @Exclude()
+  @ApiHideProperty()
   pushNotificationToken?: string;
   @Exclude()
+  @ApiHideProperty()
   resetPasswordToken?: string;
   @Exclude()
+  @ApiHideProperty()
   resetPasswordExpires?: Date;
   @Exclude()
+  @ApiHideProperty()
   refreshToken?: string;
   isEmailVerified?: boolean;
+  // Declared because it is in the SAFE_USER_FIELDS allowlist and therefore
+  // genuinely part of the response. It reached clients anyway — the constructor
+  // Object.assigns whatever it is given — but an undeclared field is a contract
+  // nothing type-checks, and the web depends on this one for onboarding routing.
+  profileCompleted?: boolean;
   @Exclude()
+  @ApiHideProperty()
   emailVerificationToken?: string;
   isTwoFactorEnabled?: boolean;
   @Exclude()
+  @ApiHideProperty()
   twoFactorSecret?: string;
   @Exclude()
+  @ApiHideProperty()
   facebookId?: string;
   @Exclude()
+  @ApiHideProperty()
   googleId?: string;
   @Exclude()
+  @ApiHideProperty()
   linkedinId?: string;
   @Exclude()
+  @ApiHideProperty()
   githubId?: string;
   @Type(() => EmployeeResponseDTO)
   employee?: EmployeeResponseDTO;
@@ -270,7 +303,7 @@ export class UserResponseDTO {
   updatedAt?: Date;
 
   constructor(partial: Partial<UserResponseDTO>) {
-    Object.assign(this, partial);
+    assignDtoData(this, partial);
     if (this.employee && !(this.employee instanceof EmployeeResponseDTO)) {
       this.employee = new EmployeeResponseDTO(this.employee);
     }

@@ -32,8 +32,8 @@ import {
   AiInterviewPrepResponseDTO,
 } from '@app/contracts/dtos/job';
 import { rpcCall } from '../../utils/rpc-call';
-import { SocketBroadcastService } from '../../socket/socket-broadcast.service';
-import { AiStreamService } from '../../ai-stream/ai-stream.service';
+import { SocketBroadcastService } from '../../shared/socket/socket-broadcast.service';
+import { AiStreamService } from '../../ai/services/ai-stream.service';
 import { AiMatchingService } from '../services/ai-matching.service';
 import { JobAccessService } from '../services/job-access.service';
 import {

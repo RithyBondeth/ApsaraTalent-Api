@@ -12,13 +12,13 @@ import { Module } from '@nestjs/common';
 import { TerminusModule } from '@nestjs/terminus';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ResumeHealthController } from './health/health.controller';
-import { ResumeBuilderController } from './controllers/resume-builder.controller';
-import { ResumeTemplateController } from './controllers/resume-template.controller';
-import { ImageService } from './services/image.service';
-import { ResumeBuilderService } from './services/resume-builder.service';
-import { PdfGeneratorService } from './services/pdf-generator.service';
-import { ResumeTemplateSeedService } from './services/seed/resume-template-seed.service';
-import { ResumeTemplateService } from './services/resume-template.service';
+import { ResumeBuilderController } from './resumes/controllers/resume-builder.controller';
+import { ResumeTemplateController } from './templates/controllers/resume-template.controller';
+import { ImageService } from './resumes/services/image.service';
+import { ResumeBuilderService } from './resumes/services/resume-builder.service';
+import { PdfGeneratorService } from './resumes/services/pdf-generator.service';
+import { ResumeTemplateSeedService } from './templates/services/seed/resume-template-seed.service';
+import { ResumeTemplateService } from './templates/services/resume-template.service';
 
 import {
   I_RESUME_BUILDER_SERVICE,

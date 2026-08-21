@@ -63,9 +63,15 @@ async function registerEmployee(label: string): Promise<Session> {
       lastname: 'E2E',
       username: `${label}-${runId}`,
       job: 'Software Engineer',
-      availability: 'Immediately',
+      // Canonical values — the search filters compare these by exact equality,
+      // so the fixture has to look like what the signup wizard now produces.
+      availability: 'full_time',
+      yearsOfExperience: '3 - 5 years',
       description: 'Isolated end-to-end test account',
       location: 'Phnom Penh',
+      workMode: 'hybrid',
+      noticePeriod: '2_weeks',
+      languages: ['Khmer', 'English'],
     })
     .expect(201);
 
@@ -91,12 +97,16 @@ async function registerCompany(): Promise<Session> {
       location: 'Phnom Penh',
       companySize: 10,
       foundedYear: 2024,
+      websiteUrl: 'https://e2e.example.com',
+      // Free text by design: not one of the suggested types.
+      companyType: 'Agricultural Cooperative',
       jobs: [
         {
           title: 'E2E Software Engineer',
           description: 'A job used only by the isolated test suite',
-          type: 'Full-time',
-          experienceRequired: '1 year',
+          // Canonical values, matching what the signup wizard now produces.
+          type: 'full_time',
+          experienceRequired: '3 - 5 years',
           educationRequired: 'Any',
           skillsRequired: 'TypeScript',
           salaryMin: 500,
@@ -104,6 +114,7 @@ async function registerCompany(): Promise<Session> {
           salaryCurrency: 'USD',
           workMode: 'hybrid',
           location: 'Phnom Penh',
+          languagesRequired: ['Khmer', 'English'],
           openingsCount: 1,
           expireDate: '2030-01-01T00:00:00.000Z',
         },
@@ -183,6 +194,63 @@ describe('isolated API system', () => {
       .expect(200);
     expect(companyProfile.body.openPositions).toHaveLength(1);
     jobId = companyProfile.body.openPositions[0].id;
+  });
+
+  // Registration used to accept fields and quietly drop them on the way to the
+  // database — a company's website, type, work mode, salary range and openings
+  // count were all lost, and nothing failed. Every assertion here names its
+  // field, because the bug was an omission and only an omission-shaped test
+  // catches it.
+  it('persists every field submitted at registration', async () => {
+    const companyProfile = await request(baseUrl)
+      .get(`/user/company/one/${company.profileId}`)
+      .set('Cookie', company.cookie)
+      .expect(200);
+
+    expect(companyProfile.body).toMatchObject({
+      industry: 'Technology',
+      location: 'Phnom Penh',
+      companySize: 10,
+      foundedYear: 2024,
+      websiteUrl: 'https://e2e.example.com',
+      companyType: 'Agricultural Cooperative',
+    });
+
+    const [position] = companyProfile.body.openPositions;
+    expect(position).toMatchObject({
+      title: 'E2E Software Engineer',
+      type: 'full_time',
+      experience: '3 - 5 years',
+      education: 'Any',
+      workMode: 'hybrid',
+      location: 'Phnom Penh',
+      openingsCount: 1,
+    });
+    expect(position.skills).toContain('TypeScript');
+    expect(position.languagesRequired).toEqual(['Khmer', 'English']);
+    // Decimal columns come back as strings through the driver, so compare
+    // numerically rather than by identity.
+    expect(Number(position.salaryMin)).toBe(500);
+    expect(Number(position.salaryMax)).toBe(1000);
+    expect(position.salaryCurrency).toBe('USD');
+
+    const employeeProfile = await request(baseUrl)
+      .get('/user/current-user')
+      .set('Cookie', owner.cookie)
+      .expect(200);
+
+    expect(employeeProfile.body.employee).toMatchObject({
+      job: 'Software Engineer',
+      availability: 'full_time',
+      yearsOfExperience: '3 - 5 years',
+      location: 'Phnom Penh',
+      workMode: 'hybrid',
+      noticePeriod: '2_weeks',
+    });
+    expect(employeeProfile.body.employee.languages).toEqual([
+      'Khmer',
+      'English',
+    ]);
   });
 
   it('rejects cross-profile mutations and private document access', async () => {

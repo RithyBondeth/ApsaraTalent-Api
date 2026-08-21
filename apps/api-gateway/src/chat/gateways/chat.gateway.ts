@@ -28,7 +28,7 @@ import {
 import { SocketStateService } from '../services/socket-state.service';
 import { ChatRateLimiterService } from '../services/chat-rate-limiter.service';
 import { ChatNotificationService } from '../services/chat-notification.service';
-import { SocketBroadcastService } from '../../socket/socket-broadcast.service';
+import { SocketBroadcastService } from '../../shared/socket/socket-broadcast.service';
 import { ChatMessageService } from '../services/chat-message.service';
 import { extractChatToken } from '../utils/chat-token.util';
 import { IChatGateway } from '@app/contracts/interfaces/gateway/chat-gateway.interface';
@@ -52,6 +52,10 @@ import {
   DeleteMessageResponseDTO,
 } from '@app/contracts/dtos/chat/chat-gateway/delete-message.dto';
 import { isOriginAllowed } from '@app/common';
+import {
+  validateEditMessage,
+  validateSendMessage,
+} from '../utils/chat-payload.util';
 
 @WebSocketGateway({
   namespace: '/chat',
@@ -201,34 +205,18 @@ export class ChatGateway
         return;
       }
 
-      if (
-        !sendMessageDTO?.receiverId ||
-        typeof sendMessageDTO.receiverId !== 'string'
-      ) {
-        client.emit('error', {
-          message: 'Invalid message payload: missing receiverId',
-        });
+      const invalid = validateSendMessage(
+        sendMessageDTO,
+        this.VALID_MESSAGE_TYPES,
+      );
+      if (invalid) {
+        client.emit('error', { message: invalid });
         return;
       }
 
       const trimmedContent = sendMessageDTO?.content?.trim() ?? '';
       const hasAttachment = !!sendMessageDTO?.attachment;
-      if (trimmedContent.length > CHAT.MAX_MESSAGE_LENGTH) {
-        client.emit('error', {
-          message: `Message must be at most ${CHAT.MAX_MESSAGE_LENGTH} characters`,
-        });
-        return;
-      }
-      if (!trimmedContent && !hasAttachment) {
-        client.emit('error', { message: 'Message cannot be empty' });
-        return;
-      }
-
       const messageType = sendMessageDTO.type ?? 'text';
-      if (!this.VALID_MESSAGE_TYPES.includes(messageType as any)) {
-        client.emit('error', { message: 'Invalid message type' });
-        return;
-      }
 
       const { usersData, savedMessage } =
         await this.chatMessageService.sendMessage(
@@ -487,21 +475,12 @@ export class ChatGateway
       return;
     }
 
-    if (
-      !editMessageDTO?.messageId ||
-      typeof editMessageDTO.messageId !== 'string'
-    ) {
-      client.emit('error', { message: 'messageId is required' });
+    const invalidEdit = validateEditMessage(editMessageDTO);
+    if (invalidEdit) {
+      client.emit('error', { message: invalidEdit });
       return;
     }
-
-    const trimmed = editMessageDTO.newContent?.trim();
-    if (!trimmed || trimmed.length > CHAT.MAX_MESSAGE_LENGTH) {
-      client.emit('error', {
-        message: `Message must be 1–${CHAT.MAX_MESSAGE_LENGTH} characters`,
-      });
-      return;
-    }
+    const trimmed = editMessageDTO.newContent!.trim();
 
     try {
       const result = await rpcCall<EditMessageResponseDTO>(

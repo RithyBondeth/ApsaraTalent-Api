@@ -1,6 +1,6 @@
 import 'reflect-metadata';
-import { of, throwError } from 'rxjs';
-import { USER_SERVICE } from '@app/contracts';
+import { EMPTY, NEVER, of, throwError } from 'rxjs';
+import { AUTH, USER_SERVICE } from '@app/contracts';
 import { CacheCleanupService } from './cache-cleanup.service';
 
 describe('CacheCleanupService', () => {
@@ -29,6 +29,30 @@ describe('CacheCleanupService', () => {
     expect(logger.warn).toHaveBeenCalledWith(
       '[AUTH] Failed to clear user cache for userId=user-1: redis down',
     );
+  });
+
+  it('accepts a successful RPC that completes without a response body', async () => {
+    client.send.mockReturnValue(EMPTY);
+
+    await expect(service.clear('user-1')).resolves.toBeUndefined();
+
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('stops waiting when user-service does not respond', async () => {
+    jest.useFakeTimers();
+    client.send.mockReturnValue(NEVER);
+
+    const cleanup = service.clear('user-1');
+    await jest.advanceTimersByTimeAsync(AUTH.CACHE_CLEANUP_TIMEOUT);
+
+    await expect(cleanup).resolves.toBeUndefined();
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        '[AUTH] Failed to clear user cache for userId=user-1:',
+      ),
+    );
+    jest.useRealTimers();
   });
 
   it('starts social-login invalidation without blocking the caller', async () => {
