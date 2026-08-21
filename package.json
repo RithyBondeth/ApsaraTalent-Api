@@ -147,7 +147,7 @@
     "@types/passport-google-oauth20": "^2.0.16",
     "@types/passport-linkedin-oauth2": "^1.5.6",
     "@types/pdf-parse": "^1.1.5",
-    "@types/supertest": "^6.0.0",
+    "@types/supertest": "^7.2.1",
     "@typescript-eslint/eslint-plugin": "^8.66.0",
     "@typescript-eslint/parser": "^8.66.0",
     "cross-env": "^10.1.0",
@@ -163,8 +163,7 @@
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
     "typescript": "5.9.3",
-    "webpack": "^5.109.2",
-    "webpack-cli": "^6.0.1"
+    "webpack": "^5.109.2"
   },
   "optionalDependencies": {
     "@img/sharp-linuxmusl-x64": "0.35.3"
