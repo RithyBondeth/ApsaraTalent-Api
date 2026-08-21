@@ -12,7 +12,6 @@ describe('RegisterService', () => {
   const users = { exists: jest.fn() };
   const config = { get: jest.fn(() => 'https://app.example.com') };
   const jwt = {
-    generateEmailVerificationToken: jest.fn(),
     generateToken: jest.fn(),
     generateRefreshToken: jest.fn(),
   };
@@ -49,7 +48,6 @@ describe('RegisterService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     users.exists.mockResolvedValue(false);
-    jwt.generateEmailVerificationToken.mockResolvedValue('verify-token');
     jwt.generateToken.mockResolvedValue('access');
     jwt.generateRefreshToken.mockResolvedValue('refresh');
     email.sendEmail.mockResolvedValue({ messageId: 'email-1' });
@@ -99,8 +97,12 @@ describe('RegisterService', () => {
       info: 'employee@example.com',
       role: 'employee',
     });
+    // The verification mail must carry a six-digit code, not a link.
     expect(email.sendEmail).toHaveBeenCalledWith(
-      expect.objectContaining({ to: 'employee@example.com' }),
+      expect.objectContaining({
+        to: 'employee@example.com',
+        text: expect.stringMatching(/\b\d{6}\b/),
+      }),
     );
     expect(result).toEqual(
       expect.objectContaining({
@@ -220,7 +222,10 @@ describe('RegisterService', () => {
       expect.objectContaining({ title: 'Developer' }),
     );
     expect(email.sendEmail).toHaveBeenCalledWith(
-      expect.objectContaining({ to: 'company@example.com' }),
+      expect.objectContaining({
+        to: 'company@example.com',
+        text: expect.stringMatching(/\b\d{6}\b/),
+      }),
     );
     expect(result.message).toContain('verify your email');
   });

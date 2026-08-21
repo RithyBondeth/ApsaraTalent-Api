@@ -143,7 +143,13 @@ export class UserInJobResponseDTO {
   isEmailVerified: boolean;
   @Exclude()
   @ApiHideProperty()
-  emailVerificationToken: string | null;
+  emailVerificationOtp: string | null;
+  @Exclude()
+  @ApiHideProperty()
+  emailVerificationOtpExpires: Date | null;
+  @Exclude()
+  @ApiHideProperty()
+  emailVerificationAttempts: number;
   @Exclude()
   @ApiHideProperty()
   isTwoFactorEnabled: boolean;

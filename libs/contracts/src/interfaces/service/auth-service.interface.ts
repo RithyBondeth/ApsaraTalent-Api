@@ -18,6 +18,7 @@ import {
   RefreshTokenResponseDTO,
   RefreshTokenDTO,
   VerifyEmailResponseDTO,
+  ResendEmailOtpResponseDTO,
   VerifyOtpDTO,
   VerifyOtpResponseDTO,
   FacebookLoginResponseDTO,
@@ -25,6 +26,7 @@ import {
   GoogleLoginResponseDTO,
   LinkedInLoginResponseDTO,
   VerifyEmailDTO,
+  ResendEmailOtpDTO,
   TwoFactorSetupDTO,
   TwoFactorSetupResponseDTO,
   TwoFactorEnableDTO,
@@ -83,6 +85,9 @@ export interface IRefreshTokenService {
 
 export interface IVerifyEmailService {
   verifyEmail(verifyEmailDTO: VerifyEmailDTO): Promise<VerifyEmailResponseDTO>;
+  resendEmailOtp(
+    resendEmailOtpDTO: ResendEmailOtpDTO,
+  ): Promise<ResendEmailOtpResponseDTO>;
 }
 
 export interface ILoginOTPService {
