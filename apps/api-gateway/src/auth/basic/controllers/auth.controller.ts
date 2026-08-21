@@ -43,10 +43,12 @@ import {
   ResetPasswordResponseDTO,
   RefreshTokenResponseDTO,
   VerifyEmailResponseDTO,
+  ResendEmailOtpResponseDTO,
   CompanyRegisterResponseDTO,
   EmployeeRegisterResponseDTO,
   VerifyOtpResponseDTO,
   VerifyEmailDTO,
+  ResendEmailOtpDTO,
   TwoFactorSetupResponseDTO,
   TwoFactorEnableDTO,
   TwoFactorEnableResponseDTO,
@@ -283,17 +285,34 @@ export class AuthController implements IBasicAuthController {
     return { message: 'Logged out successfully' };
   }
 
-  @Post('verify-email/:emailVerificationToken')
+  // The code arrives in the body, not the path: a six-digit value in a URL
+  // lands in access logs, proxy caches and browser history, and this one is a
+  // credential for the ten minutes it lives.
+  @Post('verify-email')
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
   @StrictThrottle()
   async verifyEmail(
-    @Param('emailVerificationToken') emailVerificationToken: VerifyEmailDTO,
+    @Body() verifyEmailDTO: VerifyEmailDTO,
   ): Promise<VerifyEmailResponseDTO> {
     return await sendAuthServiceRequest<VerifyEmailResponseDTO>(
       this.authClient,
       AUTH_SERVICE.ACTIONS.VERIFY_EMAIL,
-      emailVerificationToken,
+      verifyEmailDTO,
+    );
+  }
+
+  @Post('verify-email/resend')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(ThrottlerGuard)
+  @StrictThrottle()
+  async resendEmailOtp(
+    @Body() resendEmailOtpDTO: ResendEmailOtpDTO,
+  ): Promise<ResendEmailOtpResponseDTO> {
+    return await sendAuthServiceRequest<ResendEmailOtpResponseDTO>(
+      this.authClient,
+      AUTH_SERVICE.ACTIONS.RESEND_EMAIL_OTP,
+      resendEmailOtpDTO,
     );
   }
 

@@ -76,8 +76,16 @@ export class User {
   @Column({ default: false })
   isEmailVerified: boolean;
 
+  /** Six-digit email verification code. Null once verified or expired. */
   @Column({ nullable: true })
-  emailVerificationToken: string | null;
+  emailVerificationOtp: string | null;
+
+  @Column({ nullable: true })
+  emailVerificationOtpExpires: Date | null;
+
+  /** Wrong guesses against the current code; the code is burned at the cap. */
+  @Column({ default: 0 })
+  emailVerificationAttempts: number;
 
   @Column({ default: false })
   isTwoFactorEnabled: boolean;

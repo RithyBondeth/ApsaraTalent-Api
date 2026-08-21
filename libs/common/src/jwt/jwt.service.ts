@@ -30,14 +30,6 @@ export class JwtService {
     return refreshToken;
   }
 
-  async generateEmailVerificationToken(email: string): Promise<string> {
-    const token = await this.jwtService.signAsync(
-      { email, type: 'email-verification' },
-      { expiresIn: this.configService.get<StringValue>('jwt.emailExpiresIn') },
-    );
-    return token;
-  }
-
   async verifyToken(token: string): Promise<any> {
     try {
       const decoded = await this.jwtService.verifyAsync(token);
@@ -55,20 +47,6 @@ export class JwtService {
     try {
       const decoded = await this.jwtService.verifyAsync(token);
       if (decoded.type !== 'refresh') throw new Error('Invalid token type');
-      return decoded;
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(errorMessage);
-      throw new Error(errorMessage);
-    }
-  }
-
-  async verifyEmailToken(token: string): Promise<any> {
-    try {
-      const decoded = await this.jwtService.verifyAsync(token);
-      if (decoded.type !== 'email-verification')
-        throw new Error('Invalid token type');
       return decoded;
     } catch (error) {
       const errorMessage =
