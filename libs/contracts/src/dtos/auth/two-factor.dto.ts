@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsNumberString, IsUUID, Length } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumberString,
+  IsString,
+  IsUUID,
+  Length,
+} from 'class-validator';
 import { CoreResponseDTO } from '../shared/core-response.dto';
 import { UserResponseDTO } from '../shared/user.dto';
 
@@ -50,9 +56,9 @@ export class TwoFactorDisableResponseDTO extends CoreResponseDTO {
 }
 
 export class TwoFactorVerifyLoginDTO {
-  @IsUUID()
+  @IsString()
   @IsNotEmpty()
-  userId: string;
+  twoFactorToken: string;
 
   @IsNumberString({ no_symbols: true })
   @Length(6, 6)

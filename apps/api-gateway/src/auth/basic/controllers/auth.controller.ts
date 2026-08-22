@@ -162,7 +162,7 @@ export class AuthController implements IBasicAuthController {
       return new LoginResponseDTO({
         message: response.message,
         requiresTwoFactor: true,
-        userId: response.userId,
+        twoFactorToken: response.twoFactorToken,
       });
     }
 

@@ -61,6 +61,12 @@ export default () => ({
     expiresIn: process.env.JWT_EXPIRES,
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES,
     emailExpiresIn: process.env.JWT_EMAIL_EXPIRES,
+    // The window between passing the password check and entering a code.
+    // Long enough to fetch a phone, short enough that a leaked challenge is
+    // worthless by the time anyone could use it. Defaulted rather than
+    // required so an unset env cannot silently mint a non-expiring token.
+    twoFactorChallengeExpiresIn:
+      process.env.JWT_TWO_FACTOR_CHALLENGE_EXPIRES ?? '5m',
   },
 
   session: {
