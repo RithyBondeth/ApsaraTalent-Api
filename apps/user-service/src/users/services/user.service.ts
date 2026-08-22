@@ -223,6 +223,11 @@ export class UserService implements IUserService, OnModuleInit {
           phone: true,
           profileCompleted: true,
           isEmailVerified: true,
+          // Settings decides between "Enable" and "Disable" from this flag.
+          // Without it the field is undefined on the client, which reads as
+          // "off", so the button stayed on Enable and the disable dialog was
+          // unreachable no matter how many times someone turned 2FA on.
+          isTwoFactorEnabled: true,
           lastLoginAt: true,
           lastLoginMethod: true,
           createdAt: true,
