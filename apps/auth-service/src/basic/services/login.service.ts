@@ -60,12 +60,16 @@ export class LoginService implements ILoginService {
           statusCode: 403,
         });
 
-      // If 2FA is enabled, return a challenge instead of issuing tokens
+      // If 2FA is enabled, return a challenge instead of issuing tokens.
+      // The challenge is signed and short-lived: it is the only thing that
+      // proves to verify-login that this caller cleared the password check.
       if (user.isTwoFactorEnabled) {
         return new LoginResponseDTO({
           message: 'Two-factor authentication required',
           requiresTwoFactor: true,
-          userId: user.id,
+          twoFactorToken: await this.jwtService.generateTwoFactorChallengeToken(
+            user.id,
+          ),
         });
       }
 

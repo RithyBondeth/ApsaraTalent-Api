@@ -10,6 +10,7 @@ describe('LoginService', () => {
   const jwt = {
     generateToken: jest.fn(),
     generateRefreshToken: jest.fn(),
+    generateTwoFactorChallengeToken: jest.fn(async () => 'challenge-token'),
   };
   const cache = { clear: jest.fn() };
   const logger = { error: jest.fn() };
@@ -90,8 +91,14 @@ describe('LoginService', () => {
     await expect(
       service.login({ identifier: 'person@example.com', password: 'valid' }),
     ).resolves.toEqual(
-      expect.objectContaining({ requiresTwoFactor: true, userId: 'u1' }),
+      expect.objectContaining({
+        requiresTwoFactor: true,
+        twoFactorToken: 'challenge-token',
+      }),
     );
+    // The challenge is signed for this user; the raw id is no longer part of
+    // the response, so it cannot be lifted and replayed against verify-login.
+    expect(jwt.generateTwoFactorChallengeToken).toHaveBeenCalledWith('u1');
     expect(jwt.generateToken).not.toHaveBeenCalled();
     expect(repository.save).not.toHaveBeenCalled();
   });

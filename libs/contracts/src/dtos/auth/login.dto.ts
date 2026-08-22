@@ -21,7 +21,13 @@ export class LoginResponseDTO extends CoreResponseDTO {
   refreshToken?: string | null;
   user?: UserResponseDTO;
   requiresTwoFactor?: boolean;
-  userId?: string;
+  /**
+   * Short-lived signed proof that the password step just succeeded. Replaces
+   * the bare `userId` this used to return: an id is public — it comes back in
+   * feed, search and matching responses — so it proved nothing about who was
+   * asking. The signature is what binds the two halves of the login.
+   */
+  twoFactorToken?: string;
 
   constructor(partial: Partial<LoginResponseDTO>) {
     super(partial);

@@ -145,7 +145,22 @@ export class TwoFactorService implements ITwoFactorService {
     twoFactorVerifyLoginDTO: TwoFactorVerifyLoginDTO,
   ): Promise<TwoFactorVerifyLoginResponseDTO> {
     try {
-      const user = await this.findUserOrThrow(twoFactorVerifyLoginDTO.userId);
+      // Establishes *who* is logging in from a signature rather than from an
+      // id supplied by the caller, so this route can no longer be driven with
+      // a user id lifted out of any ordinary API response.
+      let userId: string;
+      try {
+        userId = await this.jwtService.verifyTwoFactorChallengeToken(
+          twoFactorVerifyLoginDTO.twoFactorToken,
+        );
+      } catch {
+        throw new RpcException({
+          message: 'Your sign-in session expired. Please log in again.',
+          statusCode: 401,
+        });
+      }
+
+      const user = await this.findUserOrThrow(userId);
 
       if (!user.isTwoFactorEnabled || !user.twoFactorSecret) {
         throw new RpcException({
