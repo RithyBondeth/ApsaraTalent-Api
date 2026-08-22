@@ -16,7 +16,7 @@ import {
 import { ITwoFactorService } from '@app/contracts/interfaces/service/auth-service.interface';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { generateSecret, generateURI, verify as verifyOtp } from 'otplib';
+import { generateSecret, generateURI, verifySync } from 'otplib';
 import { PinoLogger } from 'nestjs-pino';
 import { RpcException } from '@nestjs/microservices';
 import { Repository } from 'typeorm';
@@ -79,12 +79,7 @@ export class TwoFactorService implements ITwoFactorService {
         });
       }
 
-      const isValid = verifyOtp({
-        token: twoFactorEnableDTO.otp,
-        secret: user.twoFactorSecret,
-      });
-
-      if (!isValid) {
+      if (!this.isOtpValid(twoFactorEnableDTO.otp, user.twoFactorSecret)) {
         throw new RpcException({
           message: 'Invalid code. Please try again.',
           statusCode: 401,
@@ -121,12 +116,7 @@ export class TwoFactorService implements ITwoFactorService {
         });
       }
 
-      const isValid = verifyOtp({
-        token: twoFactorDisableDTO.otp,
-        secret: user.twoFactorSecret,
-      });
-
-      if (!isValid) {
+      if (!this.isOtpValid(twoFactorDisableDTO.otp, user.twoFactorSecret)) {
         throw new RpcException({
           message: 'Invalid code. Please try again.',
           statusCode: 401,
@@ -164,12 +154,7 @@ export class TwoFactorService implements ITwoFactorService {
         });
       }
 
-      const isValid = verifyOtp({
-        token: twoFactorVerifyLoginDTO.otp,
-        secret: user.twoFactorSecret,
-      });
-
-      if (!isValid) {
+      if (!this.isOtpValid(twoFactorVerifyLoginDTO.otp, user.twoFactorSecret)) {
         throw new RpcException({
           message: 'Invalid code. Please try again.',
           statusCode: 401,
@@ -208,6 +193,29 @@ export class TwoFactorService implements ITwoFactorService {
         message: (error as Error)?.message || '2FA verify-login failed',
         statusCode: 500,
       });
+    }
+  }
+
+  /**
+   * Check a TOTP code against a stored secret.
+   *
+   * This exists because the previous check was `if (!verify({...}))`, and
+   * `verify` is async: the expression evaluated to a Promise, which is always
+   * truthy, so the rejection branch was unreachable and every code was
+   * accepted. Awaiting alone would not have fixed it either — this otplib
+   * major resolves to a result object (`{ valid: false }`), which is also
+   * truthy. The boolean lives at `.valid`, so that is what gets read.
+   *
+   * The unit tests missed it by mocking the whole library, which let them
+   * assert against a boolean contract otplib does not have.
+   */
+  private isOtpValid(token: string, secret: string): boolean {
+    try {
+      return verifySync({ token, secret }).valid === true;
+    } catch {
+      // verifySync throws on a non-numeric token. The DTO rejects those, but
+      // this is a credential check, so it fails closed rather than 500ing.
+      return false;
     }
   }
 
