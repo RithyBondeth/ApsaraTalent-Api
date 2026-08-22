@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/package.json",
   "name": "apsara-talent",
   "version": "0.0.1",
-  "description": "Apsara Talent platform API — a NestJS monorepo of an HTTP gateway and six TCP microservices.",
+  "description": "Apsara Talent platform API \u2014 a NestJS monorepo of an HTTP gateway and six TCP microservices.",
   "author": "Apsara Talent",
   "private": true,
   "license": "UNLICENSED",
@@ -194,6 +194,9 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "transformIgnorePatterns": [
+      "/node_modules/(?!(otplib|@otplib|@scure|@noble)/)"
+    ],
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
