@@ -1,4 +1,4 @@
-FROM prom/prometheus:v3.13.2
+FROM prom/prometheus:v3.14.0
 
 USER root
 COPY --chown=nobody:nobody monitoring/production/prometheus/prometheus.yml /etc/prometheus/prometheus.yml
