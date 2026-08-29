@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Logger } from 'nestjs-pino';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import {
   FindCurrentMatchingResponseDTO,
   MatchCountResponseDTO,
@@ -226,20 +226,29 @@ export class MatchingQueryService implements IMatchingQueryService {
     employeeMatchingLookupDTO: EmployeeMatchingLookupDTO,
   ): Promise<MatchCountResponseDTO> {
     const cacheKey = generateMatchingKey(
-      'employee-matching-count',
+      'employee-matching-count-v2',
       employeeMatchingLookupDTO.eid,
     );
     const cached = await this.redisService.get<MatchCountResponseDTO>(cacheKey);
     if (cached) return cached;
 
     try {
-      const count = await this.jobMatchingRepo.count({
-        where: {
-          employee: { id: employeeMatchingLookupDTO.eid },
-          isMatched: true,
-        },
-      });
-      const result = new MatchCountResponseDTO({ count });
+      const where = {
+        employee: { id: employeeMatchingLookupDTO.eid },
+        isMatched: true,
+      };
+      /*
+        The badge number is resolved here, not on the client. A null seen
+        timestamp means this side has never opened their matching list, so the
+        row is still new to them.
+      */
+      const [count, unseenCount] = await Promise.all([
+        this.jobMatchingRepo.count({ where }),
+        this.jobMatchingRepo.count({
+          where: { ...where, employeeSeenAt: IsNull() },
+        }),
+      ]);
+      const result = new MatchCountResponseDTO({ count, unseenCount });
       await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
       return result;
     } catch (error) {
@@ -260,20 +269,25 @@ export class MatchingQueryService implements IMatchingQueryService {
     companyMatchingLookupDTO: CompanyMatchingLookupDTO,
   ): Promise<MatchCountResponseDTO> {
     const cacheKey = generateMatchingKey(
-      'company-matching-count',
+      'company-matching-count-v2',
       companyMatchingLookupDTO.cid,
     );
     const cached = await this.redisService.get<MatchCountResponseDTO>(cacheKey);
     if (cached) return cached;
 
     try {
-      const count = await this.jobMatchingRepo.count({
-        where: {
-          company: { id: companyMatchingLookupDTO.cid },
-          isMatched: true,
-        },
-      });
-      const result = new MatchCountResponseDTO({ count });
+      const where = {
+        company: { id: companyMatchingLookupDTO.cid },
+        isMatched: true,
+      };
+      // See findCurrentEmployeeMatchingCount — same rule, other side.
+      const [count, unseenCount] = await Promise.all([
+        this.jobMatchingRepo.count({ where }),
+        this.jobMatchingRepo.count({
+          where: { ...where, companySeenAt: IsNull() },
+        }),
+      ]);
+      const result = new MatchCountResponseDTO({ count, unseenCount });
       await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
       return result;
     } catch (error) {

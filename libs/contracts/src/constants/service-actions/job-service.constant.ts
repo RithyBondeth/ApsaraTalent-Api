@@ -17,6 +17,8 @@ export const JOB_SERVICE = {
     FIND_CURRENT_COMPANY_MATCHING_COUNT: {
       cmd: 'findCurrentCompanyMatchingCount',
     },
+    MARK_EMPLOYEE_MATCHING_SEEN: { cmd: 'markEmployeeMatchingSeen' },
+    MARK_COMPANY_MATCHING_SEEN: { cmd: 'markCompanyMatchingSeen' },
     GET_ANALYTICS: { cmd: 'getAnalytics' },
     AI_MATCH_EXPLANATION: { cmd: 'aiMatchExplanation' },
     AI_INTERVIEW_PREP: { cmd: 'aiInterviewPrep' },

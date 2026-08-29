@@ -11,8 +11,14 @@ import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Logger } from 'nestjs-pino';
-import { Repository } from 'typeorm';
-import { MatchDTO, MatchResponseDTO } from '@app/contracts/dtos/job';
+import { FindOptionsWhere, IsNull, Repository } from 'typeorm';
+import {
+  MatchCountResponseDTO,
+  MatchDTO,
+  MatchResponseDTO,
+  EmployeeMatchingLookupDTO,
+  CompanyMatchingLookupDTO,
+} from '@app/contracts/dtos/job';
 import { IMatchingService } from '@app/contracts/interfaces/service/job-service.interface';
 import {
   computeMatchScore,
@@ -27,6 +33,7 @@ import {
   generateCompanyFavoritesKey,
   generateEmployeeFavoriteCountKey,
   generateEmployeeFavoritesKey,
+  generateMatchingKey,
 } from '@app/common/redis/redis-keys.util';
 
 /**
@@ -228,6 +235,9 @@ export class MatchingService implements IMatchingService {
           employee: { id: unMatchDTO.eid },
           company: { id: unMatchDTO.cid },
         },
+        // Auth user IDs are needed for the socket broadcast — see notifyUserIds
+        // on UnMatchResposneDTO. Loaded here, before the delete below.
+        relations: ['employee', 'employee.user', 'company', 'company.user'],
       });
 
       if (!match) {
@@ -236,6 +246,11 @@ export class MatchingService implements IMatchingService {
           statusCode: 404,
         });
       }
+
+      const notifyUserIds = [
+        match.employee?.user?.id,
+        match.company?.user?.id,
+      ].filter((userId): userId is string => !!userId);
 
       // Delete the match record and all interviews between these two parties
       await Promise.all([
@@ -255,6 +270,7 @@ export class MatchingService implements IMatchingService {
       return new UnMatchResposneDTO({
         message: 'Unmatched successfully.',
         success: true,
+        notifyUserIds,
       });
     } catch (error: any) {
       this.logger.error(error?.message || error);
@@ -264,6 +280,76 @@ export class MatchingService implements IMatchingService {
         statusCode: error?.statusCode || 500,
       });
     }
+  }
+
+  /*
+    Marking seen is a write, so it lives here rather than in the query service.
+    Both sides share one implementation: the only differences are which column
+    is stamped, which side the rows are filtered by, and which cache key drops.
+  */
+  private async markMatchingSeen(
+    side: 'employee' | 'company',
+    profileId: string,
+  ): Promise<MatchCountResponseDTO> {
+    try {
+      /*
+        Spelled out per side rather than indexed by a computed key: a dynamic
+        column name has to be cast away to satisfy FindOptionsWhere, and a typo
+        in it would silently match nothing instead of failing to compile.
+      */
+      const matchedRows: FindOptionsWhere<JobMatching> =
+        side === 'employee'
+          ? { employee: { id: profileId }, isMatched: true }
+          : { company: { id: profileId }, isMatched: true };
+
+      const unseenRows: FindOptionsWhere<JobMatching> =
+        side === 'employee'
+          ? { ...matchedRows, employeeSeenAt: IsNull() }
+          : { ...matchedRows, companySeenAt: IsNull() };
+
+      // Only the rows still null are written, so re-opening the page does not
+      // churn timestamps that are already set.
+      const seenNow =
+        side === 'employee'
+          ? { employeeSeenAt: new Date() }
+          : { companySeenAt: new Date() };
+
+      await this.jobMatchingRepo.update(unseenRows, seenNow);
+
+      await this.redisService.del(
+        generateMatchingKey(`${side}-matching-count-v2`, profileId),
+      );
+
+      /*
+        Recount instead of assuming zero. The update above is the only writer of
+        this column, but returning a measured number keeps the client free of
+        any inference about what the badge should now be.
+      */
+      const [count, unseenCount] = await Promise.all([
+        this.jobMatchingRepo.count({ where: matchedRows }),
+        this.jobMatchingRepo.count({ where: unseenRows }),
+      ]);
+      return new MatchCountResponseDTO({ count, unseenCount });
+    } catch (error: any) {
+      this.logger.error(error?.message || error);
+      throw new RpcException({
+        message:
+          error?.message || 'An error occurred while marking matches as seen.',
+        statusCode: error?.statusCode || 500,
+      });
+    }
+  }
+
+  async markEmployeeMatchingSeen(
+    employeeMatchingLookupDTO: EmployeeMatchingLookupDTO,
+  ): Promise<MatchCountResponseDTO> {
+    return this.markMatchingSeen('employee', employeeMatchingLookupDTO.eid);
+  }
+
+  async markCompanyMatchingSeen(
+    companyMatchingLookupDTO: CompanyMatchingLookupDTO,
+  ): Promise<MatchCountResponseDTO> {
+    return this.markMatchingSeen('company', companyMatchingLookupDTO.cid);
   }
 
   async companyLikes(matchDTO: MatchDTO): Promise<MatchResponseDTO> {

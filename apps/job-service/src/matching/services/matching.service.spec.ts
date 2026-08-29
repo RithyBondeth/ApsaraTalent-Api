@@ -176,6 +176,110 @@ describe('MatchingService', () => {
     expect(redis.invalidateMatchingCaches).toHaveBeenCalled();
   });
 
+  it('returns both auth user IDs so the gateway can broadcast the unmatch', async () => {
+    matching.findOne.mockResolvedValue({
+      id: 'match-1',
+      employee: { id: 'employee-1', user: { id: 'employee-user' } },
+      company: { id: 'company-1', user: { id: 'company-user' } },
+    });
+
+    await expect(
+      service.unmatch({ eid: 'employee-1', cid: 'company-1' }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        notifyUserIds: ['employee-user', 'company-user'],
+      }),
+    );
+    expect(matching.findOne).toHaveBeenCalledWith(
+      expect.objectContaining({
+        relations: ['employee', 'employee.user', 'company', 'company.user'],
+      }),
+    );
+  });
+
+  it('omits missing auth user IDs from the unmatch broadcast list', async () => {
+    matching.findOne.mockResolvedValue({
+      id: 'match-1',
+      employee: { id: 'employee-1', user: { id: 'employee-user' } },
+      company: { id: 'company-1' },
+    });
+
+    await expect(
+      service.unmatch({ eid: 'employee-1', cid: 'company-1' }),
+    ).resolves.toEqual(
+      expect.objectContaining({ notifyUserIds: ['employee-user'] }),
+    );
+  });
+
+  it('stamps only the unseen rows on the acting side and returns fresh counts', async () => {
+    matching.update.mockResolvedValue({ affected: 2 });
+    // Total 5, none left unseen once the update lands.
+    matching.count.mockResolvedValueOnce(5).mockResolvedValueOnce(0);
+
+    await expect(
+      service.markEmployeeMatchingSeen({ eid: 'employee-1' }),
+    ).resolves.toEqual({ count: 5, unseenCount: 0 });
+
+    /*
+      Only rows still null are written, so re-opening the page does not churn
+      timestamps, and the company's own seen column is never touched.
+    */
+    const [where, patch] = matching.update.mock.calls[0];
+    expect(where).toMatchObject({
+      employee: { id: 'employee-1' },
+      isMatched: true,
+    });
+    expect(Object.keys(patch)).toEqual(['employeeSeenAt']);
+    expect(patch.employeeSeenAt).toBeInstanceOf(Date);
+    // The cached count must drop, or the badge would serve a stale number.
+    expect(redis.del).toHaveBeenCalledWith(
+      'apsaratalent:job-service:matching:employee-matching-count-v2:employee-1',
+    );
+  });
+
+  it('stamps the company column when the company is the one looking', async () => {
+    matching.update.mockResolvedValue({ affected: 1 });
+    matching.count.mockResolvedValueOnce(3).mockResolvedValueOnce(0);
+
+    await expect(
+      service.markCompanyMatchingSeen({ cid: 'company-1' }),
+    ).resolves.toEqual({ count: 3, unseenCount: 0 });
+
+    const [where, patch] = matching.update.mock.calls[0];
+    expect(where).toMatchObject({ company: { id: 'company-1' } });
+    expect(Object.keys(patch)).toEqual(['companySeenAt']);
+    expect(redis.del).toHaveBeenCalledWith(
+      'apsaratalent:job-service:matching:company-matching-count-v2:company-1',
+    );
+  });
+
+  it('wraps a failure to mark matches as seen', async () => {
+    matching.update.mockRejectedValue(new Error('update failed'));
+    await expectRpc(
+      service.markEmployeeMatchingSeen({ eid: 'employee-1' }),
+      500,
+      'update failed',
+    );
+  });
+
+  it('reports how many matches each side has not opened yet', async () => {
+    redis.get.mockResolvedValue(null);
+    matching.count.mockResolvedValueOnce(7).mockResolvedValueOnce(3);
+
+    await expect(
+      queryService.findCurrentEmployeeMatchingCount({ eid: 'employee-1' }),
+    ).resolves.toEqual({ count: 7, unseenCount: 3 });
+
+    // The badge number is the unseen one, resolved here rather than by
+    // subtracting a client-held high-water mark.
+    const [, unseenQuery] = matching.count.mock.calls;
+    expect(unseenQuery[0].where).toMatchObject({
+      employee: { id: 'employee-1' },
+      isMatched: true,
+    });
+    expect(unseenQuery[0].where.employeeSeenAt).toBeDefined();
+  });
+
   it('returns matching lists from cache without database access', async () => {
     const cached = [{ id: 'company-1' }];
     redis.get.mockResolvedValue(cached);

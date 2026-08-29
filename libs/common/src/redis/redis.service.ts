@@ -462,8 +462,11 @@ export class RedisService {
       this.del(generateMatchingKey('company-liked', cid)),
       this.del(generateMatchingKey('employee-matching', eid)),
       this.del(generateMatchingKey('company-matching', cid)),
-      this.del(generateMatchingKey('employee-matching-count', eid)),
-      this.del(generateMatchingKey('company-matching-count', cid)),
+      // v2: the cached payload gained `unseenCount`. A pre-deploy entry read
+      // back under the old name would be missing it, so the key changed rather
+      // than the shape — stale entries simply age out on their own TTL.
+      this.del(generateMatchingKey('employee-matching-count-v2', eid)),
+      this.del(generateMatchingKey('company-matching-count-v2', cid)),
     ]);
   }
 

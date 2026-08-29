@@ -55,6 +55,17 @@ export interface IMatchingService {
   employeeLikes(matchDTO: MatchDTO): Promise<MatchResponseDTO>;
   companyLikes(matchDTO: MatchDTO): Promise<MatchResponseDTO>;
   unmatch(unMatchDTO: UnMatchDTO): Promise<UnMatchResposneDTO>;
+  /**
+   * Stamp every one of this side's matches as seen and return the recomputed
+   * counts. Returning them here means opening the matching list needs one
+   * round trip, and the client never infers the new badge number itself.
+   */
+  markEmployeeMatchingSeen(
+    employeeMatchingLookupDTO: EmployeeMatchingLookupDTO,
+  ): Promise<MatchCountResponseDTO>;
+  markCompanyMatchingSeen(
+    companyMatchingLookupDTO: CompanyMatchingLookupDTO,
+  ): Promise<MatchCountResponseDTO>;
 }
 
 /** Read side of matching: cached lists and counts. */
