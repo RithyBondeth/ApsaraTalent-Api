@@ -125,3 +125,16 @@ export function generateNotificationListKey(
 ): string {
   return `${NOTIFICATION_CACHE_PREFIX}:list:${userId}:page:${page}:limit:${limit}:unread:${unreadOnly}`;
 }
+
+/**
+ * Cache key for a text-embedding-3-small vector, keyed on the content itself.
+ *
+ * Embeddings are a pure function of (model, input), so identical text always
+ * yields the same vector and the entry never needs invalidating. The full
+ * sha256 is used rather than a truncated digest: a collision here would hand
+ * one concept another concept's vector, silently corrupting recommendations.
+ */
+export function generateEmbeddingKey(text: string): string {
+  const digest = createHash('sha256').update(text.trim()).digest('hex');
+  return `apsaratalent:embedding:text-embedding-3-small:${digest}`;
+}

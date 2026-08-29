@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
 import OpenAI from 'openai';
+import { RedisService } from '../redis/redis.service';
+import { generateEmbeddingKey } from '../redis/redis-keys.util';
 
 /** Dimensions produced by text-embedding-3-small. Must match the migration. */
 export const EMBEDDING_DIMS = 1536;
@@ -23,6 +25,13 @@ export const SCOPE_SIMILARITY_THRESHOLD = 0.55;
  */
 export const JOB_TITLE_SIMILARITY_THRESHOLD = 0.7;
 
+/**
+ * How long a cached embedding lives. Long, because the value cannot go stale:
+ * the same input always produces the same vector. The TTL exists only so that
+ * one-off strings do not occupy Redis forever.
+ */
+export const EMBEDDING_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
 @Injectable()
 export class EmbeddingService {
   private readonly openAI: OpenAI;
@@ -31,6 +40,7 @@ export class EmbeddingService {
     private readonly configService: ConfigService,
     @InjectPinoLogger(EmbeddingService.name)
     private readonly logger: PinoLogger,
+    private readonly redisService: RedisService,
   ) {
     this.openAI = new OpenAI({
       apiKey: this.configService.get<string>('openai.apiKey'),
@@ -40,13 +50,37 @@ export class EmbeddingService {
   /**
    * Generate a text-embedding-3-small vector for the given text.
    * Returns a 1536-dimensional number array.
+   *
+   * Results are cached on a hash of the input. The provider bills per call but
+   * the mapping is deterministic, so repeats are pure waste: a user toggling a
+   * job title back to a previous value, or several users submitting the same
+   * new career scope name concurrently.
    */
   async embed(text: string): Promise<number[]> {
+    const input = text.trim();
+    const key = generateEmbeddingKey(input);
+
+    const cached = await this.redisService.get<number[]>(key);
+    if (Array.isArray(cached) && cached.length === EMBEDDING_DIMS) {
+      return cached;
+    }
+
     const response = await this.openAI.embeddings.create({
       model: 'text-embedding-3-small',
-      input: text.trim(),
+      input,
     });
-    return response.data[0].embedding;
+    const embedding = response.data[0].embedding;
+
+    // Fire-and-forget: a cache write failure must not fail the embedding.
+    // RedisService already swallows its own errors, so this only guards
+    // against the operation timeout rejecting.
+    void this.redisService
+      .set(key, embedding, EMBEDDING_CACHE_TTL_MS)
+      .catch((err: Error) =>
+        this.logger.warn(`Failed to cache embedding: ${err.message}`),
+      );
+
+    return embedding;
   }
 
   /**
