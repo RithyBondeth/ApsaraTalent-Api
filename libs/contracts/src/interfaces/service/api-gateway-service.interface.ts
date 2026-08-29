@@ -24,6 +24,7 @@ export interface IAiStreamService {
     temperature: number,
     res: Response,
     maxTokens?: number,
+    cacheKey?: string,
   ): Promise<void>;
 }
 

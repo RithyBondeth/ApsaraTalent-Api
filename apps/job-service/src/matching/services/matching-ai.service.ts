@@ -133,7 +133,7 @@ export class MatchingAiService implements IMatchingAiService {
         gaps: parsed.gaps ?? [],
       });
 
-      await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
+      await this.redisService.set(cacheKey, result, CACHE_TTL.AI);
       return result;
     } catch (error) {
       this.logger.error({ err: error }, 'AI match explanation failed');
@@ -307,7 +307,7 @@ export class MatchingAiService implements IMatchingAiService {
       }));
       const result = new AiInterviewPrepResponseDTO({ questions });
 
-      await this.redisService.set(cacheKey, result, CACHE_TTL.LONG);
+      await this.redisService.set(cacheKey, result, CACHE_TTL.AI);
       return result;
     } catch (error) {
       this.logger.error({ err: error }, 'AI interview prep failed');

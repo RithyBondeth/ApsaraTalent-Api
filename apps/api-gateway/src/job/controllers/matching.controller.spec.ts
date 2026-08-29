@@ -218,6 +218,8 @@ describe('JobMatchingController', () => {
       ['match-message'],
       0.3,
       res,
+      undefined,
+      expect.stringContaining('ai-explanation-stream:employee-1'),
     );
     await controller.streamAiInterviewPrep(
       'employee-1',
@@ -231,6 +233,8 @@ describe('JobMatchingController', () => {
       ['prep-message'],
       0.4,
       res,
+      undefined,
+      expect.stringContaining('ai-interview-prep-stream:employee-1'),
     );
     await controller.streamAiSkillGap(
       'employee-1',
@@ -244,6 +248,8 @@ describe('JobMatchingController', () => {
       ['gap-message'],
       0.3,
       res,
+      undefined,
+      expect.stringContaining('ai-skill-gap-stream:employee-1'),
     );
   });
 });

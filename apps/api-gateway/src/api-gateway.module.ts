@@ -1,3 +1,4 @@
+import { RedisModule } from '@app/common/redis/redis.module';
 import { AiClientModule } from '@app/common/ai/ai-client.module';
 import { JwtModule, LoggerModule, ThrottlerModule } from '@app/common';
 import { ThrottlerGuard } from '@app/common/throttler/guards/throttler.guard';
@@ -27,6 +28,7 @@ import { AiModule } from './ai/ai.module';
     ScheduleModule.forRoot(),
     ConfigModule,
     LoggerModule,
+    RedisModule,
     AiClientModule,
     AiQuotaModule,
     AiModule,

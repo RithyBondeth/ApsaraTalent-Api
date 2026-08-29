@@ -138,3 +138,33 @@ export function generateEmbeddingKey(text: string): string {
   const digest = createHash('sha256').update(text.trim()).digest('hex');
   return `apsaratalent:embedding:text-embedding-3-small:${digest}`;
 }
+
+/**
+ * Cache key for a streamed AI narration about an employee/company pair.
+ *
+ * Deliberately inside the `matching:` namespace: invalidateMatchingProfileCaches()
+ * clears `matching:*` whenever either profile changes, which is the only event
+ * that makes this text wrong. Keeping the key here means the stream cache
+ * inherits that invalidation for free.
+ *
+ * `variant` carries anything else that changes the output — the requested
+ * language, the interview round — so two variants never share an entry. The
+ * `-stream` suffix keeps these (raw text) apart from the non-streaming
+ * entries under the same kind, which hold a parsed DTO.
+ */
+export function generateAiStreamKey(
+  kind: string,
+  eid: string,
+  cid: string,
+  variant?: string,
+): string {
+  const slug = (variant ?? '')
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .slice(0, 60);
+  return generateMatchingKey(
+    `${kind}-stream:${eid}${slug ? `:${slug}` : ''}`,
+    cid,
+  );
+}

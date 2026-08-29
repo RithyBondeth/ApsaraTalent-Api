@@ -1,3 +1,4 @@
+import { generateAiStreamKey } from '@app/common/redis/redis-keys.util';
 import { AuthGuard } from '@app/common/guards/auth.guard';
 import { AiQuotaGuard } from '@app/common/throttler/guards/ai-quota.guard';
 import { IMatchingController } from '@app/contracts/interfaces/controller/job-controllers/matching-controller.interface';
@@ -288,6 +289,8 @@ export class JobMatchingController implements IMatchingController {
       ),
       0.3,
       res,
+      undefined,
+      generateAiStreamKey('ai-explanation', eid, cid, lang),
     );
   }
 
@@ -334,6 +337,8 @@ export class JobMatchingController implements IMatchingController {
       ),
       0.4,
       res,
+      undefined,
+      generateAiStreamKey('ai-interview-prep', eid, cid, interviewTitle),
     );
   }
 
@@ -362,6 +367,8 @@ export class JobMatchingController implements IMatchingController {
       ),
       0.3,
       res,
+      undefined,
+      generateAiStreamKey('ai-skill-gap', eid, cid, lang),
     );
   }
 }
