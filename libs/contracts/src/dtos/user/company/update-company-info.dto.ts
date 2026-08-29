@@ -1,8 +1,10 @@
+import { CAREER_SCOPE } from '../../../constants/domain/career-scope.constant';
 import { CompanyResponseDTO } from '../../shared/user.dto';
 import { EWorkMode } from '@app/common/database/enums/work-mode.enum';
 import { COMPANY_TYPE_MAX_LENGTH } from '@app/common/database/enums/company-type.enum';
 import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
   IsArray,
   IsDate,
   IsEmail,
@@ -115,6 +117,7 @@ class CareerScopeDTO {
 
   @IsString()
   @IsOptional()
+  @MaxLength(CAREER_SCOPE.NAME_MAX_LENGTH)
   name?: string;
 
   @IsString()
@@ -219,6 +222,7 @@ export class UpdateCompanyInfoDTO {
   values?: ValueDTO[];
 
   @IsArray()
+  @ArrayMaxSize(CAREER_SCOPE.MAX_PER_PROFILE)
   @ValidateNested({ each: true })
   @Type(() => CareerScopeDTO)
   @IsOptional()

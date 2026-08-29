@@ -8,6 +8,10 @@ import { Social } from '@app/common/database/entities/social.entity';
 import { User } from '@app/common/database/entities/user.entity';
 import { EmbeddingService } from '@app/common/embedding/embedding.service';
 import { CacheInvalidationService } from '@app/common/redis/cache-invalidation.service';
+import {
+  normalizeScopeName,
+  resolveCareerScopes,
+} from '@app/common/utils/resolve-career-scopes.util';
 import { resolveOrCreateByKey } from '@app/common/utils/resolve-or-create-by-key.util';
 import { parseSkillList } from '@app/common/utils/skill.util';
 import { upsertOwnedRows } from '@app/common/utils/upsert-owned-rows.util';
@@ -343,35 +347,21 @@ export class UpdateCompanyInfoService implements IUpdateCompanyInfoService {
             finalIds.push(cs.id);
             continue;
           }
-          const name = (cs.name ?? '').trim();
+          const name = normalizeScopeName(cs.name ?? '');
           if (!name || wanted.has(name)) continue;
           wanted.set(name, { description: cs.description ?? null });
         }
 
-        const { resolved, created } = await resolveOrCreateByKey(
-          this.careerScopeRepository,
-          'name',
+        // Reuses an existing scope when the submitted name is the same concept
+        // under another spelling, so free-text input cannot keep growing the
+        // global career_scope table. Embeds and persists the vector inline.
+        const resolved = await resolveCareerScopes({
+          repository: this.careerScopeRepository,
+          embeddingService: this.embeddingService,
+          logger: this.logger,
           wanted,
-        );
+        });
         finalIds.push(...resolved.map((row) => row.id));
-
-        // Generate and persist the semantic embedding asynchronously, for the
-        // newly created scopes only. Fire-and-forget: don't block the response.
-        for (const row of created) {
-          this.embeddingService
-            .embedAsVector(row.name)
-            .then((vector) =>
-              this.careerScopeRepository.query(
-                `UPDATE career_scope SET embedding = $1::vector WHERE id = $2`,
-                [vector, row.id],
-              ),
-            )
-            .catch((err: Error) =>
-              this.logger.warn(
-                `Failed to embed career scope "${row.name}": ${err.message}`,
-              ),
-            );
-        }
 
         const uniqueFinalIds = Array.from(new Set(finalIds));
         const currentIds = new Set(

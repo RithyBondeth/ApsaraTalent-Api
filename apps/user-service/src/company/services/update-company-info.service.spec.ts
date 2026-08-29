@@ -20,7 +20,7 @@ describe('UpdateCompanyInfoService', () => {
     createQueryBuilder: jest.fn(),
   };
   const userRepo = { save: jest.fn(), find: jest.fn() };
-  const logger = { error: jest.fn(), warn: jest.fn() };
+  const logger = { error: jest.fn(), warn: jest.fn(), info: jest.fn() };
   const cache = {
     invalidateCompanyCache: jest.fn(),
   };
@@ -49,6 +49,10 @@ describe('UpdateCompanyInfoService', () => {
     repository.create.mockImplementation((data) => data);
     repository.find.mockResolvedValue([]);
     repository.save.mockImplementation(async (value) => value);
+    // Career scopes resolve through raw SQL now: a case-insensitive name
+    // lookup, a nearest-vector probe, then the embedding UPDATE. Default to
+    // "nothing exists yet" so every submitted name reaches the create path.
+    repository.query.mockImplementation(async () => []);
     embedding.embedAsVector.mockResolvedValue('[0.1,0.2]');
   });
 
@@ -176,8 +180,20 @@ describe('UpdateCompanyInfoService', () => {
       .mockResolvedValueOnce([{ id: 2, label: 'Health' }])
       .mockResolvedValueOnce([{ id: 11, label: 'Integrity' }])
       .mockResolvedValueOnce([{ id: 'job-1', title: 'Developer' }])
-      .mockResolvedValueOnce([{ id: 'scope-existing', name: 'Engineering' }])
       .mockResolvedValueOnce([{ id: 'social-1', url: 'old' }]);
+    // "Engineering" already exists and is matched by name; "Design" is new, and
+    // its nearest neighbour is too far away to be treated as another spelling.
+    repository.query.mockImplementation(async (sql: string) => {
+      if (sql.includes('= ANY')) {
+        return [{ id: 'scope-existing', name: 'Engineering' }];
+      }
+      if (sql.includes('SELECT')) {
+        return [
+          { id: 'scope-existing', name: 'Engineering', similarity: '0.2' },
+        ];
+      }
+      return [];
+    });
     repository.save.mockImplementation(async (value: any) => {
       const rows = Array.isArray(value) ? value : [value];
       const saved = rows.map((row: any) => {
@@ -245,7 +261,17 @@ describe('UpdateCompanyInfoService', () => {
     expect(embedding.embedAsVector).toHaveBeenCalledWith('Senior Developer');
     expect(embedding.embedAsVector).toHaveBeenCalledWith('Designer');
     expect(embedding.embedAsVector).toHaveBeenCalledWith('Design');
-    expect(repository.query).toHaveBeenCalledTimes(3);
+    // Every embedded value is written back: the two job titles, and the one
+    // career scope that was actually new. Asserted by shape rather than by a
+    // raw call count, which also counts the scope lookup and vector probe.
+    const updates = repository.query.mock.calls.filter(([sql]: [string]) =>
+      sql.includes('UPDATE'),
+    );
+    expect(updates).toHaveLength(3);
+    expect(repository.query).toHaveBeenCalledWith(
+      expect.stringContaining('career_scope'),
+      ['[0.1,0.2]', 'scope-new'],
+    );
     expect(result.company.openPositions).toHaveLength(1);
   });
 

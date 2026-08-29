@@ -1,5 +1,6 @@
 export * from './auth.constant';
 export * from './cache-ttl.constant';
+export * from './career-scope.constant';
 export * from './chat.constant';
 export * from './job.constant';
 export * from './notification.constant';

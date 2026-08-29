@@ -22,7 +22,7 @@ describe('UpdateEmployeeInfoService', () => {
     createQueryBuilder: jest.fn(),
   };
   const userRepo = { save: jest.fn() };
-  const logger = { error: jest.fn(), warn: jest.fn() };
+  const logger = { error: jest.fn(), warn: jest.fn(), info: jest.fn() };
   const cache = { invalidateEmployeeCache: jest.fn() };
   const embedding = { embedAsVector: jest.fn() };
   const service = new UpdateEmployeeInfoService(
@@ -45,6 +45,10 @@ describe('UpdateEmployeeInfoService', () => {
     repository.create.mockImplementation((data) => data);
     repository.find.mockResolvedValue([]);
     repository.save.mockImplementation(async (value) => value);
+    // Career scopes resolve through raw SQL now: a case-insensitive name
+    // lookup, a nearest-vector probe, then the embedding UPDATE. Default to
+    // "nothing exists yet" so every submitted name reaches the create path.
+    repository.query.mockImplementation(async () => []);
     embedding.embedAsVector.mockResolvedValue('[0.1,0.2]');
   });
 
@@ -176,10 +180,22 @@ describe('UpdateEmployeeInfoService', () => {
     // rows. Names absent from a result are the ones that get created.
     repository.find
       .mockResolvedValueOnce([{ id: 'skill-existing', name: 'TypeScript' }])
-      .mockResolvedValueOnce([{ id: 'scope-existing', name: 'Engineering' }])
       .mockResolvedValueOnce([{ id: 'exp-1', title: 'Junior' }])
       .mockResolvedValueOnce([{ id: 'edu-1', degree: 'Bachelor' }])
       .mockResolvedValueOnce([{ id: 'social-1', url: 'old' }]);
+    // "Engineering" already exists and is matched by name; "Design" is new, and
+    // its nearest neighbour is too far away to be treated as another spelling.
+    repository.query.mockImplementation(async (sql: string) => {
+      if (sql.includes('= ANY')) {
+        return [{ id: 'scope-existing', name: 'Engineering' }];
+      }
+      if (sql.includes('SELECT')) {
+        return [
+          { id: 'scope-existing', name: 'Engineering', similarity: '0.2' },
+        ];
+      }
+      return [];
+    });
     repository.save.mockImplementation(async (value: any) => {
       const rows = Array.isArray(value) ? value : [value];
       const saved = rows.map((row: any) => {

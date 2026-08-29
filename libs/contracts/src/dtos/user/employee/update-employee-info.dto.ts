@@ -1,9 +1,11 @@
+import { CAREER_SCOPE } from '../../../constants/domain/career-scope.constant';
 import { EmployeeResponseDTO } from '../../shared/user.dto';
 import { EGender } from '@app/common/database/enums/gender.enum';
 import { EWorkMode } from '@app/common/database/enums/work-mode.enum';
 import { ENoticePeriod } from '@app/common/database/enums/notice-period.enum';
 import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
   IsArray,
   IsBoolean,
   IsDate,
@@ -68,6 +70,7 @@ class CareerScopeDTO {
 
   @IsString()
   @IsOptional()
+  @MaxLength(CAREER_SCOPE.NAME_MAX_LENGTH)
   name?: string;
 
   @IsString()
@@ -173,6 +176,7 @@ export class UpdateEmployeeInfoDTO {
   experiences?: ExperienceDTO[];
 
   @IsArray()
+  @ArrayMaxSize(CAREER_SCOPE.MAX_PER_PROFILE)
   @ValidateNested({ each: true })
   @Type(() => CareerScopeDTO)
   @IsOptional()
