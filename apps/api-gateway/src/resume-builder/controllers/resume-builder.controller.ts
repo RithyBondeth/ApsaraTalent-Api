@@ -154,6 +154,7 @@ export class ResumeBuilderController implements IResumeBuilderController {
       generateCoverLetterDTO.employeeSkills?.join(', ') || 'various skills';
 
     await this.aiStream.pipe(
+      'coverLetterDraft',
       [
         {
           role: 'system',
@@ -201,6 +202,7 @@ export class ResumeBuilderController implements IResumeBuilderController {
     @Res() res: Response,
   ): Promise<void> {
     await this.aiStream.pipe(
+      'coverLetterPolish',
       [
         {
           role: 'system',
@@ -245,6 +247,7 @@ export class ResumeBuilderController implements IResumeBuilderController {
         : optimizeResumeDTO;
 
     await this.aiStream.pipe(
+      'resumeOptimize',
       [
         {
           role: 'system',
@@ -301,6 +304,12 @@ export class ResumeBuilderController implements IResumeBuilderController {
     @Res() res: Response,
   ): Promise<void> {
     const messages = this.aiProfileBio.getMessages(refineProfileBioDTO);
-    await this.aiStream.pipe(messages, 0.7, res, RESUME.AI_REFINE_MAX_TOKENS);
+    await this.aiStream.pipe(
+      'profileRefine',
+      messages,
+      0.7,
+      res,
+      RESUME.AI_REFINE_MAX_TOKENS,
+    );
   }
 }

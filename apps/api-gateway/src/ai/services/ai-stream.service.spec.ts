@@ -1,16 +1,15 @@
-import OpenAI from 'openai';
 import { AiStreamService } from './ai-stream.service';
 
 const mockCreate = jest.fn();
-jest.mock('openai', () =>
-  jest.fn().mockImplementation(() => ({
-    chat: { completions: { create: mockCreate } },
-  })),
-);
 
 describe('AiStreamService', () => {
-  const config = {
-    get: jest.fn((key) => (key === 'openai.model' ? 'gpt-test' : 'key')),
+  // The service no longer builds its own client; it asks AiClientService for
+  // the endpoint its task maps to.
+  const aiClient = {
+    forTask: jest.fn(() => ({
+      client: { chat: { completions: { create: mockCreate } } },
+      model: 'gpt-test',
+    })),
   };
 
   function response() {
@@ -33,16 +32,26 @@ describe('AiStreamService', () => {
 
   beforeEach(() => jest.clearAllMocks());
 
-  it('initializes OpenAI and uses the configured model', () => {
-    const service = new AiStreamService(config as any);
-    expect(OpenAI).toHaveBeenCalledWith({ apiKey: 'key' });
-    expect(service.model).toBe('gpt-test');
+  it('resolves the endpoint for the task it was given', async () => {
+    mockCreate.mockResolvedValue(stream('hi'));
+    await new AiStreamService(aiClient as any).pipe(
+      'profileRefine',
+      [],
+      0,
+      response(),
+    );
+    expect(aiClient.forTask).toHaveBeenCalledWith('profileRefine');
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ model: 'gpt-test' }),
+      expect.anything(),
+    );
   });
 
   it('writes SSE headers, chunks, completion, and closes the response', async () => {
     mockCreate.mockResolvedValue(stream('Hello', ' world'));
     const res = response();
-    await new AiStreamService(config as any).pipe(
+    await new AiStreamService(aiClient as any).pipe(
+      'profileRefine',
       [{ role: 'user', content: 'Hi' }],
       0.2,
       res,
@@ -61,7 +70,7 @@ describe('AiStreamService', () => {
     mockCreate.mockRejectedValue(new Error('OpenAI unavailable'));
     const res = response();
     await expect(
-      new AiStreamService(config as any).pipe([], 0, res),
+      new AiStreamService(aiClient as any).pipe('profileRefine', [], 0, res),
     ).resolves.toBeUndefined();
     expect(res.write).toHaveBeenCalledWith(
       expect.stringContaining('OpenAI unavailable'),
@@ -76,7 +85,12 @@ describe('AiStreamService', () => {
       return source;
     });
     const res = response();
-    const promise = new AiStreamService(config as any).pipe([], 0, res);
+    const promise = new AiStreamService(aiClient as any).pipe(
+      'profileRefine',
+      [],
+      0,
+      res,
+    );
     res.closeHandlers[0]();
     await promise;
     expect(res.write).not.toHaveBeenCalledWith(expect.stringContaining('done'));

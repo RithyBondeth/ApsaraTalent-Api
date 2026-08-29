@@ -213,7 +213,12 @@ describe('JobMatchingController', () => {
       req,
       res,
     );
-    expect(aiStream.pipe).toHaveBeenLastCalledWith(['match-message'], 0.3, res);
+    expect(aiStream.pipe).toHaveBeenLastCalledWith(
+      'matchExplanation',
+      ['match-message'],
+      0.3,
+      res,
+    );
     await controller.streamAiInterviewPrep(
       'employee-1',
       'company-1',
@@ -221,7 +226,12 @@ describe('JobMatchingController', () => {
       req,
       res,
     );
-    expect(aiStream.pipe).toHaveBeenLastCalledWith(['prep-message'], 0.4, res);
+    expect(aiStream.pipe).toHaveBeenLastCalledWith(
+      'interviewPrep',
+      ['prep-message'],
+      0.4,
+      res,
+    );
     await controller.streamAiSkillGap(
       'employee-1',
       'company-1',
@@ -229,6 +239,11 @@ describe('JobMatchingController', () => {
       req,
       res,
     );
-    expect(aiStream.pipe).toHaveBeenLastCalledWith(['gap-message'], 0.3, res);
+    expect(aiStream.pipe).toHaveBeenLastCalledWith(
+      'skillGap',
+      ['gap-message'],
+      0.3,
+      res,
+    );
   });
 });

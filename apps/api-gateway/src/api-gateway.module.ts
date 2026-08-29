@@ -1,3 +1,4 @@
+import { AiClientModule } from '@app/common/ai/ai-client.module';
 import { JwtModule, LoggerModule, ThrottlerModule } from '@app/common';
 import { ThrottlerGuard } from '@app/common/throttler/guards/throttler.guard';
 import { ConfigModule } from '@app/common/config';
@@ -26,6 +27,7 @@ import { AiModule } from './ai/ai.module';
     ScheduleModule.forRoot(),
     ConfigModule,
     LoggerModule,
+    AiClientModule,
     AiQuotaModule,
     AiModule,
     AuthModule,

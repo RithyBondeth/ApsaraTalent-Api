@@ -1,5 +1,6 @@
+import { AiClientService } from '@app/common/ai/ai-client.service';
+import { TAiTask } from '@app/contracts/interfaces/domain/ai-model.interface';
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { Response } from 'express';
 import { IAiStreamService } from '@app/contracts';
@@ -7,22 +8,24 @@ import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class AiStreamService implements IAiStreamService {
-  private readonly openai: OpenAI;
-  readonly model: string;
   private readonly logger = new Logger(AiStreamService.name);
 
-  constructor(private readonly config: ConfigService) {
-    this.openai = new OpenAI({ apiKey: config.get<string>('openai.apiKey') });
-    this.model = config.get<string>('openai.model') ?? 'gpt-4o';
-  }
+  constructor(private readonly aiClient: AiClientService) {}
 
-  /** Write SSE headers and stream an OpenAI chat completion to the HTTP response. */
+  /**
+   * Write SSE headers and stream a chat completion to the HTTP response.
+   *
+   * `task` picks the model: the cheap tier for short, constrained work, the
+   * expensive one for the resume documents. See AI_TASK_TIER.
+   */
   async pipe(
+    task: TAiTask,
     messages: OpenAI.Chat.ChatCompletionMessageParam[],
     temperature: number,
     res: Response,
     maxTokens = 2_048,
   ): Promise<void> {
+    const { client, model } = this.aiClient.forTask(task);
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache, no-store');
     res.setHeader('Connection', 'keep-alive');
@@ -38,9 +41,9 @@ export class AiStreamService implements IAiStreamService {
     res.once('close', handleClose);
 
     try {
-      const stream = await this.openai.chat.completions.create(
+      const stream = await client.chat.completions.create(
         {
-          model: this.model,
+          model,
           temperature,
           stream: true,
           max_tokens: maxTokens,

@@ -222,6 +222,32 @@ export default () => ({
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
     model: process.env.OPENAI_MODEL ?? 'gpt-4o',
+
+    /**
+     * Per-tier provider settings. Tasks pick a tier through AI_TASK_TIER
+     * rather than reading one global model name, so the cheap, high-volume
+     * work (bio refinement, match explanations) stops paying gpt-4o rates.
+     *
+     * The fast tier falls back to the quality tier's credentials, so the
+     * saving lands with no new environment variables. Setting the
+     * OPENAI_FAST_* trio points it at any OpenAI-compatible endpoint —
+     * Groq, Together, Fireworks — without a code change.
+     *
+     * `baseUrl: undefined` means the SDK's own default (api.openai.com).
+     */
+    tiers: {
+      quality: {
+        apiKey: process.env.OPENAI_API_KEY,
+        baseUrl: process.env.OPENAI_BASE_URL,
+        model: process.env.OPENAI_MODEL ?? 'gpt-4o',
+      },
+      fast: {
+        apiKey: process.env.OPENAI_FAST_API_KEY ?? process.env.OPENAI_API_KEY,
+        baseUrl:
+          process.env.OPENAI_FAST_BASE_URL ?? process.env.OPENAI_BASE_URL,
+        model: process.env.OPENAI_FAST_MODEL ?? 'gpt-4o-mini',
+      },
+    },
   },
 
   ai: {

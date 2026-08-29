@@ -3,11 +3,6 @@ import { RpcException } from '@nestjs/microservices';
 import { ResumeBuilderService } from './resume-builder.service';
 
 const mockCreate = jest.fn();
-jest.mock('openai', () =>
-  jest.fn().mockImplementation(() => ({
-    chat: { completions: { create: mockCreate } },
-  })),
-);
 
 // puppeteer 25 is ESM-only ("type": "module", no CommonJS build). Node 24
 // handles `require()` of ESM natively, so production is unaffected — but
@@ -23,11 +18,20 @@ describe('ResumeBuilderService', () => {
   const images = { optimizeProfilePicture: jest.fn() };
   const pdf = { generate: jest.fn() };
   const logger = { setContext: jest.fn(), error: jest.fn() };
+  // Each generation task resolves its own endpoint through AiClientService
+  // rather than the service holding one client for every model.
+  const aiClient = {
+    forTask: jest.fn(() => ({
+      client: { chat: { completions: { create: mockCreate } } },
+      model: 'gpt-test',
+    })),
+  };
   const service = new ResumeBuilderService(
     config as any,
     images as any,
     pdf as any,
     logger as any,
+    aiClient as any,
   );
 
   beforeEach(() => {
@@ -406,7 +410,7 @@ describe('ResumeBuilderService', () => {
     expect(error.getError()).toBe('AI returned an empty imported resume');
   });
 
-  it('uses the default OpenAI model across every AI workflow', async () => {
+  it('routes every AI workflow to its own task tier', async () => {
     config.get.mockReturnValue(undefined);
     mockCreate
       .mockResolvedValueOnce({
@@ -456,8 +460,18 @@ describe('ResumeBuilderService', () => {
     await service.polishCoverLetter({ coverLetterText: 'Original' });
 
     expect(mockCreate).toHaveBeenCalledTimes(5);
+    // Each workflow names itself, so AI_TASK_TIER can put the resume documents
+    // on the expensive model and the cover-letter work on the cheap one
+    // without any of these call sites changing again.
+    expect(aiClient.forTask.mock.calls.flat()).toEqual([
+      'resumeGenerate',
+      'resumeImport',
+      'resumeOptimize',
+      'coverLetterDraft',
+      'coverLetterPolish',
+    ]);
     for (const [request] of mockCreate.mock.calls) {
-      expect(request.model).toBe('gpt-4o');
+      expect(request.model).toBe('gpt-test');
     }
   });
 });

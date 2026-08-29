@@ -17,12 +17,20 @@ describe('MatchingAiService', () => {
     company,
   } = createMatchingFixtures();
 
+  // The service asks AiClientService for its endpoint instead of holding its
+  // own client, so tests swap `openAI` and the factory hands that back.
+  let openAI: any;
+  const aiClient = {
+    forTask: jest.fn(() => ({ client: openAI, model: 'gpt-test' })),
+  };
+
   const service = new MatchingAiService(
     employees as any,
     companies as any,
     logger as any,
     redis as any,
     config as any,
+    aiClient as any,
   );
 
   beforeEach(() => {
@@ -107,7 +115,7 @@ describe('MatchingAiService', () => {
         },
       ],
     });
-    (service as any).openAI = { chat: { completions: { create } } };
+    openAI = { chat: { completions: { create } } };
     const result = await service.getAiMatchExplanation({
       eid: 'employee-1',
       cid: 'company-1',
@@ -153,7 +161,7 @@ describe('MatchingAiService', () => {
         },
       ],
     });
-    (service as any).openAI = { chat: { completions: { create } } };
+    openAI = { chat: { completions: { create } } };
     const result = await service.getAiInterviewPrep({
       eid: 'employee-1',
       cid: 'company-1',
@@ -181,7 +189,7 @@ describe('MatchingAiService', () => {
 
     employees.findOne.mockResolvedValue(employee);
     companies.findOne.mockResolvedValue(company);
-    (service as any).openAI = {
+    openAI = {
       chat: {
         completions: {
           create: jest.fn().mockResolvedValue({
@@ -213,7 +221,7 @@ describe('MatchingAiService', () => {
 
     employees.findOne.mockResolvedValue(employee);
     companies.findOne.mockResolvedValue(company);
-    (service as any).openAI = {
+    openAI = {
       chat: {
         completions: {
           create: jest.fn().mockResolvedValue({
@@ -270,7 +278,7 @@ describe('MatchingAiService', () => {
     const create = jest.fn().mockResolvedValue({
       choices: [{ message: { content: JSON.stringify({ questions: [] }) } }],
     });
-    (service as any).openAI = { chat: { completions: { create } } };
+    openAI = { chat: { completions: { create } } };
     await service.getAiInterviewPrep({
       eid: 'employee-1',
       cid: 'company-1',
@@ -294,7 +302,7 @@ describe('MatchingAiService', () => {
           { message: { content: JSON.stringify({ questions: [{}] }) } },
         ],
       });
-    (service as any).openAI = { chat: { completions: { create } } };
+    openAI = { chat: { completions: { create } } };
 
     await expect(
       service.getAiMatchExplanation({ eid: 'employee-1', cid: 'company-1' }),
@@ -329,7 +337,7 @@ describe('MatchingAiService', () => {
   it('uses stable messages for non-Error AI failures', async () => {
     employees.findOne.mockResolvedValue(employee);
     companies.findOne.mockResolvedValue(company);
-    (service as any).openAI = {
+    openAI = {
       chat: { completions: { create: jest.fn().mockRejectedValue('offline') } },
     };
     const explanation = (await service
@@ -378,7 +386,7 @@ describe('MatchingAiService', () => {
     });
   });
 
-  it('uses the default model and sparse relations for both AI requests', async () => {
+  it('routes each request to its own task tier and tolerates sparse relations', async () => {
     config.get.mockReturnValue(undefined);
     employees.findOne.mockResolvedValue({
       id: 'employee-1',
@@ -402,7 +410,7 @@ describe('MatchingAiService', () => {
       .mockResolvedValueOnce({
         choices: [{ message: { content: JSON.stringify({ questions: [] }) } }],
       });
-    (service as any).openAI = { chat: { completions: { create } } };
+    openAI = { chat: { completions: { create } } };
 
     await service.getAiMatchExplanation({
       eid: 'employee-1',
@@ -413,13 +421,17 @@ describe('MatchingAiService', () => {
       cid: 'company-1',
     });
 
+    // The model is no longer read from one global setting — each task asks
+    // AI_TASK_TIER which tier it belongs to and uses that endpoint's model.
+    expect(aiClient.forTask).toHaveBeenCalledWith('matchExplanation');
+    expect(aiClient.forTask).toHaveBeenCalledWith('interviewPrep');
     expect(create).toHaveBeenNthCalledWith(
       1,
-      expect.objectContaining({ model: 'gpt-4o' }),
+      expect.objectContaining({ model: 'gpt-test' }),
     );
     expect(create).toHaveBeenNthCalledWith(
       2,
-      expect.objectContaining({ model: 'gpt-4o' }),
+      expect.objectContaining({ model: 'gpt-test' }),
     );
   });
 

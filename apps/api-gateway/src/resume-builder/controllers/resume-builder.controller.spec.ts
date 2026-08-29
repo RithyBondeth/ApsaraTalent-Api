@@ -101,6 +101,7 @@ describe('ResumeBuilderController', () => {
       res,
     );
     expect(aiStream.pipe).toHaveBeenCalledWith(
+      'coverLetterDraft',
       expect.arrayContaining([
         expect.objectContaining({
           role: 'user',
@@ -120,6 +121,7 @@ describe('ResumeBuilderController', () => {
       res,
     );
     expect(aiStream.pipe).toHaveBeenCalledWith(
+      'coverLetterPolish',
       expect.arrayContaining([
         expect.objectContaining({
           content: expect.stringContaining('Original letter'),
@@ -142,7 +144,7 @@ describe('ResumeBuilderController', () => {
       } as any,
       res,
     );
-    const messages = aiStream.pipe.mock.calls[0][0];
+    const messages = aiStream.pipe.mock.calls[0][1];
     expect(messages[1].content).not.toContain('data:image/png');
     expect(messages[1].content).toContain('"fullName": "A"');
   });
@@ -154,6 +156,7 @@ describe('ResumeBuilderController', () => {
     aiProfileBio.getMessages.mockReturnValue(messages);
     await controller.streamRefineBio(dto, res);
     expect(aiStream.pipe).toHaveBeenCalledWith(
+      'profileRefine',
       messages,
       0.7,
       res,

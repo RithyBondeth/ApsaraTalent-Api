@@ -1,3 +1,4 @@
+import { AiClientModule } from '@app/common/ai/ai-client.module';
 import {
   DatabaseModule,
   EmailModule,
@@ -50,6 +51,7 @@ import {
 @Module({
   imports: [
     ConfigModule,
+    AiClientModule,
     MetricsModule,
     DatabaseModule,
     LoggerModule,

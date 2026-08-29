@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RpcException } from '@nestjs/microservices';
 import { PinoLogger } from 'nestjs-pino';
-import OpenAI from 'openai';
+import { AiClientService } from '@app/common/ai/ai-client.service';
 import {
   BuildResumeDTO,
   BuildResumeResponseDTO,
@@ -39,31 +39,27 @@ import {
 
 @Injectable()
 export class ResumeBuilderService implements IResumeBuilderService {
-  private openAI: OpenAI;
-
   constructor(
     private readonly configService: ConfigService,
     private readonly imageService: ImageService,
     private readonly pdfGeneratorService: PdfGeneratorService,
     private readonly logger: PinoLogger,
+    private readonly aiClient: AiClientService,
   ) {
     this.logger.setContext(ResumeBuilderService.name);
-    this.openAI = new OpenAI({
-      apiKey: this.configService.get<string>('openai.apiKey'),
-    });
   }
 
   async generateResume(
     buildResumeDTO: BuildResumeDTO,
   ): Promise<BuildResumeDTO> {
     try {
-      const model = this.configService.get<string>('openai.model') ?? 'gpt-4o';
+      const { client, model } = this.aiClient.forTask('resumeGenerate');
       const candidateData = buildResumeGenerationInput(
         buildResumeDTO,
         RESUME.MAX_TEXT_CHARS,
       );
       const variationSeed = Math.floor(Math.random() * 1_000_000);
-      const completion = await this.openAI.chat.completions.create({
+      const completion = await client.chat.completions.create({
         model,
         temperature: 0.9,
         max_tokens: RESUME.AI_GENERATE_MAX_TOKENS,
@@ -148,13 +144,13 @@ Rules:
     generateResumeFromTextDTO: GenerateResumeFromTextDTO,
   ): Promise<BuildResumeDTO> {
     try {
-      const model = this.configService.get<string>('openai.model') ?? 'gpt-4o';
+      const { client, model } = this.aiClient.forTask('resumeImport');
       const variationSeed = Math.floor(Math.random() * 1_000_000);
       const sourceText = generateResumeFromTextDTO.sourceText.slice(
         0,
         RESUME.MAX_TEXT_CHARS,
       );
-      const completion = await this.openAI.chat.completions.create({
+      const completion = await client.chat.completions.create({
         model,
         temperature: 0.5,
         max_tokens: RESUME.AI_IMPORT_MAX_TOKENS,
@@ -248,7 +244,7 @@ Rules:
     optimizeResumeDTO: OptimizeResumeDTO,
   ): Promise<OptimizeResumeResponseDTO> {
     try {
-      const model = this.configService.get<string>('openai.model') ?? 'gpt-4o';
+      const { client, model } = this.aiClient.forTask('resumeOptimize');
       const resumeData = { ...optimizeResumeDTO };
       if (resumeData.personalInfo?.profilePicture?.startsWith('data:')) {
         resumeData.personalInfo = {
@@ -257,7 +253,7 @@ Rules:
         };
       }
 
-      const completion = await this.openAI.chat.completions.create({
+      const completion = await client.chat.completions.create({
         model,
         temperature: 0.4,
         max_tokens: RESUME.AI_OPTIMIZE_MAX_TOKENS,
@@ -299,14 +295,14 @@ Rules:
     generateCoverLetterDTO: GenerateCoverLetterDTO,
   ): Promise<GenerateCoverLetterResponseDTO> {
     try {
-      const model = this.configService.get<string>('openai.model') ?? 'gpt-4o';
+      const { client, model } = this.aiClient.forTask('coverLetterDraft');
       const positions =
         generateCoverLetterDTO.openPositions.join(', ') ||
         'available positions';
       const skills =
         generateCoverLetterDTO.employeeSkills.join(', ') || 'various skills';
 
-      const completion = await this.openAI.chat.completions.create({
+      const completion = await client.chat.completions.create({
         model,
         temperature: 0.6,
         max_tokens: RESUME.AI_COVER_LETTER_MAX_TOKENS,
@@ -349,9 +345,9 @@ Rules:
     polishCoverLetterDTO: PolishCoverLetterDTO,
   ): Promise<PolishCoverLetterResponseDTO> {
     try {
-      const model = this.configService.get<string>('openai.model') ?? 'gpt-4o';
+      const { client, model } = this.aiClient.forTask('coverLetterPolish');
 
-      const completion = await this.openAI.chat.completions.create({
+      const completion = await client.chat.completions.create({
         model,
         temperature: 0.4,
         max_tokens: RESUME.AI_COVER_LETTER_MAX_TOKENS,

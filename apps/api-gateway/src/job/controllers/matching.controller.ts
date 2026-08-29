@@ -280,6 +280,7 @@ export class JobMatchingController implements IMatchingController {
     }>(this.jobClient, JOB_SERVICE.ACTIONS.GET_AI_MATCH_PROFILES, { eid, cid });
 
     await this.aiStream.pipe(
+      'matchExplanation',
       this.aiMatching.getMatchExplanationMessages(
         employeeProfile,
         companyProfile,
@@ -325,6 +326,7 @@ export class JobMatchingController implements IMatchingController {
     }>(this.jobClient, JOB_SERVICE.ACTIONS.GET_AI_MATCH_PROFILES, { eid, cid });
 
     await this.aiStream.pipe(
+      'interviewPrep',
       this.aiMatching.getInterviewPrepMessages(
         employeeProfile,
         companyProfile,
@@ -352,6 +354,7 @@ export class JobMatchingController implements IMatchingController {
     }>(this.jobClient, JOB_SERVICE.ACTIONS.GET_AI_MATCH_PROFILES, { eid, cid });
 
     await this.aiStream.pipe(
+      'skillGap',
       this.aiMatching.getSkillGapMessages(
         employeeProfile,
         companyProfile,

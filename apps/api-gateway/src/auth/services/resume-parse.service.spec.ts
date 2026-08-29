@@ -3,16 +3,18 @@ import pdfParse from 'pdf-parse';
 import { ResumeParseService } from './resume-parse.service';
 
 const mockCreate = jest.fn();
-jest.mock('openai', () =>
-  jest.fn().mockImplementation(() => ({
-    chat: { completions: { create: mockCreate } },
-  })),
-);
 jest.mock('pdf-parse', () => jest.fn());
 
 describe('ResumeParseService', () => {
-  const config = { get: jest.fn(() => 'test') };
-  const service = new ResumeParseService(config as any);
+  // Parsing runs on the fast tier: the prompt is a fixed extraction schema, so
+  // it never needed the expensive model.
+  const aiClient = {
+    forTask: jest.fn(() => ({
+      client: { chat: { completions: { create: mockCreate } } },
+      model: 'gpt-4o-mini',
+    })),
+  };
+  const service = new ResumeParseService(aiClient as any);
 
   beforeEach(() => jest.clearAllMocks());
 
@@ -44,6 +46,7 @@ describe('ResumeParseService', () => {
       firstName: 'Sok',
       jobTitle: 'Engineer',
     });
+    expect(aiClient.forTask).toHaveBeenCalledWith('resumeParse');
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({ model: 'gpt-4o-mini', temperature: 0 }),
     );

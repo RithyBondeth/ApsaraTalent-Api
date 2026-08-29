@@ -1,19 +1,13 @@
 import { IParsedResumeData, IResumeParseService, RESUME } from '@app/contracts';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import OpenAI from 'openai';
+import { AiClientService } from '@app/common/ai/ai-client.service';
 import pdfParse from 'pdf-parse';
 
 @Injectable()
 export class ResumeParseService implements IResumeParseService {
   private readonly logger = new Logger(ResumeParseService.name);
-  private readonly openai: OpenAI;
-  private readonly model: string;
 
-  constructor(private readonly config: ConfigService) {
-    this.openai = new OpenAI({ apiKey: config.get<string>('openai.apiKey') });
-    this.model = config.get<string>('openai.model') ?? 'gpt-4o-mini';
-  }
+  constructor(private readonly aiClient: AiClientService) {}
 
   async parseResume(
     fileBuffer: Buffer,
@@ -45,8 +39,9 @@ export class ResumeParseService implements IResumeParseService {
     resumeText: string,
   ): Promise<IParsedResumeData> {
     try {
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+      const { client, model } = this.aiClient.forTask('resumeParse');
+      const response = await client.chat.completions.create({
+        model,
         temperature: 0,
         response_format: { type: 'json_object' },
         messages: [

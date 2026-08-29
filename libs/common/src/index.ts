@@ -1,3 +1,5 @@
+export * from './ai/ai-client.service';
+export * from './ai/ai-client.module';
 export * from './config/config.module';
 export * from './embedding/embedding.module';
 export * from './embedding/embedding.service';

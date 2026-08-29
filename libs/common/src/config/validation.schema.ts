@@ -101,8 +101,15 @@ export const validationSchema = Joi.object({
   // Base URL
   BASE_URL: Joi.string().uri(),
 
-  // OpenAI
+  // OpenAI. The fast tier inherits the base key/URL when its own are unset,
+  // so a deployment needs nothing beyond OPENAI_API_KEY to get the cheap
+  // model on the small tasks. See AI_TASK_TIER for which task lands where.
   OPENAI_API_KEY: Joi.string().optional(),
+  OPENAI_MODEL: Joi.string().optional(),
+  OPENAI_BASE_URL: Joi.string().uri().optional(),
+  OPENAI_FAST_API_KEY: Joi.string().optional(),
+  OPENAI_FAST_BASE_URL: Joi.string().uri().optional(),
+  OPENAI_FAST_MODEL: Joi.string().optional(),
 
   // AI usage limits (per authenticated user) — see AiQuotaGuard
   AI_RATE_LIMIT: Joi.number().integer().min(1).default(10),

@@ -15,7 +15,7 @@ import {
 } from '@app/contracts/dtos/job';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
 import { ConfigService } from '@nestjs/config';
-import OpenAI from 'openai';
+import { AiClientService } from '@app/common/ai/ai-client.service';
 import {
   AiMatchProfilesDTO,
   AiMatchProfilesResponseDTO,
@@ -30,8 +30,6 @@ import { generateMatchingKey } from '@app/common/redis/redis-keys.util';
  */
 @Injectable()
 export class MatchingAiService implements IMatchingAiService {
-  private readonly openAI: OpenAI;
-
   constructor(
     @InjectRepository(Employee)
     private readonly employeeRepo: Repository<Employee>,
@@ -40,11 +38,8 @@ export class MatchingAiService implements IMatchingAiService {
     private readonly logger: Logger,
     private readonly redisService: RedisService,
     private readonly configService: ConfigService,
-  ) {
-    this.openAI = new OpenAI({
-      apiKey: this.configService.get<string>('openai.apiKey'),
-    });
-  }
+    private readonly aiClient: AiClientService,
+  ) {}
 
   async getAiMatchExplanation(
     aiMatchExplanationDTO: AiMatchExplanationDTO,
@@ -105,8 +100,8 @@ export class MatchingAiService implements IMatchingAiService {
         careerScopes: (company.careerScopes ?? []).map((c) => c.name),
       };
 
-      const model = this.configService.get<string>('openai.model') ?? 'gpt-4o';
-      const completion = await this.openAI.chat.completions.create({
+      const { client, model } = this.aiClient.forTask('matchExplanation');
+      const completion = await client.chat.completions.create({
         model,
         temperature: 0.3,
         response_format: { type: 'json_object' },
@@ -266,8 +261,8 @@ export class MatchingAiService implements IMatchingAiService {
         careerScopes: (company.careerScopes ?? []).map((c) => c.name),
       };
 
-      const model = this.configService.get<string>('openai.model') ?? 'gpt-4o';
-      const completion = await this.openAI.chat.completions.create({
+      const { client, model } = this.aiClient.forTask('interviewPrep');
+      const completion = await client.chat.completions.create({
         model,
         temperature: 0.4,
         response_format: { type: 'json_object' },

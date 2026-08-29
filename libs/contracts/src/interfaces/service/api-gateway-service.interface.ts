@@ -1,3 +1,4 @@
+import { TAiTask } from '../domain/ai-model.interface';
 import { UserResponseDTO } from '@app/contracts/dtos/shared/user.dto';
 import {
   SendMessageDTO,
@@ -18,6 +19,7 @@ export const I_CHAT_MESSAGE_SERVICE = 'IChatMessageService';
 // AI Stream
 export interface IAiStreamService {
   pipe(
+    task: TAiTask,
     messages: OpenAI.Chat.ChatCompletionMessageParam[],
     temperature: number,
     res: Response,
