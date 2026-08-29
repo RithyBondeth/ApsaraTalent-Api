@@ -63,22 +63,43 @@ describe('JobMatchingController', () => {
     );
   });
 
-  it('authorizes unmatching and broadcasts to both profile rooms', async () => {
+  it('authorizes unmatching and broadcasts to both auth user rooms', async () => {
     const dto = { eid: 'employee-1', cid: 'company-1' };
+    (rpcCall as jest.Mock).mockResolvedValue({
+      notifyUserIds: ['employee-user', 'company-user'],
+    });
     await controller.unmatch(dto, { user: { id: 'user-1' } });
     expect(access.assertMatchParticipantAccess).toHaveBeenCalledWith(
       'user-1',
       'employee-1',
       'company-1',
     );
+    // Socket rooms are keyed by auth user ID, never by the eid/cid profile IDs.
     expect(broadcast.emitToUser).toHaveBeenCalledWith(
+      'employee-user',
+      'unmatchUpdate',
+    );
+    expect(broadcast.emitToUser).toHaveBeenCalledWith(
+      'company-user',
+      'unmatchUpdate',
+    );
+    expect(broadcast.emitToUser).not.toHaveBeenCalledWith(
       'employee-1',
       'unmatchUpdate',
     );
-    expect(broadcast.emitToUser).toHaveBeenCalledWith(
+    expect(broadcast.emitToUser).not.toHaveBeenCalledWith(
       'company-1',
       'unmatchUpdate',
     );
+  });
+
+  it('does not broadcast an unmatch when the service returns no user IDs', async () => {
+    (rpcCall as jest.Mock).mockResolvedValue({ message: 'Unmatched' });
+    await controller.unmatch(
+      { eid: 'employee-1', cid: 'company-1' },
+      { user: { id: 'user-1' } },
+    );
+    expect(broadcast.emitToUser).not.toHaveBeenCalled();
   });
 
   it('authorizes and forwards all current-profile lookup endpoints', async () => {

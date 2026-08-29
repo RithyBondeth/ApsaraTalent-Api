@@ -27,6 +27,14 @@ export interface IMatchingController {
   employeeLikes(matchDTO: MatchDTO, req?: any): Promise<MatchResponseDTO>;
   companyLikes(matchDTO: MatchDTO, req?: any): Promise<MatchResponseDTO>;
   unmatch(unMatchDTO: UnMatchDTO, req?: any): Promise<UnMatchResposneDTO>;
+  markEmployeeMatchingSeen(
+    eid: string,
+    req?: any,
+  ): Promise<MatchCountResponseDTO>;
+  markCompanyMatchingSeen(
+    cid: string,
+    req?: any,
+  ): Promise<MatchCountResponseDTO>;
   findCurrentEmployeeLiked(
     eid: string,
     req?: any,
