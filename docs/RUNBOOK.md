@@ -31,23 +31,26 @@ read-through cache of the `User` row. Refresh tokens live in Postgres
 caches refill and resets in-flight rate-limit windows. It does not log anyone
 out and does not lose data. Do not spend incident time trying to recover Redis.
 
-### The storage volume 🚩 — mitigation available, not yet enabled
+### Uploaded files — resolved on 2026-08-07/08
 
-`/app/storage` holds `resumes`, `cover-letters`, `chat`, `employee-avatars`,
-`company-avatars`, `company-covers`, `company-images`. This is user-generated
-content with **no second copy** — there is no Firestore mirror in the current
-codebase, despite chat backup having been discussed historically.
+`resumes`, `cover-letters`, `chat`, `employee-avatars`, `company-avatars`,
+`company-covers`, `company-images` now live in Cloudflare R2, not on the Railway
+volume. `STORAGE_DRIVER=s3` is set in production. `storage-backup.yml` copies
+them nightly into a 30-day-locked bucket the application's own credentials
+cannot reach, and the path was proven end to end: a file deleted from the live
+bucket was recovered from the backup.
 
-Railway volumes are not automatically backed up. **If that volume is lost, the
-files are gone**, and the database will still hold rows pointing at them, so the
-app will render broken links rather than fail loudly.
+The application key and the backup key are deliberately separate. R2 has no
+object versioning, so that separation — not versioning — is what protects the
+backups from a leaked application key.
 
-**Object storage support now exists** and removes this risk once enabled: set
-`STORAGE_DRIVER=s3` and files move to a durable bucket. See
-[STORAGE.md](./STORAGE.md) for the rollout procedure.
+**The Railway volume at `/app/storage` is no longer the system of record**, but
+it may still be mounted on the API gateway. Anything left on it is residue from
+before the migration: not backed up, and not read by the app once
+`STORAGE_DRIVER=s3` is set. Treat it as disposable, and confirm it is empty
+before detaching it.
 
-Until that switch is made in production, everything above still applies — the
-capability being merged is not the same as the risk being closed.
+See [STORAGE.md](./STORAGE.md) for the bucket layout and the restore procedure.
 
 ---
 
@@ -334,9 +337,18 @@ they are handled.
    wrong enough to fire permanently on a healthy fleet. Expect others to be, and
    re-tune after a week of real data rather than trusting them.
 
-3. **The container CI builds is not the container that ships.** CI builds all 11
-   images, verifies they build, then discards them; Railway rebuilds from source
-   on deploy. What was tested and what runs are different artifacts.
+---
+
+### Closed on 2026-08-09 — build-once-deploy-many
+
+- **The container CI built was not the container that shipped.** CI built all 11
+  images, scanned them, then discarded them while Railway rebuilt from source on
+  deploy — so what was tested and what ran were different artifacts. All 11
+  services now deploy from their GHCR image via
+  `railway-deploy-from-source.sh`, making the artifact Trivy scanned the
+  artifact serving. `check-infra-drift.mjs` asserts daily that every service
+  still has an image source, because losing that guarantee would otherwise be
+  silent.
 
 ---
 

@@ -41,6 +41,22 @@ export class JobMatching {
   @Column({ type: 'smallint', nullable: true })
   matchScore: number | null;
 
+  /**
+   * When each side last opened their matching list. Null means "never looked",
+   * so a row counts as new to that party.
+   *
+   * This replaces a `matching-seen:<id>` high-water mark that lived in the
+   * browser's localStorage. That number could only ever grow, so every unmatch
+   * left it above the real total and permanently zeroed the badge; it also did
+   * not follow the user between devices. Seen state is per row and per side,
+   * so an unmatch simply deletes the row and the count follows.
+   */
+  @Column({ type: 'timestamptz', nullable: true })
+  employeeSeenAt: Date | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  companySeenAt: Date | null;
+
   @CreateDateColumn()
   createdAt: Date;
 }

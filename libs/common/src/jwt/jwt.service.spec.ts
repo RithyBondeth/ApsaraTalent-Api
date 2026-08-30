@@ -60,32 +60,16 @@ describe('JwtService token boundaries', () => {
       { id: 'user-1', type: 'refresh' },
       { expiresIn: '30d' },
     );
-    await configured.generateEmailVerificationToken('person@example.com');
-    expect(nestJwtService.signAsync).toHaveBeenLastCalledWith(
-      { email: 'person@example.com', type: 'email-verification' },
-      { expiresIn: '15m' },
-    );
   });
 
-  it('accepts only correctly typed refresh and email-verification tokens', async () => {
+  it('accepts only correctly typed refresh tokens', async () => {
     nestJwtService.verifyAsync
       .mockResolvedValueOnce({ id: 'user-1', type: 'refresh' })
-      .mockResolvedValueOnce({
-        email: 'person@example.com',
-        type: 'email-verification',
-      })
-      .mockResolvedValueOnce({ type: 'access' })
       .mockResolvedValueOnce({ type: 'access' });
     await expect(service.verifyRefreshToken('refresh')).resolves.toEqual(
       expect.objectContaining({ type: 'refresh' }),
     );
-    await expect(service.verifyEmailToken('email')).resolves.toEqual(
-      expect.objectContaining({ type: 'email-verification' }),
-    );
     await expect(service.verifyRefreshToken('access')).rejects.toThrow(
-      'Invalid token type',
-    );
-    await expect(service.verifyEmailToken('access')).rejects.toThrow(
       'Invalid token type',
     );
   });

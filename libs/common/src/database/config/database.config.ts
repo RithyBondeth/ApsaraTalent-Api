@@ -16,6 +16,7 @@ import { Skill } from '../entities/employee/skill.entity';
 import { Interview } from '../entities/interview.entity';
 import { LoginHistory } from '../entities/login-history.entity';
 import { JobMatching } from '../entities/job-matching.entity';
+import { AdminAuditLog } from '../entities/moderation/admin-audit-log.entity';
 import { UserBlock } from '../entities/moderation/user-block.entity';
 import { UserReport } from '../entities/moderation/user-report.entity';
 import { Notification } from '../entities/notification.entity';
@@ -53,6 +54,7 @@ export const databaseConfig = async (
     Interview,
     UserBlock,
     UserReport,
+    AdminAuditLog,
     Application,
   ],
   // Load relations as separate batched queries instead of a single multi-join.

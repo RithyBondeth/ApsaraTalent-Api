@@ -139,6 +139,40 @@ describe('PushNotificationService external boundary', () => {
     );
   });
 
+  it('tags non-chat pushes by type so they cannot stack', async () => {
+    const send = jest.fn().mockResolvedValue('message-id');
+    (getMessaging as jest.Mock).mockReturnValue({ send });
+    const config = {
+      get: jest.fn().mockReturnValue(
+        JSON.stringify({
+          project_id: 'project-1',
+          client_email: 'firebase@example.com',
+        }),
+      ),
+    };
+    const service = new PushNotificationService(config as any, logger as any);
+
+    await service.sendToToken('device-token', {
+      title: "It's a Match!",
+      body: 'You liked each other',
+      // Match, like and interview payloads carry no senderId — only chat does.
+      data: { type: 'match', targetUserId: 'user-1', url: '/matching' },
+    });
+
+    /*
+      Without a tag these stacked, and the browser had nothing to deduplicate
+      against when the SDK auto-displays the payload and onBackgroundMessage
+      re-shows it.
+    */
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        webpush: expect.objectContaining({
+          notification: expect.objectContaining({ tag: 'type-match' }),
+        }),
+      }),
+    );
+  });
+
   it('returns a stable failure response when Firebase delivery fails', async () => {
     (getMessaging as jest.Mock).mockReturnValue({
       send: jest.fn().mockRejectedValue(new Error('invalid device token')),

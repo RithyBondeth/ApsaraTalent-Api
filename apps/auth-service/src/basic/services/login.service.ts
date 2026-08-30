@@ -14,6 +14,7 @@ import { LoginDTO, LoginResponseDTO } from '@app/contracts';
 import { CacheCleanupService } from '../../shared/services/cache-cleanup.service';
 import { RpcException } from '@nestjs/microservices';
 import { toUserResponseDTO } from '@app/common/utils/to-user-response.util';
+import { assertAccountUsable } from '../../shared/utils/account-status.util';
 
 @Injectable()
 export class LoginService implements ILoginService {
@@ -53,6 +54,11 @@ export class LoginService implements ILoginService {
 
       if (!validPassword) throw invalidCredentialsError;
 
+      // Checked after the password, never before: answering "this account is
+      // banned" to an unauthenticated caller would confirm the address exists,
+      // which is the enumeration leak the generic error above exists to avoid.
+      assertAccountUsable(user);
+
       //Check email verification
       if (isEmail && !user.isEmailVerified)
         throw new RpcException({
@@ -60,12 +66,16 @@ export class LoginService implements ILoginService {
           statusCode: 403,
         });
 
-      // If 2FA is enabled, return a challenge instead of issuing tokens
+      // If 2FA is enabled, return a challenge instead of issuing tokens.
+      // The challenge is signed and short-lived: it is the only thing that
+      // proves to verify-login that this caller cleared the password check.
       if (user.isTwoFactorEnabled) {
         return new LoginResponseDTO({
           message: 'Two-factor authentication required',
           requiresTwoFactor: true,
-          userId: user.id,
+          twoFactorToken: await this.jwtService.generateTwoFactorChallengeToken(
+            user.id,
+          ),
         });
       }
 

@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/package.json",
   "name": "apsara-talent",
   "version": "0.0.1",
-  "description": "Apsara Talent platform API — a NestJS monorepo of an HTTP gateway and six TCP microservices.",
+  "description": "Apsara Talent platform API \u2014 a NestJS monorepo of an HTTP gateway and six TCP microservices.",
   "author": "Apsara Talent",
   "private": true,
   "license": "UNLICENSED",
@@ -56,6 +56,7 @@
     "db:restore-point": "node --env-file-if-exists=.env scripts/ci/create-restore-point.mjs",
     "db:rehearse": "node --env-file-if-exists=.env scripts/ci/migration-rehearsal.mjs",
     "seed": "ts-node -r tsconfig-paths/register scripts/db/seed.ts",
+    "admin:grant": "ts-node -r tsconfig-paths/register scripts/db/grant-admin.ts",
     "backfill:embeddings": "ts-node -r tsconfig-paths/register scripts/db/backfill-embeddings.ts",
     "storage:migrate": "ts-node -r tsconfig-paths/register scripts/storage/migrate-storage-to-s3.ts",
     "storage:verify": "ts-node -r tsconfig-paths/register scripts/storage/verify-storage-migration.ts",
@@ -192,6 +193,9 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "transformIgnorePatterns": [
+      "/node_modules/(?!(otplib|@otplib|@scure|@noble)/)"
+    ],
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],

@@ -14,6 +14,8 @@ import { JwtService } from '@app/common/jwt/jwt.service';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RpcException } from '@nestjs/microservices';
+import { AUTH } from '@app/contracts/constants/domain/auth.constant';
+import { buildOtpEmail, VerifyEmailService } from './verify-email.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   CompanyResponseDTO,
@@ -64,13 +66,11 @@ export class RegisterService implements IRegisterService {
         statusCode: 401,
       });
 
-    // Generate email verification token in parallel with nothing blocking
-    const emailVerificationToken =
-      await this.jwtService.generateEmailVerificationToken(
-        companyRegisterDTO.authEmail
-          ? companyRegisterDTO.email
-          : companyRegisterDTO.phone,
-      );
+    // A six-digit code, not a signed link — see VerifyEmailService for why.
+    const emailVerificationOtp = VerifyEmailService.generateOtp();
+    const emailVerificationOtpExpires = new Date(
+      Date.now() + AUTH.EMAIL_OTP_EXPIRY,
+    );
 
     // ── Transaction: all DB writes are atomic ──────────────────────
     const queryRunner = this.dataSource.createQueryRunner();
@@ -175,8 +175,11 @@ export class RegisterService implements IRegisterService {
         password: companyRegisterDTO.password,
         company: newCompany,
         isEmailVerified: false,
-        emailVerificationToken: companyRegisterDTO.authEmail
-          ? emailVerificationToken
+        emailVerificationOtp: companyRegisterDTO.authEmail
+          ? emailVerificationOtp
+          : null,
+        emailVerificationOtpExpires: companyRegisterDTO.authEmail
+          ? emailVerificationOtpExpires
           : null,
         profileCompleted: true,
       });
@@ -214,9 +217,8 @@ export class RegisterService implements IRegisterService {
       this.emailService
         .sendEmail({
           to: company.email,
-          subject: 'Apsara Talent - Verify Your Email Address',
-          text: `Hello, ${company.company.name}. Please verify your email address by clicking on the following link:
-          ${this.configService.get<string>('CLIENT_URL')}/login/email-verification/${emailVerificationToken}`,
+          subject: 'Apsara Talent - Your verification code',
+          text: buildOtpEmail(emailVerificationOtp),
         })
         .catch((err) =>
           this.logger.error(
@@ -265,13 +267,11 @@ export class RegisterService implements IRegisterService {
         statusCode: 401,
       });
 
-    // Generate email verification token
-    const emailVerificationToken =
-      await this.jwtService.generateEmailVerificationToken(
-        employeeRegisterDTO.authEmail
-          ? employeeRegisterDTO.email
-          : employeeRegisterDTO.phone,
-      );
+    // A six-digit code, not a signed link — see VerifyEmailService for why.
+    const emailVerificationOtp = VerifyEmailService.generateOtp();
+    const emailVerificationOtpExpires = new Date(
+      Date.now() + AUTH.EMAIL_OTP_EXPIRY,
+    );
 
     // ── Transaction: all DB writes are atomic ──────────────────────
     const queryRunner = this.dataSource.createQueryRunner();
@@ -373,8 +373,11 @@ export class RegisterService implements IRegisterService {
         password: employeeRegisterDTO.password,
         employee: newEmployee,
         isEmailVerified: employeeRegisterDTO.authEmail ? false : true,
-        emailVerificationToken: employeeRegisterDTO.authEmail
-          ? emailVerificationToken
+        emailVerificationOtp: employeeRegisterDTO.authEmail
+          ? emailVerificationOtp
+          : null,
+        emailVerificationOtpExpires: employeeRegisterDTO.authEmail
+          ? emailVerificationOtpExpires
           : null,
         profileCompleted: true,
       });
@@ -412,9 +415,8 @@ export class RegisterService implements IRegisterService {
       this.emailService
         .sendEmail({
           to: employee.email,
-          subject: 'Apsara Talent - Verify Your Email Address',
-          text: `Hello, ${employee.employee.username}. Please verify your email address by clicking on the following link:
-          ${this.configService.get<string>('CLIENT_URL')}/login/email-verification/${emailVerificationToken}`,
+          subject: 'Apsara Talent - Your verification code',
+          text: buildOtpEmail(emailVerificationOtp),
         })
         .catch((err) =>
           this.logger.error(

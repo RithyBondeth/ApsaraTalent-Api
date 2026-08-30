@@ -1,9 +1,15 @@
-import { IsNotEmpty, IsString, Length } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumberString,
+  IsString,
+  IsUUID,
+  Length,
+} from 'class-validator';
 import { CoreResponseDTO } from '../shared/core-response.dto';
 import { UserResponseDTO } from '../shared/user.dto';
 
 export class TwoFactorSetupDTO {
-  @IsString()
+  @IsUUID()
   @IsNotEmpty()
   userId: string;
 }
@@ -18,12 +24,11 @@ export class TwoFactorSetupResponseDTO extends CoreResponseDTO {
 }
 
 export class TwoFactorEnableDTO {
-  @IsString()
+  @IsUUID()
   @IsNotEmpty()
   userId: string;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsNumberString({ no_symbols: true })
   @Length(6, 6)
   otp: string;
 }
@@ -35,12 +40,11 @@ export class TwoFactorEnableResponseDTO extends CoreResponseDTO {
 }
 
 export class TwoFactorDisableDTO {
-  @IsString()
+  @IsUUID()
   @IsNotEmpty()
   userId: string;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsNumberString({ no_symbols: true })
   @Length(6, 6)
   otp: string;
 }
@@ -54,10 +58,9 @@ export class TwoFactorDisableResponseDTO extends CoreResponseDTO {
 export class TwoFactorVerifyLoginDTO {
   @IsString()
   @IsNotEmpty()
-  userId: string;
+  twoFactorToken: string;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsNumberString({ no_symbols: true })
   @Length(6, 6)
   otp: string;
 }
