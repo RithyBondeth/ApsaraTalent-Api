@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { GithubAuthDTO, GithubLoginResponseDTO } from '@app/contracts';
 import { IGithubAuthService } from '@app/contracts/interfaces/service/auth-service.interface';
 import { CacheCleanupService } from '../../shared/services/cache-cleanup.service';
+import { assertAccountUsable } from '../../shared/utils/account-status.util';
 
 @Injectable()
 export class GithubAuthService implements IGithubAuthService {
@@ -40,6 +41,11 @@ export class GithubAuthService implements IGithubAuthService {
           provider: githubDataDTO.provider,
         });
       }
+
+      // A suspended or banned account must not slip back in through a
+      // social provider — the provider only proves who they are, not
+      // whether they are still welcome.
+      assertAccountUsable(user);
 
       // Update user with githubId and login tracking
       if (!user.githubId && githubDataDTO.id) {

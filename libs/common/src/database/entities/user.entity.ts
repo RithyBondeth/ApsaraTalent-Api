@@ -5,12 +5,14 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { SALT_ROUNDS } from '@app/contracts/constants/domain/password.constant';
 import { ELoginMethod } from '../enums/login-method.enum';
 import { EUserRole } from '../enums/user-role.enum';
+import { EUserStatus } from '../enums/user-status.enum';
 import { Company } from './company/company.entity';
 import { Employee } from './employee/employee.entity';
 
@@ -21,6 +23,30 @@ export class User {
 
   @Column({ type: 'enum', enum: EUserRole })
   role: EUserRole;
+
+  /**
+   * Whether this account may sign in and use the platform. Enforced in
+   * `AuthGuard` (every authenticated request) and in the login services, so a
+   * suspension takes effect without waiting for the access token to expire.
+   */
+  @Index()
+  @Column({ type: 'enum', enum: EUserStatus, default: EUserStatus.ACTIVE })
+  status: EUserStatus;
+
+  /**
+   * When a suspension lifts on its own. Null means "until an admin lifts it".
+   * Checked rather than swept by a job: `resolveEffectiveStatus` treats a
+   * past date as active, so an expiry needs no scheduler to come into effect.
+   */
+  @Column({ type: 'timestamptz', nullable: true })
+  suspendedUntil: Date | null;
+
+  /** Shown to the user when they are turned away, so keep it presentable. */
+  @Column({ type: 'text', nullable: true })
+  statusReason: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  statusChangedAt: Date | null;
 
   @OneToOne(() => Employee, (employee) => employee.user)
   employee: Employee;

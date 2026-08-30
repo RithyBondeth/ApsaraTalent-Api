@@ -4,6 +4,7 @@ import { ConfigModule } from '@app/common/config';
 import { UploadfileModule } from '@app/common/uploadfile/uploadfile.module';
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './chat/chat.module';
 import { StorageHttpModule } from './storage/storage-http.module';
@@ -29,6 +30,7 @@ import { AiModule } from './ai/ai.module';
     AiQuotaModule,
     AiModule,
     AuthModule,
+    AdminModule,
     UploadfileModule,
     StorageHttpModule,
     HealthModule,

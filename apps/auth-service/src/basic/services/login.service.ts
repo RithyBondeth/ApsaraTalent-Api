@@ -14,6 +14,7 @@ import { LoginDTO, LoginResponseDTO } from '@app/contracts';
 import { CacheCleanupService } from '../../shared/services/cache-cleanup.service';
 import { RpcException } from '@nestjs/microservices';
 import { toUserResponseDTO } from '@app/common/utils/to-user-response.util';
+import { assertAccountUsable } from '../../shared/utils/account-status.util';
 
 @Injectable()
 export class LoginService implements ILoginService {
@@ -52,6 +53,11 @@ export class LoginService implements ILoginService {
       );
 
       if (!validPassword) throw invalidCredentialsError;
+
+      // Checked after the password, never before: answering "this account is
+      // banned" to an unauthenticated caller would confirm the address exists,
+      // which is the enumeration leak the generic error above exists to avoid.
+      assertAccountUsable(user);
 
       //Check email verification
       if (isEmail && !user.isEmailVerified)
