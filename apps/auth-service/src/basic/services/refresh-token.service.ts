@@ -9,6 +9,7 @@ import { Repository } from 'typeorm';
 import { IRefreshTokenService } from '@app/contracts/interfaces/service/auth-service.interface';
 import { RefreshTokenDTO, RefreshTokenResponseDTO } from '@app/contracts';
 import { toUserResponseDTO } from '@app/common/utils/to-user-response.util';
+import { assertAccountUsable } from '../../shared/utils/account-status.util';
 
 @Injectable()
 export class RefreshTokenService implements IRefreshTokenService {
@@ -48,6 +49,11 @@ export class RefreshTokenService implements IRefreshTokenService {
           message: 'Invalid refresh token',
           statusCode: 401,
         });
+
+      // A suspension imposed mid-session lands here first: refresh is how a
+      // long-lived session renews itself, so letting it through would hand a
+      // banned account another 15 minutes every time it asked.
+      assertAccountUsable(user);
 
       //Generate new access token and refresh token
       const [accessToken, refreshToken] = await Promise.all([

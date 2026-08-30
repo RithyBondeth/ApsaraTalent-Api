@@ -19,6 +19,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { generateSecret, generateURI, verifySync } from 'otplib';
 import { PinoLogger } from 'nestjs-pino';
 import { RpcException } from '@nestjs/microservices';
+import { assertAccountUsable } from '../../shared/utils/account-status.util';
 import { Repository } from 'typeorm';
 import { CacheCleanupService } from '../../shared/services/cache-cleanup.service';
 import { toUserResponseDTO } from '@app/common/utils/to-user-response.util';
@@ -175,6 +176,8 @@ export class TwoFactorService implements ITwoFactorService {
           statusCode: 401,
         });
       }
+
+      assertAccountUsable(user);
 
       const payload: IPayload = {
         id: user.id,

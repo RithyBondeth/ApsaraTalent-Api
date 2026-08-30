@@ -56,6 +56,7 @@
     "db:restore-point": "node --env-file-if-exists=.env scripts/ci/create-restore-point.mjs",
     "db:rehearse": "node --env-file-if-exists=.env scripts/ci/migration-rehearsal.mjs",
     "seed": "ts-node -r tsconfig-paths/register scripts/db/seed.ts",
+    "admin:grant": "ts-node -r tsconfig-paths/register scripts/db/grant-admin.ts",
     "backfill:embeddings": "ts-node -r tsconfig-paths/register scripts/db/backfill-embeddings.ts",
     "storage:migrate": "ts-node -r tsconfig-paths/register scripts/storage/migrate-storage-to-s3.ts",
     "storage:verify": "ts-node -r tsconfig-paths/register scripts/storage/verify-storage-migration.ts",

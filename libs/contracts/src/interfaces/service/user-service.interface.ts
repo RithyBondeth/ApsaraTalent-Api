@@ -1,5 +1,17 @@
 import { PaginationDTO } from '@app/contracts/dtos/shared';
 import {
+  AdminActionResponseDTO,
+  AdminGetUserDTO,
+  AdminListAuditDTO,
+  AdminListReportsDTO,
+  AdminListUsersDTO,
+  AdminOverviewDTO,
+  AdminPagedAuditDTO,
+  AdminPagedReportsDTO,
+  AdminPagedUsersDTO,
+  AdminUpdateReportStatusDTO,
+  AdminUpdateUserStatusDTO,
+  AdminUserDetailDTO,
   CompanyResponseDTO,
   CompanyEmployeeFavoriteDTO,
   CompanyEmployeeFavoriteWithFavoriteIdDTO,
@@ -95,6 +107,8 @@ export const I_EXPERIENCE_AND_EDUCATION_SERVICE =
   'IExperienceAndEducationService';
 export const I_MODERATION_SERVICE = 'IModerationService';
 export const I_SUPPORT_SERVICE = 'ISupportService';
+export const I_ADMIN_USER_SERVICE = 'IAdminUserService';
+export const I_ADMIN_REPORT_SERVICE = 'IAdminReportService';
 
 export interface IUpdateEmployeeInfoService {
   updateEmployeeInfo(
@@ -259,4 +273,30 @@ export interface ISupportService {
   reportProblem(
     reportProblemDTO: ReportProblemDTO,
   ): Promise<ReportProblemResponseDTO>;
+}
+
+/**
+ * Reads and account-control actions over the whole user table.
+ *
+ * Split from IAdminReportService along the same line as the rest of the
+ * service: the user half mutates accounts, the report half works a queue, and
+ * they share only the audit-log collaborator.
+ */
+export interface IAdminUserService {
+  getOverview(): Promise<AdminOverviewDTO>;
+  listUsers(adminListUsersDTO: AdminListUsersDTO): Promise<AdminPagedUsersDTO>;
+  getUser(adminGetUserDTO: AdminGetUserDTO): Promise<AdminUserDetailDTO>;
+  updateUserStatus(
+    adminUpdateUserStatusDTO: AdminUpdateUserStatusDTO,
+  ): Promise<AdminActionResponseDTO>;
+}
+
+export interface IAdminReportService {
+  listReports(
+    adminListReportsDTO: AdminListReportsDTO,
+  ): Promise<AdminPagedReportsDTO>;
+  updateReportStatus(
+    adminUpdateReportStatusDTO: AdminUpdateReportStatusDTO,
+  ): Promise<AdminActionResponseDTO>;
+  listAudit(adminListAuditDTO: AdminListAuditDTO): Promise<AdminPagedAuditDTO>;
 }
