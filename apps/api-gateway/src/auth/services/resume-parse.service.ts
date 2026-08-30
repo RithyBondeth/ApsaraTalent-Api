@@ -2,7 +2,7 @@ import { IParsedResumeData, IResumeParseService, RESUME } from '@app/contracts';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
-import pdfParse from 'pdf-parse';
+import { PDFParse } from 'pdf-parse';
 
 @Injectable()
 export class ResumeParseService implements IResumeParseService {
@@ -30,14 +30,29 @@ export class ResumeParseService implements IResumeParseService {
         'Only PDF resumes are supported at this time.',
       );
     }
+    // pdf-parse 2 replaced the single callable export with a parser that holds
+    // the document — and the worker behind it — open until it is destroyed.
+    // Every resume upload comes through here, so the `finally` is load-bearing:
+    // without it each parse leaks one document for the life of the process.
+    const parser = new PDFParse({ data: buffer });
     try {
-      const { text } = await pdfParse(buffer);
-      return (text as string).substring(0, RESUME.MAX_TEXT_CHARS);
+      // `pageJoiner: ''` matters more than it looks. v2 appends a page marker
+      // to each page's text, defaulting to '\n-- page_number of total_number --'
+      // — so a scanned, image-only PDF that v1 reported as empty now comes back
+      // as '-- 1 of 1 --'. That is truthy, so `parseResume` would stop treating
+      // it as textless and would instead send the marker to OpenAI: a paid call
+      // that can only return nonsense. Empty joiner, v1 behaviour.
+      const { text } = await parser.getText({ pageJoiner: '' });
+      return text.substring(0, RESUME.MAX_TEXT_CHARS);
     } catch (err) {
       this.logger.warn(`PDF text extraction failed: ${err}`);
       throw new BadRequestException(
         'Could not read this PDF. Please upload a text-based PDF resume.',
       );
+    } finally {
+      // A failure to release must not replace the error that got us here — the
+      // caller needs the BadRequestException, not a teardown failure.
+      await parser.destroy().catch(() => undefined);
     }
   }
 
