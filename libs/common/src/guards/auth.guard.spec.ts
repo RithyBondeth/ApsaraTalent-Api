@@ -1,8 +1,10 @@
 import {
   ExecutionContext,
+  ForbiddenException,
   InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { EUserStatus } from '../database/enums/user-status.enum';
 import { AuthGuard } from './auth.guard';
 
 jest.mock('@sentry/nestjs', () => ({ setUser: jest.fn() }));
@@ -109,6 +111,84 @@ describe('AuthGuard', () => {
         context({ cookies: {}, headers: { authorization: 'Bearer access' } }),
       ),
     ).rejects.toBeInstanceOf(InternalServerErrorException);
+  });
+
+  it('turns away a suspended account on a cache hit', async () => {
+    // The suspension has to bite on the cached path too, or a busy account
+    // keeps its session for the full 2-minute TTL after being suspended.
+    jwt.verifyToken.mockResolvedValue({ id: 'u1', type: 'access' });
+    redis.get.mockResolvedValue({
+      id: 'u1',
+      role: 'employee',
+      status: EUserStatus.SUSPENDED,
+      suspendedUntil: null,
+      statusReason: 'Spamming applications',
+    });
+
+    await expect(
+      guard.canActivate(
+        context({ cookies: {}, headers: { authorization: 'Bearer access' } }),
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('turns away a banned account loaded from the database', async () => {
+    jwt.verifyToken.mockResolvedValue({ id: 'u1', type: 'access' });
+    redis.get.mockResolvedValue(null);
+    repository.findOne.mockResolvedValue({
+      id: 'u1',
+      role: 'employee',
+      status: EUserStatus.BANNED,
+    });
+
+    await expect(
+      guard.canActivate(
+        context({ cookies: {}, headers: { authorization: 'Bearer access' } }),
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('rejects a suspended account with 403, never 401', async () => {
+    // 401 would send the axios interceptor into a refresh-and-retry loop
+    // against an account that is never coming back.
+    jwt.verifyToken.mockResolvedValue({ id: 'u1', type: 'access' });
+    redis.get.mockResolvedValue({ id: 'u1', status: EUserStatus.SUSPENDED });
+
+    await expect(
+      guard.canActivate(
+        context({ cookies: {}, headers: { authorization: 'Bearer access' } }),
+      ),
+    ).rejects.not.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it('lets an account whose suspension has expired back in', async () => {
+    jwt.verifyToken.mockResolvedValue({ id: 'u1', type: 'access' });
+    redis.get.mockResolvedValue({
+      id: 'u1',
+      role: 'employee',
+      status: EUserStatus.SUSPENDED,
+      suspendedUntil: new Date(Date.now() - 60_000).toISOString(),
+    });
+
+    await expect(
+      guard.canActivate(
+        context({ cookies: {}, headers: { authorization: 'Bearer access' } }),
+      ),
+    ).resolves.toBe(true);
+  });
+
+  it('selects the status columns it needs to enforce a suspension', async () => {
+    jwt.verifyToken.mockResolvedValue({ id: 'u1', type: 'access' });
+    redis.get.mockResolvedValue(null);
+    repository.findOne.mockResolvedValue({ id: 'u1', role: 'employee' });
+
+    await guard.canActivate(
+      context({ cookies: {}, headers: { authorization: 'Bearer access' } }),
+    );
+
+    const { select } = repository.findOne.mock.calls[0][0];
+    expect(select).toContain('status');
+    expect(select).toContain('suspendedUntil');
   });
 
   it('rejects failed token verification without querying the user store', async () => {

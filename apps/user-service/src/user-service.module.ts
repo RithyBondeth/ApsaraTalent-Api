@@ -22,6 +22,7 @@ import { Experience } from '@app/common/database/entities/employee/experience.en
 import { EmployeeFavoriteCompany } from '@app/common/database/entities/employee/favorite-company.entity';
 import { Skill } from '@app/common/database/entities/employee/skill.entity';
 import { JobMatching } from '@app/common/database/entities/job-matching.entity';
+import { AdminAuditLog } from '@app/common/database/entities/moderation/admin-audit-log.entity';
 import { UserBlock } from '@app/common/database/entities/moderation/user-block.entity';
 import { UserReport } from '@app/common/database/entities/moderation/user-report.entity';
 import { Social } from '@app/common/database/entities/social.entity';
@@ -44,6 +45,7 @@ import { SearchEmployeeController } from './employee/controllers/search-employee
 import { UpdateEmployeeInfoController } from './employee/controllers/update-employee-info.controller';
 import { UploadEmployeeReferenceController } from './employee/controllers/upload-employee-reference.controller';
 import { EmailModule } from '@app/common/email/email.module';
+import { AdminController } from './admin/controllers/admin.controller';
 import { ModerationController } from './moderation/controllers/moderation.controller';
 import { SupportController } from './support/controllers/support.controller';
 import { UserController } from './users/controllers/user.controller';
@@ -58,6 +60,9 @@ import { ImageEmployeeService } from './employee/services/image-employee.service
 import { SearchEmployeeService } from './employee/services/search-employee.service';
 import { UpdateEmployeeInfoService } from './employee/services/update-employee-info.service';
 import { UploadEmployeeReferenceService } from './employee/services/upload-employee-reference.service';
+import { AdminAuditService } from './admin/services/admin-audit.service';
+import { AdminReportService } from './admin/services/admin-report.service';
+import { AdminUserService } from './admin/services/admin-user.service';
 import { ModerationService } from './moderation/services/moderation.service';
 import { SupportService } from './support/services/support.service';
 import { UserService } from './users/services/user.service';
@@ -84,6 +89,8 @@ import {
   I_EXPERIENCE_AND_EDUCATION_SERVICE,
   I_MODERATION_SERVICE,
   I_SUPPORT_SERVICE,
+  I_ADMIN_USER_SERVICE,
+  I_ADMIN_REPORT_SERVICE,
 } from '@app/contracts/interfaces/service/user-service.interface';
 
 @Module({
@@ -109,6 +116,7 @@ import {
       JobMatching,
       UserBlock,
       UserReport,
+      AdminAuditLog,
     ]),
     LoggerModule,
     EmailModule,
@@ -143,6 +151,7 @@ import {
     ExperienceAndEducationController,
     ModerationController,
     SupportController,
+    AdminController,
   ],
   providers: [
     {
@@ -184,6 +193,9 @@ import {
     },
     { provide: I_MODERATION_SERVICE, useClass: ModerationService },
     { provide: I_SUPPORT_SERVICE, useClass: SupportService },
+    AdminAuditService,
+    { provide: I_ADMIN_USER_SERVICE, useClass: AdminUserService },
+    { provide: I_ADMIN_REPORT_SERVICE, useClass: AdminReportService },
     CacheInvalidationService,
     RedisCacheHealthIndicator,
     {

@@ -13,6 +13,14 @@ export const AUTH = {
   OTP_MIN: 100_000,
   /** OTP generation range (random * 900000 keeps it 6 digits) */
   OTP_RANGE: 900_000,
+  /** Email verification code validity window — 10 minutes.
+   *  Longer than the login OTP because this code is read from an inbox, which
+   *  can lag, rather than from an SMS that arrives in seconds. */
+  EMAIL_OTP_EXPIRY: 10 * 60 * 1_000,
+  /** Wrong guesses allowed before the code is burned and must be resent.
+   *  A 6-digit code is one of a million; without this the route's IP throttle
+   *  is the only thing standing between an attacker and a verified address. */
+  EMAIL_OTP_MAX_ATTEMPTS: 5,
   /** Maximum time login flows wait for best-effort cache invalidation */
   CACHE_CLEANUP_TIMEOUT: 3_000,
   /** Timeout for OAuth callback RPC — 10 seconds */

@@ -76,6 +76,16 @@ export class ChatNotificationService implements IChatNotificationService {
         params.receiverId,
       );
 
+      // getCallerProfile substitutes CHAT.DEFAULT_AVATAR_PATH when a user has
+      // no picture, and nothing serves that path — storing it would put a
+      // guaranteed 404 into every notification row. Null instead, so the client
+      // falls back to the sender's initials.
+      const senderAvatar =
+        senderProfile?.avatar &&
+        senderProfile.avatar !== CHAT.DEFAULT_AVATAR_PATH
+          ? senderProfile.avatar
+          : null;
+
       const preview = buildChatNotificationPreview({
         messageType: params.messageType,
         content: params.content,
@@ -97,9 +107,18 @@ export class ChatNotificationService implements IChatNotificationService {
             messageId: params.messageId,
             messageType: params.messageType,
             url: `/message?chat=${params.senderId}`,
+            // `data` is the only part of this that survives. The entity is
+            // (title, message, type, data, isRead) — there is no senderAvatar
+            // column — so the top-level field below reaches Firebase as a push
+            // icon and nothing else. The notification list reads the sender off
+            // `data`, which is why chat notifications rendered with no name and
+            // a blank avatar while match and like notifications, which do write
+            // these two, rendered correctly.
+            senderName: senderProfile?.name || null,
+            senderAvatar,
           },
           sendPush: !receiverOnline,
-          senderAvatar: senderProfile?.avatar || null,
+          senderAvatar,
         },
       );
 

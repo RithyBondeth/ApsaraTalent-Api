@@ -6,7 +6,12 @@ import {
   I_VERIFY_EMAIL_SERVICE,
   IVerifyEmailService,
 } from '@app/contracts/interfaces/service/auth-service.interface';
-import { VerifyEmailDTO, VerifyEmailResponseDTO } from '@app/contracts';
+import {
+  ResendEmailOtpDTO,
+  ResendEmailOtpResponseDTO,
+  VerifyEmailDTO,
+  VerifyEmailResponseDTO,
+} from '@app/contracts';
 
 @Controller()
 export class VerifyEmailController implements IBasicAuthVerifyEmailRpcController {
@@ -20,5 +25,12 @@ export class VerifyEmailController implements IBasicAuthVerifyEmailRpcController
     @Payload() verifyEmailDTO: VerifyEmailDTO,
   ): Promise<VerifyEmailResponseDTO> {
     return this.verifyEmailService.verifyEmail(verifyEmailDTO);
+  }
+
+  @MessagePattern(AUTH_SERVICE.ACTIONS.RESEND_EMAIL_OTP)
+  async resendEmailOtp(
+    @Payload() resendEmailOtpDTO: ResendEmailOtpDTO,
+  ): Promise<ResendEmailOtpResponseDTO> {
+    return this.verifyEmailService.resendEmailOtp(resendEmailOtpDTO);
   }
 }

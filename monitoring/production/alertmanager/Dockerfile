@@ -1,4 +1,4 @@
-FROM prom/alertmanager:v0.33.1
+FROM prom/alertmanager:v0.34.0
 
 USER root
 COPY --chown=nobody:nobody monitoring/production/alertmanager/alertmanager.yml /etc/alertmanager/alertmanager.yml

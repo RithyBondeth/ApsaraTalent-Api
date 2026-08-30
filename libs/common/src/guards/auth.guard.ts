@@ -1,6 +1,7 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Optional,
@@ -14,6 +15,7 @@ import { User } from '../database/entities/user.entity';
 import { IPayload } from '../jwt/interfaces/payload.interface';
 import { JwtService } from '../jwt/jwt.service';
 import { RedisService } from '../redis/redis.service';
+import { describeAccountStatus, isUserActive } from '../utils/user-status.util';
 
 // Short TTL: users banned/deleted stop working within 2 minutes without DB hit on every request
 const AUTH_CACHE_TTL_MS = 2 * 60 * 1000;
@@ -33,6 +35,12 @@ const AUTH_USER_FIELDS = [
   'email',
   'profileCompleted',
   'isEmailVerified',
+  // Account control. These three are the reason a suspension takes effect on
+  // the next request rather than when the access token expires — see
+  // `assertUsable` below.
+  'status',
+  'suspendedUntil',
+  'statusReason',
 ] as const satisfies readonly (keyof User)[];
 
 export type AuthenticatedUser = Pick<User, (typeof AUTH_USER_FIELDS)[number]>;
@@ -73,6 +81,7 @@ export class AuthGuard implements CanActivate {
     if (this.redisService) {
       const cached = await this.redisService.get<AuthenticatedUser>(cacheKey);
       if (cached) {
+        this.assertUsable(cached);
         request.user = cached;
         this.identifyForSentry(cached);
         return true;
@@ -99,9 +108,28 @@ export class AuthGuard implements CanActivate {
       await this.redisService.set(cacheKey, user, AUTH_CACHE_TTL_MS);
     }
 
+    this.assertUsable(user);
+
     request.user = user;
     this.identifyForSentry(user);
     return true;
+  }
+
+  /**
+   * Turn away a suspended or banned account.
+   *
+   * Checked on both the cached and uncached paths, and *after* the cache write
+   * on the uncached one, so a suspension imposed mid-session cannot be held off
+   * by re-warming the cache. Admin actions also delete this key outright, which
+   * is what makes the effect immediate rather than bounded by the 2-minute TTL.
+   *
+   * 403, not 401: the credentials are perfectly valid, so the client must not
+   * treat this as an expired token and try to refresh — that loop would retry
+   * forever against an account that is never coming back.
+   */
+  private assertUsable(user: AuthenticatedUser): void {
+    if (isUserActive(user)) return;
+    throw new ForbiddenException(describeAccountStatus(user));
   }
 
   // Attach the user to Sentry's request-isolated scope so errors show who was
