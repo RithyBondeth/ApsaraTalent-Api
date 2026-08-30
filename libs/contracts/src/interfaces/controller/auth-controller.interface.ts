@@ -4,6 +4,7 @@ import {
   ResetPasswordResponseDTO,
   RefreshTokenResponseDTO,
   VerifyEmailResponseDTO,
+  ResendEmailOtpResponseDTO,
   CompanyRegisterResponseDTO,
   EmployeeRegisterResponseDTO,
   LoginDTO,
@@ -17,6 +18,7 @@ import {
   LoginOtpDTO,
   LoginOtpResponseDTO,
   VerifyEmailDTO,
+  ResendEmailOtpDTO,
   TwoFactorSetupResponseDTO,
   TwoFactorEnableDTO,
   TwoFactorEnableResponseDTO,
@@ -78,15 +80,17 @@ export interface IBasicAuthRefreshTokenRpcController {
 }
 
 export interface IBasicAuthVerifyEmailController {
-  verifyEmail(
-    emailVerificationToken: VerifyEmailDTO,
-  ): Promise<VerifyEmailResponseDTO>;
+  verifyEmail(verifyEmailDTO: VerifyEmailDTO): Promise<VerifyEmailResponseDTO>;
+  resendEmailOtp(
+    resendEmailOtpDTO: ResendEmailOtpDTO,
+  ): Promise<ResendEmailOtpResponseDTO>;
 }
 
 export interface IBasicAuthVerifyEmailRpcController {
-  verifyEmail(
-    emailVerificationToken: VerifyEmailDTO,
-  ): Promise<VerifyEmailResponseDTO>;
+  verifyEmail(verifyEmailDTO: VerifyEmailDTO): Promise<VerifyEmailResponseDTO>;
+  resendEmailOtp(
+    resendEmailOtpDTO: ResendEmailOtpDTO,
+  ): Promise<ResendEmailOtpResponseDTO>;
 }
 
 export interface IBasicAuthRegisterController {

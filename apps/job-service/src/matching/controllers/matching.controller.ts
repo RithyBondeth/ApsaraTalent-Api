@@ -122,6 +122,22 @@ export class MatchingController implements IMatchingRpcController {
     );
   }
 
+  @MessagePattern(JOB_SERVICE.ACTIONS.MARK_EMPLOYEE_MATCHING_SEEN)
+  async markEmployeeMatchingSeen(
+    @Payload() employeeMatchLookupDTO: EmployeeMatchingLookupDTO,
+  ): Promise<MatchCountResponseDTO> {
+    return this.matchingService.markEmployeeMatchingSeen(
+      employeeMatchLookupDTO,
+    );
+  }
+
+  @MessagePattern(JOB_SERVICE.ACTIONS.MARK_COMPANY_MATCHING_SEEN)
+  async markCompanyMatchingSeen(
+    @Payload() companyMatchLookupDTO: CompanyMatchingLookupDTO,
+  ): Promise<MatchCountResponseDTO> {
+    return this.matchingService.markCompanyMatchingSeen(companyMatchLookupDTO);
+  }
+
   @MessagePattern(JOB_SERVICE.ACTIONS.GET_ANALYTICS)
   async getMatchingAnalytics(
     @Payload() matchingAnalyticsDTO: MatchingAnalyticsDTO,

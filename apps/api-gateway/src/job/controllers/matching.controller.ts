@@ -85,9 +85,49 @@ export class JobMatchingController implements IMatchingController {
       JOB_SERVICE.ACTIONS.UNMATCH,
       unMatchDTO,
     );
-    this.socketBroadcastService.emitToUser(unMatchDTO.eid, 'unmatchUpdate');
-    this.socketBroadcastService.emitToUser(unMatchDTO.cid, 'unmatchUpdate');
+    /*
+      Broadcast to the AUTH USER IDs returned by the service, not to eid/cid.
+      eid/cid are employee/company profile IDs, while socket rooms are keyed by
+      auth user ID (chat.gateway joins `payload.id`) — emitting to the profile
+      IDs targets rooms that do not exist, so neither party ever received this.
+    */
+    result.notifyUserIds?.forEach((userId) => {
+      this.socketBroadcastService.emitToUser(userId, 'unmatchUpdate');
+    });
     return result;
+  }
+
+  /*
+    Opening the matching list is what marks it seen. Both endpoints return the
+    recomputed counts so the caller does not need a follow-up read, and the
+    badge never has to be derived on the client.
+  */
+  @Post('employee/:eid/matching-seen')
+  @HttpCode(HttpStatus.OK)
+  async markEmployeeMatchingSeen(
+    @Param('eid', ParseUUIDPipe) eid: string,
+    @Req() req?: any,
+  ): Promise<MatchCountResponseDTO> {
+    await this.jobAccess.assertEmployeeAccess(req?.user?.id, eid);
+    return rpcCall<MatchCountResponseDTO>(
+      this.jobClient,
+      JOB_SERVICE.ACTIONS.MARK_EMPLOYEE_MATCHING_SEEN,
+      { eid },
+    );
+  }
+
+  @Post('company/:cid/matching-seen')
+  @HttpCode(HttpStatus.OK)
+  async markCompanyMatchingSeen(
+    @Param('cid', ParseUUIDPipe) cid: string,
+    @Req() req?: any,
+  ): Promise<MatchCountResponseDTO> {
+    await this.jobAccess.assertCompanyAccess(req?.user?.id, cid);
+    return rpcCall<MatchCountResponseDTO>(
+      this.jobClient,
+      JOB_SERVICE.ACTIONS.MARK_COMPANY_MATCHING_SEEN,
+      { cid },
+    );
   }
 
   @Post('company/:cid/like/:eid')

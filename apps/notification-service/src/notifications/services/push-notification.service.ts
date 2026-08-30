@@ -115,10 +115,23 @@ export class PushNotificationService implements IPushNotificationService {
       // falling back to the app's default icon.
       const icon = pushNotificationPayload.senderAvatar || undefined;
 
-      // tag: group all messages from the same sender into one notification slot.
-      // New messages from the same sender replace the previous one instead of stacking.
+      /*
+        tag: collapse related notifications into one slot instead of stacking.
+
+        Chat groups by sender, so a new message replaces the previous banner.
+        Everything else had no tag at all, because only chat writes senderId
+        into `data` — which left match, like and interview pushes free to stack,
+        and gave the browser nothing to deduplicate against when the payload is
+        both auto-displayed by the SDK and re-shown by onBackgroundMessage.
+        Falling back to the notification type keeps one slot per kind.
+      */
       const senderId = normalizedData?.senderId;
-      const tag = senderId ? `chat-${senderId}` : undefined;
+      const type = normalizedData?.type;
+      const tag = senderId
+        ? `chat-${senderId}`
+        : type
+          ? `type-${type}`
+          : undefined;
 
       // Deep-link URL — opens the correct chat thread when the user clicks the notification.
       const link = normalizedData?.url || '/notification';

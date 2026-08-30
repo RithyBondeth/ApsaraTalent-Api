@@ -67,14 +67,14 @@ describe('AuthController', () => {
     request.mockResolvedValue({
       message: 'OTP required',
       requiresTwoFactor: true,
-      userId: 'user-1',
+      twoFactorToken: 'challenge-token',
     });
 
     await expect(
       controller.login({} as any, response, httpRequest),
     ).resolves.toMatchObject({
       requiresTwoFactor: true,
-      userId: 'user-1',
+      twoFactorToken: 'challenge-token',
     });
     expect(setAuthTokenCookies).not.toHaveBeenCalled();
   });

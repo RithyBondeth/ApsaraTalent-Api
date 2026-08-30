@@ -196,8 +196,9 @@ const TRIGGERLESS_SERVICES = [
 
 // Zero-downtime settings. railway.toml has always asked for these, and until
 // 2026-08-09 not one service had them: `railwayConfigFile` is null on every
-// service, so Railway never read that file — and now that seven services deploy
-// from an image there is no repo for it to read at all. They are set directly
+// service, so Railway never read that file — and now that all 11 services
+// deploy from an image there is no repo for it to read at all. They are set
+// directly
 // on each service instead, which makes them dashboard-only state and therefore
 // this script's business.
 //

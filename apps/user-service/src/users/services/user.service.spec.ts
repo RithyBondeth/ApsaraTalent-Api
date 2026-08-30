@@ -146,6 +146,7 @@ describe('UserService', () => {
       'email',
       'id',
       'isEmailVerified',
+      'isTwoFactorEnabled',
       'lastLoginAt',
       'lastLoginMethod',
       'phone',
@@ -153,6 +154,13 @@ describe('UserService', () => {
       'role',
     ]);
     expect(options.select).not.toHaveProperty('password');
+    // Named separately from the list above so the reason survives the next
+    // edit: Settings picks "Enable" vs "Disable" from this flag, and while it
+    // was missing the client read undefined as "off" — leaving anyone who
+    // turned 2FA on unable to turn it back off. The secret itself must stay
+    // out; only the boolean is safe to publish.
+    expect(options.select).toHaveProperty('isTwoFactorEnabled', true);
+    expect(options.select).not.toHaveProperty('twoFactorSecret');
     expect(result.id).toBe('user-1');
     expect(redis.set).toHaveBeenCalledWith(
       generateUserKey('detail', 'user-1'),

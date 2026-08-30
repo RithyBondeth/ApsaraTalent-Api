@@ -273,7 +273,13 @@ export class UserResponseDTO {
   profileCompleted?: boolean;
   @Exclude()
   @ApiHideProperty()
-  emailVerificationToken?: string;
+  emailVerificationOtp?: string;
+  @Exclude()
+  @ApiHideProperty()
+  emailVerificationOtpExpires?: Date;
+  @Exclude()
+  @ApiHideProperty()
+  emailVerificationAttempts?: number;
   isTwoFactorEnabled?: boolean;
   @Exclude()
   @ApiHideProperty()

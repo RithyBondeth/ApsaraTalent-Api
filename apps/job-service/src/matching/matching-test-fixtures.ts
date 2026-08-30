@@ -13,6 +13,7 @@ export function createMatchingFixtures() {
     create: jest.fn((data) => data),
     save: jest.fn(),
     delete: jest.fn(),
+    update: jest.fn(),
     createQueryBuilder: jest.fn(),
   };
   const employees = { findOne: jest.fn() };

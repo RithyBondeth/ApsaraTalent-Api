@@ -56,5 +56,13 @@ export const USER_SERVICE = {
     GET_HIDDEN_PROFILE_IDS: { cmd: 'getHiddenProfileIds' },
     REPORT_USER: { cmd: 'reportUser' },
     REPORT_PROBLEM: { cmd: 'reportProblem' },
+
+    ADMIN_OVERVIEW: { cmd: 'adminOverview' },
+    ADMIN_LIST_USERS: { cmd: 'adminListUsers' },
+    ADMIN_GET_USER: { cmd: 'adminGetUser' },
+    ADMIN_UPDATE_USER_STATUS: { cmd: 'adminUpdateUserStatus' },
+    ADMIN_LIST_REPORTS: { cmd: 'adminListReports' },
+    ADMIN_UPDATE_REPORT_STATUS: { cmd: 'adminUpdateReportStatus' },
+    ADMIN_LIST_AUDIT: { cmd: 'adminListAudit' },
   },
 };

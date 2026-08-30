@@ -199,10 +199,34 @@ jobs:
       # Tagged with the commit SHA and pushed on main, so the artifact that was
       # built, scanned and (soon) deployed is one immutable thing rather than
       # three separate rebuilds that happen to come from the same source.
+      # The Dockerfile's builder stage runs scripts/upload-sourcemaps.mjs, which
+      # needs all four of these. Until now none were passed: the ARGs resolved
+      # empty, the script took its documented silent `exit 0`, and every API
+      # release shipped with no source maps — Sentry showed compiled dist/ lines
+      # while SENTRY_RELEASE was stamped correctly, so it looked configured.
+      #
+      # Passed bare, so Docker reads each from the step environment instead of
+      # the command line. Nothing is interpolated into the shell, which keeps
+      # this step off CodeQL's actions-injection surface.
+      #
+      # The token is deliberately empty off main. A pull request builds and
+      # scans the identical image but must not upload artifacts for a release
+      # that will never ship; the script's silent skip is the right behaviour
+      # there. ORG and PROJECT stay set either way — without the token the
+      # script never reaches them.
       - name: Build production container
+        env:
+          SENTRY_AUTH_TOKEN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SENTRY_AUTH_TOKEN || '' }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+          SENTRY_RELEASE: ${{ github.sha }}
         run: >-
           docker build
           --file apps/${{ matrix.service }}/Dockerfile
+          --build-arg SENTRY_AUTH_TOKEN
+          --build-arg SENTRY_ORG
+          --build-arg SENTRY_PROJECT
+          --build-arg SENTRY_RELEASE
           --tag ghcr.io/rithybondeth/apsaratalent-${{ matrix.service }}:${{ github.sha }}
           .
 
@@ -659,11 +683,12 @@ jobs:
         run: scripts/ci/railway-deploy-from-source.sh "Job Service"
 
       # Was the canary, and shipped three clean releases on the image path
-      # before the five internal services above joined it. The API Gateway and
-      # the four monitoring services are still rebuilt by `railway up` —
-      # converting everything at once is how #78 failed, and the gateway is the
-      # one service where being wrong is immediately user-visible, so it goes
-      # last and on its own.
+      # before the five internal services above joined it. The four monitoring
+      # services and the gateway followed, so all 11 now deploy from their image
+      # and nothing rebuilds from source — converting everything at once is how
+      # #78 failed, which is why they were moved in batches and why the gateway,
+      # the one service where being wrong is immediately user-visible, still
+      # goes last and on its own.
       #
       # Every source here was pointed at :main by hand, with account
       # credentials. The project token used by this job cannot change a source
