@@ -130,8 +130,10 @@ deliberate and load-bearing: a leaked application key must not be able to reach
 the backups. That separation, not versioning, is what protects them.
 
 `RAILWAY_TOKEN` is a **project** token. It can deploy but cannot change a
-service's *source* — which is why deploying prebuilt images from GHCR failed and
-was reverted.
+service's *source* — which is what broke the first GHCR attempt (#78). The
+approach that works, and is what runs today: each service's source was pointed
+at its `:main` image once by hand with account credentials, and CI redeploys it
+from there forever. All 11 services now ship this way.
 
 ---
 
