@@ -195,6 +195,59 @@ describe('chat support services', () => {
       );
     });
 
+    // The assertion above only ever checked userId and sendPush, which is how a
+    // chat notification carrying no sender at all stayed green: the client
+    // reads the sender off `data`, and `data` was the one thing untested.
+    it('writes the sender onto data, which is the only part that persists', async () => {
+      users.send.mockReturnValue(
+        of({ employee: { username: 'Sender', avatar: '/uploads/sender.png' } }),
+      );
+      sockets.isOnline.mockReturnValue(true);
+      notifications.send.mockReturnValue(of({ id: 'notification-1' }));
+
+      await service.notifyChatMessage(server, {
+        senderId: 'sender',
+        receiverId: 'receiver',
+        messageType: 'text',
+        content: 'Hello',
+        hasAttachment: false,
+        messageId: 'message-1',
+      });
+
+      expect(notifications.send).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          data: expect.objectContaining({
+            senderName: 'Sender',
+            senderAvatar: '/uploads/sender.png',
+          }),
+        }),
+      );
+    });
+
+    it('stores no avatar rather than the placeholder path', async () => {
+      // getCallerProfile hands back CHAT.DEFAULT_AVATAR_PATH for a user with no
+      // picture. Nothing serves that path, so persisting it would guarantee a
+      // broken image; null lets the client fall back to initials.
+      users.send.mockReturnValue(of({ employee: { username: 'Sender' } }));
+      sockets.isOnline.mockReturnValue(false);
+      notifications.send.mockReturnValue(of({ id: 'notification-1' }));
+
+      await service.notifyChatMessage(server, {
+        senderId: 'sender',
+        receiverId: 'receiver',
+        messageType: 'text',
+        content: 'Hello',
+        hasAttachment: false,
+        messageId: 'message-1',
+      });
+
+      const payload = notifications.send.mock.calls[0][1];
+      expect(payload.data.senderAvatar).toBeNull();
+      expect(payload.senderAvatar).toBeNull();
+      expect(payload.data.senderName).toBe('Sender');
+    });
+
     it('contains notification-service failures so message delivery continues', async () => {
       users.send.mockReturnValue(of(null));
       sockets.isOnline.mockReturnValue(false);

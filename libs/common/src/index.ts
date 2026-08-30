@@ -26,4 +26,5 @@ export * from './utils/release.util';
 export * from './utils/resolve-or-create-by-key.util';
 export * from './utils/string.util';
 export * from './utils/upsert-owned-rows.util';
+export * from './utils/user-status.util';
 export * from './utils/user.util';

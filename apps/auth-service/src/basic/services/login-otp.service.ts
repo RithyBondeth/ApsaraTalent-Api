@@ -6,6 +6,7 @@ import { JwtService } from '@app/common/jwt/jwt.service';
 import { hashRefreshToken } from '@app/common/jwt/refresh-token-hash.util';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
+import { assertAccountUsable } from '../../shared/utils/account-status.util';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
@@ -85,6 +86,8 @@ export class LoginOTPService implements ILoginOTPService {
 
       if (!user.otpCodeExpires || user.otpCodeExpires < new Date())
         throw new RpcException({ message: 'OTP expired', statusCode: 401 });
+
+      assertAccountUsable(user);
 
       // Prepare payload early to start JWT generation in parallel
       const payload: IPayload = {

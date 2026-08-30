@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { GoogleAuthDTO, GoogleLoginResponseDTO } from '@app/contracts';
 import { IGoogleAuthService } from '@app/contracts/interfaces/service/auth-service.interface';
 import { CacheCleanupService } from '../../shared/services/cache-cleanup.service';
+import { assertAccountUsable } from '../../shared/utils/account-status.util';
 
 @Injectable()
 export class GoogleAuthService implements IGoogleAuthService {
@@ -43,6 +44,11 @@ export class GoogleAuthService implements IGoogleAuthService {
           provider: 'google',
         });
       }
+
+      // A suspended or banned account must not slip back in through a
+      // social provider — the provider only proves who they are, not
+      // whether they are still welcome.
+      assertAccountUsable(user);
 
       // Update user with googleId and login tracking if not already set
       if (!user.googleId && googleDataDTO.id) {

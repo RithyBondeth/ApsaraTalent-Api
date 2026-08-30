@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { IFacebookAuthService } from '@app/contracts/interfaces/service/auth-service.interface';
 import { FacebookAuthDTO, FacebookLoginResponseDTO } from '@app/contracts';
 import { CacheCleanupService } from '../../shared/services/cache-cleanup.service';
+import { assertAccountUsable } from '../../shared/utils/account-status.util';
 
 @Injectable()
 export class FacebookAuthService implements IFacebookAuthService {
@@ -43,6 +44,11 @@ export class FacebookAuthService implements IFacebookAuthService {
           provider: 'facebook',
         });
       }
+
+      // A suspended or banned account must not slip back in through a
+      // social provider — the provider only proves who they are, not
+      // whether they are still welcome.
+      assertAccountUsable(user);
 
       // Update user with facebookId and login tracking
       if (!user.facebookId && facebookDataDTO.id) {

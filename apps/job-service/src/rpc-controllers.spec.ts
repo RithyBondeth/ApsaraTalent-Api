@@ -62,7 +62,15 @@ describe('Job-service RPC controllers', () => {
     // MatchingService was split four ways; the owner column is what keeps a
     // delegation from silently landing on the wrong collaborator.
     const owners = {
-      matching: ['employeeLikes', 'companyLikes', 'unmatch'],
+      // markSeen is a write, so it belongs to the write service — not to
+      // matchingQuery, which is where the count it returns is read from.
+      matching: [
+        'employeeLikes',
+        'companyLikes',
+        'unmatch',
+        'markEmployeeMatchingSeen',
+        'markCompanyMatchingSeen',
+      ],
       matchingQuery: [
         'findCurrentEmployeeLiked',
         'findCurrentCompanyLiked',

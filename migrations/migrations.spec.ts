@@ -15,6 +15,10 @@ import { FlexibleCompanyTypeAndJobLanguages1786500000000 } from './1786500000000
 import { NormalizeEmploymentTypes1786500001000 } from './1786500001000-NormalizeEmploymentTypes';
 import { JobSkillsRelation1786500002000 } from './1786500002000-JobSkillsRelation';
 import { AddMatchScore1786500003000 } from './1786500003000-AddMatchScore';
+import { EmailVerificationOtp1786500004000 } from './1786500004000-EmailVerificationOtp';
+import { AddMatchSeenAt1786500005000 } from './1786500005000-AddMatchSeenAt';
+import { AddUserStatus1786500006000 } from './1786500006000-AddUserStatus';
+import { AddAdminAuditLog1786500007000 } from './1786500007000-AddAdminAuditLog';
 
 // Read rather than imported: the tsconfig does not enable resolveJsonModule,
 // and reading it the same way scripts/ci/migration-rehearsal.mjs does keeps
@@ -46,6 +50,10 @@ describe('database migration contracts', () => {
     ],
     ['job skills relation', new JobSkillsRelation1786500002000()],
     ['match score column', new AddMatchScore1786500003000()],
+    ['email verification otp', new EmailVerificationOtp1786500004000()],
+    ['match seen timestamps', new AddMatchSeenAt1786500005000()],
+    ['user account status', new AddUserStatus1786500006000()],
+    ['admin audit log', new AddAdminAuditLog1786500007000()],
   ] as const;
 
   it.each(migrations)(

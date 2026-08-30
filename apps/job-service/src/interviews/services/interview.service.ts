@@ -132,7 +132,13 @@ export class InterviewService implements IInterviewService {
       }
 
       const response = new CreateInterviewResponseDTO(saved);
-      response.notifyUserId = employee.user?.id ?? null;
+      /*
+        Reuse targetUserId rather than resolving the side a second time. This
+        read `employee.user?.id` directly, which agrees with targetUserId only
+        because createdBy is guarded to 'company' above. Two expressions of one
+        decision is what drifts if that guard is ever relaxed; there is now one.
+      */
+      response.notifyUserId = targetUserId ?? null;
       return response;
     } catch (error: any) {
       this.logger.error(error?.message || error);
