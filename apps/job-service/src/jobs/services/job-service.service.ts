@@ -7,6 +7,15 @@ import { PinoLogger } from 'nestjs-pino';
 import { Brackets, MoreThan, Repository, SelectQueryBuilder } from 'typeorm';
 import { SCOPE_SIMILARITY_THRESHOLD } from '@app/common/embedding/embedding.service';
 import {
+  experienceYearsSql,
+  parseExperienceRange,
+} from '@app/common/utils/experience-level.util';
+import {
+  RELEVANCE_SORT,
+  relevanceParams,
+  relevanceScoreSql,
+} from '@app/common/utils/search-relevance.util';
+import {
   JobResponseDTO,
   SearchJobResponseDTO,
   SearchJobResult,
@@ -36,7 +45,12 @@ export class JobService implements IJobServiceService {
     const cached = await this.redisService.get<JobResponseDTO[]>(cacheKey);
     if (cached) {
       this.logger.info('All jobs cache HIT');
-      return cached;
+      // Rebuild the DTOs. Redis stores JSON, and JSON.stringify copies only
+      // own properties — `skills`, `experience` and `education` are @Expose()
+      // getters on the prototype, so they never survive the round trip. The
+      // fields they derive from do, so reconstructing recomputes them and a
+      // hit returns the same shape as a miss.
+      return cached.map((job) => new JobResponseDTO(job));
     }
     this.logger.info('All jobs cache MISS');
 
@@ -77,7 +91,12 @@ export class JobService implements IJobServiceService {
       const cached = await this.redisService.get<SearchJobResult>(cacheKey);
       if (cached) {
         this.logger.info('Job search cache HIT');
-        return cached;
+        // Same getter loss as findAllJobs: without this the client gets a job
+        // with no `skills`, and the search card crashes on `skills.length`.
+        return {
+          ...cached,
+          data: cached.data.map((job) => new SearchJobResponseDTO(job)),
+        };
       }
       this.logger.info('Job search cache MISS');
     }
@@ -91,13 +110,14 @@ export class JobService implements IJobServiceService {
         companySizeMax,
         postedDateFrom,
         postedDateTo,
-        sortBy = 'createdAt',
+        sortBy = RELEVANCE_SORT,
         sortOrder = 'DESC',
         salaryMin,
         salaryMax,
         jobType,
         experienceLevel,
         educationRequired,
+        workMode,
         page = 1,
         pageSize = 20,
         excludeCompanyIds,
@@ -115,15 +135,33 @@ export class JobService implements IJobServiceService {
 
         if (keyword) {
           qb.andWhere(
-            '(job.title ILIKE :keyword OR job.description ILIKE :keyword)',
+            `(
+               job.title ILIKE :keyword
+               OR job.description ILIKE :keyword
+               OR job."skillsRequired" ILIKE :keyword
+               OR EXISTS (
+                 SELECT 1 FROM job_skills_skill jss
+                 INNER JOIN skill kw_skill ON kw_skill.id = jss."skillId"
+                 WHERE jss."jobId" = job.id
+                   AND kw_skill.name ILIKE :keyword
+               )
+             )`,
             { keyword: `%${keyword}%` },
           );
         }
 
         if (location) {
-          qb.andWhere('company.location ILIKE :location', {
-            location: `%${location}%`,
-          });
+          qb.andWhere(
+            `(job.location ILIKE :location
+              OR (job.location IS NULL AND company.location ILIKE :location))`,
+            { location: `%${location}%` },
+          );
+        }
+
+        // BUG 4b: workMode was declared on the DTO and validated, but no query
+        // ever read it — remote/hybrid/on-site was unfilterable.
+        if (workMode) {
+          qb.andWhere('job."workMode" = :workMode', { workMode });
         }
 
         if (companySizeMin || companySizeMax) {
@@ -143,8 +181,11 @@ export class JobService implements IJobServiceService {
         // SQL salary range filter using numeric columns
         if (salaryMin !== undefined || salaryMax !== undefined) {
           qb.andWhere(
-            'job.salaryMin IS NOT NULL AND job.salaryMax IS NOT NULL' +
-              ' AND job.salaryMin <= :salaryMax AND job.salaryMax >= :salaryMin',
+            `(
+               job."salaryMin" IS NULL
+               OR job."salaryMax" IS NULL
+               OR (job."salaryMin" <= :salaryMax AND job."salaryMax" >= :salaryMin)
+             )`,
             {
               salaryMin: salaryMin ?? 0,
               salaryMax: salaryMax ?? Number.MAX_SAFE_INTEGER,
@@ -171,13 +212,12 @@ export class JobService implements IJobServiceService {
           );
         }
 
-        if (
-          experienceLevel &&
-          experienceLevel !== 'All' &&
-          experienceLevel !== ''
-        ) {
-          qb.andWhere('job.experienceRequired = :experienceLevel', {
-            experienceLevel,
+        const experienceRange = parseExperienceRange(experienceLevel);
+        if (experienceRange) {
+          const years = experienceYearsSql('job."experienceRequired"');
+          qb.andWhere(`${years} BETWEEN :minYears AND :maxYears`, {
+            minYears: experienceRange.min,
+            maxYears: experienceRange.max,
           });
         }
 
@@ -250,12 +290,37 @@ export class JobService implements IJobServiceService {
           );
         }
 
-        const validSortFields = ['createdAt', 'title', 'companySize'];
-        const field = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
+        const validSortFields = [
+          RELEVANCE_SORT,
+          'createdAt',
+          'title',
+          'companySize',
+        ];
+        const field = validSortFields.includes(sortBy)
+          ? sortBy
+          : RELEVANCE_SORT;
         const order =
           (sortOrder as string).toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
-        if (field === 'companySize') {
+        if (field === RELEVANCE_SORT) {
+          // Relevance needs something to be relevant to. With no keyword there
+          // is no signal to rank on, so it degrades to newest-first — which is
+          // what the feed should show when the user has not asked for anything.
+          if (keyword) {
+            const score = relevanceScoreSql({
+              primary: 'job.title',
+              secondary: ['job."skillsRequired"', 'company.name'],
+              tertiary: ['job.description'],
+            });
+            qb.addSelect(score, 'relevance_score')
+              .setParameters(relevanceParams(keyword))
+              .orderBy('relevance_score', 'DESC')
+              .addOrderBy('job.createdAt', 'DESC');
+          } else {
+            qb.orderBy('job.createdAt', order);
+          }
+          qb.addOrderBy('job.id', 'ASC');
+        } else if (field === 'companySize') {
           qb.orderBy(`company.${field}`, order).addOrderBy('job.id', 'ASC');
         } else {
           qb.orderBy(`job.${field}`, order).addOrderBy('job.id', 'ASC');

@@ -24,6 +24,6 @@ Prometheus/Grafana/Alertmanager stack alongside.
 ```bash
 npm ci
 cp .env.example .env      # then fill it in
-npm run start:dev         # or ./scripts/dev/run-dev.sh for all services in tmux
+npm run start:dev         # or ./scripts/dev/run.sh for all services in tmux
 npm test
 ```

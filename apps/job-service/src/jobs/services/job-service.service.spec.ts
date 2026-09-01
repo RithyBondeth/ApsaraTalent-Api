@@ -34,13 +34,33 @@ describe('JobService', () => {
     const cached = [{ id: 'job-1' }];
     redis.get.mockResolvedValue(cached);
 
-    await expect(service.findAllJobs({ skip: 20, limit: 10 })).resolves.toBe(
-      cached,
+    await expect(service.findAllJobs({ skip: 20, limit: 10 })).resolves.toEqual(
+      [expect.objectContaining({ id: 'job-1' })],
     );
     expect(redis.get).toHaveBeenCalledWith(
       `${generateJobListKey()}:skip:20:limit:10`,
     );
     expect(repository.find).not.toHaveBeenCalled();
+  });
+
+  it('restores the derived fields a cached job page lost to JSON', async () => {
+    // Redis returns plain objects: the @Expose() getters did not survive
+    // JSON.stringify, only the columns they read. A hit must still answer
+    // with `skills`, or the search card crashes on `skills.length`.
+    redis.get.mockResolvedValue([
+      {
+        id: 'job-1',
+        title: 'Engineer',
+        skillsRequired: 'Node.js, Redis',
+        experienceRequired: '3 - 5 years',
+        educationRequired: "Bachelor's Degree",
+      },
+    ]);
+
+    const [job] = await service.findAllJobs({});
+    expect(job.skills).toEqual(['Node.js', 'Redis']);
+    expect(job.experience).toBe('3 - 5 years');
+    expect(job.education).toBe("Bachelor's Degree");
   });
 
   it('returns and caches active jobs on a cache miss', async () => {
@@ -81,6 +101,8 @@ describe('JobService', () => {
       'andWhere',
       'orderBy',
       'addOrderBy',
+      'addSelect',
+      'setParameters',
       'skip',
       'take',
     ]) {
@@ -94,8 +116,32 @@ describe('JobService', () => {
     const cached = { data: [], total: 0, page: 1, pageSize: 20 };
     redis.get.mockResolvedValue(cached);
 
-    await expect(service.searchJobs({})).resolves.toBe(cached);
+    await expect(service.searchJobs({})).resolves.toEqual(
+      expect.objectContaining({ total: 0, page: 1, pageSize: 20, data: [] }),
+    );
     expect(repository.createQueryBuilder).not.toHaveBeenCalled();
+  });
+
+  it('restores the derived fields a cached search lost to JSON', async () => {
+    redis.get.mockResolvedValue({
+      data: [
+        {
+          id: 'job-1',
+          title: 'Engineer',
+          skillsRequired: 'Node.js, Redis',
+          experienceRequired: '3 - 5 years',
+          educationRequired: "Bachelor's Degree",
+        },
+      ],
+      total: 1,
+      page: 1,
+      pageSize: 20,
+    });
+
+    const { data, total } = await service.searchJobs({});
+    expect(total).toBe(1);
+    expect(data[0].skills).toEqual(['Node.js', 'Redis']);
+    expect(data[0].experience).toBe('3 - 5 years');
   });
 
   it('builds, paginates, and caches a normal search', async () => {
@@ -213,12 +259,14 @@ describe('JobService', () => {
       expect.objectContaining({ from: expect.any(Date), to: expect.any(Date) }),
     );
     expect(qb.andWhere).toHaveBeenCalledWith(
-      expect.stringContaining('job.salaryMin IS NOT NULL'),
+      expect.stringContaining('job."salaryMin" IS NULL'),
       { salaryMin: 1000, salaryMax: 3000 },
     );
-    expect(qb.andWhere).toHaveBeenCalledWith(
-      'job.experienceRequired = :experienceLevel',
-      { experienceLevel: 'Senior' },
+    // 'Senior' carries no number, so it is not a filterable experience level
+    // and must not narrow the results at all.
+    expect(qb.andWhere).not.toHaveBeenCalledWith(
+      expect.stringContaining('experienceRequired'),
+      expect.anything(),
     );
     expect(qb.orderBy).toHaveBeenCalledWith('company.companySize', 'DESC');
 
@@ -230,6 +278,71 @@ describe('JobService', () => {
     brackets.forEach((value) => value.whereFactory(inner));
     expect(inner.where).toHaveBeenCalledTimes(2);
     expect(inner.orWhere).toHaveBeenCalledTimes(2);
+  });
+
+  it('ranks by keyword relevance, not post date, when a keyword is given', async () => {
+    redis.get.mockResolvedValue(null);
+    const qb = queryBuilder([[], 0]);
+    repository.createQueryBuilder.mockReturnValue(qb);
+
+    await service.searchJobs({ keyword: 'React' });
+
+    // Title outranks skills outranks description.
+    const [scoreSql, alias] = qb.addSelect.mock.calls[0];
+    expect(scoreSql).toContain('job.title ILIKE :relevanceExact THEN 100');
+    expect(scoreSql).toContain(
+      'job."skillsRequired" ILIKE :relevanceLike THEN 10',
+    );
+    expect(scoreSql).toContain('job.description ILIKE :relevanceLike THEN 4');
+    expect(alias).toBe('relevance_score');
+
+    expect(qb.setParameters).toHaveBeenCalledWith(
+      expect.objectContaining({
+        relevanceExact: 'React',
+        relevancePrefix: 'React%',
+        relevanceLike: '%React%',
+      }),
+    );
+    expect(qb.orderBy).toHaveBeenCalledWith('relevance_score', 'DESC');
+    expect(qb.addOrderBy).toHaveBeenCalledWith('job.createdAt', 'DESC');
+    // Stable tiebreak so pages never repeat or skip a row.
+    expect(qb.addOrderBy).toHaveBeenCalledWith('job.id', 'ASC');
+  });
+
+  it('reaches the skills a job asks for, not just title and description', async () => {
+    redis.get.mockResolvedValue(null);
+    const qb = queryBuilder([[], 0]);
+    repository.createQueryBuilder.mockReturnValue(qb);
+
+    await service.searchJobs({ keyword: 'React' });
+
+    const keywordClause = qb.andWhere.mock.calls
+      .map(([clause]) => clause)
+      .find(
+        (clause) =>
+          typeof clause === 'string' && clause.includes('job.title ILIKE'),
+      );
+    expect(keywordClause).toContain('job."skillsRequired" ILIKE :keyword');
+    expect(keywordClause).toContain('job_skills_skill');
+  });
+
+  it('filters on work mode and prefers the job location over the company address', async () => {
+    redis.get.mockResolvedValue(null);
+    const qb = queryBuilder([[], 0]);
+    repository.createQueryBuilder.mockReturnValue(qb);
+
+    await service.searchJobs({
+      location: 'Phnom Penh',
+      workMode: 'remote' as any,
+    });
+
+    expect(qb.andWhere).toHaveBeenCalledWith(
+      expect.stringContaining('job.location ILIKE :location'),
+      { location: '%Phnom Penh%' },
+    );
+    expect(qb.andWhere).toHaveBeenCalledWith('job."workMode" = :workMode', {
+      workMode: 'remote',
+    });
   });
 
   it('uses open-ended defaults for partial size, date, and salary filters', async () => {
@@ -248,8 +361,9 @@ describe('JobService', () => {
       { csMin: 0, csMax: 20 },
     );
     expect(qb.orderBy).toHaveBeenCalledWith('job.createdAt', 'ASC');
+    expect(qb.addSelect).not.toHaveBeenCalled();
     expect(qb.andWhere).toHaveBeenCalledWith(
-      expect.stringContaining('job.salaryMin IS NOT NULL'),
+      expect.stringContaining('job."salaryMin" IS NULL'),
       { salaryMin: 0, salaryMax: 2500 },
     );
   });

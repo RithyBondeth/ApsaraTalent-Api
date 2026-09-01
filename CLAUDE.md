@@ -109,10 +109,10 @@ DTOs and interfaces do **not** live inside services — they belong in
 ```bash
 npm run start:dev              # gateway in watch mode (alias of start:dev:api)
 npm run start:dev:auth         # any one service: :api :auth :users :resume :chat :job :notification
-./scripts/dev/run-dev.sh       # every service, each in its own tmux window (needs zsh + tmux)
+./scripts/dev/run.sh       # every service, each in its own tmux window (needs zsh + tmux)
 ```
 
-`run-dev.sh` uses one `apsara-backend` tmux session — `tmux attach -t apsara-backend`
+`run.sh` uses one `apsara-backend` tmux session — `tmux attach -t apsara-backend`
 to reattach, `Ctrl-b w` to switch windows. Re-running it restarts the whole session.
 
 ```bash
