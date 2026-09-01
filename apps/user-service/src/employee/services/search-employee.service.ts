@@ -14,6 +14,15 @@ import {
 import { ISearchEmployeeService } from '@app/contracts/interfaces/service/user-service.interface';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
 import { generateSearchKey } from '@app/common/redis/redis-keys.util';
+import {
+  experienceYearsSql,
+  parseExperienceRange,
+} from '@app/common/utils/experience-level.util';
+import {
+  RELEVANCE_SORT,
+  relevanceParams,
+  relevanceScoreSql,
+} from '@app/common/utils/search-relevance.util';
 
 @Injectable()
 export class SearchEmployeeService implements ISearchEmployeeService {
@@ -55,6 +64,7 @@ export class SearchEmployeeService implements ISearchEmployeeService {
         jobType,
         experienceLevel,
         education,
+        skills,
         sortBy,
         sortOrder,
         page = 1,
@@ -77,8 +87,33 @@ export class SearchEmployeeService implements ISearchEmployeeService {
 
         if (keyword) {
           qb.andWhere(
-            '(employee.job ILIKE :keyword OR employee.firstname ILIKE :keyword OR employee.lastname ILIKE :keyword)',
+            `(
+               employee.job ILIKE :keyword
+               OR employee.firstname ILIKE :keyword
+               OR employee.lastname ILIKE :keyword
+               OR EXISTS (
+                 SELECT 1 FROM employee_skills_skill ess
+                 INNER JOIN skill kw_skill ON kw_skill.id = ess."skillId"
+                 WHERE ess."employeeId" = employee.id
+                   AND kw_skill.name ILIKE :keyword
+               )
+             )`,
             { keyword: `%${keyword}%` },
+          );
+        }
+
+        // Skills filter: a candidate qualifies by holding ANY of the requested
+        // skills, which is how a recruiter reads a skill list — "React OR Vue",
+        // not "React AND Vue".
+        if (skills && skills.length > 0) {
+          qb.andWhere(
+            `EXISTS (
+               SELECT 1 FROM employee_skills_skill ess
+               INNER JOIN skill f_skill ON f_skill.id = ess."skillId"
+               WHERE ess."employeeId" = employee.id
+                 AND f_skill.name ILIKE ANY (:skillPatterns)
+             )`,
+            { skillPatterns: skills.map((s) => `%${s}%`) },
           );
         }
 
@@ -92,14 +127,12 @@ export class SearchEmployeeService implements ISearchEmployeeService {
           qb.andWhere('employee.availability = :jobType', { jobType });
         }
 
-        if (
-          experienceLevel &&
-          experienceLevel !== 'All' &&
-          experienceLevel !== ''
-        ) {
-          qb.andWhere('employee.yearsOfExperience = :experienceLevel', {
-            experienceLevel,
-          });
+        const experienceRange = parseExperienceRange(experienceLevel);
+        if (experienceRange) {
+          qb.andWhere(
+            `${experienceYearsSql('employee."yearsOfExperience"')} >= :minYears`,
+            { minYears: experienceRange.min },
+          );
         }
 
         if (education && education.length > 0) {
@@ -169,16 +202,48 @@ export class SearchEmployeeService implements ISearchEmployeeService {
         }
 
         const validSortFields = [
+          RELEVANCE_SORT,
           'firstname',
           'lastname',
           'yearsOfExperience',
           'createdAt',
         ];
-        const field = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
+        const field = validSortFields.includes(sortBy)
+          ? sortBy
+          : RELEVANCE_SORT;
         const order = (sortOrder?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC') as
           'ASC' | 'DESC';
 
-        if (field === 'yearsOfExperience') {
+        if (field === RELEVANCE_SORT) {
+          // Relevance needs something to be relevant to. With no keyword there
+          // is no signal to rank on, so it degrades to newest-first — which is
+          // what the feed should show when the user has not asked for anything.
+          if (keyword) {
+            const score = relevanceScoreSql({
+              primary: 'employee.job',
+              secondary: [
+                'employee.firstname',
+                'employee.lastname',
+                // Scalar subquery yielding the name of a matching skill, or
+                // NULL. NULL ILIKE never scores, so this reads as a boolean
+                // bonus while still fitting the text-column shape.
+                `(SELECT rs.name FROM employee_skills_skill ress
+                    INNER JOIN skill rs ON rs.id = ress."skillId"
+                   WHERE ress."employeeId" = employee.id
+                     AND rs.name ILIKE :relevanceLike
+                   LIMIT 1)`,
+              ],
+              tertiary: ['employee.description'],
+            });
+            qb.addSelect(score, 'relevance_score')
+              .setParameters(relevanceParams(keyword))
+              .orderBy('relevance_score', 'DESC')
+              .addOrderBy('employee.createdAt', 'DESC');
+          } else {
+            qb.orderBy('employee.createdAt', order);
+          }
+          qb.addOrderBy('employee.id', 'ASC');
+        } else if (field === 'yearsOfExperience') {
           qb.orderBy(
             `CASE "employee"."yearsOfExperience"
               WHEN 'No Experience' THEN 0
