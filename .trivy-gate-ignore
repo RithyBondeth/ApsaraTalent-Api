@@ -40,3 +40,36 @@ CVE-2026-33186 exp:2026-11-07
 # Would require an attacker positioned between the prober and our own health
 # endpoints, to make a failing probe look healthy.
 CVE-2025-68121 exp:2026-11-07
+
+# --- all four monitoring images -------------------------------------------
+# golang.org/x/crypto/ssh — authentication bypass.
+#
+# This one is not about a stale image. On 2026-09-01 I scanned the newest
+# published release of every monitoring image we ship:
+#
+#   prom/prometheus:v3.14.0         affected
+#   prom/alertmanager:v0.34.0       affected
+#   grafana/grafana:13.1.4          affected
+#   prom/blackbox-exporter:v0.28.0  affected
+#
+# There is no fixed image to move to for any of them, so this is exactly the
+# case the gate cannot express: Trivy calls it fixable because x/crypto has a
+# patched version, but nobody has rebuilt the binaries against it yet.
+#
+# The vulnerable code path is the SSH transport. Not one of these four speaks
+# SSH: Prometheus scrapes HTTP, Alertmanager posts webhooks, Grafana serves a
+# web UI, and blackbox makes outbound probes. The package is linked in through
+# a dependency and never reached.
+#
+# Short expiry on purpose — an x/crypto fix propagates through upstream Go
+# images quickly, so this should be removable well before it lapses. Recheck
+# with `docker run aquasec/trivy image --severity CRITICAL --ignore-unfixed`
+# against the four tags above rather than assuming it still applies.
+CVE-2026-56854 exp:2026-10-15
+
+# NOTE — blackbox-exporter has now hit the third-CVE line drawn above. The two
+# entries above it are blackbox-specific staleness; this one is not, and would
+# have landed with or without a v0.29.0 release. So it is not by itself a
+# reason to start building the prober from source. But v0.28.0 is now nine
+# months old and carrying three exceptions, and the case for compiling it from
+# pinned upstream source on a current Go toolchain is stronger than it was.
