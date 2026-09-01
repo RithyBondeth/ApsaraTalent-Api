@@ -88,7 +88,7 @@ an external service pages when it **stops**. Silence is the signal.
 | `scripts/db/` | migrations, seed, `backup-db.sh` |
 | `scripts/storage/` | volume→bucket migration, verification, in-container migrator |
 | `scripts/load/` | local load test |
-| `scripts/dev/run-dev.sh` | all services in tmux |
+| `scripts/dev/run.sh` | all services in tmux |
 | `scripts/upload-sourcemaps.mjs` | called from every Dockerfile at build time |
 
 ---

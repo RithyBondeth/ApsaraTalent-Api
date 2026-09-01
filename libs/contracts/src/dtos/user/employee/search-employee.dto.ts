@@ -40,6 +40,13 @@ export class SearchEmployeeDTO {
   @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
   education?: string[];
 
+  /** Match candidates holding ANY of these skills. */
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+  skills?: string[];
+
   @IsOptional()
   @IsString()
   sortBy?: string;

@@ -139,9 +139,12 @@ describe('SearchEmployeeService', () => {
       sortOrder: 'desc',
     } as any);
 
+    // '3 - 5 years' is a floor, not an equality: a candidate with 8 years
+    // clears a 3-year bar. The column holds free text ('3 years', '5'), so the
+    // comparison parses both sides to a number.
     expect(qb.andWhere).toHaveBeenCalledWith(
-      'employee.yearsOfExperience = :experienceLevel',
-      { experienceLevel: '3 - 5 years' },
+      expect.stringContaining('>= :minYears'),
+      { minYears: 3 },
     );
     expect(qb.andWhere).toHaveBeenCalledWith(
       expect.stringContaining('cs_candidate.embedding'),

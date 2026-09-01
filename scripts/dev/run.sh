@@ -2,10 +2,10 @@
 #
 # Start every backend service in its own tmux window.
 #
-#   ./scripts/dev/run-dev.sh                 # all services
-#   ./scripts/dev/run-dev.sh api auth        # only these two
-#   ./scripts/dev/run-dev.sh --kill          # stop everything
-#   ./scripts/dev/run-dev.sh --list          # show the service registry
+#   ./scripts/dev/run.sh                 # all services
+#   ./scripts/dev/run.sh api auth        # only these two
+#   ./scripts/dev/run.sh --kill          # stop everything
+#   ./scripts/dev/run.sh --list          # show the service registry
 #
 # Re-running restarts the whole session. Ctrl-b w lists windows, Ctrl-b d
 # detaches (services keep running), Ctrl-b z zooms the focused pane.
