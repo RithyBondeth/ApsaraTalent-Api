@@ -19,6 +19,8 @@ import { EmailVerificationOtp1786500004000 } from './1786500004000-EmailVerifica
 import { AddMatchSeenAt1786500005000 } from './1786500005000-AddMatchSeenAt';
 import { AddUserStatus1786500006000 } from './1786500006000-AddUserStatus';
 import { AddAdminAuditLog1786500007000 } from './1786500007000-AddAdminAuditLog';
+import { AddApplicationPipelineStatuses1786500008000 } from './1786500008000-AddApplicationPipelineStatuses';
+import { AddApplicationPipelineColumns1786500009000 } from './1786500009000-AddApplicationPipelineColumns';
 
 // Read rather than imported: the tsconfig does not enable resolveJsonModule,
 // and reading it the same way scripts/ci/migration-rehearsal.mjs does keeps
@@ -54,6 +56,14 @@ describe('database migration contracts', () => {
     ['match seen timestamps', new AddMatchSeenAt1786500005000()],
     ['user account status', new AddUserStatus1786500006000()],
     ['admin audit log', new AddAdminAuditLog1786500007000()],
+    [
+      'application pipeline statuses',
+      new AddApplicationPipelineStatuses1786500008000(),
+    ],
+    [
+      'application pipeline columns',
+      new AddApplicationPipelineColumns1786500009000(),
+    ],
   ] as const;
 
   it.each(migrations)(
@@ -100,6 +110,21 @@ describe('database migration contracts', () => {
       expect(query).toHaveBeenCalled();
     },
   );
+
+  it('cannot remove the pipeline enum labels it adds', async () => {
+    // Postgres has no ALTER TYPE ... DROP VALUE, so down() is empty by
+    // necessity rather than by omission.
+    const migration = new AddApplicationPipelineStatuses1786500008000();
+    await expect(migration.down()).resolves.toBeUndefined();
+  });
+
+  it('adds the pipeline enum labels outside a transaction', () => {
+    // ALTER TYPE ... ADD VALUE may not be used in the transaction that adds
+    // it, which is what `transaction = false` buys.
+    expect(new AddApplicationPipelineStatuses1786500008000().transaction).toBe(
+      false,
+    );
+  });
 
   it('documents experience normalization as intentionally irreversible', async () => {
     const migration = new NormalizeExperienceLevels1781136000000();
