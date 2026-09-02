@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { Employee } from './employee/employee.entity';
 import { Company } from './company/company.entity';
+import { Application } from './application.entity';
 
 @Entity()
 export class Interview {
@@ -19,6 +20,21 @@ export class Interview {
 
   @ManyToOne(() => Company, { onDelete: 'CASCADE' })
   company: Company;
+
+  /**
+   * The application this interview is for, when it came from one.
+   *
+   * Null for interviews created off a mutual match, which is how every
+   * interview was created before the pipeline existed and remains a first-class
+   * path. Without this column an interview belonged to an employee and a
+   * company but to no role, so "which candidate, for which job, is at interview
+   * stage" had no answer and APPLICATION.INTERVIEWING could not be trusted.
+   *
+   * ON DELETE SET NULL, not CASCADE: an interview is a thing that happened.
+   * Losing the application should orphan it, not erase it.
+   */
+  @ManyToOne(() => Application, { nullable: true, onDelete: 'SET NULL' })
+  application: Application | null;
 
   @Column()
   title: string;
