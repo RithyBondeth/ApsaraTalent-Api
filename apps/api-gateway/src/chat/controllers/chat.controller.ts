@@ -28,6 +28,7 @@ import {
 } from '@app/contracts/dtos/chat';
 import { CanAccessAttachmentResponseDTO } from '@app/contracts/dtos/chat/chat-service/can-access-attachment.dto';
 import { rpcCall } from '../../utils/rpc-call';
+import { ChatMatchGuardService } from '../services/chat-match-guard.service';
 import { Response } from 'express';
 import { basename } from 'path';
 import { serveStorageObject, StorageService } from '@app/common';
@@ -39,6 +40,7 @@ export class ChatController implements IChatController {
   constructor(
     @Inject(CHAT_SERVICE.NAME) private chatClient: ClientProxy,
     private readonly storageService: StorageService,
+    private readonly chatMatchGuard: ChatMatchGuardService,
   ) {}
 
   @Post('initiate')
@@ -47,6 +49,11 @@ export class ChatController implements IChatController {
     @Body() initiateChatDTO: InitiateChatDTO,
     @Req() req: any,
   ): Promise<InitiateChatResponseDTO> {
+    await this.chatMatchGuard.assertMatched(
+      req.user.id,
+      initiateChatDTO.receiverId,
+    );
+
     return rpcCall<InitiateChatResponseDTO>(
       this.chatClient,
       CHAT_SERVICE.ACTIONS.CREATE_OR_GET_CHAT,

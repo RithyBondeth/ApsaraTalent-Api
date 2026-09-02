@@ -2,6 +2,8 @@ import { JwtModule } from '@app/common';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
+import { ChatMatchGuardService } from './services/chat-match-guard.service';
 import { CHAT_SERVICE } from '@app/contracts/constants/service-actions/chat-service.constant';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
@@ -39,6 +41,17 @@ import { ChatMessageService } from './services/chat-message.service';
         inject: [ConfigService],
       },
       {
+        name: JOB_SERVICE.NAME,
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: configService.get<string>('services.job.host'),
+            port: configService.get<number>('services.job.port'),
+          },
+        }),
+        inject: [ConfigService],
+      },
+      {
         name: NOTIFICATION_SERVICE.NAME,
         useFactory: (configService: ConfigService) => ({
           transport: Transport.TCP,
@@ -60,6 +73,7 @@ import { ChatMessageService } from './services/chat-message.service';
     ChatRateLimiterService,
     ChatNotificationService,
     ChatMessageService,
+    ChatMatchGuardService,
   ],
 })
 export class ChatModule {}

@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { MatchingService } from './matching.service';
 import { MatchingQueryService } from './matching-query.service';
+import { MatchLinkService } from './match-link.service';
 import { computeSkillScore } from '../utils/matching-score.util';
 import { createMatchingFixtures, expectRpc } from '../matching-test-fixtures';
 
@@ -20,10 +21,21 @@ describe('MatchingService', () => {
     company,
   } = createMatchingFixtures();
 
-  const service = new MatchingService(
+  /*
+    A real collaborator over the same fixtures rather than a mock: the upsert
+    these tests assert on moved into it wholesale, so the existing expectations
+    on `employees.findOne` / `companies.findOne` / `matching.save` still
+    describe the behaviour under test.
+  */
+  const matchLink = new MatchLinkService(
     matching as any,
     employees as any,
     companies as any,
+    redis as any,
+  );
+
+  const service = new MatchingService(
+    matching as any,
     employeeFavorites as any,
     companyFavorites as any,
     interviews as any,
@@ -31,6 +43,7 @@ describe('MatchingService', () => {
     logger as any,
     redis as any,
     notifications as any,
+    matchLink,
   );
 
   // Read-side methods moved to MatchingQueryService; it shares the same

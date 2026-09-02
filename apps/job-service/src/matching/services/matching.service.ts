@@ -1,6 +1,4 @@
-import { Company } from '@app/common/database/entities/company/company.entity';
 import { CompanyFavoriteEmployee } from '@app/common/database/entities/company/favorite-employee.entity';
-import { Employee } from '@app/common/database/entities/employee/employee.entity';
 import { EmployeeFavoriteCompany } from '@app/common/database/entities/employee/favorite-company.entity';
 import { Interview } from '@app/common/database/entities/interview.entity';
 import { JobMatching } from '@app/common/database/entities/job-matching.entity';
@@ -9,6 +7,7 @@ import { RedisService } from '@app/common/redis/redis.service';
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
+import { MatchLinkService } from './match-link.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Logger } from 'nestjs-pino';
 import { FindOptionsWhere, IsNull, Repository } from 'typeorm';
@@ -20,10 +19,6 @@ import {
   CompanyMatchingLookupDTO,
 } from '@app/contracts/dtos/job';
 import { IMatchingService } from '@app/contracts/interfaces/service/job-service.interface';
-import {
-  computeMatchScore,
-  computeSkillScore,
-} from '../utils/matching-score.util';
 import {
   UnMatchDTO,
   UnMatchResposneDTO,
@@ -46,10 +41,6 @@ export class MatchingService implements IMatchingService {
   constructor(
     @InjectRepository(JobMatching)
     private readonly jobMatchingRepo: Repository<JobMatching>,
-    @InjectRepository(Employee)
-    private readonly employeeRepo: Repository<Employee>,
-    @InjectRepository(Company)
-    private readonly companyRepo: Repository<Company>,
     @InjectRepository(EmployeeFavoriteCompany)
     private readonly employeeFavoriteCompanyRepo: Repository<EmployeeFavoriteCompany>,
     @InjectRepository(CompanyFavoriteEmployee)
@@ -61,62 +52,21 @@ export class MatchingService implements IMatchingService {
     private readonly redisService: RedisService,
     @Inject(NOTIFICATION_SERVICE.NAME)
     private readonly notificationClient: ClientProxy,
+    private readonly matchLink: MatchLinkService,
   ) {}
 
   async employeeLikes(matchDTO: MatchDTO): Promise<MatchResponseDTO> {
     try {
-      const [employee, company] = await Promise.all([
-        this.employeeRepo.findOne({
-          where: { id: matchDTO.eid },
-          relations: ['user', 'skills'],
-        }),
-        this.companyRepo.findOne({
-          where: { id: matchDTO.cid },
-          relations: ['user', 'openPositions', 'openPositions.requiredSkills'],
-        }),
-      ]);
-
-      if (!employee || !company) {
-        throw new RpcException({
-          message: 'Employee or Company not found.',
-          statusCode: 404,
-        });
-      }
-
-      let match = await this.jobMatchingRepo.findOne({
-        where: {
-          employee: { id: matchDTO.eid },
-          company: { id: matchDTO.cid },
-        },
-        relations: ['employee', 'company'],
-      });
-
-      const skillScore = computeSkillScore(employee, company);
-      const matchScore = computeMatchScore(employee, company).score;
-
-      if (!match) {
-        match = this.jobMatchingRepo.create({
-          employee,
-          company,
-          employeeLiked: true,
-          companyLiked: false,
-          isMatched: false,
-          skillScore,
-          matchScore,
-        });
-      } else {
-        match.employeeLiked = true;
-        match.skillScore = skillScore;
-        match.matchScore = matchScore;
-      }
-
-      const becameMatched =
-        !match.isMatched && match.employeeLiked && match.companyLiked;
-      if (becameMatched) {
-        match.isMatched = true;
-      }
-
-      const saved = await this.jobMatchingRepo.save(match);
+      const {
+        match: saved,
+        becameMatched,
+        employee,
+        company,
+      } = await this.matchLink.recordInterest(
+        matchDTO.eid,
+        matchDTO.cid,
+        'employee',
+      );
 
       // Tinder-style: remove from employee's saved companies when liked
       await this.employeeFavoriteCompanyRepo.delete({
@@ -354,58 +304,16 @@ export class MatchingService implements IMatchingService {
 
   async companyLikes(matchDTO: MatchDTO): Promise<MatchResponseDTO> {
     try {
-      const [employee, company] = await Promise.all([
-        this.employeeRepo.findOne({
-          where: { id: matchDTO.eid },
-          relations: ['user', 'skills'],
-        }),
-        this.companyRepo.findOne({
-          where: { id: matchDTO.cid },
-          relations: ['user', 'openPositions', 'openPositions.requiredSkills'],
-        }),
-      ]);
-
-      if (!employee || !company) {
-        throw new RpcException({
-          message: 'Employee or Company not found.',
-          statusCode: 404,
-        });
-      }
-
-      let match = await this.jobMatchingRepo.findOne({
-        where: {
-          employee: { id: matchDTO.eid },
-          company: { id: matchDTO.cid },
-        },
-        relations: ['employee', 'company'],
-      });
-
-      const skillScore = computeSkillScore(employee, company);
-      const matchScore = computeMatchScore(employee, company).score;
-
-      if (!match) {
-        match = this.jobMatchingRepo.create({
-          employee,
-          company,
-          employeeLiked: false,
-          companyLiked: true,
-          isMatched: false,
-          skillScore,
-          matchScore,
-        });
-      } else {
-        match.companyLiked = true;
-        match.skillScore = skillScore;
-        match.matchScore = matchScore;
-      }
-
-      const becameMatched =
-        !match.isMatched && match.employeeLiked && match.companyLiked;
-      if (becameMatched) {
-        match.isMatched = true;
-      }
-
-      const saved = await this.jobMatchingRepo.save(match);
+      const {
+        match: saved,
+        becameMatched,
+        employee,
+        company,
+      } = await this.matchLink.recordInterest(
+        matchDTO.eid,
+        matchDTO.cid,
+        'company',
+      );
 
       // Tinder-style: remove from company's saved employees when liked
       await this.companyFavoriteEmployeeRepo.delete({

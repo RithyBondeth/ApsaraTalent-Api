@@ -227,8 +227,30 @@ describe('InterviewService', () => {
       await expectRpc(
         service.createInterview(applicationDto),
         400,
-        'Cannot schedule an interview for a rejected application.',
+        'Cannot schedule an interview for a rejected application. Shortlist the candidate first.',
       );
+    });
+
+    it('refuses to schedule against an applicant nobody has shortlisted', async () => {
+      /*
+        The consent gate. A PENDING application is the candidate saying yes
+        while the company has not answered — one side, not two — so there is no
+        match and no interview. This used to be allowed.
+      */
+      applications.findOne.mockResolvedValue({
+        id: 'application-1',
+        status: EApplicationStatus.PENDING,
+        job: { id: 'job-1', company: { id: 'company-1' } },
+        employee: { id: 'employee-1' },
+      });
+      matches.findOne.mockResolvedValue(null);
+
+      await expectRpc(
+        service.createInterview(applicationDto),
+        400,
+        'Cannot schedule an interview for a pending application. Shortlist the candidate first.',
+      );
+      expect(interviews.save).not.toHaveBeenCalled();
     });
   });
 

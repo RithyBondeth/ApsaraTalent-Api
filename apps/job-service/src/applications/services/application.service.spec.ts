@@ -15,6 +15,7 @@ describe('ApplicationService', () => {
   const employees = { findOne: jest.fn() };
   const matches = { find: jest.fn() };
   const notifications = { emit: jest.fn() };
+  const matchLink = { recordInterest: jest.fn() };
   const logger = { setContext: jest.fn(), error: jest.fn(), warn: jest.fn() };
   const service = new ApplicationService(
     applications as any,
@@ -22,6 +23,7 @@ describe('ApplicationService', () => {
     employees as any,
     matches as any,
     notifications as any,
+    matchLink as any,
     logger as any,
   );
 
@@ -30,6 +32,7 @@ describe('ApplicationService', () => {
     applications.save.mockImplementation(async (value) => value);
     applications.update.mockResolvedValue({ affected: 1 });
     matches.find.mockResolvedValue([]);
+    matchLink.recordInterest.mockResolvedValue({ becameMatched: false });
   });
 
   async function expectRpc(
@@ -425,6 +428,114 @@ describe('ApplicationService', () => {
     expect(advanced.rejectionReason).toBeNull();
   });
 
+  it('records the applicant as having liked the company', async () => {
+    /*
+      Applying is a like aimed at a role. Without this the application would sit
+      outside the matching loop entirely, which is what let it become a second
+      door into contact.
+    */
+    employees.findOne.mockResolvedValue({ id: 'employee-1' });
+    jobs.findOne.mockResolvedValue({
+      id: 'job-1',
+      title: 'Engineer',
+      company: { id: 'company-1' },
+    });
+    applications.findOne.mockResolvedValue(null);
+
+    await service.applyApplication('user-1', { jobId: 'job-1' });
+
+    expect(matchLink.recordInterest).toHaveBeenCalledWith(
+      'employee-1',
+      'company-1',
+      'employee',
+    );
+  });
+
+  it('still creates the application when the match link fails', async () => {
+    // The candidate asked for the application; a scoring or cache failure
+    // must not cost them it. Shortlisting records the same interest again.
+    employees.findOne.mockResolvedValue({ id: 'employee-1' });
+    jobs.findOne.mockResolvedValue({
+      id: 'job-1',
+      title: 'Engineer',
+      company: { id: 'company-1' },
+    });
+    applications.findOne.mockResolvedValue(null);
+    matchLink.recordInterest.mockRejectedValueOnce(new Error('redis down'));
+
+    const result = await service.applyApplication('user-1', { jobId: 'job-1' });
+    expect(result.status).toBe(EApplicationStatus.PENDING);
+    expect(logger.warn).toHaveBeenCalled();
+  });
+
+  it('creates the match when the company shortlists', async () => {
+    applications.findOne.mockResolvedValue({
+      id: 'application-1',
+      status: EApplicationStatus.PENDING,
+      appliedAt: new Date(),
+      job: { id: 'job-1', title: 'Engineer', company: { id: 'company-1' } },
+      employee: { id: 'employee-1', user: { id: 'employee-user' } },
+    });
+
+    await service.updateApplicationStatus('company-1', {
+      applicationId: 'application-1',
+      status: EApplicationStatus.SHORTLISTED,
+    });
+
+    expect(matchLink.recordInterest).toHaveBeenCalledWith(
+      'employee-1',
+      'company-1',
+      'company',
+    );
+  });
+
+  it('does not move the stage when the match could not be written', async () => {
+    /*
+      Ordered so the link runs first and is allowed to throw: a shortlist whose
+      match failed would read as progress while leaving the two sides unable to
+      speak.
+    */
+    const application = {
+      id: 'application-1',
+      status: EApplicationStatus.PENDING,
+      appliedAt: new Date(),
+      job: { id: 'job-1', title: 'Engineer', company: { id: 'company-1' } },
+      employee: { id: 'employee-1' },
+    };
+    applications.findOne.mockResolvedValue(application);
+    matchLink.recordInterest.mockRejectedValueOnce(new Error('link failed'));
+
+    await expectRpc(
+      service.updateApplicationStatus('company-1', {
+        applicationId: 'application-1',
+        status: EApplicationStatus.SHORTLISTED,
+      }),
+      500,
+      'link failed',
+    );
+    expect(application.status).toBe(EApplicationStatus.PENDING);
+    expect(applications.save).not.toHaveBeenCalled();
+  });
+
+  it('does not create a match for stages other than shortlisted', async () => {
+    applications.findOne.mockResolvedValue({
+      id: 'application-1',
+      status: EApplicationStatus.PENDING,
+      appliedAt: new Date(),
+      job: { id: 'job-1', title: 'Engineer', company: { id: 'company-1' } },
+      employee: { id: 'employee-1' },
+    });
+
+    await service.updateApplicationStatus('company-1', {
+      applicationId: 'application-1',
+      status: EApplicationStatus.REJECTED,
+      rejectionReason: 'Not a fit',
+    });
+
+    // Rejecting a cold applicant must never put them in contact.
+    expect(matchLink.recordInterest).not.toHaveBeenCalled();
+  });
+
   it('notifies the candidate when their application moves', async () => {
     applications.findOne.mockResolvedValue({
       id: 'application-1',
@@ -573,6 +684,7 @@ describe('ApplicationService', () => {
       id: 'application-1',
       status: EApplicationStatus.PENDING,
       job: { company: { id: 'company-1' } },
+      employee: { id: 'employee-1' },
     });
     applications.save.mockRejectedValueOnce(new Error('status write failed'));
     await expectRpc(

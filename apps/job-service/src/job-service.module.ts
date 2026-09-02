@@ -34,6 +34,7 @@ import { ApplicationService } from './applications/services/application.service'
 import { InterviewService } from './interviews/services/interview.service';
 import { JobService } from './jobs/services/job-service.service';
 import { MatchingService } from './matching/services/matching.service';
+import { MatchLinkService } from './matching/services/match-link.service';
 import { MatchingQueryService } from './matching/services/matching-query.service';
 import { MatchingAnalyticsService } from './matching/services/matching-analytics.service';
 import { MatchingAiService } from './matching/services/matching-ai.service';
@@ -93,6 +94,7 @@ import {
   providers: [
     { provide: I_JOB_SERVICE_SERVICE, useClass: JobService },
     { provide: I_MATCHING_SERVICE, useClass: MatchingService },
+    MatchLinkService,
     { provide: I_MATCHING_QUERY_SERVICE, useClass: MatchingQueryService },
     {
       provide: I_MATCHING_ANALYTICS_SERVICE,

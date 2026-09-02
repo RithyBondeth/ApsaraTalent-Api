@@ -71,14 +71,24 @@ export class InterviewService implements IInterviewService {
       });
     }
 
-    const closed: EApplicationStatus[] = [
-      EApplicationStatus.HIRED,
-      EApplicationStatus.REJECTED,
-      EApplicationStatus.WITHDRAWN,
+    /*
+      An allow-list, not a deny-list. This previously refused only the three
+      terminal stages, which let a company interview a PENDING applicant — a
+      candidate who had said yes while the company had not, with no match
+      between them. That is the mutual-consent gate this whole check exists to
+      enforce, and it was being satisfied by one side alone.
+
+      Shortlisting is the company's yes and the moment the match is created, so
+      it is the earliest stage at which an interview can be scheduled.
+    */
+    const schedulable: EApplicationStatus[] = [
+      EApplicationStatus.SHORTLISTED,
+      EApplicationStatus.INTERVIEWING,
+      EApplicationStatus.OFFERED,
     ];
-    if (closed.includes(application.status)) {
+    if (!schedulable.includes(application.status)) {
       throw new RpcException({
-        message: `Cannot schedule an interview for a ${application.status} application.`,
+        message: `Cannot schedule an interview for a ${application.status} application. Shortlist the candidate first.`,
         statusCode: 400,
       });
     }

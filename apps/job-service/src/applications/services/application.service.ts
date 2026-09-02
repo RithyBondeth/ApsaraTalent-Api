@@ -13,6 +13,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { In, IsNull, Repository } from 'typeorm';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
+import { MatchLinkService } from '../../matching/services/match-link.service';
 import {
   IApplicationService,
   ApplyApplicationDTO,
@@ -73,6 +74,7 @@ export class ApplicationService implements IApplicationService {
     private readonly jobMatchingRepo: Repository<JobMatching>,
     @Inject(NOTIFICATION_SERVICE.NAME)
     private readonly notificationClient: ClientProxy,
+    private readonly matchLink: MatchLinkService,
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(ApplicationService.name);
@@ -195,6 +197,32 @@ export class ApplicationService implements IApplicationService {
       }
 
       const saved = await this.applicationRepo.save(application);
+
+      /*
+        Applying is a like — the same half of the handshake a swipe is, aimed
+        at a role instead of a company. Recording it here is what keeps
+        applications inside the matching loop rather than beside it: if this
+        company had already liked the candidate, the pair matches now.
+
+        Deliberately non-fatal. The application is the thing the candidate
+        asked for, and a scoring or cache failure should not cost them it —
+        shortlisting records the same interest again, so a miss self-heals.
+      */
+      const companyId = job.company?.id;
+      if (companyId) {
+        try {
+          await this.matchLink.recordInterest(
+            employee.id,
+            companyId,
+            'employee',
+          );
+        } catch (linkError) {
+          this.logger.warn(
+            (linkError as Error).message ||
+              'Could not record applicant interest',
+          );
+        }
+      }
 
       /*
         The company was never told an application had arrived. Matching and
@@ -385,6 +413,21 @@ export class ApplicationService implements IApplicationService {
           message: `Cannot move an application from "${application.status}" to "${nextStatus}".`,
           statusCode: 400,
         });
+      }
+
+      /*
+        Shortlisting is the company saying yes, so it is the moment the pair
+        becomes a match and chat and interviews unlock. Recorded *before* the
+        stage is saved and allowed to throw: a shortlist whose match failed to
+        write would read as progress while leaving the two sides unable to
+        speak, which is the one outcome worse than an error.
+      */
+      if (nextStatus === EApplicationStatus.SHORTLISTED) {
+        await this.matchLink.recordInterest(
+          application.employee.id,
+          companyId,
+          'company',
+        );
       }
 
       application.status = nextStatus;
