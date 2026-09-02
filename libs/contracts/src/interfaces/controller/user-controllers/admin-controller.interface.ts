@@ -2,6 +2,12 @@ import { AuthUser } from '@app/common/decorators/user.decorator';
 import {
   AdminActionResponseDTO,
   AdminGetUserDTO,
+  AdminHideJobBodyDTO,
+  AdminHideJobDTO,
+  AdminListJobsDTO,
+  AdminListJobsQueryDTO,
+  AdminPagedJobsDTO,
+  AdminRestoreJobDTO,
   AdminListAuditDTO,
   AdminListAuditQueryDTO,
   AdminListReportsDTO,
@@ -34,6 +40,11 @@ export interface IAdminRpcController {
     adminUpdateReportStatusDTO: AdminUpdateReportStatusDTO,
   ): Promise<AdminActionResponseDTO>;
   listAudit(adminListAuditDTO: AdminListAuditDTO): Promise<AdminPagedAuditDTO>;
+  listJobs(adminListJobsDTO: AdminListJobsDTO): Promise<AdminPagedJobsDTO>;
+  hideJob(adminHideJobDTO: AdminHideJobDTO): Promise<AdminActionResponseDTO>;
+  restoreJob(
+    adminRestoreJobDTO: AdminRestoreJobDTO,
+  ): Promise<AdminActionResponseDTO>;
 }
 
 // HTTP controllers (api-gateway)
@@ -56,4 +67,14 @@ export interface IAdminReportController {
     body: AdminUpdateReportStatusBodyDTO,
   ): Promise<AdminActionResponseDTO>;
   listAudit(query: AdminListAuditQueryDTO): Promise<AdminPagedAuditDTO>;
+}
+
+export interface IAdminJobController {
+  listJobs(query: AdminListJobsQueryDTO): Promise<AdminPagedJobsDTO>;
+  hideJob(
+    user: AuthUser,
+    jobId: string,
+    body: AdminHideJobBodyDTO,
+  ): Promise<AdminActionResponseDTO>;
+  restoreJob(user: AuthUser, jobId: string): Promise<AdminActionResponseDTO>;
 }

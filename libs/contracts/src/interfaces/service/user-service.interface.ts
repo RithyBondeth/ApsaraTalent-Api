@@ -2,6 +2,10 @@ import { PaginationDTO } from '@app/contracts/dtos/shared';
 import {
   AdminActionResponseDTO,
   AdminGetUserDTO,
+  AdminHideJobDTO,
+  AdminListJobsDTO,
+  AdminPagedJobsDTO,
+  AdminRestoreJobDTO,
   AdminListAuditDTO,
   AdminListReportsDTO,
   AdminListUsersDTO,
@@ -109,6 +113,7 @@ export const I_MODERATION_SERVICE = 'IModerationService';
 export const I_SUPPORT_SERVICE = 'ISupportService';
 export const I_ADMIN_USER_SERVICE = 'IAdminUserService';
 export const I_ADMIN_REPORT_SERVICE = 'IAdminReportService';
+export const I_ADMIN_JOB_SERVICE = 'IAdminJobService';
 
 export interface IUpdateEmployeeInfoService {
   updateEmployeeInfo(
@@ -288,6 +293,21 @@ export interface IAdminUserService {
   getUser(adminGetUserDTO: AdminGetUserDTO): Promise<AdminUserDetailDTO>;
   updateUserStatus(
     adminUpdateUserStatusDTO: AdminUpdateUserStatusDTO,
+  ): Promise<AdminActionResponseDTO>;
+}
+
+/**
+ * Taking job postings down, and putting them back.
+ *
+ * Its own service rather than a third arm of IAdminUserService: the user half
+ * mutates accounts and the report half works a queue, and this one moderates
+ * content. They share only the audit collaborator.
+ */
+export interface IAdminJobService {
+  listJobs(adminListJobsDTO: AdminListJobsDTO): Promise<AdminPagedJobsDTO>;
+  hideJob(adminHideJobDTO: AdminHideJobDTO): Promise<AdminActionResponseDTO>;
+  restoreJob(
+    adminRestoreJobDTO: AdminRestoreJobDTO,
   ): Promise<AdminActionResponseDTO>;
 }
 

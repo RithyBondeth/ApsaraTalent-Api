@@ -61,6 +61,7 @@ import { SearchEmployeeService } from './employee/services/search-employee.servi
 import { UpdateEmployeeInfoService } from './employee/services/update-employee-info.service';
 import { UploadEmployeeReferenceService } from './employee/services/upload-employee-reference.service';
 import { AdminAuditService } from './admin/services/admin-audit.service';
+import { AdminJobService } from './admin/services/admin-job.service';
 import { AdminReportService } from './admin/services/admin-report.service';
 import { AdminUserService } from './admin/services/admin-user.service';
 import { ModerationService } from './moderation/services/moderation.service';
@@ -91,6 +92,7 @@ import {
   I_SUPPORT_SERVICE,
   I_ADMIN_USER_SERVICE,
   I_ADMIN_REPORT_SERVICE,
+  I_ADMIN_JOB_SERVICE,
 } from '@app/contracts/interfaces/service/user-service.interface';
 
 @Module({
@@ -196,6 +198,7 @@ import {
     AdminAuditService,
     { provide: I_ADMIN_USER_SERVICE, useClass: AdminUserService },
     { provide: I_ADMIN_REPORT_SERVICE, useClass: AdminReportService },
+    { provide: I_ADMIN_JOB_SERVICE, useClass: AdminJobService },
     CacheInvalidationService,
     RedisCacheHealthIndicator,
     {
