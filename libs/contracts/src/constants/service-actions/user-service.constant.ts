@@ -64,5 +64,8 @@ export const USER_SERVICE = {
     ADMIN_LIST_REPORTS: { cmd: 'adminListReports' },
     ADMIN_UPDATE_REPORT_STATUS: { cmd: 'adminUpdateReportStatus' },
     ADMIN_LIST_AUDIT: { cmd: 'adminListAudit' },
+    ADMIN_LIST_JOBS: { cmd: 'adminListJobs' },
+    ADMIN_HIDE_JOB: { cmd: 'adminHideJob' },
+    ADMIN_RESTORE_JOB: { cmd: 'adminRestoreJob' },
   },
 };

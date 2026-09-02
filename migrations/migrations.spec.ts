@@ -21,6 +21,8 @@ import { AddUserStatus1786500006000 } from './1786500006000-AddUserStatus';
 import { AddAdminAuditLog1786500007000 } from './1786500007000-AddAdminAuditLog';
 import { AddApplicationPipelineStatuses1786500008000 } from './1786500008000-AddApplicationPipelineStatuses';
 import { AddApplicationPipelineColumns1786500009000 } from './1786500009000-AddApplicationPipelineColumns';
+import { AddJobModeration1786500010000 } from './1786500010000-AddJobModeration';
+import { AddJobAdminActions1786500011000 } from './1786500011000-AddJobAdminActions';
 
 // Read rather than imported: the tsconfig does not enable resolveJsonModule,
 // and reading it the same way scripts/ci/migration-rehearsal.mjs does keeps
@@ -64,6 +66,8 @@ describe('database migration contracts', () => {
       'application pipeline columns',
       new AddApplicationPipelineColumns1786500009000(),
     ],
+    ['job moderation', new AddJobModeration1786500010000()],
+    ['job admin actions', new AddJobAdminActions1786500011000()],
   ] as const;
 
   it.each(migrations)(

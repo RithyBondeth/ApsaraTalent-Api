@@ -1,7 +1,9 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
+  Index,
   JoinTable,
   ManyToMany,
   ManyToOne,
@@ -97,6 +99,42 @@ export class Job {
     synchronize: false,
   } as any)
   titleEmbedding: string | null;
+
+  /**
+   * Set when an administrator takes this posting down. Null means visible.
+   *
+   * This is a TypeORM `@DeleteDateColumn`, which is what makes the takedown
+   * safe rather than merely recorded. Jobs reach candidates through roughly
+   * fifteen read paths across three services — job search, the feed, company
+   * detail, both recommendation services, favourites, matching and the AI
+   * matching prompt — and most of them arrive indirectly, as
+   * `company.openPositions` joined onto a company query. Adding a status
+   * column would mean finding and filtering every one of them, and the first
+   * one missed is a scam posting still being shown to candidates.
+   *
+   * A soft-delete column is filtered by TypeORM itself, on the entity and on
+   * joined relations alike, so a hidden job disappears everywhere by default
+   * and reappearing anywhere requires someone to explicitly write
+   * `withDeleted`. The default is safe; the exception is greppable.
+   *
+   * Named `hiddenAt` rather than `deletedAt` because it is moderation, not
+   * deletion: a company removing its own posting still hard-deletes the row
+   * (`open-position.service.ts`), which is unchanged by this.
+   */
+  @Index()
+  @DeleteDateColumn({ name: 'hiddenAt', type: 'timestamptz', nullable: true })
+  hiddenAt: Date | null;
+
+  /** Why it was taken down. Shown to the company that posted it. */
+  @Column({ type: 'text', nullable: true })
+  hiddenReason: string | null;
+
+  /**
+   * The administrator who took it down. No foreign key, for the same reason
+   * as `admin_audit_log.targetUserId`: the record must outlive the account.
+   */
+  @Column({ type: 'uuid', nullable: true })
+  hiddenBy: string | null;
 
   @CreateDateColumn()
   createdAt: Date;

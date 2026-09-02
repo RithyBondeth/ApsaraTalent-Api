@@ -2,6 +2,10 @@ import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-serv
 import {
   AdminActionResponseDTO,
   AdminGetUserDTO,
+  AdminHideJobDTO,
+  AdminListJobsDTO,
+  AdminPagedJobsDTO,
+  AdminRestoreJobDTO,
   AdminListAuditDTO,
   AdminListReportsDTO,
   AdminListUsersDTO,
@@ -33,6 +37,8 @@ export class AdminController implements IAdminRpcController {
     private readonly adminUserService: userServiceInterface.IAdminUserService,
     @Inject(userServiceInterface.I_ADMIN_REPORT_SERVICE)
     private readonly adminReportService: userServiceInterface.IAdminReportService,
+    @Inject(userServiceInterface.I_ADMIN_JOB_SERVICE)
+    private readonly adminJobService: userServiceInterface.IAdminJobService,
   ) {}
 
   @MessagePattern(USER_SERVICE.ACTIONS.ADMIN_OVERVIEW)
@@ -82,5 +88,26 @@ export class AdminController implements IAdminRpcController {
     @Payload() adminListAuditDTO: AdminListAuditDTO,
   ): Promise<AdminPagedAuditDTO> {
     return this.adminReportService.listAudit(adminListAuditDTO);
+  }
+
+  @MessagePattern(USER_SERVICE.ACTIONS.ADMIN_LIST_JOBS)
+  async listJobs(
+    @Payload() adminListJobsDTO: AdminListJobsDTO,
+  ): Promise<AdminPagedJobsDTO> {
+    return this.adminJobService.listJobs(adminListJobsDTO);
+  }
+
+  @MessagePattern(USER_SERVICE.ACTIONS.ADMIN_HIDE_JOB)
+  async hideJob(
+    @Payload() adminHideJobDTO: AdminHideJobDTO,
+  ): Promise<AdminActionResponseDTO> {
+    return this.adminJobService.hideJob(adminHideJobDTO);
+  }
+
+  @MessagePattern(USER_SERVICE.ACTIONS.ADMIN_RESTORE_JOB)
+  async restoreJob(
+    @Payload() adminRestoreJobDTO: AdminRestoreJobDTO,
+  ): Promise<AdminActionResponseDTO> {
+    return this.adminJobService.restoreJob(adminRestoreJobDTO);
   }
 }

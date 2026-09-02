@@ -3,5 +3,6 @@
   "NormalizeExperienceLevels1781136000000": "The original free-text experience levels are gone once normalized. There is nothing left to restore them from.",
   "NormalizeEmploymentTypes1786500001000": "Many-to-one: 'Full Time', 'full-time' and 'FULLTIME' all collapse to 'full_time'. The original spellings cannot be derived from the normalized value.",
   "HashRefreshTokens1784073600000": "Reversing this would write bearer credentials back in plaintext, which is the vulnerability the migration exists to remove.",
-  "AddApplicationPipelineStatuses1786500008000": "Postgres has no ALTER TYPE ... DROP VALUE. Removing 'interviewing', 'offered' and 'withdrawn' would mean recreating application_status_enum and rewriting every column that uses it, which fails on any row that has reached one of those stages."
+  "AddApplicationPipelineStatuses1786500008000": "Postgres has no ALTER TYPE ... DROP VALUE. Removing 'interviewing', 'offered' and 'withdrawn' would mean recreating application_status_enum and rewriting every column that uses it, which fails on any row that has reached one of those stages.",
+  "AddJobAdminActions1786500011000": "Postgres cannot drop a value from an enum type. Reversing it would mean rewriting admin_audit_log to delete the audit rows that use the label, which is the history the table exists to preserve."
 }

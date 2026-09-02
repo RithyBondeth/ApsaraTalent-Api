@@ -7,6 +7,7 @@ import { Type } from 'class-transformer';
 import {
   IsDateString,
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -113,6 +114,48 @@ export class AdminUpdateUserStatusBodyDTO {
   suspendedUntil?: string;
 }
 
+export class AdminListJobsQueryDTO {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(ADMIN_PAGE_SIZE_MAX)
+  limit?: number;
+
+  /** Matched against the job title and the company name. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  search?: string;
+
+  /**
+   * Which side of the takedown line to show. Omitted means visible only —
+   * the queue an admin works — rather than everything, so a page of hidden
+   * postings is something you ask for.
+   */
+  @IsOptional()
+  @IsIn(['visible', 'hidden', 'all'])
+  visibility?: 'visible' | 'hidden' | 'all';
+}
+
+export class AdminHideJobBodyDTO {
+  /**
+   * Required and substantial, like a suspension reason: it is shown to the
+   * company whose posting was taken down, and it is the only part of the
+   * audit row a human will read later.
+   */
+  @IsString()
+  @MinLength(10)
+  @MaxLength(500)
+  reason: string;
+}
+
 export class AdminUpdateReportStatusBodyDTO {
   @IsEnum(EReportStatus)
   status: EReportStatus;
@@ -151,6 +194,24 @@ export class AdminUpdateReportStatusDTO extends AdminUpdateReportStatusBodyDTO {
 }
 
 export class AdminListAuditDTO extends AdminListAuditQueryDTO {}
+
+export class AdminListJobsDTO extends AdminListJobsQueryDTO {}
+
+export class AdminHideJobDTO extends AdminHideJobBodyDTO {
+  @IsUUID()
+  actorId: string;
+
+  @IsUUID()
+  jobId: string;
+}
+
+export class AdminRestoreJobDTO {
+  @IsUUID()
+  actorId: string;
+
+  @IsUUID()
+  jobId: string;
+}
 
 /* -------------------------------- Responses ------------------------------- */
 export class AdminUserListItemDTO {
@@ -264,6 +325,37 @@ export class AdminPagedAuditDTO {
   }
 }
 
+export class AdminJobListItemDTO {
+  id: string;
+  title: string;
+  companyId: string | null;
+  companyName: string;
+  location: string | null;
+  type: string;
+  createdAt: Date;
+  expireDate: Date | null;
+  /** Null means the posting is live. */
+  hiddenAt: Date | null;
+  hiddenReason: string | null;
+  /** Pending reports against the company that placed it. */
+  companyOpenReportCount: number;
+
+  constructor(partial: Partial<AdminJobListItemDTO>) {
+    Object.assign(this, partial);
+  }
+}
+
+export class AdminPagedJobsDTO {
+  items: AdminJobListItemDTO[];
+  total: number;
+  page: number;
+  limit: number;
+
+  constructor(partial: Partial<AdminPagedJobsDTO>) {
+    Object.assign(this, partial);
+  }
+}
+
 export class AdminOverviewDTO {
   totalUsers: number;
   employees: number;
@@ -272,6 +364,8 @@ export class AdminOverviewDTO {
   bannedUsers: number;
   pendingReports: number;
   newUsersLast7Days: number;
+  liveJobs: number;
+  hiddenJobs: number;
 
   constructor(partial: Partial<AdminOverviewDTO>) {
     Object.assign(this, partial);
