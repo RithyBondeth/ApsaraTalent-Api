@@ -3,7 +3,10 @@ import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
 import {
+  FindOneJobDTO,
   JobResponseDTO,
+  PublicJobDetailDTO,
+  PublicJobSitemapEntryDTO,
   SearchJobDTO,
   SearchJobResult,
 } from '@app/contracts/dtos/job';
@@ -30,5 +33,17 @@ export class JobController implements IJobRpcController {
   @MessagePattern(JOB_SERVICE.ACTIONS.SEARCH_JOBS)
   searchJobs(@Payload() searchJobDTO: SearchJobDTO): Promise<SearchJobResult> {
     return this.jobService.searchJobs(searchJobDTO);
+  }
+
+  @MessagePattern(JOB_SERVICE.ACTIONS.FIND_ONE_JOB)
+  findOneJob(
+    @Payload() findOneJobDTO: FindOneJobDTO,
+  ): Promise<PublicJobDetailDTO | null> {
+    return this.jobService.findOneJob(findOneJobDTO);
+  }
+
+  @MessagePattern(JOB_SERVICE.ACTIONS.FIND_PUBLIC_JOB_SITEMAP)
+  findPublicJobSitemap(): Promise<PublicJobSitemapEntryDTO[]> {
+    return this.jobService.findPublicJobSitemap();
   }
 }

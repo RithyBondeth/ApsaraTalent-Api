@@ -1,5 +1,8 @@
 import { AuthUser } from '@app/common/decorators/user.decorator';
 import {
+  FindOneJobDTO,
+  PublicJobDetailDTO,
+  PublicJobSitemapEntryDTO,
   SearchJobDTO,
   SearchJobResponseDTO,
   SearchJobResult,
@@ -14,7 +17,15 @@ export interface IJobController {
   findAllJobs(pagination: PaginationDTO): Promise<SearchJobResponseDTO[]>;
 }
 
+/** The unauthenticated half of the job surface — see PublicJobController. */
+export interface IPublicJobController {
+  findOneJob(jobId: string): Promise<PublicJobDetailDTO>;
+  findPublicJobSitemap(): Promise<PublicJobSitemapEntryDTO[]>;
+}
+
 export interface IJobRpcController {
   searchJobs(searchJobDTO: SearchJobDTO): Promise<SearchJobResult>;
   findAllJobs(paginationDTO: PaginationDTO): Promise<SearchJobResponseDTO[]>;
+  findOneJob(findOneJobDTO: FindOneJobDTO): Promise<PublicJobDetailDTO | null>;
+  findPublicJobSitemap(): Promise<PublicJobSitemapEntryDTO[]>;
 }

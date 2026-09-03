@@ -1,5 +1,8 @@
 import {
+  FindOneJobDTO,
   JobResponseDTO,
+  PublicJobDetailDTO,
+  PublicJobSitemapEntryDTO,
   SearchJobResult,
   CreateInterviewDTO,
   GetInterviewsByCompanyDTO,
@@ -49,6 +52,9 @@ export const I_APPLICATION_SERVICE = 'IApplicationService';
 export interface IJobServiceService {
   findAllJobs(paginationDTO: PaginationDTO): Promise<JobResponseDTO[]>;
   searchJobs(searchJobDTO: SearchJobDTO): Promise<SearchJobResult>;
+  /** Null for a job that is missing, expired, hidden, or from a suspended account. */
+  findOneJob(findOneJobDTO: FindOneJobDTO): Promise<PublicJobDetailDTO | null>;
+  findPublicJobSitemap(): Promise<PublicJobSitemapEntryDTO[]>;
 }
 
 export interface IMatchingService {

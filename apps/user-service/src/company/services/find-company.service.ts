@@ -6,7 +6,8 @@ import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
-import { In, Not, Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
+import { activeUserSql } from '@app/common/utils/discovery-status.util';
 import {
   CompanyResponseDTO,
   CountAllUsersResponseDTO,
@@ -125,19 +126,29 @@ export class FindCompanyService implements IFindCompanyService {
     this.logger.info('All Companies cache MISS');
 
     try {
-      const companies = await this.companyRepository.find({
-        where: hasFilter ? { id: Not(In(excludeCompanyIds)) } : {},
-        relations: [
-          'openPositions',
-          'benefits',
-          'values',
-          'careerScopes',
-          'socials',
-          'images',
-        ],
-        skip,
-        take: limit,
-      });
+      const qb = this.companyRepository
+        .createQueryBuilder('company')
+        .leftJoinAndSelect('company.user', 'user')
+        .leftJoinAndSelect('company.openPositions', 'openPositions')
+        .leftJoinAndSelect('company.benefits', 'benefits')
+        .leftJoinAndSelect('company.values', 'values')
+        .leftJoinAndSelect('company.careerScopes', 'careerScopes')
+        .leftJoinAndSelect('company.socials', 'socials')
+        .leftJoinAndSelect('company.images', 'images')
+        // Discovery: hide suspended and banned companies. Existing
+        // relationships — matches, applications, chats — read through other
+        // paths and are not affected.
+        .where(activeUserSql('user'))
+        .skip(skip)
+        .take(limit);
+
+      if (hasFilter) {
+        qb.andWhere('company.id NOT IN (:...excludeCompanyIds)', {
+          excludeCompanyIds,
+        });
+      }
+
+      const companies = await qb.getMany();
       if (!companies)
         throw new RpcException({
           message: 'There are no companies available.',

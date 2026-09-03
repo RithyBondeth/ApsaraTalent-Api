@@ -4,6 +4,7 @@ export const JOB_SERVICE = {
     FIND_ALL_JOBS: { cmd: 'findAllJobs' },
     SEARCH_JOBS: { cmd: 'searchJobs' },
     FIND_ONE_JOB: { cmd: 'findOneJob' },
+    FIND_PUBLIC_JOB_SITEMAP: { cmd: 'findPublicJobSitemap' },
     EMPLOYEE_LIKES: { cmd: 'employeeLikes' },
     COMPANY_LIKES: { cmd: 'companyLikes' },
     UNMATCH: { cmd: 'unmatch' },

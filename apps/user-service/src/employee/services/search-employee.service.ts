@@ -4,6 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
+import { activeUserSql } from '@app/common/utils/discovery-status.util';
 import { Brackets, Repository, SelectQueryBuilder } from 'typeorm';
 import { SCOPE_SIMILARITY_THRESHOLD } from '@app/common/embedding/embedding.service';
 import {
@@ -83,7 +84,10 @@ export class SearchEmployeeService implements ISearchEmployeeService {
           .leftJoinAndSelect('employee.careerScopes', 'careerScope')
           .leftJoinAndSelect('employee.experiences', 'experience')
           .leftJoinAndSelect('employee.educations', 'edu')
-          .where('employee.isHide = :isHide', { isHide: false });
+          .where('employee.isHide = :isHide', { isHide: false })
+          // Discovery: hide suspended and banned employees. Existing
+          // relationships still see each other through other read paths.
+          .andWhere(activeUserSql('user'));
 
         if (keyword) {
           qb.andWhere(

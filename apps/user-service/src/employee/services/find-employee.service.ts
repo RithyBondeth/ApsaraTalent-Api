@@ -6,7 +6,8 @@ import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
-import { In, Not, Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
+import { activeUserSql } from '@app/common/utils/discovery-status.util';
 import {
   CountAllUsersResponseDTO,
   EmployeeResponseDTO,
@@ -105,21 +106,27 @@ export class FindEmployeeService implements IFindEmployeeService {
     this.logger.info('All employees cache MISS');
 
     try {
-      const employees = await this.employeeRepository.find({
-        where: {
-          isHide: false,
-          ...(hasFilter ? { id: Not(In(excludeEmployeeIds)) } : {}),
-        },
-        relations: [
-          'skills',
-          'careerScopes',
-          'experiences',
-          'socials',
-          'educations',
-        ],
-        skip,
-        take: limit,
-      });
+      const qb = this.employeeRepository
+        .createQueryBuilder('employee')
+        .leftJoinAndSelect('employee.user', 'user')
+        .leftJoinAndSelect('employee.skills', 'skills')
+        .leftJoinAndSelect('employee.careerScopes', 'careerScopes')
+        .leftJoinAndSelect('employee.experiences', 'experiences')
+        .leftJoinAndSelect('employee.socials', 'socials')
+        .leftJoinAndSelect('employee.educations', 'educations')
+        .where('employee.isHide = false')
+        // Discovery: hide suspended and banned employees.
+        .andWhere(activeUserSql('user'))
+        .skip(skip)
+        .take(limit);
+
+      if (hasFilter) {
+        qb.andWhere('employee.id NOT IN (:...excludeEmployeeIds)', {
+          excludeEmployeeIds,
+        });
+      }
+
+      const employees = await qb.getMany();
       if (!employees)
         throw new RpcException({
           message: 'There are no employees available',

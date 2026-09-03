@@ -8,7 +8,29 @@ import {
 } from '@app/contracts/dtos/user';
 
 describe('FindCompanyService', () => {
-  const companies = { find: jest.fn(), count: jest.fn() };
+  const companies = {
+    find: jest.fn(),
+    count: jest.fn(),
+    createQueryBuilder: jest.fn(),
+  };
+
+  function companiesQb(rows: any[], overrides: Record<string, jest.Mock> = {}) {
+    const qb: Record<string, jest.Mock> = {};
+    for (const method of [
+      'leftJoinAndSelect',
+      'where',
+      'andWhere',
+      'orderBy',
+      'skip',
+      'take',
+      'select',
+    ]) {
+      qb[method] = jest.fn(() => qb);
+    }
+    qb.getMany = jest.fn().mockResolvedValue(rows);
+    Object.assign(qb, overrides);
+    return qb;
+  }
   const users = { findOne: jest.fn() };
   // getBlockedCounterpartUserIds reads the FK columns through a query builder
   // rather than hydrating blocker/blocked. The previous mock resolved `find()`
@@ -55,9 +77,10 @@ describe('FindCompanyService', () => {
     blockRows.mockResolvedValue([
       { blockerId: 'blocked-user', blockedId: 'requester' },
     ]);
-    companies.find
-      .mockResolvedValueOnce([{ id: 'blocked-company' }])
-      .mockResolvedValueOnce([{ id: 'visible', name: 'Visible' }]);
+    companies.find.mockResolvedValueOnce([{ id: 'blocked-company' }]);
+    companies.createQueryBuilder.mockReturnValue(
+      companiesQb([{ id: 'visible', name: 'Visible' }]),
+    );
     await service.findAll({ requesterId: 'requester' });
 
     // Filtered pages used to skip the cache entirely, so anyone who had
@@ -76,7 +99,9 @@ describe('FindCompanyService', () => {
   it('leaves the unfiltered key untouched when nothing is excluded', async () => {
     // Users with no blocks must keep hitting the shared entry, byte-identical
     // to the key that is already live in Redis.
-    companies.find.mockResolvedValueOnce([{ id: 'visible' }]);
+    companies.createQueryBuilder.mockReturnValue(
+      companiesQb([{ id: 'visible' }]),
+    );
     await service.findAll({ requesterId: 'requester', skip: 0, limit: 10 });
 
     const [readKey] = redis.get.mock.calls[0];
@@ -134,7 +159,7 @@ describe('FindCompanyService', () => {
   });
 
   it('wraps list failures and null repository results', async () => {
-    companies.find.mockResolvedValueOnce(null);
+    companies.createQueryBuilder.mockReturnValueOnce(companiesQb(null as any));
     const empty = (await service
       .findAll({})
       .catch((error) => error)) as RpcException;
@@ -142,7 +167,9 @@ describe('FindCompanyService', () => {
       statusCode: 500,
       message: 'There are no companies available.',
     });
-    companies.find.mockRejectedValueOnce(new Error('list failed'));
+    const failingQb = companiesQb([]);
+    failingQb.getMany = jest.fn().mockRejectedValue(new Error('list failed'));
+    companies.createQueryBuilder.mockReturnValueOnce(failingQb);
     const failed = (await service
       .findAll({})
       .catch((error) => error)) as RpcException;
@@ -218,19 +245,33 @@ describe('FindCompanyService', () => {
     });
   });
 
+  it('applies the active-user filter when building the discovery query', async () => {
+    const qb = companiesQb([]);
+    companies.createQueryBuilder.mockReturnValue(qb);
+
+    await service.findAll({ skip: 0, limit: 10 });
+
+    const whereCalls = qb.where.mock.calls.flat().join(' ');
+    // Suspended and banned companies must not appear in the list. A change
+    // that drops this call quietly brings them back.
+    expect(whereCalls).toMatch(/status/);
+    expect(whereCalls).toMatch(/suspendedUntil/);
+  });
+
   it('collects blocks in both directions and maps visible job positions', async () => {
     blockRows.mockResolvedValue([
       { blockerId: 'requester', blockedId: 'blocked-a' },
       { blockerId: 'blocked-b', blockedId: 'requester' },
     ]);
-    companies.find
-      .mockResolvedValueOnce([{ id: 'company-blocked' }])
-      .mockResolvedValueOnce([
+    companies.find.mockResolvedValueOnce([{ id: 'company-blocked' }]);
+    companies.createQueryBuilder.mockReturnValue(
+      companiesQb([
         {
           id: 'company-visible',
           openPositions: [{ id: 'job-1', skillsRequired: '' }],
         },
-      ]);
+      ]),
+    );
 
     const result = await service.findAll({ requesterId: 'requester' });
 
@@ -253,7 +294,9 @@ describe('FindCompanyService', () => {
   });
 
   it('returns stable operation errors for non-Error repository failures', async () => {
-    companies.find.mockRejectedValueOnce(null);
+    const nullFailingQb = companiesQb([]);
+    nullFailingQb.getMany = jest.fn().mockRejectedValue(null);
+    companies.createQueryBuilder.mockReturnValueOnce(nullFailingQb);
     const listFailure = (await service
       .findAll({})
       .catch((error) => error)) as RpcException;

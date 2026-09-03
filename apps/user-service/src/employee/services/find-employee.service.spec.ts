@@ -4,7 +4,27 @@ import { FindEmployeeService } from './find-employee.service';
 import { generateListKey } from '@app/common/redis/redis-keys.util';
 
 describe('FindEmployeeService', () => {
-  const employees = { find: jest.fn(), count: jest.fn() };
+  const employees = {
+    find: jest.fn(),
+    count: jest.fn(),
+    createQueryBuilder: jest.fn(),
+  };
+
+  function employeesQb(rows: any[], overrides: Record<string, jest.Mock> = {}) {
+    const qb: Record<string, jest.Mock> = {};
+    for (const method of [
+      'leftJoinAndSelect',
+      'where',
+      'andWhere',
+      'skip',
+      'take',
+    ]) {
+      qb[method] = jest.fn(() => qb);
+    }
+    qb.getMany = jest.fn().mockResolvedValue(rows);
+    Object.assign(qb, overrides);
+    return qb;
+  }
   const users = { findOne: jest.fn() };
   // getBlockedCounterpartUserIds reads the FK columns through a query builder
   // rather than hydrating blocker/blocked. The previous mock resolved `find()`
@@ -51,9 +71,10 @@ describe('FindEmployeeService', () => {
     blockRows.mockResolvedValue([
       { blockerId: 'requester', blockedId: 'blocked-user' },
     ]);
-    employees.find
-      .mockResolvedValueOnce([{ id: 'blocked-employee' }])
-      .mockResolvedValueOnce([{ id: 'visible', firstname: 'Visible' }]);
+    employees.find.mockResolvedValueOnce([{ id: 'blocked-employee' }]);
+    employees.createQueryBuilder.mockReturnValue(
+      employeesQb([{ id: 'visible', firstname: 'Visible' }]),
+    );
     const result = await service.findAll({ requesterId: 'requester' });
     expect(result).toHaveLength(1);
 
@@ -73,7 +94,9 @@ describe('FindEmployeeService', () => {
   it('leaves the unfiltered key untouched when nothing is excluded', async () => {
     // Users with no blocks must keep hitting the shared entry, byte-identical
     // to the key that is already live in Redis.
-    employees.find.mockResolvedValueOnce([{ id: 'visible' }]);
+    employees.createQueryBuilder.mockReturnValue(
+      employeesQb([{ id: 'visible' }]),
+    );
     await service.findAll({ requesterId: 'requester', skip: 0, limit: 10 });
 
     const [readKey] = redis.get.mock.calls[0];
@@ -130,7 +153,7 @@ describe('FindEmployeeService', () => {
   });
 
   it('wraps null and failed employee list queries', async () => {
-    employees.find.mockResolvedValueOnce(null);
+    employees.createQueryBuilder.mockReturnValueOnce(employeesQb(null as any));
     const empty = (await service
       .findAll({})
       .catch((error) => error)) as RpcException;
@@ -138,7 +161,9 @@ describe('FindEmployeeService', () => {
       statusCode: 500,
       message: 'There are no employees available',
     });
-    employees.find.mockRejectedValueOnce(new Error('list failed'));
+    const failingQb = employeesQb([]);
+    failingQb.getMany = jest.fn().mockRejectedValue(new Error('list failed'));
+    employees.createQueryBuilder.mockReturnValueOnce(failingQb);
     const failed = (await service
       .findAll({})
       .catch((error) => error)) as RpcException;
@@ -193,8 +218,23 @@ describe('FindEmployeeService', () => {
     });
   });
 
+  it('applies the active-user filter when building the discovery query', async () => {
+    const qb = employeesQb([]);
+    employees.createQueryBuilder.mockReturnValue(qb);
+
+    await service.findAll({ skip: 0, limit: 10 });
+
+    // Discovery: suspended and banned accounts must be excluded. Any change
+    // that stops calling andWhere here brings them back into the feed.
+    const andWhereCalls = qb.andWhere.mock.calls.flat().join(' ');
+    expect(andWhereCalls).toMatch(/status/);
+    expect(andWhereCalls).toMatch(/suspendedUntil/);
+  });
+
   it('loads and caches an unfiltered database page', async () => {
-    employees.find.mockResolvedValue([{ id: 'employee-1', firstname: 'Sok' }]);
+    employees.createQueryBuilder.mockReturnValue(
+      employeesQb([{ id: 'employee-1', firstname: 'Sok' }]),
+    );
 
     await expect(service.findAll({ skip: 5, limit: 2 })).resolves.toEqual([
       expect.objectContaining({ id: 'employee-1' }),
@@ -210,12 +250,13 @@ describe('FindEmployeeService', () => {
     blockRows.mockResolvedValue([
       { blockerId: 'other-user', blockedId: 'requester' },
     ]);
-    employees.find
-      .mockResolvedValueOnce([{ id: 'blocked-employee' }])
-      .mockResolvedValueOnce([]);
+    employees.find.mockResolvedValueOnce([{ id: 'blocked-employee' }]);
+    employees.createQueryBuilder.mockReturnValue(employeesQb([]));
 
     await service.findAll({ requesterId: 'requester' });
 
+    // The blocked user -> employee id lookup still uses repository.find; the
+    // main hydration moved to a query builder.
     expect(employees.find).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({
@@ -239,7 +280,9 @@ describe('FindEmployeeService', () => {
   });
 
   it('uses stable fallback messages for malformed repository failures', async () => {
-    employees.find.mockRejectedValueOnce(null);
+    const nullFailingQb = employeesQb([]);
+    nullFailingQb.getMany = jest.fn().mockRejectedValue(null);
+    employees.createQueryBuilder.mockReturnValueOnce(nullFailingQb);
     const list = (await service
       .findAll({})
       .catch((error) => error)) as RpcException;

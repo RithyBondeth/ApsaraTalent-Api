@@ -8,6 +8,7 @@ import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-serv
 import { ApplicationController } from './controllers/application.controller';
 import { InterviewController } from './controllers/interview.controller';
 import { JobController } from './controllers/job.controller';
+import { PublicJobController } from './controllers/public-job.controller';
 import { JobMatchingController } from './controllers/matching.controller';
 import { AiMatchingService } from './services/ai-matching.service';
 import { JobAccessService } from './services/job-access.service';
@@ -43,6 +44,7 @@ import { JobAccessService } from './services/job-access.service';
   ],
   controllers: [
     JobController,
+    PublicJobController,
     JobMatchingController,
     InterviewController,
     ApplicationController,
