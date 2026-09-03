@@ -6,3 +6,4 @@ export * from './read-all-notifications.dto';
 export * from './delete-notification.dto';
 export * from './create-notification.dto';
 export * from './notification-rpc.dto';
+export * from './notification-preference.dto';

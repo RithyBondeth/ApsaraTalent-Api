@@ -25,6 +25,18 @@ export class CreateNotificationCurrentUserDTO {
   @IsOptional()
   sendPush?: boolean;
 
+  /**
+   * Whether this notification may also be emailed. Defaults to true.
+   *
+   * The default is safe because the *preference* defaults decide the outcome:
+   * a chat message resolves to the MESSAGE category, whose email default is
+   * off, so opting every emit in does not turn the platform into a mailing
+   * list. Pass `false` only for something that should never be email, whatever
+   * the reader has chosen.
+   */
+  @IsOptional()
+  sendEmail?: boolean;
+
   @IsString()
   @IsOptional()
   senderAvatar?: string;

@@ -20,6 +20,8 @@ import { AdminAuditLog } from '../entities/moderation/admin-audit-log.entity';
 import { UserBlock } from '../entities/moderation/user-block.entity';
 import { UserReport } from '../entities/moderation/user-report.entity';
 import { Notification } from '../entities/notification.entity';
+import { NotificationPreference } from '../entities/notification-preference.entity';
+import { OutboxMessage } from '../entities/outbox-message.entity';
 import { ResumeTemplate } from '../entities/resume-template.entity';
 import { Social } from '../entities/social.entity';
 import { User } from '../entities/user.entity';
@@ -56,6 +58,8 @@ export const databaseConfig = async (
     UserReport,
     AdminAuditLog,
     Application,
+    OutboxMessage,
+    NotificationPreference,
   ],
   // Load relations as separate batched queries instead of a single multi-join.
   // This prevents the cartesian-product row explosion (and embedding/column

@@ -2,7 +2,6 @@ import { CompanyFavoriteEmployee } from '@app/common/database/entities/company/f
 import { EmployeeFavoriteCompany } from '@app/common/database/entities/employee/favorite-company.entity';
 import { Interview } from '@app/common/database/entities/interview.entity';
 import { JobMatching } from '@app/common/database/entities/job-matching.entity';
-import { EmailService } from '@app/common/email/email.service';
 import { RedisService } from '@app/common/redis/redis.service';
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
@@ -47,7 +46,6 @@ export class MatchingService implements IMatchingService {
     private readonly companyFavoriteEmployeeRepo: Repository<CompanyFavoriteEmployee>,
     @InjectRepository(Interview)
     private readonly interviewRepo: Repository<Interview>,
-    private readonly emailService: EmailService,
     private readonly logger: Logger,
     private readonly redisService: RedisService,
     @Inject(NOTIFICATION_SERVICE.NAME)
@@ -152,20 +150,18 @@ export class MatchingService implements IMatchingService {
         notificationTargets.push(companyUserId);
       }
 
-      if (becameMatched && company.user?.email && employee.user?.email) {
-        this.emailService
-          .sendEmail({
-            from: company.user.email,
-            to: employee.user.email,
-            subject: 'Matched Message',
-            text: `🎉 Match! ${employee.username} likes your company.`,
-          })
-          .catch((err) =>
-            this.logger.warn(
-              `Failed to send match notification: ${err?.message || err}`,
-            ),
-          );
-      }
+      /*
+        The match email is no longer sent from here. The CREATE_NOTIFICATION
+        emit above already reaches notification-service, which now renders and
+        sends the email itself — through the outbox, honouring the recipient's
+        preferences, and with an unsubscribe link.
+
+        Doing it here as well would send two emails for one match, and this one
+        was the worse of the pair: it set `from` to the *other user's* address,
+        so every message was sent from a domain this platform has no authority
+        over. SPF and DKIM fail on that by design, which is exactly how a
+        sending domain earns a spam reputation.
+      */
 
       return new MatchResponseDTO({ ...saved, notificationTargets });
     } catch (error: any) {
@@ -398,20 +394,18 @@ export class MatchingService implements IMatchingService {
         notificationTargets.push(employeeUserId);
       }
 
-      if (becameMatched && employee.user?.email && company.user?.email) {
-        this.emailService
-          .sendEmail({
-            from: employee.user.email,
-            to: company.user.email,
-            subject: 'Apsara Talent - Matched Messages',
-            text: `🎉 Match! ${company.name} likes your profile.`,
-          })
-          .catch((err) =>
-            this.logger.warn(
-              `Failed to send match notification: ${err?.message || err}`,
-            ),
-          );
-      }
+      /*
+        The match email is no longer sent from here. The CREATE_NOTIFICATION
+        emit above already reaches notification-service, which now renders and
+        sends the email itself — through the outbox, honouring the recipient's
+        preferences, and with an unsubscribe link.
+
+        Doing it here as well would send two emails for one match, and this one
+        was the worse of the pair: it set `from` to the *other user's* address,
+        so every message was sent from a domain this platform has no authority
+        over. SPF and DKIM fail on that by design, which is exactly how a
+        sending domain earns a spam reputation.
+      */
 
       return new MatchResponseDTO({ ...saved, notificationTargets });
     } catch (error: any) {

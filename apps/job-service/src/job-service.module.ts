@@ -1,6 +1,5 @@
 import {
   DatabaseModule,
-  EmailModule,
   LoggerModule,
   RedisCacheHealthIndicator,
   VectorColumnsModule,
@@ -55,7 +54,6 @@ import {
     DatabaseModule,
     LoggerModule,
     MessageModule,
-    EmailModule,
     VectorColumnsModule,
     RedisModule,
     TerminusModule,

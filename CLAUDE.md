@@ -176,6 +176,25 @@ the only image that mounts the storage volume.
 - Service discovery is environment-variable based (`services.<name>.host` / `.port`).
 - Real-time chat and calls use Socket.IO, in `api-gateway/src/chat/gateways/`.
 
+### Transactional email
+Nothing sends email inline. `EmailService.sendEmail()` writes a row to
+`outbox_message` inside the caller's request; `OutboxDispatcherService` in
+notification-service polls that table and does the SMTP round trip out of band,
+retrying with exponential backoff up to `OUTBOX_MAX_ATTEMPTS`.
+
+- Application code calls **`EmailService`**. `MailerService` is the raw
+  nodemailer transport and belongs to the dispatcher alone — calling it
+  directly is a fire-and-forget that is lost if SMTP is down.
+- Concurrency safety is one statement in `OutboxService.claimBatch`
+  (`FOR UPDATE SKIP LOCKED` + a visibility timeout), so extra
+  notification-service replicas are safe and a worker that dies mid-send
+  releases its claim on its own.
+- Push is deliberately **not** routed through the outbox: chat push has to
+  arrive in seconds and a polled queue would make it feel broken.
+- The undelivered backlog is reported by notification-service's `/health/ready`
+  as a gauge. It never fails readiness — pulling the only process that can
+  drain the queue out of rotation would make a backlog permanent.
+
 ### Error handling
 - Inside a microservice, throw `RpcException`.
 - The gateway converts those to HTTP via `api-gateway/src/utils/rpc-to-http-exception.filter.ts`.

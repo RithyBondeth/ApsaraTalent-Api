@@ -19,6 +19,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { PushNotificationService } from './push-notification.service';
+import { NotificationPreferenceService } from '../../preferences/services/notification-preference.service';
+import { NotificationEmailService } from './notification-email.service';
+import { ENotificationChannel } from '@app/common/database/enums/notification-channel.enum';
+import { categoryForNotificationType } from '@app/common/utils/notification-category.util';
 import { INotificationService } from '@app/contracts/interfaces/service/notification-service.interface';
 import { NOTIFICATION } from '@app/contracts/constants/domain/notification.constant';
 import { RedisService } from '@app/common/redis/redis.service';
@@ -36,6 +40,8 @@ export class NotificationService implements INotificationService {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly pushNotificationService: PushNotificationService,
+    private readonly preferenceService: NotificationPreferenceService,
+    private readonly notificationEmailService: NotificationEmailService,
     private readonly logger: PinoLogger,
     private readonly redisService: RedisService,
   ) {
@@ -73,38 +79,76 @@ export class NotificationService implements INotificationService {
       isRead: false,
     });
     const saved = await this.notificationRepo.save(notification);
-    await this.redisService.invalidateNotificationCaches(
-      createNotificationCurrentUserDTO.userId,
-    );
+
+    const response = new CreateNotificationCurrentUserResponseDTO({
+      id: saved.id,
+      title: saved.title,
+      message: saved.message,
+      type: saved.type,
+      data: saved.data,
+      isRead: saved.isRead,
+      createdAt: saved.createdAt,
+    });
+
+    /*
+      `userId` is optional on the DTO because the same class is the HTTP body,
+      where the gateway supplies it from the session rather than the caller.
+      Every RPC path sets it. Narrowing it once here keeps everything that
+      follows — cache invalidation, preferences, push, email — off a value that
+      cannot address a user, instead of each of them re-deriving that.
+    */
+    const userId = createNotificationCurrentUserDTO.userId;
+    if (!userId) {
+      this.logger.warn(
+        'Notification saved without a userId — skipping cache invalidation and delivery',
+      );
+      return response;
+    }
+
+    await this.redisService.invalidateNotificationCaches(userId);
 
     if (createNotificationCurrentUserDTO.sendPush) {
       try {
-        const user = await this.userRepo.findOne({
-          where: { id: createNotificationCurrentUserDTO.userId },
+        // The row above is always written: the feed is the record of what
+        // happened, and a user who muted push still needs to be able to find
+        // out what they missed. Preferences gate the *interruption*, not the
+        // history — see ENotificationChannel.
+        const allowed = await this.preferenceService.canDeliver({
+          userId,
+          category: categoryForNotificationType(
+            createNotificationCurrentUserDTO.type,
+          ),
+          channel: ENotificationChannel.PUSH,
         });
+        const user = allowed
+          ? await this.userRepo.findOne({ where: { id: userId } })
+          : null;
         const token = user?.pushNotificationToken;
-        if (!token) {
-          this.logger.warn(
-            `Push skipped: no token for userId=${createNotificationCurrentUserDTO.userId}`,
+
+        if (!allowed) {
+          this.logger.info(
+            `Push suppressed by preferences for userId=${userId}`,
           );
+        } else if (!token) {
+          this.logger.warn(`Push skipped: no token for userId=${userId}`);
         } else {
           const result = await this.pushNotificationService.sendToToken(token, {
             title: createNotificationCurrentUserDTO.title,
             body: createNotificationCurrentUserDTO.message,
             data: {
               ...(createNotificationCurrentUserDTO.data ?? {}),
-              targetUserId: createNotificationCurrentUserDTO.userId,
+              targetUserId: userId,
               type: createNotificationCurrentUserDTO.type ?? '',
             },
             senderAvatar: createNotificationCurrentUserDTO.senderAvatar ?? null,
           });
           if (result?.success) {
             this.logger.info(
-              `Push sent to userId=${createNotificationCurrentUserDTO.userId} (token length ${token.length})`,
+              `Push sent to userId=${userId} (token length ${token.length})`,
             );
           } else if (result?.skipped) {
             this.logger.warn(
-              `Push skipped for userId=${createNotificationCurrentUserDTO.userId}: ${result.reason}`,
+              `Push skipped for userId=${userId}: ${result.reason}`,
             );
           }
         }
@@ -115,15 +159,32 @@ export class NotificationService implements INotificationService {
       }
     }
 
-    return new CreateNotificationCurrentUserResponseDTO({
-      id: saved.id,
-      title: saved.title,
-      message: saved.message,
-      type: saved.type,
-      data: saved.data,
-      isRead: saved.isRead,
-      createdAt: saved.createdAt,
-    });
+    // Opt-out rather than opt-in: the preference defaults already decide the
+    // outcome per category, so every existing emit gets email coverage where it
+    // makes sense without five call sites having to be told about it.
+    if (createNotificationCurrentUserDTO.sendEmail !== false) {
+      try {
+        await this.notificationEmailService.send({
+          userId,
+          title: createNotificationCurrentUserDTO.title,
+          message: createNotificationCurrentUserDTO.message,
+          category: categoryForNotificationType(
+            createNotificationCurrentUserDTO.type,
+          ),
+        });
+      } catch (error) {
+        // The notification row is already saved and is what the user will
+        // actually see in the app. A mail problem must not fail the RPC and
+        // make the caller think nothing was recorded.
+        this.logger.warn(
+          `Notification email failed for userId=${userId}: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`,
+        );
+      }
+    }
+
+    return response;
   }
 
   async listByUser(

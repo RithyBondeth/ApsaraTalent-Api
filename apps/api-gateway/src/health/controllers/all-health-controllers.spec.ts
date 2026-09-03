@@ -27,6 +27,9 @@ describe('Health controllers', () => {
   const internal = {
     pingCheck: jest.fn().mockResolvedValue({ service: { status: 'up' } }),
   };
+  const outbox = {
+    pendingCount: jest.fn().mockResolvedValue(0),
+  };
   const config = {
     get: jest.fn((key: string) => {
       const values: Record<string, unknown> = {
@@ -196,6 +199,7 @@ describe('Health controllers', () => {
       database as any,
       indicator as any,
       push as any,
+      outbox as any,
       config as any,
     ).checkHealth();
     expect(up).toHaveBeenCalledWith(
@@ -208,6 +212,7 @@ describe('Health controllers', () => {
       database as any,
       indicator as any,
       push as any,
+      outbox as any,
       config as any,
     ).checkHealth();
     expect(up).toHaveBeenCalledWith(
@@ -234,6 +239,56 @@ describe('Health controllers', () => {
         database as any,
         indicator as any,
         push as any,
+        outbox as any,
+        config as any,
+      ).checkHealth(),
+    ).rejects.toBeInstanceOf(HealthCheckError);
+  });
+
+  it('reports the outbox backlog as a gauge rather than a readiness gate', async () => {
+    const up = jest.fn((details) => ({ outbox: { status: 'up', ...details } }));
+    const indicator = { check: jest.fn(() => ({ up, down: jest.fn() })) };
+    const push = { isConfigured: jest.fn().mockReturnValue(true) };
+    outbox.pendingCount.mockResolvedValue(1200);
+    config.get.mockImplementation((key: string) =>
+      key === 'outbox.enabled' ? true : undefined,
+    );
+
+    // A backlog this size is a problem, but failing readiness would pull the
+    // only process that can drain it out of rotation.
+    await expect(
+      new NotificationHealthController(
+        health as any,
+        database as any,
+        indicator as any,
+        push as any,
+        outbox as any,
+        config as any,
+      ).checkHealth(),
+    ).resolves.toEqual({ status: 'ok' });
+    expect(up).toHaveBeenCalledWith({ pending: 1200, dispatcher: 'enabled' });
+  });
+
+  it('marks the outbox down when its backlog cannot be read', async () => {
+    const indicator = {
+      check: jest.fn(() => ({
+        up: jest.fn(),
+        down: jest.fn((details) => ({
+          outbox: { status: 'down', ...details },
+        })),
+      })),
+    };
+    const push = { isConfigured: jest.fn().mockReturnValue(true) };
+    outbox.pendingCount.mockRejectedValue(new Error('relation is missing'));
+    config.get.mockImplementation(() => undefined);
+
+    await expect(
+      new NotificationHealthController(
+        health as any,
+        database as any,
+        indicator as any,
+        push as any,
+        outbox as any,
         config as any,
       ).checkHealth(),
     ).rejects.toBeInstanceOf(HealthCheckError);

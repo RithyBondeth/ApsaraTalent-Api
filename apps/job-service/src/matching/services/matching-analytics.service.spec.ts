@@ -7,7 +7,6 @@ describe('MatchingAnalyticsService', () => {
     matching,
     employeeFavorites,
     companyFavorites,
-    email,
     logger,
     redis,
     company,
@@ -27,7 +26,6 @@ describe('MatchingAnalyticsService', () => {
       id: 'match-1',
       ...value,
     }));
-    email.sendEmail.mockResolvedValue(undefined);
   });
 
   it('builds real-time analytics for an employee', async () => {

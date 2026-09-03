@@ -296,7 +296,45 @@ including why `down()` must never use `CONCURRENTLY`.
 | Migration failed part-way | It ran in a transaction and rolled itself back — except the two non-transactional ones. Check for invalid indexes (`migrations/README.md`), then re-run: every migration is idempotent. |
 | Total database loss | Restore latest dump (§3 Option B), then reconcile `/app/storage`. |
 | Redis down / flushed | Nothing to do. Latency spike only; no data loss. |
+| Nobody is receiving email | Check the outbox (§6a) before suspecting SMTP. |
 | Broken images / missing resumes | Storage volume issue, not a DB issue. See §1. |
+
+### 6a. The email outbox
+
+Transactional email is written to `outbox_message` inside the request that
+causes it, and delivered by `OutboxDispatcherService` in notification-service.
+So "no email is arriving" has two very different causes, and one query tells
+them apart:
+
+```sql
+SELECT status, count(*), min("availableAt"), max(attempts)
+FROM outbox_message GROUP BY status;
+```
+
+- **Rows piling up in `pending` / `processing`** — the dispatcher is not
+  running. Check notification-service is up, and that `OUTBOX_ENABLED` is not
+  `false`. Nothing is lost; the backlog drains once it is back.
+- **Rows in `failed`** — delivery was attempted `maxAttempts` times and gave up.
+  `"lastError"` says why, and it is almost always SMTP credentials or a rejected
+  sender. Fix the cause, then requeue:
+
+  ```sql
+  UPDATE outbox_message
+  SET status = 'pending', attempts = 0, "availableAt" = now()
+  WHERE status = 'failed' AND "createdAt" > now() - interval '1 day';
+  ```
+
+- **No rows at all** — nothing is enqueuing. That is an application problem, not
+  a mail problem: look at whether notifications are being created.
+
+The same backlog is on notification-service's `/health/ready` as the `outbox`
+indicator. It reports `pending` as a number and never fails readiness — taking
+the only process that can drain the queue out of rotation would make a backlog
+permanent — so it will not page you on its own. Watch the number, not the
+status.
+
+Delivered rows are pruned after `OUTBOX_RETENTION_DAYS` (default 30). Failed
+rows are kept indefinitely: they are the record of mail that never arrived.
 
 ---
 

@@ -29,6 +29,14 @@ export const validationSchema = Joi.object({
   EMAIL_PASSWORD: Joi.string().required(),
   EMAIL_FROM: Joi.string().required(),
 
+  // Outbox (durable transactional email) — see libs/common/src/outbox
+  OUTBOX_ENABLED: Joi.string().valid('true', 'false').default('true'),
+  OUTBOX_POLL_INTERVAL_MS: Joi.number().integer().min(500).default(5000),
+  OUTBOX_BATCH_SIZE: Joi.number().integer().min(1).max(500).default(20),
+  OUTBOX_MAX_ATTEMPTS: Joi.number().integer().min(1).max(50).default(5),
+  OUTBOX_VISIBILITY_TIMEOUT_MS: Joi.number().integer().min(5000).default(60000),
+  OUTBOX_RETENTION_DAYS: Joi.number().integer().min(1).default(30),
+
   // Throttler
   THROTTLE_TTL: Joi.number().optional(),
   THROTTLE_TTL_MS: Joi.number().integer().min(1000).default(60000),

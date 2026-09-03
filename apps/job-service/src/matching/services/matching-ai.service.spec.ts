@@ -9,7 +9,6 @@ describe('MatchingAiService', () => {
     matching,
     employees,
     companies,
-    email,
     logger,
     redis,
     config,
@@ -32,7 +31,6 @@ describe('MatchingAiService', () => {
       id: 'match-1',
       ...value,
     }));
-    email.sendEmail.mockResolvedValue(undefined);
   });
 
   it('returns normalized profiles for AI matching', async () => {
