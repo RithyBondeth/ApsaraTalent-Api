@@ -378,6 +378,26 @@ describe('isolated API system', () => {
   });
 
   it('covers chat creation, attachment quarantine, and moderation workflows', async () => {
+    /*
+      Chat requires a mutual match. Two people who have not both said yes
+      cannot open a conversation, which is the platform's core rule and is now
+      enforced on the server rather than merely unexposed in the UI.
+    */
+    await request(baseUrl)
+      .post('/chat/initiate')
+      .set('Cookie', owner.cookie)
+      .send({ receiverId: company.userId })
+      .expect(403);
+
+    await request(baseUrl)
+      .post(`/match/employee/${owner.profileId}/like/${company.profileId}`)
+      .set('Cookie', owner.cookie)
+      .expect(201);
+    await request(baseUrl)
+      .post(`/match/company/${company.profileId}/like/${owner.profileId}`)
+      .set('Cookie', company.cookie)
+      .expect(201);
+
     const chat = await request(baseUrl)
       .post('/chat/initiate')
       .set('Cookie', owner.cookie)
