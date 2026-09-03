@@ -1,6 +1,7 @@
 import { Controller, Inject } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { JOB_SERVICE } from '@app/contracts/constants/service-actions/job-service.constant';
+import { MatchLinkService } from '../services/match-link.service';
 import {
   MatchDTO,
   MatchResponseDTO,
@@ -47,7 +48,20 @@ export class MatchingController implements IMatchingRpcController {
     private readonly analyticsService: IMatchingAnalyticsService,
     @Inject(I_MATCHING_AI_SERVICE)
     private readonly aiService: IMatchingAiService,
+    private readonly matchLink: MatchLinkService,
   ) {}
+
+  /*
+    Read by the gateway before it lets two people talk. It answers about auth
+    users rather than profiles because that is what chat identifies people by.
+  */
+  @MessagePattern(JOB_SERVICE.ACTIONS.ARE_USERS_MATCHED)
+  async areUsersMatched(
+    @Payload('userIdA') userIdA: string,
+    @Payload('userIdB') userIdB: string,
+  ): Promise<{ matched: boolean }> {
+    return { matched: await this.matchLink.areUsersMatched(userIdA, userIdB) };
+  }
 
   @MessagePattern(JOB_SERVICE.ACTIONS.EMPLOYEE_LIKES)
   async employeeLikes(
