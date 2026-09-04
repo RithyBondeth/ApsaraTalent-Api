@@ -1,5 +1,6 @@
 import { resolveUserId } from '@app/common';
 import { EmailService } from '@app/common/email/email.service';
+import { ProblemReport } from '@app/common/database/entities/problem-report.entity';
 import { User } from '@app/common/database/entities/user.entity';
 import {
   ReportProblemDTO,
@@ -18,6 +19,8 @@ export class SupportService implements ISupportService {
   constructor(
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    @InjectRepository(ProblemReport)
+    private readonly reportRepo: Repository<ProblemReport>,
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
     private readonly logger: PinoLogger,
@@ -88,11 +91,28 @@ export class SupportService implements ISupportService {
         details,
       ];
 
+      /*
+        Row first, then email. The row is what the admin queue reads and
+        what the admin dashboard was empty for; the email is the alert to
+        SUPPORT_EMAIL. A row without an email delivery, or an email without a
+        row, both still get the message to a human — but the row is what
+        makes it findable a week later.
+      */
+      const saved = await this.reportRepo.save(
+        this.reportRepo.create({
+          reporter: reporter ? ({ id: reporter.id } as User) : null,
+          category,
+          details,
+          pageUrl: pageUrl ?? null,
+          userAgent: userAgent ?? null,
+        }),
+      );
+
       await this.emailService.sendEmail({
         to: inbox,
         // Replies from support go to the reporter, not to the noreply sender.
         replyTo: reporter?.email,
-        subject: `[Problem Report] ${category} — ${reporter?.email ?? reporterId}`,
+        subject: `[Problem Report ${saved.id.slice(0, 8)}] ${category} — ${reporter?.email ?? reporterId}`,
         text: lines.join('\n'),
         html: `<pre style="font-family:ui-monospace,monospace;white-space:pre-wrap">${this.escapeHtml(
           lines.join('\n'),

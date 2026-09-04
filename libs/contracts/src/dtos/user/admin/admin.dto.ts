@@ -1,4 +1,5 @@
 import { EAdminAction } from '@app/common/database/enums/admin-action.enum';
+import { EProblemCategory } from '@app/common/database/enums/problem-category.enum';
 import { EReportReason } from '@app/common/database/enums/report-reason.enum';
 import { EReportStatus } from '@app/common/database/enums/report-status.enum';
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
@@ -69,6 +70,47 @@ export class AdminListReportsQueryDTO {
   @IsOptional()
   @IsEnum(EReportStatus)
   status?: EReportStatus;
+}
+
+export class AdminListProblemReportsQueryDTO {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(ADMIN_PAGE_SIZE_MAX)
+  limit?: number;
+
+  @IsOptional()
+  @IsEnum(EReportStatus)
+  status?: EReportStatus;
+
+  @IsOptional()
+  @IsEnum(EProblemCategory)
+  category?: EProblemCategory;
+}
+
+/**
+ * Body for a triage decision on a problem report.
+ *
+ * The same statuses as `AdminUpdateReportStatusBodyDTO` because the same four
+ * labels apply (pending / reviewed / resolved / dismissed). The `note` is
+ * mirrored onto `problem_report.resolutionNote` so triage does not have to
+ * join the audit log to see the last decision.
+ */
+export class AdminUpdateProblemReportStatusBodyDTO {
+  @IsEnum(EReportStatus)
+  status: EReportStatus;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  note?: string;
 }
 
 export class AdminListAuditQueryDTO {
@@ -185,6 +227,16 @@ export class AdminUpdateUserStatusDTO extends AdminUpdateUserStatusBodyDTO {
 
 export class AdminListReportsDTO extends AdminListReportsQueryDTO {}
 
+export class AdminListProblemReportsDTO extends AdminListProblemReportsQueryDTO {}
+
+export class AdminUpdateProblemReportStatusDTO extends AdminUpdateProblemReportStatusBodyDTO {
+  @IsUUID()
+  actorId: string;
+
+  @IsUUID()
+  reportId: string;
+}
+
 export class AdminUpdateReportStatusDTO extends AdminUpdateReportStatusBodyDTO {
   @IsUUID()
   actorId: string;
@@ -295,6 +347,45 @@ export class AdminPagedReportsDTO {
   limit: number;
 
   constructor(partial: Partial<AdminPagedReportsDTO>) {
+    Object.assign(this, partial);
+  }
+}
+
+/** How a reporter is shown on the problem-report row (small, non-identifying). */
+export class AdminProblemReportReporterDTO {
+  id: string;
+  email: string;
+  role: EUserRole;
+
+  constructor(partial: Partial<AdminProblemReportReporterDTO>) {
+    Object.assign(this, partial);
+  }
+}
+
+export class AdminProblemReportDTO {
+  id: string;
+  category: EProblemCategory;
+  details: string;
+  pageUrl: string | null;
+  userAgent: string | null;
+  status: EReportStatus;
+  resolutionNote: string | null;
+  createdAt: Date;
+  /** Null when the reporter's account has since been deleted (FK is SET NULL). */
+  reporter: AdminProblemReportReporterDTO | null;
+
+  constructor(partial: Partial<AdminProblemReportDTO>) {
+    Object.assign(this, partial);
+  }
+}
+
+export class AdminPagedProblemReportsDTO {
+  items: AdminProblemReportDTO[];
+  total: number;
+  page: number;
+  limit: number;
+
+  constructor(partial: Partial<AdminPagedProblemReportsDTO>) {
     Object.assign(this, partial);
   }
 }

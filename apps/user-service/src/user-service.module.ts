@@ -23,6 +23,7 @@ import { EmployeeFavoriteCompany } from '@app/common/database/entities/employee/
 import { Skill } from '@app/common/database/entities/employee/skill.entity';
 import { JobMatching } from '@app/common/database/entities/job-matching.entity';
 import { AdminAuditLog } from '@app/common/database/entities/moderation/admin-audit-log.entity';
+import { ProblemReport } from '@app/common/database/entities/problem-report.entity';
 import { UserBlock } from '@app/common/database/entities/moderation/user-block.entity';
 import { UserReport } from '@app/common/database/entities/moderation/user-report.entity';
 import { Social } from '@app/common/database/entities/social.entity';
@@ -63,6 +64,7 @@ import { UploadEmployeeReferenceService } from './employee/services/upload-emplo
 import { AdminAuditService } from './admin/services/admin-audit.service';
 import { AdminJobService } from './admin/services/admin-job.service';
 import { AdminReportService } from './admin/services/admin-report.service';
+import { AdminProblemReportService } from './admin/services/admin-problem-report.service';
 import { AdminUserService } from './admin/services/admin-user.service';
 import { ModerationService } from './moderation/services/moderation.service';
 import { SupportService } from './support/services/support.service';
@@ -91,6 +93,7 @@ import {
   I_MODERATION_SERVICE,
   I_SUPPORT_SERVICE,
   I_ADMIN_USER_SERVICE,
+  I_ADMIN_PROBLEM_REPORT_SERVICE,
   I_ADMIN_REPORT_SERVICE,
   I_ADMIN_JOB_SERVICE,
 } from '@app/contracts/interfaces/service/user-service.interface';
@@ -119,6 +122,7 @@ import {
       UserBlock,
       UserReport,
       AdminAuditLog,
+      ProblemReport,
     ]),
     LoggerModule,
     EmailModule,
@@ -198,6 +202,10 @@ import {
     AdminAuditService,
     { provide: I_ADMIN_USER_SERVICE, useClass: AdminUserService },
     { provide: I_ADMIN_REPORT_SERVICE, useClass: AdminReportService },
+    {
+      provide: I_ADMIN_PROBLEM_REPORT_SERVICE,
+      useClass: AdminProblemReportService,
+    },
     { provide: I_ADMIN_JOB_SERVICE, useClass: AdminJobService },
     CacheInvalidationService,
     RedisCacheHealthIndicator,

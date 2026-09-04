@@ -7,12 +7,15 @@ import {
   AdminPagedJobsDTO,
   AdminRestoreJobDTO,
   AdminListAuditDTO,
+  AdminListProblemReportsDTO,
   AdminListReportsDTO,
   AdminListUsersDTO,
   AdminOverviewDTO,
   AdminPagedAuditDTO,
+  AdminPagedProblemReportsDTO,
   AdminPagedReportsDTO,
   AdminPagedUsersDTO,
+  AdminUpdateProblemReportStatusDTO,
   AdminUpdateReportStatusDTO,
   AdminUpdateUserStatusDTO,
   AdminUserDetailDTO,
@@ -114,6 +117,7 @@ export const I_SUPPORT_SERVICE = 'ISupportService';
 export const I_ADMIN_USER_SERVICE = 'IAdminUserService';
 export const I_ADMIN_REPORT_SERVICE = 'IAdminReportService';
 export const I_ADMIN_JOB_SERVICE = 'IAdminJobService';
+export const I_ADMIN_PROBLEM_REPORT_SERVICE = 'IAdminProblemReportService';
 
 export interface IUpdateEmployeeInfoService {
   updateEmployeeInfo(
@@ -319,4 +323,20 @@ export interface IAdminReportService {
     adminUpdateReportStatusDTO: AdminUpdateReportStatusDTO,
   ): Promise<AdminActionResponseDTO>;
   listAudit(adminListAuditDTO: AdminListAuditDTO): Promise<AdminPagedAuditDTO>;
+}
+
+/**
+ * Problem reports from the support form.
+ *
+ * Its own service rather than a branch inside IAdminReportService: user
+ * reports and problem reports share nothing but the word. See
+ * `AdminProblemReportService` for the mapping onto the shared audit log.
+ */
+export interface IAdminProblemReportService {
+  listReports(
+    dto: AdminListProblemReportsDTO,
+  ): Promise<AdminPagedProblemReportsDTO>;
+  updateStatus(
+    dto: AdminUpdateProblemReportStatusDTO,
+  ): Promise<AdminActionResponseDTO>;
 }

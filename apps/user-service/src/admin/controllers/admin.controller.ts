@@ -9,10 +9,13 @@ import {
   AdminListAuditDTO,
   AdminListReportsDTO,
   AdminListUsersDTO,
+  AdminListProblemReportsDTO,
   AdminOverviewDTO,
   AdminPagedAuditDTO,
+  AdminPagedProblemReportsDTO,
   AdminPagedReportsDTO,
   AdminPagedUsersDTO,
+  AdminUpdateProblemReportStatusDTO,
   AdminUpdateReportStatusDTO,
   AdminUpdateUserStatusDTO,
   AdminUserDetailDTO,
@@ -39,6 +42,8 @@ export class AdminController implements IAdminRpcController {
     private readonly adminReportService: userServiceInterface.IAdminReportService,
     @Inject(userServiceInterface.I_ADMIN_JOB_SERVICE)
     private readonly adminJobService: userServiceInterface.IAdminJobService,
+    @Inject(userServiceInterface.I_ADMIN_PROBLEM_REPORT_SERVICE)
+    private readonly adminProblemReportService: userServiceInterface.IAdminProblemReportService,
   ) {}
 
   @MessagePattern(USER_SERVICE.ACTIONS.ADMIN_OVERVIEW)
@@ -109,5 +114,19 @@ export class AdminController implements IAdminRpcController {
     @Payload() adminRestoreJobDTO: AdminRestoreJobDTO,
   ): Promise<AdminActionResponseDTO> {
     return this.adminJobService.restoreJob(adminRestoreJobDTO);
+  }
+
+  @MessagePattern(USER_SERVICE.ACTIONS.ADMIN_LIST_PROBLEM_REPORTS)
+  async listProblemReports(
+    @Payload() dto: AdminListProblemReportsDTO,
+  ): Promise<AdminPagedProblemReportsDTO> {
+    return this.adminProblemReportService.listReports(dto);
+  }
+
+  @MessagePattern(USER_SERVICE.ACTIONS.ADMIN_UPDATE_PROBLEM_REPORT_STATUS)
+  async updateProblemReportStatus(
+    @Payload() dto: AdminUpdateProblemReportStatusDTO,
+  ): Promise<AdminActionResponseDTO> {
+    return this.adminProblemReportService.updateStatus(dto);
   }
 }
