@@ -26,6 +26,7 @@ import { AddJobAdminActions1786500011000 } from './1786500011000-AddJobAdminActi
 import { AddOutboxMessages1786500012000 } from './1786500012000-AddOutboxMessages';
 import { AddNotificationPreferences1786500013000 } from './1786500013000-AddNotificationPreferences';
 import { AddProblemReports1786500014000 } from './1786500014000-AddProblemReports';
+import { AddInterviewTimezoneAndReminders1786500015000 } from './1786500015000-AddInterviewTimezoneAndReminders';
 
 // Read rather than imported: the tsconfig does not enable resolveJsonModule,
 // and reading it the same way scripts/ci/migration-rehearsal.mjs does keeps
@@ -74,6 +75,10 @@ describe('database migration contracts', () => {
     ['outbox messages', new AddOutboxMessages1786500012000()],
     ['notification preferences', new AddNotificationPreferences1786500013000()],
     ['problem reports', new AddProblemReports1786500014000()],
+    [
+      'interview timezone and reminders',
+      new AddInterviewTimezoneAndReminders1786500015000(),
+    ],
   ] as const;
 
   it.each(migrations)(

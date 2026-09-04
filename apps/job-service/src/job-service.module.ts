@@ -18,6 +18,7 @@ import { JobMatching } from '@app/common/database/entities/job-matching.entity';
 import { User } from '@app/common/database/entities/user.entity';
 import { MessageModule } from '@app/common/message/message.module';
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -31,6 +32,7 @@ import { JobController } from './jobs/controllers/job-service.controller';
 import { MatchingController } from './matching/controllers/matching.controller';
 import { ApplicationService } from './applications/services/application.service';
 import { InterviewService } from './interviews/services/interview.service';
+import { InterviewReminderService } from './interviews/services/interview-reminder.service';
 import { JobService } from './jobs/services/job-service.service';
 import { MatchingService } from './matching/services/matching.service';
 import { MatchLinkService } from './matching/services/match-link.service';
@@ -56,6 +58,9 @@ import {
     MessageModule,
     VectorColumnsModule,
     RedisModule,
+    // The interview reminder cron lives in this service. Nothing else here
+    // is scheduled.
+    ScheduleModule.forRoot(),
     TerminusModule,
     ClientsModule.registerAsync([
       {
@@ -100,6 +105,7 @@ import {
     },
     { provide: I_MATCHING_AI_SERVICE, useClass: MatchingAiService },
     { provide: I_INTERVIEW_SERVICE, useClass: InterviewService },
+    InterviewReminderService,
     { provide: I_APPLICATION_SERVICE, useClass: ApplicationService },
     RedisCacheHealthIndicator,
     {

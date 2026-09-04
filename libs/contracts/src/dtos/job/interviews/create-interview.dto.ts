@@ -27,6 +27,17 @@ export class CreateInterviewDTO {
   @IsNotEmpty()
   scheduledAt: string;
 
+  /**
+   * IANA timezone the client picked the time in — e.g. `Asia/Phnom_Penh`.
+   *
+   * Optional so an older client that does not send it still works; the server
+   * stores null and the renderer falls back to UTC. The web app sends
+   * `Intl.DateTimeFormat().resolvedOptions().timeZone` on submit.
+   */
+  @IsString()
+  @IsOptional()
+  timezone?: string;
+
   @IsNumber()
   @IsOptional()
   durationMinutes?: number;
@@ -62,6 +73,8 @@ export class CreateInterviewResponseDTO {
   title: string;
   description: string | null;
   scheduledAt: Date;
+  /** IANA timezone name of the scheduler, or null on legacy rows. */
+  timezone: string | null;
   durationMinutes: number;
   location: string | null;
   meetingLink: string | null;

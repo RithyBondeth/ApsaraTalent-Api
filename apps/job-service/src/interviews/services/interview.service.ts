@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Logger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
+import { formatInterviewTime } from '@app/common/utils/interview-time.util';
 import {
   CreateInterviewDTO,
   CreateInterviewResponseDTO,
@@ -161,6 +162,10 @@ export class InterviewService implements IInterviewService {
         title: createInterview.title,
         description: createInterview.description,
         scheduledAt: new Date(createInterview.scheduledAt),
+        // The scheduler's IANA timezone — used to label the time in every
+        // render surface without a browser (email, ICS, PDF). Falls back to
+        // null (renderer uses UTC) if a client hasn't been updated to send it.
+        timezone: createInterview.timezone ?? null,
         durationMinutes:
           createInterview.durationMinutes || JOB.DEFAULT_INTERVIEW_DURATION,
         location: createInterview.location,
@@ -206,7 +211,10 @@ export class InterviewService implements IInterviewService {
           {
             userId: targetUserId,
             title: 'Interview Scheduled',
-            message: `${senderName} wants to schedule an interview: ${createInterview.title}`,
+            // The formatted time is what makes the email actionable — a
+            // reader with no browser to convert timezones would otherwise get
+            // just the title and have to click into the app to see when.
+            message: `${senderName} wants to schedule an interview: ${createInterview.title}\n\nWhen: ${formatInterviewTime(saved.scheduledAt, saved.timezone)}`,
             type: 'interview',
             data: {
               interviewId: saved.id,
