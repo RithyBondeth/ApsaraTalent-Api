@@ -13,6 +13,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { In, IsNull, Repository } from 'typeorm';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
+import { AnalyticsService, EAnalyticsEvent } from '@app/common/analytics';
 import { MatchLinkService } from '../../matching/services/match-link.service';
 import {
   IApplicationService,
@@ -74,6 +75,7 @@ export class ApplicationService implements IApplicationService {
     private readonly jobMatchingRepo: Repository<JobMatching>,
     @Inject(NOTIFICATION_SERVICE.NAME)
     private readonly notificationClient: ClientProxy,
+    private readonly analyticsService: AnalyticsService,
     private readonly matchLink: MatchLinkService,
     private readonly logger: PinoLogger,
   ) {
@@ -251,6 +253,17 @@ export class ApplicationService implements IApplicationService {
           },
         );
       }
+
+      this.analyticsService.capture(
+        employee.user?.id ?? employee.id,
+        EAnalyticsEvent.APPLICATION_SUBMITTED,
+        {
+          application_id: saved.id,
+          job_id: job.id,
+          company_id: job.company?.id,
+          has_cover_letter: !!saved.coverLetterNote,
+        },
+      );
 
       return new ApplyApplicationResponseDTO({
         id: saved.id,
@@ -430,6 +443,7 @@ export class ApplicationService implements IApplicationService {
         );
       }
 
+      const previousStatus = application.status;
       application.status = nextStatus;
       application.statusChangedAt = new Date();
       // A reason belongs to a rejection. Carrying one onto any other status
@@ -442,6 +456,18 @@ export class ApplicationService implements IApplicationService {
       application.reviewedAt = application.reviewedAt ?? new Date();
 
       const updated = await this.applicationRepo.save(application);
+
+      this.analyticsService.capture(
+        application.job?.company?.user?.id ??
+          application.job?.company?.id ??
+          'unknown',
+        EAnalyticsEvent.APPLICATION_STATUS_CHANGED,
+        {
+          application_id: updated.id,
+          from: previousStatus,
+          to: nextStatus,
+        },
+      );
 
       const notice = APPLICATION_STATUS_NOTICE[nextStatus];
       const employeeUserId = application.employee?.user?.id;
@@ -526,6 +552,15 @@ export class ApplicationService implements IApplicationService {
       application.status = EApplicationStatus.WITHDRAWN;
       application.statusChangedAt = new Date();
       await this.applicationRepo.save(application);
+
+      this.analyticsService.capture(
+        application.employee?.user?.id ?? application.employee?.id ?? 'unknown',
+        EAnalyticsEvent.APPLICATION_WITHDRAWN,
+        {
+          application_id: application.id,
+          from: withdrawnFrom,
+        },
+      );
 
       const companyUserId = application.job?.company?.user?.id;
       // Only worth telling the company if they had started working the

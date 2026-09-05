@@ -17,6 +17,7 @@ import {
   RequestAccountDeletionResponseDTO,
 } from '@app/contracts/dtos/user';
 import { Injectable } from '@nestjs/common';
+import { AnalyticsService, EAnalyticsEvent } from '@app/common/analytics';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
@@ -70,6 +71,7 @@ export class AccountLifecycleService {
     @InjectRepository(LoginHistory)
     private readonly loginHistoryRepo: Repository<LoginHistory>,
     private readonly redisService: RedisService,
+    private readonly analyticsService: AnalyticsService,
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(AccountLifecycleService.name);
@@ -98,6 +100,11 @@ export class AccountLifecycleService {
       if (!alreadyRequested) {
         await this.userRepo.update({ id: userId }, { deletedAt: requestedAt });
         await this.bustCurrentUserCache(userId);
+        this.analyticsService.capture(
+          userId,
+          EAnalyticsEvent.ACCOUNT_DELETION_REQUESTED,
+          { role: user.role },
+        );
       }
 
       const scheduledFor = new Date(
@@ -147,6 +154,12 @@ export class AccountLifecycleService {
 
       await this.userRepo.update({ id: userId }, { deletedAt: null });
       await this.bustCurrentUserCache(userId);
+
+      this.analyticsService.capture(
+        userId,
+        EAnalyticsEvent.ACCOUNT_DELETION_CANCELLED,
+        { role: user.role },
+      );
 
       return new CancelAccountDeletionResponseDTO({
         message: 'Account deletion cancelled.',
@@ -297,6 +310,12 @@ export class AccountLifecycleService {
       // Best-effort: if Redis is down the next request wouldn't be rate-limited.
       // That is deliberately better than 500-ing an export that succeeded.
       await this.redisService.set(cooldownKey, Date.now(), EXPORT_COOLDOWN_MS);
+
+      this.analyticsService.capture(
+        userId,
+        EAnalyticsEvent.ACCOUNT_DATA_EXPORTED,
+        { role: user.role },
+      );
 
       return dump;
     } catch (error) {

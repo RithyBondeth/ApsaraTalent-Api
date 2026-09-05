@@ -4,6 +4,7 @@ import {
   RedisCacheHealthIndicator,
   VectorColumnsModule,
 } from '@app/common';
+import { AnalyticsModule } from '@app/common/analytics';
 import { RedisModule } from '@app/common/redis/redis.module';
 import { ConfigModule } from '@app/common/config';
 import { MetricsModule } from '@app/common/metrics/metrics.module';
@@ -55,6 +56,7 @@ import {
     MetricsModule,
     DatabaseModule,
     LoggerModule,
+    AnalyticsModule,
     MessageModule,
     VectorColumnsModule,
     RedisModule,

@@ -1,4 +1,5 @@
 import { DatabaseModule, LoggerModule } from '@app/common';
+import { AnalyticsModule } from '@app/common/analytics';
 import { ConfigModule } from '@app/common/config';
 import { EmailModule } from '@app/common/email/email.module';
 import { OutboxModule } from '@app/common/outbox/outbox.module';
@@ -26,6 +27,7 @@ import { I_NOTIFICATION_SERVICE } from '@app/contracts/interfaces/service/notifi
     ConfigModule,
     MetricsModule,
     LoggerModule,
+    AnalyticsModule,
     DatabaseModule,
     RedisModule,
     TerminusModule,

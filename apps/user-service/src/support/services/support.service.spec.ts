@@ -6,6 +6,7 @@ import { SupportService } from './support.service';
 import { User } from '@app/common/database/entities/user.entity';
 import { ProblemReport } from '@app/common/database/entities/problem-report.entity';
 import { EmailService } from '@app/common/email/email.service';
+import { AnalyticsService } from '@app/common/analytics';
 import { resolveUserId } from '@app/common';
 import { PinoLogger } from 'nestjs-pino';
 import { ReportProblemDTO } from '@app/contracts/dtos/user';
@@ -23,6 +24,7 @@ describe('SupportService', () => {
   let emailService: any;
   let configService: any;
   let logger: any;
+  let analytics: any;
 
   beforeEach(async () => {
     userRepo = {
@@ -43,6 +45,7 @@ describe('SupportService', () => {
       error: jest.fn(),
       info: jest.fn(),
     };
+    analytics = { capture: jest.fn(), identify: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -51,6 +54,7 @@ describe('SupportService', () => {
         { provide: getRepositoryToken(ProblemReport), useValue: reportRepo },
         { provide: EmailService, useValue: emailService },
         { provide: ConfigService, useValue: configService },
+        { provide: AnalyticsService, useValue: analytics },
         { provide: PinoLogger, useValue: logger },
       ],
     }).compile();

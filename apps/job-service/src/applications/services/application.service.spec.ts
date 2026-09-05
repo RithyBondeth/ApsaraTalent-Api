@@ -16,6 +16,7 @@ describe('ApplicationService', () => {
   const matches = { find: jest.fn() };
   const notifications = { emit: jest.fn() };
   const matchLink = { recordInterest: jest.fn() };
+  const analytics = { capture: jest.fn(), identify: jest.fn() };
   const logger = { setContext: jest.fn(), error: jest.fn(), warn: jest.fn() };
   const service = new ApplicationService(
     applications as any,
@@ -23,6 +24,7 @@ describe('ApplicationService', () => {
     employees as any,
     matches as any,
     notifications as any,
+    analytics as any,
     matchLink as any,
     logger as any,
   );

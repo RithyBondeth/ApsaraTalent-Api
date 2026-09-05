@@ -1,5 +1,6 @@
 import { resolveUserId } from '@app/common';
 import { EmailService } from '@app/common/email/email.service';
+import { AnalyticsService, EAnalyticsEvent } from '@app/common/analytics';
 import { ProblemReport } from '@app/common/database/entities/problem-report.entity';
 import { User } from '@app/common/database/entities/user.entity';
 import {
@@ -23,6 +24,7 @@ export class SupportService implements ISupportService {
     private readonly reportRepo: Repository<ProblemReport>,
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
+    private readonly analyticsService: AnalyticsService,
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(SupportService.name);
@@ -106,6 +108,12 @@ export class SupportService implements ISupportService {
           pageUrl: pageUrl ?? null,
           userAgent: userAgent ?? null,
         }),
+      );
+
+      this.analyticsService.capture(
+        reporterId,
+        EAnalyticsEvent.PROBLEM_REPORT_SUBMITTED,
+        { category, has_page_url: !!pageUrl },
       );
 
       await this.emailService.sendEmail({

@@ -10,7 +10,12 @@ describe('NotificationPreferenceService', () => {
     save: jest.fn((row: any) => row) as jest.Mock,
   };
   const logger = { setContext: jest.fn(), warn: jest.fn(), error: jest.fn() };
-  const service = new NotificationPreferenceService(repo as any, logger as any);
+  const analytics = { capture: jest.fn(), identify: jest.fn() };
+  const service = new NotificationPreferenceService(
+    repo as any,
+    analytics as any,
+    logger as any,
+  );
 
   beforeEach(() => {
     jest.clearAllMocks();

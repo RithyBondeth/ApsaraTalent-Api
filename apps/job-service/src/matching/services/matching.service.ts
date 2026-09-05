@@ -6,6 +6,7 @@ import { RedisService } from '@app/common/redis/redis.service';
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
+import { AnalyticsService, EAnalyticsEvent } from '@app/common/analytics';
 import { MatchLinkService } from './match-link.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Logger } from 'nestjs-pino';
@@ -46,6 +47,7 @@ export class MatchingService implements IMatchingService {
     private readonly companyFavoriteEmployeeRepo: Repository<CompanyFavoriteEmployee>,
     @InjectRepository(Interview)
     private readonly interviewRepo: Repository<Interview>,
+    private readonly analyticsService: AnalyticsService,
     private readonly logger: Logger,
     private readonly redisService: RedisService,
     @Inject(NOTIFICATION_SERVICE.NAME)
@@ -78,6 +80,27 @@ export class MatchingService implements IMatchingService {
         this.redisService.del(generateEmployeeFavoritesKey(matchDTO.eid)),
         this.redisService.del(generateEmployeeFavoriteCountKey(matchDTO.eid)),
       ]);
+
+      this.analyticsService.capture(
+        employee.user?.id ?? matchDTO.eid,
+        EAnalyticsEvent.LIKE_SENT,
+        {
+          from: 'employee',
+          to_company_id: matchDTO.cid,
+          became_match: becameMatched,
+        },
+      );
+      if (becameMatched) {
+        this.analyticsService.capture(
+          employee.user?.id ?? matchDTO.eid,
+          EAnalyticsEvent.MATCH_FORMED,
+          {
+            initiator: 'employee',
+            company_id: matchDTO.cid,
+            employee_id: matchDTO.eid,
+          },
+        );
+      }
 
       // Notify about the like/match
       const companyUserId = company.user?.id;
@@ -323,6 +346,27 @@ export class MatchingService implements IMatchingService {
         this.redisService.del(generateCompanyFavoritesKey(matchDTO.cid)),
         this.redisService.del(generateCompanyFavoriteCountKey(matchDTO.cid)),
       ]);
+
+      this.analyticsService.capture(
+        company.user?.id ?? matchDTO.cid,
+        EAnalyticsEvent.LIKE_SENT,
+        {
+          from: 'company',
+          to_employee_id: matchDTO.eid,
+          became_match: becameMatched,
+        },
+      );
+      if (becameMatched) {
+        this.analyticsService.capture(
+          company.user?.id ?? matchDTO.cid,
+          EAnalyticsEvent.MATCH_FORMED,
+          {
+            initiator: 'company',
+            company_id: matchDTO.cid,
+            employee_id: matchDTO.eid,
+          },
+        );
+      }
 
       // Notify about the like/match
       const employeeUserId = employee.user?.id;

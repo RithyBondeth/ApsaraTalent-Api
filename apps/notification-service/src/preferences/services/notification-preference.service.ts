@@ -13,6 +13,7 @@ import {
   UpdateNotificationPreferenceDTO,
 } from '@app/contracts/dtos/notification';
 import { Injectable } from '@nestjs/common';
+import { AnalyticsService, EAnalyticsEvent } from '@app/common/analytics';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
@@ -25,6 +26,7 @@ export class NotificationPreferenceService {
   constructor(
     @InjectRepository(NotificationPreference)
     private readonly preferenceRepo: Repository<NotificationPreference>,
+    private readonly analyticsService: AnalyticsService,
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(NotificationPreferenceService.name);
@@ -147,6 +149,17 @@ export class NotificationPreferenceService {
       }
 
       const saved = await this.preferenceRepo.save(row);
+
+      this.analyticsService.capture(
+        dto.userId,
+        EAnalyticsEvent.NOTIFICATION_PREFERENCE_CHANGED,
+        {
+          email_master_off: dto.emailEnabled === false,
+          push_master_off: dto.pushEnabled === false,
+          categories_changed: Object.keys(dto.categories ?? {}),
+        },
+      );
+
       return this.resolve({ userId: dto.userId }, saved);
     } catch (error) {
       if (error instanceof RpcException) throw error;
@@ -191,6 +204,13 @@ export class NotificationPreferenceService {
 
       row.emailEnabled = false;
       await this.preferenceRepo.save(row);
+
+      this.analyticsService.capture(
+        row.user?.id ?? 'unknown',
+        EAnalyticsEvent.UNSUBSCRIBED_VIA_EMAIL_LINK,
+        {},
+      );
+
       return acknowledgement;
     } catch (error) {
       this.logger.error(

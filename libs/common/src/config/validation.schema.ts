@@ -129,6 +129,10 @@ export const validationSchema = Joi.object({
   // Firebase (Push Notifications)
   FIREBASE_SERVICE_ACCOUNT: Joi.string().optional(),
 
+  // PostHog analytics — both optional so an unset key just no-ops.
+  POSTHOG_KEY: Joi.string().allow('').optional(),
+  POSTHOG_HOST: Joi.string().uri().optional(),
+
   // File storage. The S3 credentials are only required when the S3 driver is
   // selected, so local development needs no bucket at all — but once
   // STORAGE_DRIVER=s3 the process refuses to boot with them missing rather than

@@ -33,11 +33,13 @@ describe('MatchingService', () => {
     redis as any,
   );
 
+  const analytics = { capture: jest.fn(), identify: jest.fn() };
   const service = new MatchingService(
     matching as any,
     employeeFavorites as any,
     companyFavorites as any,
     interviews as any,
+    analytics as any,
     logger as any,
     redis as any,
     notifications as any,

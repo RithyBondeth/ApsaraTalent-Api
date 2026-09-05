@@ -17,6 +17,7 @@ describe('InterviewService', () => {
   const applications = { findOne: jest.fn(), save: jest.fn() };
   const notifications = { emit: jest.fn() };
   const logger = { error: jest.fn() };
+  const analytics = { capture: jest.fn(), identify: jest.fn() };
   const service = new InterviewService(
     interviews as any,
     employees as any,
@@ -24,6 +25,7 @@ describe('InterviewService', () => {
     matches as any,
     applications as any,
     notifications as any,
+    analytics as any,
     logger as any,
   );
 

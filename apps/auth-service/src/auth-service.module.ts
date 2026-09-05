@@ -1,4 +1,5 @@
 import { LoggerModule } from '@app/common';
+import { AnalyticsModule } from '@app/common/analytics';
 import { ConfigModule } from '@app/common/config';
 import { MetricsModule } from '@app/common/metrics/metrics.module';
 import { DatabaseModule } from '@app/common/database/database.module';
@@ -70,6 +71,7 @@ import {
     ConfigModule,
     MetricsModule,
     LoggerModule,
+    AnalyticsModule,
     JwtModule,
     DatabaseModule,
     UploadfileModule,

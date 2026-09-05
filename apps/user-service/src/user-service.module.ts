@@ -7,6 +7,7 @@ import {
   UploadfileModule,
   VectorColumnsModule,
 } from '@app/common';
+import { AnalyticsModule } from '@app/common/analytics';
 import { ConfigModule } from '@app/common/config';
 import { MetricsModule } from '@app/common/metrics/metrics.module';
 import { CareerScope } from '@app/common/database/entities/career-scope.entity';
@@ -139,6 +140,7 @@ import {
       NotificationPreference,
     ]),
     LoggerModule,
+    AnalyticsModule,
     EmailModule,
     UploadfileModule,
     JwtModule,

@@ -16,6 +16,7 @@ describe('AccountLifecycleService', () => {
   const problemReportRepo = { find: jest.fn().mockResolvedValue([]) };
   const loginHistoryRepo = { find: jest.fn().mockResolvedValue([]) };
   const redisService = { get: jest.fn(), set: jest.fn(), del: jest.fn() };
+  const analytics = { capture: jest.fn(), identify: jest.fn() };
   const logger = { setContext: jest.fn(), error: jest.fn() };
 
   const service = new AccountLifecycleService(
@@ -30,6 +31,7 @@ describe('AccountLifecycleService', () => {
     problemReportRepo as any,
     loginHistoryRepo as any,
     redisService as any,
+    analytics as any,
     logger as any,
   );
 

@@ -251,4 +251,13 @@ export default () => ({
   firebase: {
     serviceAccount: process.env.FIREBASE_SERVICE_ACCOUNT,
   },
+
+  posthog: {
+    // Public "project write" key — safe to ship in the browser bundle too.
+    // When empty, both the API service and the web client are no-ops.
+    key: process.env.POSTHOG_KEY,
+    // Ingestion host. Defaults to US cloud when unset. Set to
+    // https://eu.i.posthog.com to keep events in Europe, or a self-hosted URL.
+    host: process.env.POSTHOG_HOST,
+  },
 });

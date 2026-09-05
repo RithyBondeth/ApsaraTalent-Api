@@ -10,6 +10,7 @@ import { Logger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 import { formatInterviewTime } from '@app/common/utils/interview-time.util';
+import { AnalyticsService, EAnalyticsEvent } from '@app/common/analytics';
 import {
   CreateInterviewDTO,
   CreateInterviewResponseDTO,
@@ -43,6 +44,7 @@ export class InterviewService implements IInterviewService {
     private readonly applicationRepo: Repository<Application>,
     @Inject(NOTIFICATION_SERVICE.NAME)
     private readonly notificationClient: ClientProxy,
+    private readonly analyticsService: AnalyticsService,
     private readonly logger: Logger,
   ) {}
 
@@ -175,6 +177,19 @@ export class InterviewService implements IInterviewService {
       });
 
       const saved = await this.interviewRepo.save(interview);
+
+      this.analyticsService.capture(
+        company.user?.id ?? createInterview.companyId,
+        EAnalyticsEvent.INTERVIEW_SCHEDULED,
+        {
+          interview_id: saved.id,
+          has_application: !!createInterview.applicationId,
+          duration_minutes: saved.durationMinutes,
+          days_ahead: Math.round(
+            (new Date(saved.scheduledAt).getTime() - Date.now()) / 86_400_000,
+          ),
+        },
+      );
 
       /*
         Scheduling the interview is the stage change; making the company also
