@@ -71,5 +71,8 @@ export const USER_SERVICE = {
     ADMIN_LIST_JOBS: { cmd: 'adminListJobs' },
     ADMIN_HIDE_JOB: { cmd: 'adminHideJob' },
     ADMIN_RESTORE_JOB: { cmd: 'adminRestoreJob' },
+    REQUEST_ACCOUNT_DELETION: { cmd: 'requestAccountDeletion' },
+    CANCEL_ACCOUNT_DELETION: { cmd: 'cancelAccountDeletion' },
+    EXPORT_ACCOUNT_DATA: { cmd: 'exportAccountData' },
   },
 };

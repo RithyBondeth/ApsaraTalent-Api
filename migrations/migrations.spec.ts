@@ -27,6 +27,7 @@ import { AddOutboxMessages1786500012000 } from './1786500012000-AddOutboxMessage
 import { AddNotificationPreferences1786500013000 } from './1786500013000-AddNotificationPreferences';
 import { AddProblemReports1786500014000 } from './1786500014000-AddProblemReports';
 import { AddInterviewTimezoneAndReminders1786500015000 } from './1786500015000-AddInterviewTimezoneAndReminders';
+import { AddUserDeletedAt1786500016000 } from './1786500016000-AddUserDeletedAt';
 
 // Read rather than imported: the tsconfig does not enable resolveJsonModule,
 // and reading it the same way scripts/ci/migration-rehearsal.mjs does keeps
@@ -79,6 +80,7 @@ describe('database migration contracts', () => {
       'interview timezone and reminders',
       new AddInterviewTimezoneAndReminders1786500015000(),
     ],
+    ['user deletedAt', new AddUserDeletedAt1786500016000()],
   ] as const;
 
   it.each(migrations)(

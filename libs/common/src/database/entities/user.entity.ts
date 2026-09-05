@@ -48,6 +48,20 @@ export class User {
   @Column({ type: 'timestamptz', nullable: true })
   statusChangedAt: Date | null;
 
+  /**
+   * When the account owner requested deletion. Null for normal accounts.
+   *
+   * A cron in user-service hard-deletes rows whose value is older than the
+   * grace window (`AccountLifecycleService.GRACE_PERIOD_MS`). During grace,
+   * the account is still usable — the settings page carries a banner offering
+   * "Cancel deletion", which clears the column. Deliberately **not** a
+   * TypeORM `@DeleteDateColumn`: that would make TypeORM filter these rows
+   * out of every query, and the grace period only works if the user can still
+   * log in and reach the cancel button.
+   */
+  @Column({ type: 'timestamptz', nullable: true })
+  deletedAt: Date | null;
+
   @OneToOne(() => Employee, (employee) => employee.user)
   employee: Employee;
 
