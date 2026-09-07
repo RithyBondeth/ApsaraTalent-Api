@@ -75,6 +75,9 @@ import {
   FavoriteCountResponseDTO,
   SearchEmployeeDTO,
   UserIdDTO,
+  ProfileAnalyticsResponseDTO,
+  UpdatePrivacyDTO,
+  UpdatePrivacyResponseDTO,
 } from '../../dtos/user';
 import {
   BlockUserDTO,
@@ -118,6 +121,7 @@ export const I_ADMIN_USER_SERVICE = 'IAdminUserService';
 export const I_ADMIN_REPORT_SERVICE = 'IAdminReportService';
 export const I_ADMIN_JOB_SERVICE = 'IAdminJobService';
 export const I_ADMIN_PROBLEM_REPORT_SERVICE = 'IAdminProblemReportService';
+export const I_PROFILE_ANALYTICS_SERVICE = 'IProfileAnalyticsService';
 
 export interface IUpdateEmployeeInfoService {
   updateEmployeeInfo(
@@ -339,4 +343,25 @@ export interface IAdminProblemReportService {
   updateStatus(
     dto: AdminUpdateProblemReportStatusDTO,
   ): Promise<AdminActionResponseDTO>;
+}
+
+export interface IProfileAnalyticsService {
+  /**
+   * Fire-and-forget from the profile-detail read path. Non-throwing: an
+   * analytics miss must not cost the caller their profile page.
+   */
+  recordProfileView(
+    viewerUserId: string | null,
+    viewedUserId: string,
+  ): Promise<void>;
+  /**
+   * Called once per search result set with the user ids of the rows that
+   * appeared. Bumps a per-user daily counter.
+   */
+  recordSearchAppearances(userIds: string[]): Promise<void>;
+  getMyProfileAnalytics(userId: string): Promise<ProfileAnalyticsResponseDTO>;
+  updatePrivacySettings(
+    userId: string,
+    dto: UpdatePrivacyDTO,
+  ): Promise<UpdatePrivacyResponseDTO>;
 }

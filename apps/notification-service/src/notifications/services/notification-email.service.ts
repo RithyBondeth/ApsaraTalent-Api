@@ -19,6 +19,16 @@ export interface ISendNotificationEmailInput {
   title: string;
   message: string;
   category: ENotificationCategory;
+  /**
+   * Optional files to attach — currently used to carry the `.ics` invite
+   * beside interview notifications. Passed through untouched; nodemailer
+   * handles the MIME encoding.
+   */
+  attachments?: Array<{
+    filename: string;
+    content: string;
+    contentType?: string;
+  }>;
 }
 
 /**
@@ -53,6 +63,7 @@ export class NotificationEmailService {
     title,
     message,
     category,
+    attachments,
   }: ISendNotificationEmailInput): Promise<void> {
     const appOrigin = this.appOrigin();
     if (!appOrigin) {
@@ -94,6 +105,10 @@ export class NotificationEmailService {
       subject,
       text,
       html,
+      // Attachments are forwarded verbatim; nodemailer accepts the
+      // `{ filename, content, contentType }` shape directly.
+      attachments:
+        attachments && attachments.length > 0 ? attachments : undefined,
       // RFC 8058. Gmail and Outlook surface a native unsubscribe control from
       // these, which is the difference between a reader unsubscribing and a
       // reader marking the message as spam — and it is spam complaints, not

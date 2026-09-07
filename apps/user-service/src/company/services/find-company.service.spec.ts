@@ -52,12 +52,14 @@ describe('FindCompanyService', () => {
     get: jest.fn(),
     set: jest.fn(),
   };
+  const profileAnalytics = { recordProfileView: jest.fn() };
   const service = new FindCompanyService(
     companies as any,
     users as any,
     blocks as any,
     logger as any,
     redis as any,
+    profileAnalytics as any,
   );
 
   beforeEach(() => {

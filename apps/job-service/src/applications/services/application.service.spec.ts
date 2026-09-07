@@ -11,6 +11,18 @@ describe('ApplicationService', () => {
     update: jest.fn(),
     delete: jest.fn(),
   };
+  const notes = {
+    findOne: jest.fn(),
+    find: jest.fn(),
+    create: jest.fn((data) => data),
+    save: jest.fn(),
+    remove: jest.fn(),
+  };
+  const history = {
+    find: jest.fn(),
+    create: jest.fn((data) => data),
+    save: jest.fn(),
+  };
   const jobs = { findOne: jest.fn() };
   const employees = { findOne: jest.fn() };
   const matches = { find: jest.fn() };
@@ -20,6 +32,8 @@ describe('ApplicationService', () => {
   const logger = { setContext: jest.fn(), error: jest.fn(), warn: jest.fn() };
   const service = new ApplicationService(
     applications as any,
+    notes as any,
+    history as any,
     jobs as any,
     employees as any,
     matches as any,
@@ -35,6 +49,8 @@ describe('ApplicationService', () => {
     applications.update.mockResolvedValue({ affected: 1 });
     matches.find.mockResolvedValue([]);
     matchLink.recordInterest.mockResolvedValue({ becameMatched: false });
+    notes.save.mockImplementation(async (value) => value);
+    history.save.mockImplementation(async (value) => value);
   });
 
   async function expectRpc(
@@ -728,5 +744,391 @@ describe('ApplicationService', () => {
       500,
       'withdraw failed',
     );
+  });
+
+  it('writes a history row on apply, on stage change, and on withdraw', async () => {
+    // Apply
+    employees.findOne.mockResolvedValueOnce({ id: 'employee-1' });
+    jobs.findOne.mockResolvedValueOnce({ id: 'job-1', title: 'Engineer' });
+    applications.findOne.mockResolvedValueOnce(null);
+    applications.save.mockImplementationOnce(async (value) => ({
+      id: 'application-1',
+      appliedAt: new Date(),
+      ...value,
+    }));
+    await service.applyApplication('user-1', { jobId: 'job-1' });
+    expect(history.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: null,
+        to: EApplicationStatus.PENDING,
+      }),
+    );
+
+    // Stage change
+    history.save.mockClear();
+    applications.findOne.mockResolvedValueOnce({
+      id: 'application-1',
+      status: EApplicationStatus.PENDING,
+      appliedAt: new Date(),
+      job: {
+        id: 'job-1',
+        title: 'Engineer',
+        company: { id: 'company-1', user: { id: 'company-user' } },
+      },
+      employee: { id: 'employee-1', user: { id: 'employee-user' } },
+    });
+    await service.updateApplicationStatus('company-1', {
+      applicationId: 'application-1',
+      status: EApplicationStatus.SHORTLISTED,
+    });
+    expect(history.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: EApplicationStatus.PENDING,
+        to: EApplicationStatus.SHORTLISTED,
+      }),
+    );
+
+    // Withdraw
+    history.save.mockClear();
+    employees.findOne.mockResolvedValueOnce({ id: 'employee-1' });
+    applications.findOne.mockResolvedValueOnce({
+      id: 'application-1',
+      status: EApplicationStatus.SHORTLISTED,
+      job: { id: 'job-1', title: 'Engineer', company: { id: 'company-1' } },
+    });
+    await service.withdrawApplication('user-1', 'application-1');
+    expect(history.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: EApplicationStatus.SHORTLISTED,
+        to: EApplicationStatus.WITHDRAWN,
+      }),
+    );
+  });
+
+  it('carries the rejection reason onto the history row', async () => {
+    applications.findOne.mockResolvedValue({
+      id: 'application-1',
+      status: EApplicationStatus.SHORTLISTED,
+      appliedAt: new Date(),
+      job: { id: 'job-1', title: 'Engineer', company: { id: 'company-1' } },
+      employee: { id: 'employee-1', user: { id: 'employee-user' } },
+    });
+
+    await service.updateApplicationStatus('company-1', {
+      applicationId: 'application-1',
+      status: EApplicationStatus.REJECTED,
+      rejectionReason: 'Not a match',
+    });
+
+    expect(history.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: EApplicationStatus.SHORTLISTED,
+        to: EApplicationStatus.REJECTED,
+        note: 'Not a match',
+      }),
+    );
+  });
+
+  it('does not abort a stage change when history logging fails', async () => {
+    // The trail is best-effort; a missed row must not roll back a real move.
+    applications.findOne.mockResolvedValue({
+      id: 'application-1',
+      status: EApplicationStatus.PENDING,
+      appliedAt: new Date(),
+      job: { id: 'job-1', title: 'Engineer', company: { id: 'company-1' } },
+      employee: { id: 'employee-1', user: { id: 'employee-user' } },
+    });
+    history.save.mockRejectedValueOnce(new Error('history down'));
+
+    const result = await service.updateApplicationStatus('company-1', {
+      applicationId: 'application-1',
+      status: EApplicationStatus.SHORTLISTED,
+    });
+    expect(result.status).toBe(EApplicationStatus.SHORTLISTED);
+    expect(logger.warn).toHaveBeenCalled();
+  });
+
+  describe('bulkUpdateApplicationStatus', () => {
+    it('reports per-row success and failure without aborting the batch', async () => {
+      // First: PENDING → SHORTLISTED, allowed.
+      applications.findOne.mockResolvedValueOnce({
+        id: 'application-1',
+        status: EApplicationStatus.PENDING,
+        appliedAt: new Date(),
+        job: { id: 'job-1', title: 'Engineer', company: { id: 'company-1' } },
+        employee: { id: 'employee-1', user: { id: 'employee-user' } },
+      });
+      // Second: HIRED → SHORTLISTED, refused by the state machine.
+      applications.findOne.mockResolvedValueOnce({
+        id: 'application-2',
+        status: EApplicationStatus.HIRED,
+        appliedAt: new Date(),
+        job: { id: 'job-1', title: 'Engineer', company: { id: 'company-1' } },
+        employee: { id: 'employee-2', user: { id: 'employee-user-2' } },
+      });
+      // Status re-read after the second failure (for the "unchanged status"
+      // field on the result row).
+      applications.findOne.mockResolvedValueOnce({
+        id: 'application-2',
+        status: EApplicationStatus.HIRED,
+      });
+
+      const result = await service.bulkUpdateApplicationStatus('company-1', {
+        applicationIds: ['application-1', 'application-2'],
+        status: EApplicationStatus.SHORTLISTED,
+      });
+
+      expect(result.updatedCount).toBe(1);
+      expect(result.failedCount).toBe(1);
+      expect(result.results[0]).toEqual(
+        expect.objectContaining({
+          applicationId: 'application-1',
+          ok: true,
+          status: EApplicationStatus.SHORTLISTED,
+        }),
+      );
+      expect(result.results[1]).toEqual(
+        expect.objectContaining({
+          applicationId: 'application-2',
+          ok: false,
+          status: EApplicationStatus.HIRED,
+        }),
+      );
+      expect(result.results[1].reason).toContain('Cannot move');
+    });
+
+    it('rejects an application the caller does not own without aborting the rest', async () => {
+      applications.findOne.mockResolvedValueOnce({
+        id: 'application-1',
+        status: EApplicationStatus.PENDING,
+        appliedAt: new Date(),
+        job: { id: 'job-1', company: { id: 'other-company' } },
+        employee: { id: 'employee-1' },
+      });
+      applications.findOne.mockResolvedValueOnce({
+        id: 'application-1',
+        status: EApplicationStatus.PENDING,
+      });
+
+      const result = await service.bulkUpdateApplicationStatus('company-1', {
+        applicationIds: ['application-1'],
+        status: EApplicationStatus.SHORTLISTED,
+      });
+
+      expect(result.updatedCount).toBe(0);
+      expect(result.failedCount).toBe(1);
+      expect(result.results[0].reason).toBe(
+        'Application not found or access denied',
+      );
+    });
+  });
+
+  describe('notes', () => {
+    it('refuses to create a note on an application the caller does not own', async () => {
+      applications.findOne.mockResolvedValue({
+        id: 'application-1',
+        job: { company: { id: 'other-company' } },
+      });
+      await expectRpc(
+        service.createApplicationNote(
+          'company-1',
+          'application-1',
+          { body: 'Great candidate' },
+          'company-user',
+        ),
+        404,
+        'Application not found or access denied',
+      );
+      expect(notes.save).not.toHaveBeenCalled();
+    });
+
+    it('creates a note and returns it with the author label', async () => {
+      applications.findOne.mockResolvedValueOnce({
+        id: 'application-1',
+        job: { company: { id: 'company-1' } },
+      });
+      notes.save.mockResolvedValueOnce({ id: 'note-1' });
+      notes.findOne.mockResolvedValueOnce({
+        id: 'note-1',
+        body: 'Great candidate',
+        createdAt: new Date('2026-09-01'),
+        author: { id: 'company-user', email: 'rita@acme.test' },
+      });
+
+      const result = await service.createApplicationNote(
+        'company-1',
+        'application-1',
+        { body: '  Great candidate  ' },
+        'company-user',
+      );
+
+      // Body is trimmed on the way in.
+      expect(notes.create).toHaveBeenCalledWith(
+        expect.objectContaining({ body: 'Great candidate' }),
+      );
+      expect(result).toEqual(
+        expect.objectContaining({
+          id: 'note-1',
+          applicationId: 'application-1',
+          authorName: 'rita@acme.test',
+        }),
+      );
+    });
+
+    it('lists notes newest first and refuses foreign applications', async () => {
+      applications.findOne.mockResolvedValueOnce({
+        id: 'application-1',
+        job: { company: { id: 'company-1' } },
+      });
+      notes.find.mockResolvedValueOnce([
+        {
+          id: 'note-1',
+          body: 'later',
+          createdAt: new Date('2026-09-02'),
+          author: { id: 'u1', email: 'a@x' },
+        },
+      ]);
+
+      const listed = await service.listApplicationNotes(
+        'company-1',
+        'application-1',
+      );
+      expect(notes.find).toHaveBeenCalledWith(
+        expect.objectContaining({ order: { createdAt: 'DESC' } }),
+      );
+      expect(listed).toHaveLength(1);
+
+      applications.findOne.mockResolvedValueOnce({
+        id: 'application-1',
+        job: { company: { id: 'other-company' } },
+      });
+      await expectRpc(
+        service.listApplicationNotes('company-1', 'application-1'),
+        404,
+        'Application not found or access denied',
+      );
+    });
+
+    it('removes a note that belongs to the application', async () => {
+      applications.findOne.mockResolvedValueOnce({
+        id: 'application-1',
+        job: { company: { id: 'company-1' } },
+      });
+      const stored = { id: 'note-1' };
+      notes.findOne.mockResolvedValueOnce(stored);
+
+      const result = await service.deleteApplicationNote(
+        'company-1',
+        'application-1',
+        'note-1',
+      );
+      expect(result).toEqual({ message: 'Note deleted' });
+      expect(notes.remove).toHaveBeenCalledWith(stored);
+    });
+
+    it('404s a missing note rather than silently succeeding', async () => {
+      applications.findOne.mockResolvedValueOnce({
+        id: 'application-1',
+        job: { company: { id: 'company-1' } },
+      });
+      notes.findOne.mockResolvedValueOnce(null);
+      await expectRpc(
+        service.deleteApplicationNote('company-1', 'application-1', 'note-1'),
+        404,
+        'Note not found',
+      );
+      expect(notes.remove).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getJobPipeline', () => {
+    it('buckets applications into the four live-pipeline columns', async () => {
+      // First findOne: the job itself (ownership check).
+      jobs.findOne.mockResolvedValueOnce({ id: 'job-1', title: 'Engineer' });
+      // getJobApplications runs a second findOne with company relation.
+      jobs.findOne.mockResolvedValueOnce({ id: 'job-1', title: 'Engineer' });
+      applications.find.mockResolvedValueOnce([
+        {
+          id: 'a1',
+          status: EApplicationStatus.PENDING,
+          appliedAt: new Date(),
+          reviewedAt: new Date('2026-01-01'),
+          employee: { id: 'e1' },
+        },
+        {
+          id: 'a2',
+          status: EApplicationStatus.SHORTLISTED,
+          appliedAt: new Date(),
+          reviewedAt: new Date('2026-01-01'),
+          employee: { id: 'e2' },
+        },
+        {
+          // Terminal — deliberately excluded from the board.
+          id: 'a3',
+          status: EApplicationStatus.HIRED,
+          appliedAt: new Date(),
+          reviewedAt: new Date('2026-01-01'),
+          employee: { id: 'e3' },
+        },
+      ]);
+
+      const pipeline = await service.getJobPipeline('job-1', 'company-1');
+      const cols = new Map(pipeline.columns.map((c) => [c.status, c]));
+      expect(cols.get(EApplicationStatus.PENDING)?.count).toBe(1);
+      expect(cols.get(EApplicationStatus.SHORTLISTED)?.count).toBe(1);
+      expect(cols.get(EApplicationStatus.INTERVIEWING)?.count).toBe(0);
+      expect(cols.get(EApplicationStatus.OFFERED)?.count).toBe(0);
+      // The HIRED row is not in the board — it is counted in totalCount only
+      // because it belongs to the underlying applicant list.
+      expect(pipeline.totalCount).toBe(3);
+      expect(cols.get(EApplicationStatus.HIRED)).toBeUndefined();
+    });
+
+    it('404s when the caller does not own the job', async () => {
+      jobs.findOne.mockResolvedValueOnce(null);
+      await expectRpc(
+        service.getJobPipeline('job-1', 'other-company'),
+        404,
+        'Job not found or access denied',
+      );
+    });
+  });
+
+  describe('listApplicationStatusHistory', () => {
+    it('returns the trail oldest first for an owned application', async () => {
+      applications.findOne.mockResolvedValueOnce({
+        id: 'application-1',
+        job: { company: { id: 'company-1' } },
+      });
+      history.find.mockResolvedValueOnce([
+        {
+          id: 'h1',
+          from: null,
+          to: EApplicationStatus.PENDING,
+          note: null,
+          createdAt: new Date('2026-09-01'),
+          actor: { id: 'u1', email: 'candidate@x' },
+        },
+        {
+          id: 'h2',
+          from: EApplicationStatus.PENDING,
+          to: EApplicationStatus.SHORTLISTED,
+          note: null,
+          createdAt: new Date('2026-09-02'),
+          actor: { id: 'u2', email: 'rita@acme.test' },
+        },
+      ]);
+
+      const rows = await service.listApplicationStatusHistory(
+        'company-1',
+        'application-1',
+      );
+      expect(history.find).toHaveBeenCalledWith(
+        expect.objectContaining({ order: { createdAt: 'ASC' } }),
+      );
+      expect(rows).toHaveLength(2);
+      expect(rows[0].from).toBeNull();
+      expect(rows[1].actorName).toBe('rita@acme.test');
+    });
   });
 });

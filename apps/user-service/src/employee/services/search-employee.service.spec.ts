@@ -9,10 +9,12 @@ describe('SearchEmployeeService', () => {
     get: jest.fn(),
     set: jest.fn(),
   };
+  const profileAnalytics = { recordSearchAppearances: jest.fn() };
   const service = new SearchEmployeeService(
     repository as any,
     logger as any,
     redis as any,
+    profileAnalytics as any,
   );
 
   beforeEach(() => {

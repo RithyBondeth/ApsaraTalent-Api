@@ -30,6 +30,8 @@ import { Interview } from '@app/common/database/entities/interview.entity';
 import { LoginHistory } from '@app/common/database/entities/login-history.entity';
 import { Notification } from '@app/common/database/entities/notification.entity';
 import { NotificationPreference } from '@app/common/database/entities/notification-preference.entity';
+import { ProfileSearchAppearance } from '@app/common/database/entities/profile-search-appearance.entity';
+import { ProfileView } from '@app/common/database/entities/profile-view.entity';
 import { UserBlock } from '@app/common/database/entities/moderation/user-block.entity';
 import { UserReport } from '@app/common/database/entities/moderation/user-report.entity';
 import { Social } from '@app/common/database/entities/social.entity';
@@ -55,6 +57,7 @@ import { UploadEmployeeReferenceController } from './employee/controllers/upload
 import { EmailModule } from '@app/common/email/email.module';
 import { AdminController } from './admin/controllers/admin.controller';
 import { AccountLifecycleController } from './users/controllers/account-lifecycle.controller';
+import { ProfileAnalyticsController } from './users/controllers/profile-analytics.controller';
 import { ModerationController } from './moderation/controllers/moderation.controller';
 import { SupportController } from './support/controllers/support.controller';
 import { UserController } from './users/controllers/user.controller';
@@ -74,6 +77,7 @@ import { AdminJobService } from './admin/services/admin-job.service';
 import { AdminReportService } from './admin/services/admin-report.service';
 import { AccountLifecycleService } from './users/services/account-lifecycle.service';
 import { AccountHardDeleteService } from './users/services/account-hard-delete.service';
+import { ProfileAnalyticsService } from './users/services/profile-analytics.service';
 import { AdminProblemReportService } from './admin/services/admin-problem-report.service';
 import { AdminUserService } from './admin/services/admin-user.service';
 import { ModerationService } from './moderation/services/moderation.service';
@@ -106,6 +110,7 @@ import {
   I_ADMIN_PROBLEM_REPORT_SERVICE,
   I_ADMIN_REPORT_SERVICE,
   I_ADMIN_JOB_SERVICE,
+  I_PROFILE_ANALYTICS_SERVICE,
 } from '@app/contracts/interfaces/service/user-service.interface';
 
 @Module({
@@ -138,6 +143,8 @@ import {
       LoginHistory,
       Notification,
       NotificationPreference,
+      ProfileView,
+      ProfileSearchAppearance,
     ]),
     LoggerModule,
     AnalyticsModule,
@@ -177,6 +184,7 @@ import {
     SupportController,
     AdminController,
     AccountLifecycleController,
+    ProfileAnalyticsController,
   ],
   providers: [
     {
@@ -223,6 +231,14 @@ import {
     { provide: I_ADMIN_REPORT_SERVICE, useClass: AdminReportService },
     AccountLifecycleService,
     AccountHardDeleteService,
+    // The concrete class is registered explicitly so the find-employee and
+    // find-company services can inject it for fire-and-forget view tracking;
+    // the interface token below keeps the RPC controller consumers loose.
+    ProfileAnalyticsService,
+    {
+      provide: I_PROFILE_ANALYTICS_SERVICE,
+      useExisting: ProfileAnalyticsService,
+    },
     {
       provide: I_ADMIN_PROBLEM_REPORT_SERVICE,
       useClass: AdminProblemReportService,

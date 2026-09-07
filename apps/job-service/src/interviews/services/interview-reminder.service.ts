@@ -1,5 +1,10 @@
 import { Interview } from '@app/common/database/entities/interview.entity';
 import { formatInterviewTime } from '@app/common/utils/interview-time.util';
+import {
+  buildInterviewIcs,
+  icsSequenceFromUpdatedAt,
+  TIcsEventStatus,
+} from '@app/common/utils/ics-builder.util';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -138,6 +143,44 @@ export class InterviewReminderService {
       return;
     }
 
+    // A fresh REQUEST goes along with the reminder as a fallback: if the
+    // recipient never opened the original invite, this gives them another
+    // shot at adding it. Same UID + SEQUENCE as the last emit, so a client
+    // that already has the event treats this as a no-op update. Reminders
+    // only fire for statuses that will actually happen (pending/accepted),
+    // so a CONFIRMED status maps directly; TENTATIVE is the pending case.
+    const icsStatus: TIcsEventStatus =
+      interview.status === 'accepted' ? 'CONFIRMED' : 'TENTATIVE';
+    const organizerEmail = interview.company?.user?.email;
+    const attendeeEmail = interview.employee?.user?.email;
+    const invite =
+      organizerEmail && attendeeEmail
+        ? buildInterviewIcs(
+            {
+              interviewId: interview.id,
+              title: interview.title,
+              description: interview.description,
+              startAt: new Date(interview.scheduledAt),
+              durationMinutes: interview.durationMinutes,
+              location: interview.location,
+              meetingLink: interview.meetingLink,
+              timezone: interview.timezone,
+              sequence: icsSequenceFromUpdatedAt(
+                interview.updatedAt ?? new Date(),
+              ),
+              status: icsStatus,
+              organizerEmail,
+              organizerName: interview.company?.name,
+              attendeeEmail,
+              attendeeName:
+                interview.employee?.firstname && interview.employee?.lastname
+                  ? `${interview.employee.firstname} ${interview.employee.lastname}`
+                  : (interview.employee?.username ?? null),
+            },
+            'REQUEST',
+          )
+        : null;
+
     // Both sides get one — a reminder to the *scheduler* too, because the
     // pain of a missed interview is symmetrical.
     for (const target of [interview.employee?.user, interview.company?.user]) {
@@ -157,6 +200,7 @@ export class InterviewReminderService {
             eventType: `interview_reminder_${kind}`,
           },
           sendPush: true,
+          emailAttachments: invite ? [invite] : undefined,
         },
       );
     }

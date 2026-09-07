@@ -1,7 +1,10 @@
 import { Application } from '@app/common/database/entities/application.entity';
+import { ApplicationNote } from '@app/common/database/entities/application-note.entity';
+import { ApplicationStatusHistory } from '@app/common/database/entities/application-status-history.entity';
 import { Employee } from '@app/common/database/entities/employee/employee.entity';
 import { Job } from '@app/common/database/entities/company/job.entity';
 import { JobMatching } from '@app/common/database/entities/job-matching.entity';
+import { User } from '@app/common/database/entities/user.entity';
 import {
   APPLICATION_STATUS_TRANSITIONS,
   EApplicationStatus,
@@ -17,12 +20,33 @@ import { AnalyticsService, EAnalyticsEvent } from '@app/common/analytics';
 import { MatchLinkService } from '../../matching/services/match-link.service';
 import {
   IApplicationService,
+  ApplicationNoteResponseDTO,
+  ApplicationStatusHistoryEntryDTO,
   ApplyApplicationDTO,
   ApplyApplicationResponseDTO,
+  BulkUpdateApplicationStatusDTO,
+  BulkUpdateApplicationStatusItemResultDTO,
+  BulkUpdateApplicationStatusResponseDTO,
+  CreateApplicationNoteDTO,
   GetApplicationResponseDTO,
+  JobPipelineResponseDTO,
+  PipelineColumnDTO,
   UpdateApplicationStatusDTO,
   UpdateApplicationStatusResponseDTO,
 } from '@app/contracts';
+
+/**
+ * The stage columns the kanban board renders, in the order they appear. The
+ * end-state buckets (HIRED, REJECTED, WITHDRAWN) and the legacy REVIEWED are
+ * intentionally omitted: the board is the live pipeline, and a completed row
+ * belongs on the analytics dashboard, not in the recruiter's daily view.
+ */
+const PIPELINE_COLUMN_ORDER: EApplicationStatus[] = [
+  EApplicationStatus.PENDING,
+  EApplicationStatus.SHORTLISTED,
+  EApplicationStatus.INTERVIEWING,
+  EApplicationStatus.OFFERED,
+];
 
 /**
  * What the candidate is told when their application moves. Keyed by the status
@@ -67,6 +91,10 @@ export class ApplicationService implements IApplicationService {
   constructor(
     @InjectRepository(Application)
     private readonly applicationRepo: Repository<Application>,
+    @InjectRepository(ApplicationNote)
+    private readonly noteRepo: Repository<ApplicationNote>,
+    @InjectRepository(ApplicationStatusHistory)
+    private readonly historyRepo: Repository<ApplicationStatusHistory>,
     @InjectRepository(Job)
     private readonly jobRepo: Repository<Job>,
     @InjectRepository(Employee)
@@ -80,6 +108,56 @@ export class ApplicationService implements IApplicationService {
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(ApplicationService.name);
+  }
+
+  /**
+   * Append one row to the status trail. Deliberately non-fatal — a logging
+   * miss should not roll back a real stage change; the analytics event still
+   * fires, and the missing entry shows up as a gap rather than a lost move.
+   */
+  private async logStatusChange(
+    applicationId: string,
+    from: EApplicationStatus | null,
+    to: EApplicationStatus,
+    actorUserId: string | null,
+    note?: string | null,
+  ): Promise<void> {
+    try {
+      await this.historyRepo.save(
+        this.historyRepo.create({
+          application: { id: applicationId } as Application,
+          from,
+          to,
+          actor: actorUserId ? ({ id: actorUserId } as User) : null,
+          note: note ?? null,
+        }),
+      );
+    } catch (error) {
+      this.logger.warn(
+        (error as Error).message || 'Could not write status history row',
+      );
+    }
+  }
+
+  /**
+   * Guard for every note and history read/write. Returns the loaded
+   * application (with `job.company`) so callers do not fetch it twice.
+   */
+  private async loadOwnedApplication(
+    applicationId: string,
+    companyId: string,
+  ): Promise<Application> {
+    const application = await this.applicationRepo.findOne({
+      where: { id: applicationId },
+      relations: ['job', 'job.company', 'employee', 'employee.user'],
+    });
+    if (!application || application.job?.company?.id !== companyId) {
+      throw new RpcException({
+        message: 'Application not found or access denied',
+        statusCode: 404,
+      });
+    }
+    return application;
   }
 
   /**
@@ -199,6 +277,16 @@ export class ApplicationService implements IApplicationService {
       }
 
       const saved = await this.applicationRepo.save(application);
+
+      // The first row in the trail: null → PENDING. Written after the save so
+      // it can carry the real application id.
+      await this.logStatusChange(
+        saved.id,
+        null,
+        EApplicationStatus.PENDING,
+        employeeId,
+        null,
+      );
 
       /*
         Applying is a like — the same half of the handshake a swipe is, aimed
@@ -457,6 +545,16 @@ export class ApplicationService implements IApplicationService {
 
       const updated = await this.applicationRepo.save(application);
 
+      await this.logStatusChange(
+        updated.id,
+        previousStatus,
+        nextStatus,
+        application.job?.company?.user?.id ?? null,
+        nextStatus === EApplicationStatus.REJECTED
+          ? (updateApplicationStatusDTO.rejectionReason ?? null)
+          : null,
+      );
+
       this.analyticsService.capture(
         application.job?.company?.user?.id ??
           application.job?.company?.id ??
@@ -553,6 +651,14 @@ export class ApplicationService implements IApplicationService {
       application.statusChangedAt = new Date();
       await this.applicationRepo.save(application);
 
+      await this.logStatusChange(
+        application.id,
+        withdrawnFrom,
+        EApplicationStatus.WITHDRAWN,
+        employeeId,
+        null,
+      );
+
       this.analyticsService.capture(
         application.employee?.user?.id ?? application.employee?.id ?? 'unknown',
         EAnalyticsEvent.APPLICATION_WITHDRAWN,
@@ -599,5 +705,248 @@ export class ApplicationService implements IApplicationService {
         statusCode: 500,
       });
     }
+  }
+
+  /**
+   * Move many applications to the same target stage in one call. Each row is
+   * validated on its own against `APPLICATION_STATUS_TRANSITIONS`, so a
+   * mixed selection (a HIRED row plus a PENDING one, aimed at REJECTED) is
+   * partially applied rather than rejected wholesale — the recruiter sees
+   * exactly which ones moved and which did not.
+   *
+   * Deliberately loops the single-row path rather than issuing one
+   * cross-row UPDATE: the per-row work (match link on shortlist, per-row
+   * notification, history entry, analytics) has to happen for each move, and
+   * duplicating it in a batch shape would drift out of sync with the single
+   * path.
+   */
+  async bulkUpdateApplicationStatus(
+    companyId: string,
+    bulkUpdateApplicationStatusDTO: BulkUpdateApplicationStatusDTO,
+  ): Promise<BulkUpdateApplicationStatusResponseDTO> {
+    const { applicationIds, status, rejectionReason } =
+      bulkUpdateApplicationStatusDTO;
+    const results: BulkUpdateApplicationStatusItemResultDTO[] = [];
+
+    for (const applicationId of applicationIds) {
+      try {
+        const updated = await this.updateApplicationStatus(companyId, {
+          applicationId,
+          status,
+          rejectionReason,
+        });
+        results.push(
+          new BulkUpdateApplicationStatusItemResultDTO({
+            applicationId,
+            ok: true,
+            status: updated.status,
+            reason: null,
+          }),
+        );
+      } catch (error) {
+        const err = error as { message?: string; error?: { message?: string } };
+        // RpcException wraps its payload in `.error`; the plain Error path
+        // carries a top-level `.message`. Read both so a per-row failure is
+        // legible regardless of source.
+        const reason =
+          err?.error?.message ??
+          err?.message ??
+          'Could not update this application';
+        // Read the current status so the caller can show it as unchanged.
+        let current = status;
+        try {
+          const row = await this.applicationRepo.findOne({
+            where: { id: applicationId },
+            select: { id: true, status: true },
+          });
+          if (row) current = row.status;
+        } catch {
+          // A read failure here is not worth surfacing; the message is enough.
+        }
+        results.push(
+          new BulkUpdateApplicationStatusItemResultDTO({
+            applicationId,
+            ok: false,
+            status: current,
+            reason,
+          }),
+        );
+      }
+    }
+
+    const updatedCount = results.filter((r) => r.ok).length;
+    return new BulkUpdateApplicationStatusResponseDTO({
+      results,
+      updatedCount,
+      failedCount: results.length - updatedCount,
+    });
+  }
+
+  /**
+   * The kanban read. Reuses `getJobApplications` so ownership, review-stamping
+   * and match-score enrichment all happen in exactly one place, then buckets
+   * by stage in `PIPELINE_COLUMN_ORDER`. Terminal statuses fall through: the
+   * board is the live pipeline, not an audit view.
+   */
+  async getJobPipeline(
+    jobId: string,
+    companyId: string,
+  ): Promise<JobPipelineResponseDTO> {
+    const job = await this.jobRepo.findOne({
+      where: { id: jobId, company: { id: companyId } },
+      select: { id: true, title: true },
+    });
+    if (!job) {
+      throw new RpcException({
+        message: 'Job not found or access denied',
+        statusCode: 404,
+      });
+    }
+
+    const applications = await this.getJobApplications(jobId, companyId);
+    const byStatus = new Map<EApplicationStatus, GetApplicationResponseDTO[]>();
+    for (const stage of PIPELINE_COLUMN_ORDER) {
+      byStatus.set(stage, []);
+    }
+    for (const app of applications) {
+      const bucket = byStatus.get(app.status);
+      if (bucket) bucket.push(app);
+    }
+
+    return new JobPipelineResponseDTO({
+      jobId: job.id,
+      jobTitle: job.title,
+      columns: PIPELINE_COLUMN_ORDER.map(
+        (stage) =>
+          new PipelineColumnDTO({
+            status: stage,
+            count: byStatus.get(stage)?.length ?? 0,
+            applications: byStatus.get(stage) ?? [],
+          }),
+      ),
+      totalCount: applications.length,
+    });
+  }
+
+  async createApplicationNote(
+    companyId: string,
+    applicationId: string,
+    createApplicationNoteDTO: CreateApplicationNoteDTO,
+    authorUserId: string,
+  ): Promise<ApplicationNoteResponseDTO> {
+    try {
+      const application = await this.loadOwnedApplication(
+        applicationId,
+        companyId,
+      );
+
+      const note = await this.noteRepo.save(
+        this.noteRepo.create({
+          application: { id: application.id } as Application,
+          author: authorUserId ? ({ id: authorUserId } as User) : null,
+          body: createApplicationNoteDTO.body.trim(),
+        }),
+      );
+
+      // Reload so the response carries the author's display name in one
+      // place — no second RPC hop for the drawer to render the byline.
+      const saved = await this.noteRepo.findOne({
+        where: { id: note.id },
+        relations: ['author'],
+      });
+
+      return new ApplicationNoteResponseDTO({
+        id: saved!.id,
+        applicationId: application.id,
+        body: saved!.body,
+        createdAt: saved!.createdAt,
+        authorId: saved!.author?.id ?? null,
+        // The user table carries email but not a display name; a richer name
+        // belongs to the employee/company profile on the read side. Email is
+        // the stable identifier both roles have.
+        authorName: saved!.author?.email ?? null,
+      });
+    } catch (error) {
+      this.logger.error(
+        (error as Error).message || 'Error creating application note',
+      );
+      if (error instanceof RpcException) throw error;
+      throw new RpcException({
+        message: (error as Error).message,
+        statusCode: 500,
+      });
+    }
+  }
+
+  async listApplicationNotes(
+    companyId: string,
+    applicationId: string,
+  ): Promise<ApplicationNoteResponseDTO[]> {
+    await this.loadOwnedApplication(applicationId, companyId);
+
+    const notes = await this.noteRepo.find({
+      where: { application: { id: applicationId } },
+      relations: ['author'],
+      order: { createdAt: 'DESC' },
+    });
+
+    return notes.map(
+      (note) =>
+        new ApplicationNoteResponseDTO({
+          id: note.id,
+          applicationId,
+          body: note.body,
+          createdAt: note.createdAt,
+          authorId: note.author?.id ?? null,
+          authorName: note.author?.email ?? null,
+        }),
+    );
+  }
+
+  async deleteApplicationNote(
+    companyId: string,
+    applicationId: string,
+    noteId: string,
+  ): Promise<{ message: string }> {
+    await this.loadOwnedApplication(applicationId, companyId);
+
+    const note = await this.noteRepo.findOne({
+      where: { id: noteId, application: { id: applicationId } },
+    });
+    if (!note) {
+      throw new RpcException({
+        message: 'Note not found',
+        statusCode: 404,
+      });
+    }
+    await this.noteRepo.remove(note);
+    return { message: 'Note deleted' };
+  }
+
+  async listApplicationStatusHistory(
+    companyId: string,
+    applicationId: string,
+  ): Promise<ApplicationStatusHistoryEntryDTO[]> {
+    await this.loadOwnedApplication(applicationId, companyId);
+
+    const rows = await this.historyRepo.find({
+      where: { application: { id: applicationId } },
+      relations: ['actor'],
+      order: { createdAt: 'ASC' },
+    });
+
+    return rows.map(
+      (row) =>
+        new ApplicationStatusHistoryEntryDTO({
+          id: row.id,
+          applicationId,
+          from: row.from,
+          to: row.to,
+          note: row.note,
+          createdAt: row.createdAt,
+          actorId: row.actor?.id ?? null,
+          actorName: row.actor?.email ?? null,
+        }),
+    );
   }
 }

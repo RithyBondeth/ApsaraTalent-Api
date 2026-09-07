@@ -10,6 +10,12 @@ import { Logger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 import { formatInterviewTime } from '@app/common/utils/interview-time.util';
+import {
+  buildInterviewIcs,
+  icsSequenceFromUpdatedAt,
+  TIcsEventStatus,
+  TIcsMethod,
+} from '@app/common/utils/ics-builder.util';
 import { AnalyticsService, EAnalyticsEvent } from '@app/common/analytics';
 import {
   CreateInterviewDTO,
@@ -221,6 +227,19 @@ export class InterviewService implements IInterviewService {
           : employee.username || employee.firstname;
 
       if (targetUserId) {
+        // A `.ics` invite goes out beside the notification email so the
+        // candidate's calendar picks up the meeting. TENTATIVE mirrors the
+        // interview's `pending` status — the same event will later go out as
+        // CONFIRMED once accepted, sharing UID + SEQUENCE so mail clients
+        // update the existing row rather than duplicating it.
+        const invite = this.buildInterviewInvite(
+          saved,
+          employee,
+          company,
+          'REQUEST',
+          'TENTATIVE',
+        );
+
         this.notificationClient.emit(
           NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION,
           {
@@ -240,6 +259,7 @@ export class InterviewService implements IInterviewService {
               eventType: 'interview_scheduled',
             },
             sendPush: true,
+            emailAttachments: invite ? [invite] : undefined,
           },
         );
       }
@@ -392,6 +412,20 @@ export class InterviewService implements IInterviewService {
         updateInterviewDTO.status.charAt(0).toUpperCase() +
         updateInterviewDTO.status.slice(1);
 
+      // Send a follow-up ICS so the recipient's calendar tracks the change.
+      // The event UID is stable per interview and SEQUENCE derives from
+      // `updatedAt`, so mail clients update the existing row rather than
+      // duplicating it. Cancellation is METHOD:CANCEL — every other real
+      // transition is METHOD:REQUEST with an updated STATUS.
+      const isCancel = updateInterviewDTO.status === InterviewStatus.CANCELLED;
+      const followUp = this.buildInterviewInvite(
+        saved,
+        interview.employee,
+        interview.company,
+        isCancel ? 'CANCEL' : 'REQUEST',
+        icsStatusFor(updateInterviewDTO.status),
+      );
+
       if (notifyUserId) {
         this.notificationClient.emit(
           NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION,
@@ -400,6 +434,7 @@ export class InterviewService implements IInterviewService {
             title: `Interview ${statusLabel}`,
             message: `Interview "${interview.title}" has been ${updateInterviewDTO.status}.`,
             type: 'interview',
+            emailAttachments: followUp ? [followUp] : undefined,
             data: {
               interviewId: interview.id,
               senderName: isEmployee
@@ -427,5 +462,69 @@ export class InterviewService implements IInterviewService {
         statusCode: error?.statusCode || 500,
       });
     }
+  }
+
+  /**
+   * Build the `.ics` attachment payload the emit puts on its email. Returns
+   * `null` when either side is missing an email address — a calendar
+   * invitation needs both ORGANIZER and ATTENDEE, and forging a placeholder
+   * is worse than sending the notification without an attachment.
+   */
+  private buildInterviewInvite(
+    interview: Interview,
+    employee: Employee,
+    company: Company,
+    method: TIcsMethod,
+    status: TIcsEventStatus,
+  ): { filename: string; content: string; contentType: string } | null {
+    const organizerEmail = company.user?.email;
+    const attendeeEmail = employee.user?.email;
+    if (!organizerEmail || !attendeeEmail) return null;
+
+    const { filename, content, contentType } = buildInterviewIcs(
+      {
+        interviewId: interview.id,
+        title: interview.title,
+        description: interview.description,
+        startAt: new Date(interview.scheduledAt),
+        durationMinutes: interview.durationMinutes,
+        location: interview.location,
+        meetingLink: interview.meetingLink,
+        timezone: interview.timezone,
+        sequence: icsSequenceFromUpdatedAt(interview.updatedAt ?? new Date()),
+        status,
+        organizerEmail,
+        organizerName: company.name,
+        attendeeEmail,
+        attendeeName:
+          employee.firstname && employee.lastname
+            ? `${employee.firstname} ${employee.lastname}`
+            : (employee.username ?? null),
+      },
+      method,
+    );
+    return { filename, content, contentType };
+  }
+}
+
+/**
+ * Map an interview's DB status to the ICS event STATUS. Kept as a plain
+ * function so tests can exercise it without spinning up the service.
+ *
+ * - `pending` → TENTATIVE — the recipient has been asked but not confirmed.
+ * - `accepted` → CONFIRMED — the meeting is definite.
+ * - `declined` / `cancelled` / `completed` → CANCELLED — remove from
+ *   the calendar. `completed` is a bookkeeping value that only shows up
+ *   after the meeting happened, so keeping it on the calendar as future
+ *   time is wrong.
+ */
+export function icsStatusFor(status: InterviewStatus): TIcsEventStatus {
+  switch (status) {
+    case InterviewStatus.ACCEPTED:
+      return 'CONFIRMED';
+    case InterviewStatus.PENDING:
+      return 'TENTATIVE';
+    default:
+      return 'CANCELLED';
   }
 }

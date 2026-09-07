@@ -103,6 +103,17 @@ export class User {
   @Column({ default: false })
   profileCompleted: boolean;
 
+  /**
+   * When true, this user's own visits to other profiles are recorded as
+   * anonymous (the `ProfileView.viewerHidden` flag is set at write time).
+   * Counts still move — profile owners can tell "you have visitors" apart
+   * from "nobody has looked" — but the viewer is not named on the recent
+   * viewers list. The user's own analytics summary is unaffected: this is
+   * a browsing-side preference, not a listening-side one.
+   */
+  @Column({ default: false })
+  browsePrivately: boolean;
+
   // Auth related fields
   @Column({ nullable: true })
   resetPasswordToken: string | null;

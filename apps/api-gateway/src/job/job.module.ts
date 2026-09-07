@@ -10,6 +10,8 @@ import { InterviewController } from './controllers/interview.controller';
 import { JobController } from './controllers/job.controller';
 import { PublicJobController } from './controllers/public-job.controller';
 import { JobMatchingController } from './controllers/matching.controller';
+import { SavedSearchController } from './controllers/saved-search.controller';
+import { EmployerAnalyticsController } from './controllers/employer-analytics.controller';
 import { AiMatchingService } from './services/ai-matching.service';
 import { JobAccessService } from './services/job-access.service';
 
@@ -48,6 +50,8 @@ import { JobAccessService } from './services/job-access.service';
     JobMatchingController,
     InterviewController,
     ApplicationController,
+    SavedSearchController,
+    EmployerAnalyticsController,
   ],
   providers: [AiMatchingService, JobAccessService, AiQuotaGuard],
 })
