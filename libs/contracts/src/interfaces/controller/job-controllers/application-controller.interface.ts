@@ -1,7 +1,13 @@
 import {
+  ApplicationNoteResponseDTO,
+  ApplicationStatusHistoryEntryDTO,
   ApplyApplicationDTO,
   ApplyApplicationResponseDTO,
+  BulkUpdateApplicationStatusDTO,
+  BulkUpdateApplicationStatusResponseDTO,
+  CreateApplicationNoteDTO,
   GetApplicationResponseDTO,
+  JobPipelineResponseDTO,
   UpdateApplicationStatusDTO,
   UpdateApplicationStatusResponseDTO,
 } from '@app/contracts';
@@ -25,6 +31,33 @@ export interface IApplicationController {
     applicationId: string,
     req?: any,
   ): Promise<{ message: string }>;
+  bulkUpdateApplicationStatus(
+    bulkUpdateApplicationStatusDTO: BulkUpdateApplicationStatusDTO,
+    req?: any,
+  ): Promise<BulkUpdateApplicationStatusResponseDTO>;
+  getJobPipeline(
+    jobId: string,
+    companyId: string,
+    req?: any,
+  ): Promise<JobPipelineResponseDTO>;
+  createApplicationNote(
+    applicationId: string,
+    createApplicationNoteDTO: CreateApplicationNoteDTO,
+    req?: any,
+  ): Promise<ApplicationNoteResponseDTO>;
+  listApplicationNotes(
+    applicationId: string,
+    req?: any,
+  ): Promise<ApplicationNoteResponseDTO[]>;
+  deleteApplicationNote(
+    applicationId: string,
+    noteId: string,
+    req?: any,
+  ): Promise<{ message: string }>;
+  listApplicationStatusHistory(
+    applicationId: string,
+    req?: any,
+  ): Promise<ApplicationStatusHistoryEntryDTO[]>;
 }
 
 export interface IApplicationRpcController {
@@ -45,4 +78,31 @@ export interface IApplicationRpcController {
     employeeId: string,
     applicationId: string,
   ): Promise<{ message: string }>;
+  bulkUpdateApplicationStatus(
+    companyId: string,
+    bulkUpdateApplicationStatusDTO: BulkUpdateApplicationStatusDTO,
+  ): Promise<BulkUpdateApplicationStatusResponseDTO>;
+  getJobPipeline(
+    jobId: string,
+    companyId: string,
+  ): Promise<JobPipelineResponseDTO>;
+  createApplicationNote(
+    companyId: string,
+    applicationId: string,
+    createApplicationNoteDTO: CreateApplicationNoteDTO,
+    authorUserId: string,
+  ): Promise<ApplicationNoteResponseDTO>;
+  listApplicationNotes(
+    companyId: string,
+    applicationId: string,
+  ): Promise<ApplicationNoteResponseDTO[]>;
+  deleteApplicationNote(
+    companyId: string,
+    applicationId: string,
+    noteId: string,
+  ): Promise<{ message: string }>;
+  listApplicationStatusHistory(
+    companyId: string,
+    applicationId: string,
+  ): Promise<ApplicationStatusHistoryEntryDTO[]>;
 }

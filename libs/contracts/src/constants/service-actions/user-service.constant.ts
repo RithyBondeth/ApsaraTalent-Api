@@ -74,5 +74,9 @@ export const USER_SERVICE = {
     REQUEST_ACCOUNT_DELETION: { cmd: 'requestAccountDeletion' },
     CANCEL_ACCOUNT_DELETION: { cmd: 'cancelAccountDeletion' },
     EXPORT_ACCOUNT_DATA: { cmd: 'exportAccountData' },
+    RECORD_PROFILE_VIEW: { cmd: 'recordProfileView' },
+    RECORD_SEARCH_APPEARANCES: { cmd: 'recordSearchAppearances' },
+    GET_MY_PROFILE_ANALYTICS: { cmd: 'getMyProfileAnalytics' },
+    UPDATE_PRIVACY_SETTINGS: { cmd: 'updatePrivacySettings' },
   },
 };

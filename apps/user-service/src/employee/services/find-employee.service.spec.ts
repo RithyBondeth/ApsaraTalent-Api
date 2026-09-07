@@ -46,12 +46,14 @@ describe('FindEmployeeService', () => {
     get: jest.fn(),
     set: jest.fn(),
   };
+  const profileAnalytics = { recordProfileView: jest.fn() };
   const service = new FindEmployeeService(
     employees as any,
     users as any,
     blocks as any,
     logger as any,
     redis as any,
+    profileAnalytics as any,
   );
 
   beforeEach(() => {

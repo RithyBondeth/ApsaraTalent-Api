@@ -3,6 +3,7 @@ import { UserBlock } from '@app/common/database/entities/moderation/user-block.e
 import { User } from '@app/common/database/entities/user.entity';
 import { RedisService } from '@app/common/redis/redis.service';
 import { Injectable } from '@nestjs/common';
+import { ProfileAnalyticsService } from '../../users/services/profile-analytics.service';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
@@ -33,6 +34,7 @@ export class FindEmployeeService implements IFindEmployeeService {
     private readonly blockRepository: Repository<UserBlock>,
     private readonly logger: PinoLogger,
     private readonly redisService: RedisService,
+    private readonly profileAnalytics: ProfileAnalyticsService,
   ) {}
 
   /**
@@ -183,6 +185,14 @@ export class FindEmployeeService implements IFindEmployeeService {
             message: 'This profile is not available.',
           });
         }
+        // The read is going to succeed for a real viewer looking at someone
+        // else's profile. Record it here rather than at the return points so
+        // both cache-hit and cache-miss paths count. Fire-and-forget: the
+        // service swallows its own errors.
+        void this.profileAnalytics.recordProfileView(
+          requesterId,
+          targetUser.id,
+        );
       }
     }
 

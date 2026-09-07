@@ -171,6 +171,10 @@ export class NotificationService implements INotificationService {
           category: categoryForNotificationType(
             createNotificationCurrentUserDTO.type,
           ),
+          // Passed straight through so an emit that supplied an ICS invite
+          // (interview_scheduled etc.) reaches the mail transport with its
+          // attachment intact.
+          attachments: createNotificationCurrentUserDTO.emailAttachments,
         });
       } catch (error) {
         // The notification row is already saved and is what the user will

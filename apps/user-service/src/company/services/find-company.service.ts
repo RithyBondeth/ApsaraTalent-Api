@@ -3,6 +3,7 @@ import { UserBlock } from '@app/common/database/entities/moderation/user-block.e
 import { User } from '@app/common/database/entities/user.entity';
 import { RedisService } from '@app/common/redis/redis.service';
 import { Injectable } from '@nestjs/common';
+import { ProfileAnalyticsService } from '../../users/services/profile-analytics.service';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
@@ -34,6 +35,7 @@ export class FindCompanyService implements IFindCompanyService {
     private readonly blockRepository: Repository<UserBlock>,
     private readonly logger: PinoLogger,
     private readonly redisService: RedisService,
+    private readonly profileAnalytics: ProfileAnalyticsService,
   ) {}
 
   /**
@@ -245,6 +247,12 @@ export class FindCompanyService implements IFindCompanyService {
             message: 'This profile is not available.',
           });
         }
+        // Fire-and-forget view tracking for the "who viewed your profile"
+        // summary. Symmetric with the employee side.
+        void this.profileAnalytics.recordProfileView(
+          requesterId,
+          targetUser.id,
+        );
       }
     }
 
