@@ -1,4 +1,4 @@
-FROM grafana/grafana:13.2.0
+FROM grafana/grafana:13.2.1
 
 COPY --chown=grafana:grafana monitoring/grafana/provisioning /etc/grafana/provisioning
 # NOT /var/lib/grafana/dashboards. Railway mounts the Grafana volume at
