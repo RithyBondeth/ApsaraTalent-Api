@@ -99,7 +99,7 @@
     "ioredis": "^5.8.2",
     "joi": "^18.2.5",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^2.2.0",
+    "multer": "^2.3.0",
     "mustache": "^4.2.0",
     "nestjs-pino": "^4.6.1",
     "nodemailer": "^9.0.6",
