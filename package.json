@@ -102,7 +102,7 @@
     "multer": "^2.2.0",
     "mustache": "^4.2.0",
     "nestjs-pino": "^4.6.1",
-    "nodemailer": "^9.0.6",
+    "nodemailer": "^9.1.1",
     "openai": "^4.83.0",
     "otplib": "^13.5.0",
     "passport": "^0.7.0",
