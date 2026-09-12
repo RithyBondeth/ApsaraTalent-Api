@@ -19,6 +19,15 @@ import { EmailVerificationOtp1786500004000 } from './1786500004000-EmailVerifica
 import { AddMatchSeenAt1786500005000 } from './1786500005000-AddMatchSeenAt';
 import { AddUserStatus1786500006000 } from './1786500006000-AddUserStatus';
 import { AddAdminAuditLog1786500007000 } from './1786500007000-AddAdminAuditLog';
+import { AddApplicationPipelineStatuses1786500008000 } from './1786500008000-AddApplicationPipelineStatuses';
+import { AddApplicationPipelineColumns1786500009000 } from './1786500009000-AddApplicationPipelineColumns';
+import { AddJobModeration1786500010000 } from './1786500010000-AddJobModeration';
+import { AddJobAdminActions1786500011000 } from './1786500011000-AddJobAdminActions';
+import { AddOutboxMessages1786500012000 } from './1786500012000-AddOutboxMessages';
+import { AddNotificationPreferences1786500013000 } from './1786500013000-AddNotificationPreferences';
+import { AddProblemReports1786500014000 } from './1786500014000-AddProblemReports';
+import { AddInterviewTimezoneAndReminders1786500015000 } from './1786500015000-AddInterviewTimezoneAndReminders';
+import { AddUserDeletedAt1786500016000 } from './1786500016000-AddUserDeletedAt';
 
 // Read rather than imported: the tsconfig does not enable resolveJsonModule,
 // and reading it the same way scripts/ci/migration-rehearsal.mjs does keeps
@@ -54,6 +63,24 @@ describe('database migration contracts', () => {
     ['match seen timestamps', new AddMatchSeenAt1786500005000()],
     ['user account status', new AddUserStatus1786500006000()],
     ['admin audit log', new AddAdminAuditLog1786500007000()],
+    [
+      'application pipeline statuses',
+      new AddApplicationPipelineStatuses1786500008000(),
+    ],
+    [
+      'application pipeline columns',
+      new AddApplicationPipelineColumns1786500009000(),
+    ],
+    ['job moderation', new AddJobModeration1786500010000()],
+    ['job admin actions', new AddJobAdminActions1786500011000()],
+    ['outbox messages', new AddOutboxMessages1786500012000()],
+    ['notification preferences', new AddNotificationPreferences1786500013000()],
+    ['problem reports', new AddProblemReports1786500014000()],
+    [
+      'interview timezone and reminders',
+      new AddInterviewTimezoneAndReminders1786500015000(),
+    ],
+    ['user deletedAt', new AddUserDeletedAt1786500016000()],
   ] as const;
 
   it.each(migrations)(
@@ -100,6 +127,21 @@ describe('database migration contracts', () => {
       expect(query).toHaveBeenCalled();
     },
   );
+
+  it('cannot remove the pipeline enum labels it adds', async () => {
+    // Postgres has no ALTER TYPE ... DROP VALUE, so down() is empty by
+    // necessity rather than by omission.
+    const migration = new AddApplicationPipelineStatuses1786500008000();
+    await expect(migration.down()).resolves.toBeUndefined();
+  });
+
+  it('adds the pipeline enum labels outside a transaction', () => {
+    // ALTER TYPE ... ADD VALUE may not be used in the transaction that adds
+    // it, which is what `transaction = false` buys.
+    expect(new AddApplicationPipelineStatuses1786500008000().transaction).toBe(
+      false,
+    );
+  });
 
   it('documents experience normalization as intentionally irreversible', async () => {
     const migration = new NormalizeExperienceLevels1781136000000();

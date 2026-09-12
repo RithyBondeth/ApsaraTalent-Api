@@ -1,9 +1,11 @@
 import { Employee } from '@app/common/database/entities/employee/employee.entity';
 import { RedisService } from '@app/common/redis/redis.service';
 import { Injectable } from '@nestjs/common';
+import { ProfileAnalyticsService } from '../../users/services/profile-analytics.service';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
+import { activeUserSql } from '@app/common/utils/discovery-status.util';
 import { Brackets, Repository, SelectQueryBuilder } from 'typeorm';
 import { SCOPE_SIMILARITY_THRESHOLD } from '@app/common/embedding/embedding.service';
 import {
@@ -31,6 +33,7 @@ export class SearchEmployeeService implements ISearchEmployeeService {
     private readonly employeeRepo: Repository<Employee>,
     private readonly logger: PinoLogger,
     private readonly redisService: RedisService,
+    private readonly profileAnalytics: ProfileAnalyticsService,
   ) {}
 
   async searchEmployee(
@@ -83,7 +86,10 @@ export class SearchEmployeeService implements ISearchEmployeeService {
           .leftJoinAndSelect('employee.careerScopes', 'careerScope')
           .leftJoinAndSelect('employee.experiences', 'experience')
           .leftJoinAndSelect('employee.educations', 'edu')
-          .where('employee.isHide = :isHide', { isHide: false });
+          .where('employee.isHide = :isHide', { isHide: false })
+          // Discovery: hide suspended and banned employees. Existing
+          // relationships still see each other through other read paths.
+          .andWhere(activeUserSql('user'));
 
         if (keyword) {
           qb.andWhere(
@@ -306,6 +312,19 @@ export class SearchEmployeeService implements ISearchEmployeeService {
       if (!hasExclusions) {
         await this.redisService.set(cacheKey, result, CACHE_TTL.SHORT);
       }
+
+      // "Search appearances" are counted here: every employee whose profile
+      // sat on this page counts once against today's bucket. Fire-and-forget
+      // so a metrics write outage never costs a search page. Deliberately
+      // uses `finalEmployees`, not `result.data`, because the response DTO
+      // does not carry the underlying `user.id`.
+      const appearingUserIds = finalEmployees
+        .map((employee) => employee.user?.id)
+        .filter((id): id is string => typeof id === 'string');
+      if (appearingUserIds.length > 0) {
+        void this.profileAnalytics.recordSearchAppearances(appearingUserIds);
+      }
+
       return result;
     } catch (error) {
       this.logger.error(

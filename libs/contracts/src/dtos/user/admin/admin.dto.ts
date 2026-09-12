@@ -1,4 +1,5 @@
 import { EAdminAction } from '@app/common/database/enums/admin-action.enum';
+import { EProblemCategory } from '@app/common/database/enums/problem-category.enum';
 import { EReportReason } from '@app/common/database/enums/report-reason.enum';
 import { EReportStatus } from '@app/common/database/enums/report-status.enum';
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
@@ -7,6 +8,7 @@ import { Type } from 'class-transformer';
 import {
   IsDateString,
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -70,6 +72,47 @@ export class AdminListReportsQueryDTO {
   status?: EReportStatus;
 }
 
+export class AdminListProblemReportsQueryDTO {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(ADMIN_PAGE_SIZE_MAX)
+  limit?: number;
+
+  @IsOptional()
+  @IsEnum(EReportStatus)
+  status?: EReportStatus;
+
+  @IsOptional()
+  @IsEnum(EProblemCategory)
+  category?: EProblemCategory;
+}
+
+/**
+ * Body for a triage decision on a problem report.
+ *
+ * The same statuses as `AdminUpdateReportStatusBodyDTO` because the same four
+ * labels apply (pending / reviewed / resolved / dismissed). The `note` is
+ * mirrored onto `problem_report.resolutionNote` so triage does not have to
+ * join the audit log to see the last decision.
+ */
+export class AdminUpdateProblemReportStatusBodyDTO {
+  @IsEnum(EReportStatus)
+  status: EReportStatus;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  note?: string;
+}
+
 export class AdminListAuditQueryDTO {
   @IsOptional()
   @Type(() => Number)
@@ -113,6 +156,48 @@ export class AdminUpdateUserStatusBodyDTO {
   suspendedUntil?: string;
 }
 
+export class AdminListJobsQueryDTO {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(ADMIN_PAGE_SIZE_MAX)
+  limit?: number;
+
+  /** Matched against the job title and the company name. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  search?: string;
+
+  /**
+   * Which side of the takedown line to show. Omitted means visible only —
+   * the queue an admin works — rather than everything, so a page of hidden
+   * postings is something you ask for.
+   */
+  @IsOptional()
+  @IsIn(['visible', 'hidden', 'all'])
+  visibility?: 'visible' | 'hidden' | 'all';
+}
+
+export class AdminHideJobBodyDTO {
+  /**
+   * Required and substantial, like a suspension reason: it is shown to the
+   * company whose posting was taken down, and it is the only part of the
+   * audit row a human will read later.
+   */
+  @IsString()
+  @MinLength(10)
+  @MaxLength(500)
+  reason: string;
+}
+
 export class AdminUpdateReportStatusBodyDTO {
   @IsEnum(EReportStatus)
   status: EReportStatus;
@@ -142,6 +227,16 @@ export class AdminUpdateUserStatusDTO extends AdminUpdateUserStatusBodyDTO {
 
 export class AdminListReportsDTO extends AdminListReportsQueryDTO {}
 
+export class AdminListProblemReportsDTO extends AdminListProblemReportsQueryDTO {}
+
+export class AdminUpdateProblemReportStatusDTO extends AdminUpdateProblemReportStatusBodyDTO {
+  @IsUUID()
+  actorId: string;
+
+  @IsUUID()
+  reportId: string;
+}
+
 export class AdminUpdateReportStatusDTO extends AdminUpdateReportStatusBodyDTO {
   @IsUUID()
   actorId: string;
@@ -151,6 +246,24 @@ export class AdminUpdateReportStatusDTO extends AdminUpdateReportStatusBodyDTO {
 }
 
 export class AdminListAuditDTO extends AdminListAuditQueryDTO {}
+
+export class AdminListJobsDTO extends AdminListJobsQueryDTO {}
+
+export class AdminHideJobDTO extends AdminHideJobBodyDTO {
+  @IsUUID()
+  actorId: string;
+
+  @IsUUID()
+  jobId: string;
+}
+
+export class AdminRestoreJobDTO {
+  @IsUUID()
+  actorId: string;
+
+  @IsUUID()
+  jobId: string;
+}
 
 /* -------------------------------- Responses ------------------------------- */
 export class AdminUserListItemDTO {
@@ -238,6 +351,45 @@ export class AdminPagedReportsDTO {
   }
 }
 
+/** How a reporter is shown on the problem-report row (small, non-identifying). */
+export class AdminProblemReportReporterDTO {
+  id: string;
+  email: string;
+  role: EUserRole;
+
+  constructor(partial: Partial<AdminProblemReportReporterDTO>) {
+    Object.assign(this, partial);
+  }
+}
+
+export class AdminProblemReportDTO {
+  id: string;
+  category: EProblemCategory;
+  details: string;
+  pageUrl: string | null;
+  userAgent: string | null;
+  status: EReportStatus;
+  resolutionNote: string | null;
+  createdAt: Date;
+  /** Null when the reporter's account has since been deleted (FK is SET NULL). */
+  reporter: AdminProblemReportReporterDTO | null;
+
+  constructor(partial: Partial<AdminProblemReportDTO>) {
+    Object.assign(this, partial);
+  }
+}
+
+export class AdminPagedProblemReportsDTO {
+  items: AdminProblemReportDTO[];
+  total: number;
+  page: number;
+  limit: number;
+
+  constructor(partial: Partial<AdminPagedProblemReportsDTO>) {
+    Object.assign(this, partial);
+  }
+}
+
 export class AdminAuditEntryDTO {
   id: string;
   action: EAdminAction;
@@ -264,6 +416,37 @@ export class AdminPagedAuditDTO {
   }
 }
 
+export class AdminJobListItemDTO {
+  id: string;
+  title: string;
+  companyId: string | null;
+  companyName: string;
+  location: string | null;
+  type: string;
+  createdAt: Date;
+  expireDate: Date | null;
+  /** Null means the posting is live. */
+  hiddenAt: Date | null;
+  hiddenReason: string | null;
+  /** Pending reports against the company that placed it. */
+  companyOpenReportCount: number;
+
+  constructor(partial: Partial<AdminJobListItemDTO>) {
+    Object.assign(this, partial);
+  }
+}
+
+export class AdminPagedJobsDTO {
+  items: AdminJobListItemDTO[];
+  total: number;
+  page: number;
+  limit: number;
+
+  constructor(partial: Partial<AdminPagedJobsDTO>) {
+    Object.assign(this, partial);
+  }
+}
+
 export class AdminOverviewDTO {
   totalUsers: number;
   employees: number;
@@ -272,6 +455,8 @@ export class AdminOverviewDTO {
   bannedUsers: number;
   pendingReports: number;
   newUsersLast7Days: number;
+  liveJobs: number;
+  hiddenJobs: number;
 
   constructor(partial: Partial<AdminOverviewDTO>) {
     Object.assign(this, partial);

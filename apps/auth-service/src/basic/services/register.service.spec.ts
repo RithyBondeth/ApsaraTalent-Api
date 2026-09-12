@@ -36,11 +36,13 @@ describe('RegisterService', () => {
     release: jest.fn(),
   };
   const dataSource = { createQueryRunner: jest.fn(() => runner) };
+  const analytics = { capture: jest.fn(), identify: jest.fn() };
   const service = new RegisterService(
     users as any,
     config as any,
     jwt as any,
     email as any,
+    analytics as any,
     logger as any,
     dataSource as any,
   );

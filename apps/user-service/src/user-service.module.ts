@@ -7,6 +7,7 @@ import {
   UploadfileModule,
   VectorColumnsModule,
 } from '@app/common';
+import { AnalyticsModule } from '@app/common/analytics';
 import { ConfigModule } from '@app/common/config';
 import { MetricsModule } from '@app/common/metrics/metrics.module';
 import { CareerScope } from '@app/common/database/entities/career-scope.entity';
@@ -23,6 +24,14 @@ import { EmployeeFavoriteCompany } from '@app/common/database/entities/employee/
 import { Skill } from '@app/common/database/entities/employee/skill.entity';
 import { JobMatching } from '@app/common/database/entities/job-matching.entity';
 import { AdminAuditLog } from '@app/common/database/entities/moderation/admin-audit-log.entity';
+import { ProblemReport } from '@app/common/database/entities/problem-report.entity';
+import { Application } from '@app/common/database/entities/application.entity';
+import { Interview } from '@app/common/database/entities/interview.entity';
+import { LoginHistory } from '@app/common/database/entities/login-history.entity';
+import { Notification } from '@app/common/database/entities/notification.entity';
+import { NotificationPreference } from '@app/common/database/entities/notification-preference.entity';
+import { ProfileSearchAppearance } from '@app/common/database/entities/profile-search-appearance.entity';
+import { ProfileView } from '@app/common/database/entities/profile-view.entity';
 import { UserBlock } from '@app/common/database/entities/moderation/user-block.entity';
 import { UserReport } from '@app/common/database/entities/moderation/user-report.entity';
 import { Social } from '@app/common/database/entities/social.entity';
@@ -34,6 +43,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TerminusModule } from '@nestjs/terminus';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { FindCompanyController } from './company/controllers/find-company.controller';
 import { ImageCompanyController } from './company/controllers/image-company.controller';
 import { OpenPositionController } from './company/controllers/open-position.controller';
@@ -46,6 +56,8 @@ import { UpdateEmployeeInfoController } from './employee/controllers/update-empl
 import { UploadEmployeeReferenceController } from './employee/controllers/upload-employee-reference.controller';
 import { EmailModule } from '@app/common/email/email.module';
 import { AdminController } from './admin/controllers/admin.controller';
+import { AccountLifecycleController } from './users/controllers/account-lifecycle.controller';
+import { ProfileAnalyticsController } from './users/controllers/profile-analytics.controller';
 import { ModerationController } from './moderation/controllers/moderation.controller';
 import { SupportController } from './support/controllers/support.controller';
 import { UserController } from './users/controllers/user.controller';
@@ -61,7 +73,12 @@ import { SearchEmployeeService } from './employee/services/search-employee.servi
 import { UpdateEmployeeInfoService } from './employee/services/update-employee-info.service';
 import { UploadEmployeeReferenceService } from './employee/services/upload-employee-reference.service';
 import { AdminAuditService } from './admin/services/admin-audit.service';
+import { AdminJobService } from './admin/services/admin-job.service';
 import { AdminReportService } from './admin/services/admin-report.service';
+import { AccountLifecycleService } from './users/services/account-lifecycle.service';
+import { AccountHardDeleteService } from './users/services/account-hard-delete.service';
+import { ProfileAnalyticsService } from './users/services/profile-analytics.service';
+import { AdminProblemReportService } from './admin/services/admin-problem-report.service';
 import { AdminUserService } from './admin/services/admin-user.service';
 import { ModerationService } from './moderation/services/moderation.service';
 import { SupportService } from './support/services/support.service';
@@ -90,7 +107,10 @@ import {
   I_MODERATION_SERVICE,
   I_SUPPORT_SERVICE,
   I_ADMIN_USER_SERVICE,
+  I_ADMIN_PROBLEM_REPORT_SERVICE,
   I_ADMIN_REPORT_SERVICE,
+  I_ADMIN_JOB_SERVICE,
+  I_PROFILE_ANALYTICS_SERVICE,
 } from '@app/contracts/interfaces/service/user-service.interface';
 
 @Module({
@@ -117,8 +137,17 @@ import {
       UserBlock,
       UserReport,
       AdminAuditLog,
+      ProblemReport,
+      Application,
+      Interview,
+      LoginHistory,
+      Notification,
+      NotificationPreference,
+      ProfileView,
+      ProfileSearchAppearance,
     ]),
     LoggerModule,
+    AnalyticsModule,
     EmailModule,
     UploadfileModule,
     JwtModule,
@@ -126,6 +155,8 @@ import {
     VectorColumnsModule,
     RedisModule,
     TerminusModule,
+    // Account hard-delete runs on a daily cron in this service.
+    ScheduleModule.forRoot(),
     EventEmitterModule.forRoot({
       wildcard: false,
       delimiter: '.',
@@ -152,6 +183,8 @@ import {
     ModerationController,
     SupportController,
     AdminController,
+    AccountLifecycleController,
+    ProfileAnalyticsController,
   ],
   providers: [
     {
@@ -196,6 +229,21 @@ import {
     AdminAuditService,
     { provide: I_ADMIN_USER_SERVICE, useClass: AdminUserService },
     { provide: I_ADMIN_REPORT_SERVICE, useClass: AdminReportService },
+    AccountLifecycleService,
+    AccountHardDeleteService,
+    // The concrete class is registered explicitly so the find-employee and
+    // find-company services can inject it for fire-and-forget view tracking;
+    // the interface token below keeps the RPC controller consumers loose.
+    ProfileAnalyticsService,
+    {
+      provide: I_PROFILE_ANALYTICS_SERVICE,
+      useExisting: ProfileAnalyticsService,
+    },
+    {
+      provide: I_ADMIN_PROBLEM_REPORT_SERVICE,
+      useClass: AdminProblemReportService,
+    },
+    { provide: I_ADMIN_JOB_SERVICE, useClass: AdminJobService },
     CacheInvalidationService,
     RedisCacheHealthIndicator,
     {

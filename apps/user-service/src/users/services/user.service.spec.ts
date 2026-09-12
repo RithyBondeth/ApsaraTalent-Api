@@ -143,6 +143,9 @@ describe('UserService', () => {
     // serialization, so the select must stay explicit.
     expect(Object.keys(options.select).sort()).toEqual([
       'createdAt',
+      // Included so the settings-page grace-period banner reflects the state
+      // on first paint without a second round trip.
+      'deletedAt',
       'email',
       'id',
       'isEmailVerified',

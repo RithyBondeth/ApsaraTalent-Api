@@ -1,78 +1,64 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { PinoLogger } from 'nestjs-pino';
-import * as nodemailer from 'nodemailer';
-import { emailConfig } from './config/email.config';
-import { IEmailConfigOptions } from './interfaces/email-config.interface';
+import { EOutboxChannel } from '../database/enums/outbox-channel.enum';
+import { OutboxService } from '../outbox/outbox.service';
 import { IEmailOptions } from './interfaces/email-option.interface';
+import { MailerService } from './mailer.service';
 
+/** What a caller gets back once an email has been accepted. */
+export interface IEmailDispatchResult {
+  /** True when the message is durable and a worker will deliver it. */
+  queued: boolean;
+  /** The outbox row id, or null when the message was sent inline instead. */
+  id: string | null;
+}
+
+/**
+ * The application-facing way to send email.
+ *
+ * `sendEmail` no longer means "hand this to SMTP now" — it means "record that
+ * this must be delivered". The row is written inside the caller's request and
+ * the dispatcher in notification-service does the SMTP round trip out of band,
+ * so a slow or unavailable mail host no longer slows down (or silently eats)
+ * registration, verification, password reset, support reports or match
+ * notifications.
+ *
+ * Every existing call site keeps working unchanged: the method is still async,
+ * still throws on an invalid recipient, and still resolves on success.
+ */
 @Injectable()
 export class EmailService {
-  private transporter: nodemailer.Transporter;
-  private emailConfig: IEmailConfigOptions;
-
   constructor(
-    private readonly configService: ConfigService,
+    private readonly outboxService: OutboxService,
+    private readonly mailerService: MailerService,
     private readonly logger: PinoLogger,
   ) {
-    this.initializeTransporter();
+    this.logger.setContext(EmailService.name);
   }
 
-  private initializeTransporter(): void {
-    try {
-      this.emailConfig = emailConfig(this.configService);
+  async sendEmail(emailOptions: IEmailOptions): Promise<IEmailDispatchResult> {
+    // Validated here rather than at dispatch: a message with no recipient can
+    // never succeed, so enqueuing it would just create a row that retries five
+    // times and dies. Callers already expect this to throw.
+    if (!emailOptions?.to) throw new Error('Recipient email is required');
 
-      this.transporter = nodemailer.createTransport({
-        host: this.emailConfig.host,
-        port: this.emailConfig.port,
-        secure: this.emailConfig.secure,
-        auth: this.emailConfig.auth,
-        ...this.emailConfig.transportOptions,
-      });
-      this.logger.info('Email service initialized successfully', {
-        port: this.emailConfig.port,
-        host: this.emailConfig.host,
-      });
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(
-        'Failed to initialize email transporter: ',
-        errorMessage,
-      );
-      throw new Error(errorMessage);
-    }
-  }
+    const id = await this.outboxService.enqueue(
+      EOutboxChannel.EMAIL,
+      emailOptions as unknown as Record<string, unknown>,
+      {},
+    );
 
-  async sendEmail(emailOptions: IEmailOptions) {
-    try {
-      //Merge default from with provided from
-      const from = emailOptions.from || this.emailConfig.defaultFrom;
-      const mailOptions: nodemailer.SendMailOptions = {
-        from,
-        ...emailOptions,
-      };
+    if (id) return { queued: true, id };
 
-      //Validate email
-      if (!mailOptions.to) throw new Error('Recipient email is required');
-
-      //Send email
-      const emailSent = await this.transporter.sendMail(mailOptions);
-
-      //Logging errors
-      this.logger.info('Email sent successfully', {
-        messageId: emailSent.messageId,
-        to: mailOptions.to,
-        subject: emailOptions.subject,
-      });
-
-      //Return sent email
-      return emailSent;
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error('Failed to send email: ', errorMessage);
-      throw new Error(errorMessage);
-    }
+    // The outbox write failed — the database is unreachable or the table is
+    // missing (an un-migrated deployment). Falling back to an inline send is
+    // exactly the behaviour that existed before the outbox, so the worst case
+    // is no worse than the status quo rather than an email that never sends.
+    this.logger.warn(
+      'Outbox unavailable, sending email inline as a fallback: ' +
+        `subject="${emailOptions.subject}"`,
+    );
+    await this.mailerService.send(emailOptions);
+    return { queued: false, id: null };
   }
 }

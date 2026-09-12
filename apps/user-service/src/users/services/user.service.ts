@@ -231,6 +231,9 @@ export class UserService implements IUserService, OnModuleInit {
           lastLoginAt: true,
           lastLoginMethod: true,
           createdAt: true,
+          // Feeds the grace-period banner on the settings page so the UI
+          // doesn't need a second round trip to know whether to show it.
+          deletedAt: true,
         },
         relations: {
           employee: {

@@ -33,6 +33,7 @@ describe('AdminUserService', () => {
     find: jest.fn(),
     createQueryBuilder: jest.fn(),
   };
+  const jobs = { count: jest.fn() };
   const audit = { find: jest.fn() };
   const auditService = { record: jest.fn() };
   const redis = { invalidateAuthSession: jest.fn() };
@@ -41,6 +42,7 @@ describe('AdminUserService', () => {
   const service = new AdminUserService(
     users as any,
     reports as any,
+    jobs as any,
     audit as any,
     auditService as any,
     redis as any,
@@ -58,6 +60,7 @@ describe('AdminUserService', () => {
     jest.clearAllMocks();
     users.findOne.mockResolvedValue(target);
     users.update.mockResolvedValue({ affected: 1 });
+    jobs.count.mockResolvedValue(0);
   });
 
   const suspend = (overrides: Record<string, unknown> = {}) =>

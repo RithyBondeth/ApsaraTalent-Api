@@ -1,4 +1,5 @@
 import { AdminAuditLog } from '@app/common/database/entities/moderation/admin-audit-log.entity';
+import { Job } from '@app/common/database/entities/company/job.entity';
 import { UserReport } from '@app/common/database/entities/moderation/user-report.entity';
 import { User } from '@app/common/database/entities/user.entity';
 import { EAdminAction } from '@app/common/database/enums/admin-action.enum';
@@ -36,6 +37,8 @@ export class AdminUserService implements IAdminUserService {
     private readonly userRepo: Repository<User>,
     @InjectRepository(UserReport)
     private readonly reportRepo: Repository<UserReport>,
+    @InjectRepository(Job)
+    private readonly jobRepo: Repository<Job>,
     @InjectRepository(AdminAuditLog)
     private readonly auditRepo: Repository<AdminAuditLog>,
     private readonly auditService: AdminAuditService,
@@ -57,6 +60,8 @@ export class AdminUserService implements IAdminUserService {
         bannedUsers,
         pendingReports,
         newUsersLast7Days,
+        liveJobs,
+        hiddenJobs,
       ] = await Promise.all([
         this.userRepo.count(),
         this.userRepo.count({ where: { role: EUserRole.EMPLOYEE } }),
@@ -65,6 +70,13 @@ export class AdminUserService implements IAdminUserService {
         this.userRepo.count({ where: { status: EUserStatus.BANNED } }),
         this.reportRepo.count({ where: { status: EReportStatus.PENDING } }),
         this.userRepo.count({ where: { createdAt: MoreThan(sevenDaysAgo) } }),
+        // count() honours the soft-delete filter, so this is live postings.
+        this.jobRepo.count(),
+        // Total minus live: TypeORM offers no "only deleted" count, and
+        // subtracting is cheaper than a raw query for two numbers.
+        this.jobRepo
+          .count({ withDeleted: true })
+          .then(async (all) => all - (await this.jobRepo.count())),
       ]);
 
       return new AdminOverviewDTO({
@@ -75,6 +87,8 @@ export class AdminUserService implements IAdminUserService {
         bannedUsers,
         pendingReports,
         newUsersLast7Days,
+        liveJobs,
+        hiddenJobs,
       });
     } catch (error) {
       this.logger.error(

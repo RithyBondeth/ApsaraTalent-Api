@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { EApplicationStatus } from '@app/common/database/enums/application-status.enum';
 import { InterviewStatus } from '@app/contracts/dtos/job';
 import { RpcException } from '@nestjs/microservices';
 import { InterviewService } from './interview.service';
@@ -13,14 +14,18 @@ describe('InterviewService', () => {
   const employees = { findOne: jest.fn() };
   const companies = { findOne: jest.fn() };
   const matches = { findOne: jest.fn() };
+  const applications = { findOne: jest.fn(), save: jest.fn() };
   const notifications = { emit: jest.fn() };
   const logger = { error: jest.fn() };
+  const analytics = { capture: jest.fn(), identify: jest.fn() };
   const service = new InterviewService(
     interviews as any,
     employees as any,
     companies as any,
     matches as any,
+    applications as any,
     notifications as any,
+    analytics as any,
     logger as any,
   );
 
@@ -42,6 +47,7 @@ describe('InterviewService', () => {
       id: 'interview-1',
       ...value,
     }));
+    applications.save.mockImplementation(async (value) => value);
   });
 
   async function expectRpc(
@@ -117,6 +123,137 @@ describe('InterviewService', () => {
       }),
     );
     expect(result.notifyUserId).toBe('employee-user');
+  });
+
+  describe('scheduling against an application', () => {
+    const employee = {
+      id: 'employee-1',
+      username: 'Applicant',
+      user: { id: 'employee-user' },
+    };
+    const company = {
+      id: 'company-1',
+      name: 'Apsara',
+      user: { id: 'company-user' },
+    };
+    const applicationDto = { ...createDto, applicationId: 'application-1' };
+
+    beforeEach(() => {
+      employees.findOne.mockResolvedValue(employee);
+      companies.findOne.mockResolvedValue(company);
+    });
+
+    it('does not require a match when an application backs the interview', async () => {
+      applications.findOne.mockResolvedValue({
+        id: 'application-1',
+        status: EApplicationStatus.SHORTLISTED,
+        job: { id: 'job-1', company: { id: 'company-1' } },
+        employee: { id: 'employee-1' },
+      });
+      matches.findOne.mockResolvedValue(null);
+
+      const result = await service.createInterview(applicationDto);
+
+      expect(matches.findOne).not.toHaveBeenCalled();
+      expect(result.applicationId).toBe('application-1');
+    });
+
+    it('advances a shortlisted application to interviewing', async () => {
+      const application = {
+        id: 'application-1',
+        status: EApplicationStatus.SHORTLISTED,
+        job: { id: 'job-1', company: { id: 'company-1' } },
+        employee: { id: 'employee-1' },
+      };
+      applications.findOne.mockResolvedValue(application);
+
+      await service.createInterview(applicationDto);
+
+      expect(application.status).toBe(EApplicationStatus.INTERVIEWING);
+      expect(applications.save).toHaveBeenCalledWith(application);
+    });
+
+    it('does not move an application backwards to book a follow-up', async () => {
+      const application = {
+        id: 'application-1',
+        status: EApplicationStatus.OFFERED,
+        job: { id: 'job-1', company: { id: 'company-1' } },
+        employee: { id: 'employee-1' },
+      };
+      applications.findOne.mockResolvedValue(application);
+
+      await service.createInterview(applicationDto);
+
+      expect(application.status).toBe(EApplicationStatus.OFFERED);
+      expect(applications.save).not.toHaveBeenCalled();
+    });
+
+    it('rejects an application belonging to another company', async () => {
+      applications.findOne.mockResolvedValue({
+        id: 'application-1',
+        status: EApplicationStatus.SHORTLISTED,
+        job: { id: 'job-1', company: { id: 'other-company' } },
+        employee: { id: 'employee-1' },
+      });
+
+      await expectRpc(
+        service.createInterview(applicationDto),
+        403,
+        'Application not found or access denied.',
+      );
+    });
+
+    it('rejects an application for a different employee', async () => {
+      applications.findOne.mockResolvedValue({
+        id: 'application-1',
+        status: EApplicationStatus.SHORTLISTED,
+        job: { id: 'job-1', company: { id: 'company-1' } },
+        employee: { id: 'someone-else' },
+      });
+
+      await expectRpc(
+        service.createInterview(applicationDto),
+        403,
+        'Application not found or access denied.',
+      );
+    });
+
+    it('refuses to schedule against a closed application', async () => {
+      applications.findOne.mockResolvedValue({
+        id: 'application-1',
+        status: EApplicationStatus.REJECTED,
+        job: { id: 'job-1', company: { id: 'company-1' } },
+        employee: { id: 'employee-1' },
+      });
+
+      await expectRpc(
+        service.createInterview(applicationDto),
+        400,
+        'Cannot schedule an interview for a rejected application. Shortlist the candidate first.',
+      );
+    });
+
+    it('refuses to schedule against an applicant nobody has shortlisted', async () => {
+      /*
+        The consent gate. A PENDING application is the candidate saying yes
+        while the company has not answered — one side, not two — so there is no
+        match and no interview. This used to be allowed.
+      */
+      applications.findOne.mockResolvedValue({
+        id: 'application-1',
+        status: EApplicationStatus.PENDING,
+        job: { id: 'job-1', company: { id: 'company-1' } },
+        employee: { id: 'employee-1' },
+      });
+      matches.findOne.mockResolvedValue(null);
+
+      await expectRpc(
+        service.createInterview(applicationDto),
+        400,
+        'Cannot schedule an interview for a pending application. Shortlist the candidate first.',
+      );
+      expect(interviews.save).not.toHaveBeenCalled();
+    });
   });
 
   it('does not emit when the employee has no linked user', async () => {

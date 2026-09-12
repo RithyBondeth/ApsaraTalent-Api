@@ -303,6 +303,13 @@ export class UserResponseDTO {
   lastLoginMethod?: ELoginMethod;
   @Type(() => Date)
   lastLoginAt?: Date;
+  /**
+   * When the owner requested deletion. Populated on `/user/current-user` so
+   * the web can show the grace-period banner without a second round trip.
+   * Null for normal accounts.
+   */
+  @Type(() => Date)
+  deletedAt?: Date | null;
   @Type(() => Date)
   createdAt?: Date;
   @Type(() => Date)

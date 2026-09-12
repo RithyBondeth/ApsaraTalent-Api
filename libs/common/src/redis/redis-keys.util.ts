@@ -82,6 +82,14 @@ export function generateJobListKey(): string {
   return `${JOB_CACHE_PREFIX}:job:list:all`;
 }
 
+export function generatePublicJobKey(jobId: string): string {
+  return `${JOB_CACHE_PREFIX}:job:public:${jobId}`;
+}
+
+export function generatePublicJobSitemapKey(): string {
+  return `${JOB_CACHE_PREFIX}:job:public:sitemap`;
+}
+
 export function generateJobSearchKey(query: any): string {
   const sorted = Object.fromEntries(
     Object.entries(query).sort(([a], [b]) => a.localeCompare(b)),

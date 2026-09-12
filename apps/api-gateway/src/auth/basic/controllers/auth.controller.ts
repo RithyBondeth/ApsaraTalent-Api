@@ -37,6 +37,7 @@ import {
   ForgotPasswordDTO,
   ResetPasswordDTO,
   RefreshTokenDTO,
+  RefreshTokenRequestDTO,
   LoginResponseDTO,
   LoginOtpResponseDTO,
   ForgotPasswordResponseDTO,
@@ -257,17 +258,23 @@ export class AuthController implements IBasicAuthController {
   async refreshToken(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
+    @Body() body?: RefreshTokenRequestDTO,
   ): Promise<RefreshTokenResponseDTO> {
-    const refreshTokenFromCookie = req.cookies?.['refresh-token'];
-    if (!refreshTokenFromCookie) {
+    // The cookie is the browser's path and wins when both are present. The body
+    // is for native clients, whose cookie-carrying writes the CSRF check
+    // refuses; see RefreshTokenRequestDTO.
+    const presented = req.cookies?.['refresh-token'] || body?.refreshToken;
+    if (!presented) {
       throw new BadRequestException('No refresh token provided');
     }
 
+    // Either way, the rotated pair goes out only as httpOnly cookies. A native
+    // client reads them from Set-Cookie; the body never carries a token.
     const { accessToken, refreshToken, user, message } =
       await sendAuthServiceRequest<RefreshTokenResponseDTO>(
         this.authClient,
         AUTH_SERVICE.ACTIONS.REFRESH_TOKEN,
-        new RefreshTokenDTO({ refreshToken: refreshTokenFromCookie }),
+        new RefreshTokenDTO({ refreshToken: presented }),
       );
 
     setAuthTokenCookies(res, { accessToken, refreshToken });

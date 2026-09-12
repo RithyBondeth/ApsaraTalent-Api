@@ -22,6 +22,7 @@ describe('ChatGateway', () => {
   const broadcast = { setServer: jest.fn() };
   const messages = { sendMessage: jest.fn() };
   const chatClient = { send: jest.fn() };
+  const matchGuard = { areMatched: jest.fn(), assertMatched: jest.fn() };
   const gateway = new ChatGateway(
     jwt as any,
     socketState as any,
@@ -30,6 +31,7 @@ describe('ChatGateway', () => {
     broadcast as any,
     messages as any,
     chatClient as any,
+    matchGuard as any,
   );
   const roomEmit = jest.fn();
   const server = {
@@ -52,6 +54,9 @@ describe('ChatGateway', () => {
     jest.clearAllMocks();
     gateway.server = server;
     rateLimiter.isRateLimited.mockReturnValue(false);
+    // Matched by default: these tests are about message handling, not access.
+    // The gate itself is covered separately below.
+    matchGuard.areMatched.mockResolvedValue(true);
   });
 
   it('registers the Socket.IO server for cross-service broadcasts', () => {
@@ -616,6 +621,26 @@ describe('ChatGateway', () => {
     });
     expect(socket.emit).toHaveBeenLastCalledWith('error', {
       message: 'Unknown error',
+    });
+  });
+
+  it('refuses to carry a message between two people who have not matched', async () => {
+    /*
+      The socket path is the one that actually delivers messages — gating only
+      POST /chat/initiate would have been decorative, since nothing requires a
+      client to call it first.
+    */
+    matchGuard.areMatched.mockResolvedValue(false);
+    const client: any = { data: { userId: 'sender' }, emit: jest.fn() };
+
+    await gateway.handleMessage(client, {
+      receiverId: 'receiver',
+      content: 'hello',
+    } as any);
+
+    expect(messages.sendMessage).not.toHaveBeenCalled();
+    expect(client.emit).toHaveBeenCalledWith('error', {
+      message: 'You can only message someone you have matched with.',
     });
   });
 });

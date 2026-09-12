@@ -176,6 +176,65 @@ the only image that mounts the storage volume.
 - Service discovery is environment-variable based (`services.<name>.host` / `.port`).
 - Real-time chat and calls use Socket.IO, in `api-gateway/src/chat/gateways/`.
 
+### The public surface
+`api-gateway/src/job/controllers/public-job.controller.ts` and
+`user/controllers/public-user.controller.ts` are the **only** routes served
+without a session. They live in their own files on purpose: a public route
+sitting among authenticated ones is one copy-pasted `@UseGuards` away from
+being wrong in either direction, and "what can the world see" should be a
+question you answer by opening two files.
+
+- Public DTOs are built field-by-field (`PublicJobDetailDTO`), never by
+  `@Exclude()`-ing fields off an authenticated DTO. `JobResponseDTO` carries a
+  `company.user` with twenty-odd excluded fields; one missed decorator there
+  publishes an email address.
+- `JobService.findOneJob` holds the visibility rules — not hidden, not expired,
+  **and posted by an account in good standing**. That last check is stricter
+  than the authenticated read paths, which do not look at account status:
+  anonymous means crawlable, and a crawled scam posting outlives the ban that
+  removed it.
+- Every non-public reason returns the same 404. Distinguishing "no such job"
+  from "taken down" tells a scraper walking ids which ones were real.
+
+### Discovery vs. relational: suspended and banned accounts
+Content from a suspended or banned account is hidden from **discovery** —
+search, recommendations, the feed, the job list. It is **not** hidden from
+**relational** surfaces: an application a candidate already sent still shows on
+their own dashboard, a match the pair already made still opens, an existing
+chat still works. Deleting a user's own history from under them is worse than
+the short window where an existing connection stays visible.
+
+- `activeUserSql('alias')` in `libs/common/src/utils/discovery-status.util.ts`
+  emits the SQL fragment. Every discovery query joins `user` and applies it:
+  `findAllJobs`, `searchJobs`, `findOneJob`, company `findAll`, employee
+  `findAll` and `searchEmployee`, and both recommendation services.
+- A SUSPENDED row whose `suspendedUntil` has passed is re-admitted at read
+  time — the same rule `resolveEffectiveStatus` applies at the row level.
+  Nothing sweeps the table on a clock, and a candidate should not stay
+  invisible for hours after their suspension expired.
+- The `find()` API cannot cleanly AND two conditions across relations, so
+  `findAllJobs`, company `findAll` and employee `findAll` all use
+  `createQueryBuilder` now. If you add a discovery method, use the QB shape.
+
+### Transactional email
+Nothing sends email inline. `EmailService.sendEmail()` writes a row to
+`outbox_message` inside the caller's request; `OutboxDispatcherService` in
+notification-service polls that table and does the SMTP round trip out of band,
+retrying with exponential backoff up to `OUTBOX_MAX_ATTEMPTS`.
+
+- Application code calls **`EmailService`**. `MailerService` is the raw
+  nodemailer transport and belongs to the dispatcher alone — calling it
+  directly is a fire-and-forget that is lost if SMTP is down.
+- Concurrency safety is one statement in `OutboxService.claimBatch`
+  (`FOR UPDATE SKIP LOCKED` + a visibility timeout), so extra
+  notification-service replicas are safe and a worker that dies mid-send
+  releases its claim on its own.
+- Push is deliberately **not** routed through the outbox: chat push has to
+  arrive in seconds and a polled queue would make it feel broken.
+- The undelivered backlog is reported by notification-service's `/health/ready`
+  as a gauge. It never fails readiness — pulling the only process that can
+  drain the queue out of rotation would make a backlog permanent.
+
 ### Error handling
 - Inside a microservice, throw `RpcException`.
 - The gateway converts those to HTTP via `api-gateway/src/utils/rpc-to-http-exception.filter.ts`.

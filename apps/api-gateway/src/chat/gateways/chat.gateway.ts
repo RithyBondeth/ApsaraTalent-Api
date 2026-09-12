@@ -30,6 +30,7 @@ import { ChatRateLimiterService } from '../services/chat-rate-limiter.service';
 import { ChatNotificationService } from '../services/chat-notification.service';
 import { SocketBroadcastService } from '../../shared/socket/socket-broadcast.service';
 import { ChatMessageService } from '../services/chat-message.service';
+import { ChatMatchGuardService } from '../services/chat-match-guard.service';
 import { extractChatToken } from '../utils/chat-token.util';
 import { IChatGateway } from '@app/contracts/interfaces/gateway/chat-gateway.interface';
 import { rpcCall } from '../../utils/rpc-call';
@@ -92,6 +93,7 @@ export class ChatGateway
     private readonly socketBroadcastService: SocketBroadcastService,
     private readonly chatMessageService: ChatMessageService,
     @Inject(CHAT_SERVICE.NAME) private readonly chatServiceClient: ClientProxy,
+    private readonly chatMatchGuard: ChatMatchGuardService,
   ) {}
 
   afterInit(server: Server): void {
@@ -211,6 +213,26 @@ export class ChatGateway
       );
       if (invalid) {
         client.emit('error', { message: invalid });
+        return;
+      }
+
+      /*
+        The match check the HTTP path does, on the path that actually carries
+        messages. Gating only `POST /chat/initiate` would have been decorative:
+        nothing requires a client to call it before emitting sendMessage, so
+        this event was the real hole.
+
+        Emitted as an error frame rather than thrown — an exception here tears
+        down the socket instead of telling the sender why.
+      */
+      const matched = await this.chatMatchGuard.areMatched(
+        client.data.userId,
+        sendMessageDTO.receiverId,
+      );
+      if (!matched) {
+        client.emit('error', {
+          message: 'You can only message someone you have matched with.',
+        });
         return;
       }
 

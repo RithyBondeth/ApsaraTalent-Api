@@ -1,3 +1,4 @@
+import { Application } from '@app/common/database/entities/application.entity';
 import { Company } from '@app/common/database/entities/company/company.entity';
 import { Employee } from '@app/common/database/entities/employee/employee.entity';
 import { Interview } from '@app/common/database/entities/interview.entity';
@@ -8,6 +9,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Logger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
+import { formatInterviewTime } from '@app/common/utils/interview-time.util';
+import {
+  buildInterviewIcs,
+  icsSequenceFromUpdatedAt,
+  TIcsEventStatus,
+  TIcsMethod,
+} from '@app/common/utils/ics-builder.util';
+import { AnalyticsService, EAnalyticsEvent } from '@app/common/analytics';
 import {
   CreateInterviewDTO,
   CreateInterviewResponseDTO,
@@ -21,6 +30,10 @@ import {
 } from '@app/contracts/dtos/job';
 import { IInterviewService } from '@app/contracts/interfaces/service/job-service.interface';
 import { JOB } from '@app/contracts/constants/domain/job.constant';
+import {
+  APPLICATION_STATUS_TRANSITIONS,
+  EApplicationStatus,
+} from '@app/common/database/enums/application-status.enum';
 
 @Injectable()
 export class InterviewService implements IInterviewService {
@@ -33,10 +46,64 @@ export class InterviewService implements IInterviewService {
     private readonly companyRepo: Repository<Company>,
     @InjectRepository(JobMatching)
     private readonly jobMatchingRepo: Repository<JobMatching>,
+    @InjectRepository(Application)
+    private readonly applicationRepo: Repository<Application>,
     @Inject(NOTIFICATION_SERVICE.NAME)
     private readonly notificationClient: ClientProxy,
+    private readonly analyticsService: AnalyticsService,
     private readonly logger: Logger,
   ) {}
+
+  /**
+   * Resolve `applicationId` to an application this company may actually
+   * schedule against: it must be theirs, it must belong to the employee named
+   * in the request, and it must not already be closed. A mismatch is a 403
+   * rather than a silent fall-through to the match gate — the caller asked for
+   * a specific application and should be told it was not usable.
+   */
+  private async loadSchedulableApplication(
+    createInterview: CreateInterviewDTO,
+  ): Promise<Application | null> {
+    const application = await this.applicationRepo.findOne({
+      where: { id: createInterview.applicationId },
+      relations: ['job', 'job.company', 'employee'],
+    });
+
+    if (
+      !application ||
+      application.job?.company?.id !== createInterview.companyId ||
+      application.employee?.id !== createInterview.employeeId
+    ) {
+      throw new RpcException({
+        message: 'Application not found or access denied.',
+        statusCode: 403,
+      });
+    }
+
+    /*
+      An allow-list, not a deny-list. This previously refused only the three
+      terminal stages, which let a company interview a PENDING applicant — a
+      candidate who had said yes while the company had not, with no match
+      between them. That is the mutual-consent gate this whole check exists to
+      enforce, and it was being satisfied by one side alone.
+
+      Shortlisting is the company's yes and the moment the match is created, so
+      it is the earliest stage at which an interview can be scheduled.
+    */
+    const schedulable: EApplicationStatus[] = [
+      EApplicationStatus.SHORTLISTED,
+      EApplicationStatus.INTERVIEWING,
+      EApplicationStatus.OFFERED,
+    ];
+    if (!schedulable.includes(application.status)) {
+      throw new RpcException({
+        message: `Cannot schedule an interview for a ${application.status} application. Shortlist the candidate first.`,
+        statusCode: 400,
+      });
+    }
+
+    return application;
+  }
 
   async createInterview(
     createInterview: CreateInterviewDTO,
@@ -50,20 +117,32 @@ export class InterviewService implements IInterviewService {
         });
       }
 
-      // Verify that employee and company are matched
-      const match = await this.jobMatchingRepo.findOne({
-        where: {
-          employee: { id: createInterview.employeeId },
-          company: { id: createInterview.companyId },
-          isMatched: true,
-        },
-      });
+      /*
+        Two ways to earn the right to schedule an interview, and they mean the
+        same thing: the candidate has said yes to this company. A mutual match
+        says it, and so does an application — which is why an applicationId
+        satisfies the gate on its own rather than additionally requiring a
+        match that an applicant has no reason to have made.
+      */
+      const application = createInterview.applicationId
+        ? await this.loadSchedulableApplication(createInterview)
+        : null;
 
-      if (!match) {
-        throw new RpcException({
-          message: 'You can only schedule interviews with matches.',
-          statusCode: 403,
+      if (!application) {
+        const match = await this.jobMatchingRepo.findOne({
+          where: {
+            employee: { id: createInterview.employeeId },
+            company: { id: createInterview.companyId },
+            isMatched: true,
+          },
         });
+
+        if (!match) {
+          throw new RpcException({
+            message: 'You can only schedule interviews with matches.',
+            statusCode: 403,
+          });
+        }
       }
 
       const [employee, company] = await Promise.all([
@@ -87,9 +166,14 @@ export class InterviewService implements IInterviewService {
       const interview = this.interviewRepo.create({
         employee,
         company,
+        application,
         title: createInterview.title,
         description: createInterview.description,
         scheduledAt: new Date(createInterview.scheduledAt),
+        // The scheduler's IANA timezone — used to label the time in every
+        // render surface without a browser (email, ICS, PDF). Falls back to
+        // null (renderer uses UTC) if a client hasn't been updated to send it.
+        timezone: createInterview.timezone ?? null,
         durationMinutes:
           createInterview.durationMinutes || JOB.DEFAULT_INTERVIEW_DURATION,
         location: createInterview.location,
@@ -99,6 +183,38 @@ export class InterviewService implements IInterviewService {
       });
 
       const saved = await this.interviewRepo.save(interview);
+
+      this.analyticsService.capture(
+        company.user?.id ?? createInterview.companyId,
+        EAnalyticsEvent.INTERVIEW_SCHEDULED,
+        {
+          interview_id: saved.id,
+          has_application: !!createInterview.applicationId,
+          duration_minutes: saved.durationMinutes,
+          days_ahead: Math.round(
+            (new Date(saved.scheduledAt).getTime() - Date.now()) / 86_400_000,
+          ),
+        },
+      );
+
+      /*
+        Scheduling the interview is the stage change; making the company also
+        set INTERVIEWING by hand would just be a second place for the pipeline
+        to drift out of step with what has actually happened. Only from
+        SHORTLISTED, which is the one edge the transition map allows — an
+        application already at OFFERED does not move backwards because someone
+        booked a follow-up call.
+      */
+      if (
+        application &&
+        APPLICATION_STATUS_TRANSITIONS[application.status]?.includes(
+          EApplicationStatus.INTERVIEWING,
+        )
+      ) {
+        application.status = EApplicationStatus.INTERVIEWING;
+        application.statusChangedAt = new Date();
+        await this.applicationRepo.save(application);
+      }
 
       // Notify the other party
       const targetUserId =
@@ -111,12 +227,28 @@ export class InterviewService implements IInterviewService {
           : employee.username || employee.firstname;
 
       if (targetUserId) {
+        // A `.ics` invite goes out beside the notification email so the
+        // candidate's calendar picks up the meeting. TENTATIVE mirrors the
+        // interview's `pending` status — the same event will later go out as
+        // CONFIRMED once accepted, sharing UID + SEQUENCE so mail clients
+        // update the existing row rather than duplicating it.
+        const invite = this.buildInterviewInvite(
+          saved,
+          employee,
+          company,
+          'REQUEST',
+          'TENTATIVE',
+        );
+
         this.notificationClient.emit(
           NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION,
           {
             userId: targetUserId,
             title: 'Interview Scheduled',
-            message: `${senderName} wants to schedule an interview: ${createInterview.title}`,
+            // The formatted time is what makes the email actionable — a
+            // reader with no browser to convert timezones would otherwise get
+            // just the title and have to click into the app to see when.
+            message: `${senderName} wants to schedule an interview: ${createInterview.title}\n\nWhen: ${formatInterviewTime(saved.scheduledAt, saved.timezone)}`,
             type: 'interview',
             data: {
               interviewId: saved.id,
@@ -127,6 +259,7 @@ export class InterviewService implements IInterviewService {
               eventType: 'interview_scheduled',
             },
             sendPush: true,
+            emailAttachments: invite ? [invite] : undefined,
           },
         );
       }
@@ -139,6 +272,10 @@ export class InterviewService implements IInterviewService {
         decision is what drifts if that guard is ever relaxed; there is now one.
       */
       response.notifyUserId = targetUserId ?? null;
+      // `saved.application` is the full entity; callers only need the id, and
+      // serialising the whole application across the RPC hop would leak the
+      // employee and company it hangs off.
+      response.applicationId = application?.id ?? null;
       return response;
     } catch (error: any) {
       this.logger.error(error?.message || error);
@@ -275,6 +412,20 @@ export class InterviewService implements IInterviewService {
         updateInterviewDTO.status.charAt(0).toUpperCase() +
         updateInterviewDTO.status.slice(1);
 
+      // Send a follow-up ICS so the recipient's calendar tracks the change.
+      // The event UID is stable per interview and SEQUENCE derives from
+      // `updatedAt`, so mail clients update the existing row rather than
+      // duplicating it. Cancellation is METHOD:CANCEL — every other real
+      // transition is METHOD:REQUEST with an updated STATUS.
+      const isCancel = updateInterviewDTO.status === InterviewStatus.CANCELLED;
+      const followUp = this.buildInterviewInvite(
+        saved,
+        interview.employee,
+        interview.company,
+        isCancel ? 'CANCEL' : 'REQUEST',
+        icsStatusFor(updateInterviewDTO.status),
+      );
+
       if (notifyUserId) {
         this.notificationClient.emit(
           NOTIFICATION_SERVICE.ACTIONS.CREATE_NOTIFICATION,
@@ -283,6 +434,7 @@ export class InterviewService implements IInterviewService {
             title: `Interview ${statusLabel}`,
             message: `Interview "${interview.title}" has been ${updateInterviewDTO.status}.`,
             type: 'interview',
+            emailAttachments: followUp ? [followUp] : undefined,
             data: {
               interviewId: interview.id,
               senderName: isEmployee
@@ -310,5 +462,69 @@ export class InterviewService implements IInterviewService {
         statusCode: error?.statusCode || 500,
       });
     }
+  }
+
+  /**
+   * Build the `.ics` attachment payload the emit puts on its email. Returns
+   * `null` when either side is missing an email address — a calendar
+   * invitation needs both ORGANIZER and ATTENDEE, and forging a placeholder
+   * is worse than sending the notification without an attachment.
+   */
+  private buildInterviewInvite(
+    interview: Interview,
+    employee: Employee,
+    company: Company,
+    method: TIcsMethod,
+    status: TIcsEventStatus,
+  ): { filename: string; content: string; contentType: string } | null {
+    const organizerEmail = company.user?.email;
+    const attendeeEmail = employee.user?.email;
+    if (!organizerEmail || !attendeeEmail) return null;
+
+    const { filename, content, contentType } = buildInterviewIcs(
+      {
+        interviewId: interview.id,
+        title: interview.title,
+        description: interview.description,
+        startAt: new Date(interview.scheduledAt),
+        durationMinutes: interview.durationMinutes,
+        location: interview.location,
+        meetingLink: interview.meetingLink,
+        timezone: interview.timezone,
+        sequence: icsSequenceFromUpdatedAt(interview.updatedAt ?? new Date()),
+        status,
+        organizerEmail,
+        organizerName: company.name,
+        attendeeEmail,
+        attendeeName:
+          employee.firstname && employee.lastname
+            ? `${employee.firstname} ${employee.lastname}`
+            : (employee.username ?? null),
+      },
+      method,
+    );
+    return { filename, content, contentType };
+  }
+}
+
+/**
+ * Map an interview's DB status to the ICS event STATUS. Kept as a plain
+ * function so tests can exercise it without spinning up the service.
+ *
+ * - `pending` → TENTATIVE — the recipient has been asked but not confirmed.
+ * - `accepted` → CONFIRMED — the meeting is definite.
+ * - `declined` / `cancelled` / `completed` → CANCELLED — remove from
+ *   the calendar. `completed` is a bookkeeping value that only shows up
+ *   after the meeting happened, so keeping it on the calendar as future
+ *   time is wrong.
+ */
+export function icsStatusFor(status: InterviewStatus): TIcsEventStatus {
+  switch (status) {
+    case InterviewStatus.ACCEPTED:
+      return 'CONFIRMED';
+    case InterviewStatus.PENDING:
+      return 'TENTATIVE';
+    default:
+      return 'CANCELLED';
   }
 }

@@ -4,7 +4,13 @@ import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
-import { Brackets, MoreThan, Repository, SelectQueryBuilder } from 'typeorm';
+import {
+  Brackets,
+  IsNull,
+  MoreThan,
+  Repository,
+  SelectQueryBuilder,
+} from 'typeorm';
 import { SCOPE_SIMILARITY_THRESHOLD } from '@app/common/embedding/embedding.service';
 import {
   experienceYearsSql,
@@ -16,7 +22,11 @@ import {
   relevanceScoreSql,
 } from '@app/common/utils/search-relevance.util';
 import {
+  FindOneJobDTO,
   JobResponseDTO,
+  PublicCompanyInJobDTO,
+  PublicJobDetailDTO,
+  PublicJobSitemapEntryDTO,
   SearchJobResponseDTO,
   SearchJobResult,
   SearchJobDTO,
@@ -27,7 +37,13 @@ import { PaginationDTO } from '@app/contracts';
 import {
   generateJobListKey,
   generateJobSearchKey,
+  generatePublicJobKey,
+  generatePublicJobSitemapKey,
 } from '@app/common/redis/redis-keys.util';
+import { getJobSkillNames } from '@app/common/utils/skill.util';
+import { isUserActive } from '@app/common/utils/user-status.util';
+import { activeUserSql } from '@app/common/utils/discovery-status.util';
+import { EUserStatus } from '@app/common/database/enums/user-status.enum';
 
 @Injectable()
 export class JobService implements IJobServiceService {
@@ -37,6 +53,163 @@ export class JobService implements IJobServiceService {
     private readonly redisService: RedisService,
   ) {
     this.logger.setContext(JobService.name);
+  }
+
+  /**
+   * One job posting, for the public page — no session, indexable by Google.
+   *
+   * Three things have to be true before a posting is served to the world, and
+   * they are not the same three the signed-in feed applies:
+   *
+   *  1. **Not taken down.** `hiddenAt` is a `@DeleteDateColumn`, so TypeORM
+   *     filters it here without this method saying anything.
+   *  2. **Not expired.** Same rule `findAllJobs` uses.
+   *  3. **Posted by an account in good standing.** This one is *new*. The
+   *     authenticated read paths do not check account status, which is
+   *     survivable when the audience is other logged-in users and a suspension
+   *     is usually minutes old. It is not survivable here: a banned company's
+   *     posting served anonymously gets crawled, cached and surfaced in search
+   *     results long after the ban, which is precisely the scam-posting outcome
+   *     the moderation feature exists to prevent.
+   *
+   * Returns null rather than throwing for a missing, expired, hidden or
+   * suspended job. The caller turns that into a 404, and a 404 is the only
+   * correct answer: distinguishing "no such job" from "this one was taken
+   * down" would tell a scraper which ids were real.
+   */
+  async findOneJob({
+    jobId,
+  }: FindOneJobDTO): Promise<PublicJobDetailDTO | null> {
+    const cacheKey = generatePublicJobKey(jobId);
+    const cached = await this.redisService.get<PublicJobDetailDTO>(cacheKey);
+    if (cached) {
+      this.logger.info('Public job cache HIT');
+      // No rebuild needed, unlike the DTOs above: PublicJobDetailDTO is plain
+      // properties precisely so a hit and a miss are the same object.
+      return cached;
+    }
+    this.logger.info('Public job cache MISS');
+
+    try {
+      const now = new Date();
+      const job = await this.jobRepo.findOne({
+        where: [
+          { id: jobId, expireDate: IsNull() },
+          { id: jobId, expireDate: MoreThan(now) },
+        ],
+        relations: ['company', 'company.user', 'requiredSkills'],
+      });
+
+      if (!job) return null;
+      if (!job.company?.user || !isUserActive(job.company.user)) return null;
+
+      const result = new PublicJobDetailDTO({
+        id: job.id,
+        title: job.title,
+        description: job.description,
+        type: job.type,
+        experienceRequired: job.experienceRequired,
+        educationRequired: job.educationRequired,
+        skills: getJobSkillNames(job),
+        salary: job.salary ?? null,
+        // `decimal` comes back from pg as a string; the page and the JSON-LD
+        // both need a number, and coercing here keeps that in one place.
+        salaryMin: job.salaryMin === null ? null : Number(job.salaryMin),
+        salaryMax: job.salaryMax === null ? null : Number(job.salaryMax),
+        salaryCurrency: job.salaryCurrency ?? null,
+        workMode: job.workMode ?? null,
+        location: job.location ?? null,
+        languagesRequired: job.languagesRequired ?? [],
+        openingsCount: job.openingsCount ?? null,
+        expireDate: job.expireDate
+          ? new Date(job.expireDate).toISOString()
+          : null,
+        createdAt: new Date(job.createdAt).toISOString(),
+        company: new PublicCompanyInJobDTO({
+          id: job.company.id,
+          name: job.company.name,
+          avatar: job.company.avatar ?? null,
+          industry: job.company.industry ?? null,
+          location: job.company.location ?? null,
+          companySize: job.company.companySize ?? null,
+        }),
+      });
+
+      await this.redisService.set(cacheKey, result, JOB.PUBLIC_JOB_TTL);
+      return result;
+    } catch (error) {
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while fetching the public job',
+      );
+      if (error instanceof RpcException) throw error;
+      throw new RpcException({
+        message: (error as Error).message,
+        statusCode: 500,
+      });
+    }
+  }
+
+  /**
+   * Every publicly visible job id, for the sitemap.
+   *
+   * Capped rather than paginated. A sitemap has a hard 50,000-URL limit and
+   * this platform is nowhere near it; a cap that is checked and logged is
+   * honest about when that stops being true, whereas silently returning the
+   * first page would quietly drop postings out of the index.
+   */
+  async findPublicJobSitemap(): Promise<PublicJobSitemapEntryDTO[]> {
+    const cacheKey = generatePublicJobSitemapKey();
+    const cached =
+      await this.redisService.get<PublicJobSitemapEntryDTO[]>(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const now = new Date();
+      const jobs = await this.jobRepo.find({
+        select: { id: true, createdAt: true },
+        where: [
+          {
+            expireDate: IsNull(),
+            company: { user: { status: EUserStatus.ACTIVE } },
+          },
+          {
+            expireDate: MoreThan(now),
+            company: { user: { status: EUserStatus.ACTIVE } },
+          },
+        ],
+        relations: ['company', 'company.user'],
+        order: { createdAt: 'DESC' },
+        take: JOB.SITEMAP_MAX_ENTRIES,
+      });
+
+      if (jobs.length === JOB.SITEMAP_MAX_ENTRIES) {
+        this.logger.warn(
+          `Job sitemap hit its ${JOB.SITEMAP_MAX_ENTRIES}-entry cap — older postings are no longer being submitted for indexing`,
+        );
+      }
+
+      const result = jobs.map(
+        (job) =>
+          new PublicJobSitemapEntryDTO({
+            id: job.id,
+            updatedAt: new Date(job.createdAt).toISOString(),
+          }),
+      );
+
+      await this.redisService.set(cacheKey, result, JOB.SITEMAP_TTL);
+      return result;
+    } catch (error) {
+      this.logger.error(
+        (error as Error).message ||
+          'An error occurred while building the job sitemap',
+      );
+      if (error instanceof RpcException) throw error;
+      throw new RpcException({
+        message: (error as Error).message,
+        statusCode: 500,
+      });
+    }
   }
 
   async findAllJobs(paginationDTO: PaginationDTO): Promise<JobResponseDTO[]> {
@@ -56,13 +229,20 @@ export class JobService implements IJobServiceService {
 
     try {
       const now = new Date();
-      const jobs = await this.jobRepo.find({
-        relations: ['company', 'company.user'],
-        where: [{ expireDate: null }, { expireDate: MoreThan(now) }],
-        skip,
-        take: limit,
-        order: { createdAt: 'DESC' },
-      });
+      // Switched from repo.find() to a query builder so the "not expired"
+      // clause and the "posting account in good standing" clause both live in
+      // one query. The find() `where` array is an OR, not an AND, which is
+      // why the older shape could only carry one side.
+      const jobs = await this.jobRepo
+        .createQueryBuilder('job')
+        .leftJoinAndSelect('job.company', 'company')
+        .leftJoinAndSelect('company.user', 'user')
+        .where('(job.expireDate IS NULL OR job.expireDate > :now)', { now })
+        .andWhere(activeUserSql('user'))
+        .orderBy('job.createdAt', 'DESC')
+        .skip(skip)
+        .take(limit)
+        .getMany();
       const result = jobs.map((job) => new JobResponseDTO(job));
       await this.redisService.set(cacheKey, result, JOB.JOB_LIST_TTL);
       return result;
@@ -131,7 +311,11 @@ export class JobService implements IJobServiceService {
           .leftJoinAndSelect('job.company', 'company')
           .leftJoinAndSelect('company.careerScopes', 'careerScope')
           .leftJoinAndSelect('company.user', 'user')
-          .where('(job.expireDate IS NULL OR job.expireDate > :now)', { now });
+          .where('(job.expireDate IS NULL OR job.expireDate > :now)', { now })
+          // Discovery: hide postings from suspended or banned accounts. The
+          // public path already filters this in findOneJob; this covers the
+          // signed-in search too.
+          .andWhere(activeUserSql('user'));
 
         if (keyword) {
           qb.andWhere(

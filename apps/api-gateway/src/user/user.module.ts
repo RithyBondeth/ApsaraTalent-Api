@@ -7,6 +7,8 @@ import { CompanyController } from './controllers/company.controller';
 import { EmployeeController } from './controllers/employee.controller';
 import { ModerationController } from './controllers/moderation.controller';
 import { SupportController } from './controllers/support.controller';
+import { AccountLifecycleController } from './controllers/account-lifecycle.controller';
+import { ProfileAnalyticsController } from './controllers/profile-analytics.controller';
 import { PublicUserController } from './controllers/public-user.controller';
 import { UserController } from './controllers/user.controller';
 import { UserAccessService } from './services/user-access.service';
@@ -39,6 +41,8 @@ import { EmployeeDocumentAccessGuard } from './guards/employee-document-access.g
     PublicUserController,
     ModerationController,
     SupportController,
+    AccountLifecycleController,
+    ProfileAnalyticsController,
   ],
   providers: [
     UserAccessService,

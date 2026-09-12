@@ -3,10 +3,12 @@ import { UserBlock } from '@app/common/database/entities/moderation/user-block.e
 import { User } from '@app/common/database/entities/user.entity';
 import { RedisService } from '@app/common/redis/redis.service';
 import { Injectable } from '@nestjs/common';
+import { ProfileAnalyticsService } from '../../users/services/profile-analytics.service';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
-import { In, Not, Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
+import { activeUserSql } from '@app/common/utils/discovery-status.util';
 import {
   CompanyResponseDTO,
   CountAllUsersResponseDTO,
@@ -33,6 +35,7 @@ export class FindCompanyService implements IFindCompanyService {
     private readonly blockRepository: Repository<UserBlock>,
     private readonly logger: PinoLogger,
     private readonly redisService: RedisService,
+    private readonly profileAnalytics: ProfileAnalyticsService,
   ) {}
 
   /**
@@ -125,19 +128,29 @@ export class FindCompanyService implements IFindCompanyService {
     this.logger.info('All Companies cache MISS');
 
     try {
-      const companies = await this.companyRepository.find({
-        where: hasFilter ? { id: Not(In(excludeCompanyIds)) } : {},
-        relations: [
-          'openPositions',
-          'benefits',
-          'values',
-          'careerScopes',
-          'socials',
-          'images',
-        ],
-        skip,
-        take: limit,
-      });
+      const qb = this.companyRepository
+        .createQueryBuilder('company')
+        .leftJoinAndSelect('company.user', 'user')
+        .leftJoinAndSelect('company.openPositions', 'openPositions')
+        .leftJoinAndSelect('company.benefits', 'benefits')
+        .leftJoinAndSelect('company.values', 'values')
+        .leftJoinAndSelect('company.careerScopes', 'careerScopes')
+        .leftJoinAndSelect('company.socials', 'socials')
+        .leftJoinAndSelect('company.images', 'images')
+        // Discovery: hide suspended and banned companies. Existing
+        // relationships — matches, applications, chats — read through other
+        // paths and are not affected.
+        .where(activeUserSql('user'))
+        .skip(skip)
+        .take(limit);
+
+      if (hasFilter) {
+        qb.andWhere('company.id NOT IN (:...excludeCompanyIds)', {
+          excludeCompanyIds,
+        });
+      }
+
+      const companies = await qb.getMany();
       if (!companies)
         throw new RpcException({
           message: 'There are no companies available.',
@@ -234,6 +247,12 @@ export class FindCompanyService implements IFindCompanyService {
             message: 'This profile is not available.',
           });
         }
+        // Fire-and-forget view tracking for the "who viewed your profile"
+        // summary. Symmetric with the employee side.
+        void this.profileAnalytics.recordProfileView(
+          requesterId,
+          targetUser.id,
+        );
       }
     }
 
