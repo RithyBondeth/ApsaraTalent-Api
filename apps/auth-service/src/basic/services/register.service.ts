@@ -9,6 +9,7 @@ import { parseSkillList } from '@app/common/utils/skill.util';
 import { User } from '@app/common/database/entities/user.entity';
 import { EUserRole } from '@app/common/database/enums/user-role.enum';
 import { EmailService } from '@app/common/email/email.service';
+import { AnalyticsService, EAnalyticsEvent } from '@app/common/analytics';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
 import { Injectable } from '@nestjs/common';
@@ -46,6 +47,7 @@ export class RegisterService implements IRegisterService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
+    private readonly analyticsService: AnalyticsService,
     private readonly logger: PinoLogger,
     private readonly dataSource: DataSource,
   ) {}
@@ -188,14 +190,7 @@ export class RegisterService implements IRegisterService {
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      const message =
-        (error as Error)?.message ||
-        'An error occurred while registering company.';
-      this.logger.error(message);
-      throw new RpcException({
-        message,
-        statusCode: 500,
-      });
+      throw this.registrationFailure(error, 'company');
     } finally {
       await queryRunner.release();
     }
@@ -226,6 +221,15 @@ export class RegisterService implements IRegisterService {
           ),
         );
     }
+
+    this.analyticsService.capture(company.id, EAnalyticsEvent.USER_REGISTERED, {
+      role: 'company',
+      via: companyRegisterDTO.authEmail ? 'email' : 'phone',
+    });
+    this.analyticsService.identify(company.id, {
+      role: 'company',
+      registered_at: new Date().toISOString(),
+    });
 
     return new CompanyRegisterResponseDTO({
       message: companyRegisterDTO.authEmail
@@ -386,14 +390,7 @@ export class RegisterService implements IRegisterService {
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      const message =
-        (error as Error)?.message ||
-        'An error occurred while registering employee.';
-      this.logger.error(message);
-      throw new RpcException({
-        message,
-        statusCode: 500,
-      });
+      throw this.registrationFailure(error, 'employee');
     } finally {
       await queryRunner.release();
     }
@@ -425,6 +422,19 @@ export class RegisterService implements IRegisterService {
         );
     }
 
+    this.analyticsService.capture(
+      employee.id,
+      EAnalyticsEvent.USER_REGISTERED,
+      {
+        role: 'employee',
+        via: employeeRegisterDTO.authEmail ? 'email' : 'phone',
+      },
+    );
+    this.analyticsService.identify(employee.id, {
+      role: 'employee',
+      registered_at: new Date().toISOString(),
+    });
+
     return new EmployeeRegisterResponseDTO({
       message: employeeRegisterDTO.authEmail
         ? 'Signup as employee successfully. Please verify your email before login.'
@@ -446,6 +456,32 @@ export class RegisterService implements IRegisterService {
             })
           : undefined,
       }),
+    });
+  }
+
+  /**
+   * The driver's message names tables and constraints, so it goes to the log
+   * only. `user.email` is the one unique column written here: a violation
+   * means a concurrent signup won the race past the existence check, and the
+   * caller gets the same answer that check would have given.
+   */
+  private registrationFailure(
+    error: unknown,
+    role: 'company' | 'employee',
+  ): RpcException {
+    this.logger.error(
+      { err: error },
+      `${role} registration failed: ${(error as Error)?.message ?? 'unknown error'}`,
+    );
+    if ((error as { code?: string })?.code === '23505') {
+      return new RpcException({
+        message: 'This credential already registered!',
+        statusCode: 401,
+      });
+    }
+    return new RpcException({
+      message: `An error occurred while registering ${role}.`,
+      statusCode: 500,
     });
   }
 }

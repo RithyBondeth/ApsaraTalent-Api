@@ -21,7 +21,6 @@ export function createMatchingFixtures() {
   const employeeFavorites = { delete: jest.fn(), count: jest.fn() };
   const companyFavorites = { delete: jest.fn(), count: jest.fn() };
   const interviews = { delete: jest.fn() };
-  const email = { sendEmail: jest.fn() };
   const logger = { error: jest.fn(), warn: jest.fn() };
   const redis = {
     invalidateMatchingCaches: jest.fn(),
@@ -59,7 +58,6 @@ export function createMatchingFixtures() {
     employeeFavorites,
     companyFavorites,
     interviews,
-    email,
     logger,
     redis,
     config,

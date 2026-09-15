@@ -93,6 +93,7 @@ describe('Job-service RPC controllers', () => {
       services.matchingQuery as any,
       services.analytics as any,
       services.ai as any,
+      { areUsersMatched: jest.fn() } as any,
     );
 
     for (const [owner, methods] of Object.entries(owners)) {

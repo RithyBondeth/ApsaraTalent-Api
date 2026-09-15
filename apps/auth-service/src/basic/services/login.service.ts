@@ -3,6 +3,7 @@ import { ELoginMethod } from '@app/common/database/enums/login-method.enum';
 import { IPayload } from '@app/common/jwt/interfaces/payload.interface';
 import { JwtService } from '@app/common/jwt/jwt.service';
 import { hashRefreshToken } from '@app/common/jwt/refresh-token-hash.util';
+import { AnalyticsService, EAnalyticsEvent } from '@app/common/analytics';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
@@ -22,6 +23,7 @@ export class LoginService implements ILoginService {
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
     private readonly cacheCleanupService: CacheCleanupService,
+    private readonly analyticsService: AnalyticsService,
     private readonly logger: PinoLogger,
   ) {}
 
@@ -98,6 +100,13 @@ export class LoginService implements ILoginService {
 
       // Clear Cache in USER SERVICE
       await this.cacheCleanupService.clear(user.id);
+
+      // Analytics: a login event with the method it came in on. Role travels
+      // with it so retention cohorts can split employees from companies.
+      this.analyticsService.capture(user.id, EAnalyticsEvent.USER_LOGGED_IN, {
+        role: user.role,
+        method: ELoginMethod.EMAIL_PASSWORD,
+      });
 
       //Return token and user details
       return new LoginResponseDTO({

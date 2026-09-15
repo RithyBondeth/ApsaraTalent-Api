@@ -137,10 +137,62 @@ describe('AuthController', () => {
     expect(result).not.toHaveProperty('accessToken');
   });
 
-  it('rejects refresh without a cookie', async () => {
+  it('rejects refresh with neither a cookie nor a body token', async () => {
     await expect(
       controller.refreshToken({ cookies: {} } as any, response),
     ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      controller.refreshToken({ cookies: {} } as any, response, {}),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(request).not.toHaveBeenCalled();
+  });
+
+  it('refreshes tokens from the request body for native clients', async () => {
+    request.mockResolvedValue({
+      message: 'refreshed',
+      user: { id: 'user-1' },
+      accessToken: 'next-access',
+      refreshToken: 'next-refresh',
+    });
+
+    const result = await controller.refreshToken(
+      { cookies: {} } as any,
+      response,
+      { refreshToken: 'body-refresh' },
+    );
+
+    expect(request).toHaveBeenCalledWith(
+      client,
+      AUTH_SERVICE.ACTIONS.REFRESH_TOKEN,
+      expect.objectContaining({ refreshToken: 'body-refresh' }),
+    );
+    expect(setAuthTokenCookies).toHaveBeenCalledWith(response, {
+      accessToken: 'next-access',
+      refreshToken: 'next-refresh',
+    });
+    expect(result).not.toHaveProperty('accessToken');
+    expect(result).not.toHaveProperty('refreshToken');
+  });
+
+  it('prefers the cookie when a request carries both', async () => {
+    request.mockResolvedValue({
+      message: 'refreshed',
+      user: { id: 'user-1' },
+      accessToken: 'next-access',
+      refreshToken: 'next-refresh',
+    });
+
+    await controller.refreshToken(
+      { cookies: { 'refresh-token': 'cookie-refresh' } } as any,
+      response,
+      { refreshToken: 'body-refresh' },
+    );
+
+    expect(request).toHaveBeenCalledWith(
+      client,
+      AUTH_SERVICE.ACTIONS.REFRESH_TOKEN,
+      expect.objectContaining({ refreshToken: 'cookie-refresh' }),
+    );
   });
 
   it('refreshes tokens from the http-only cookie', async () => {

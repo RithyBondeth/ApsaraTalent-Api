@@ -1,5 +1,8 @@
 import {
+  FindOneJobDTO,
   JobResponseDTO,
+  PublicJobDetailDTO,
+  PublicJobSitemapEntryDTO,
   SearchJobResult,
   CreateInterviewDTO,
   GetInterviewsByCompanyDTO,
@@ -23,6 +26,17 @@ import {
   ApplyApplicationResponseDTO,
   GetApplicationResponseDTO,
   UpdateApplicationStatusResponseDTO,
+  BulkUpdateApplicationStatusDTO,
+  BulkUpdateApplicationStatusResponseDTO,
+  CreateApplicationNoteDTO,
+  ApplicationNoteResponseDTO,
+  ApplicationStatusHistoryEntryDTO,
+  JobPipelineResponseDTO,
+  CreateSavedSearchDTO,
+  UpdateSavedSearchDTO,
+  SavedSearchResponseDTO,
+  SavedSearchPreviewResponseDTO,
+  EmployerAnalyticsResponseDTO,
   MatchingAnalyticsResponseDTO,
   CompanyMatchingLookupDTO,
   EmployeeMatchingLookupDTO,
@@ -45,10 +59,15 @@ export const I_MATCHING_ANALYTICS_SERVICE = 'IMatchingAnalyticsService';
 export const I_MATCHING_AI_SERVICE = 'IMatchingAiService';
 export const I_INTERVIEW_SERVICE = 'IInterviewService';
 export const I_APPLICATION_SERVICE = 'IApplicationService';
+export const I_SAVED_SEARCH_SERVICE = 'ISavedSearchService';
+export const I_EMPLOYER_ANALYTICS_SERVICE = 'IEmployerAnalyticsService';
 
 export interface IJobServiceService {
   findAllJobs(paginationDTO: PaginationDTO): Promise<JobResponseDTO[]>;
   searchJobs(searchJobDTO: SearchJobDTO): Promise<SearchJobResult>;
+  /** Null for a job that is missing, expired, hidden, or from a suspended account. */
+  findOneJob(findOneJobDTO: FindOneJobDTO): Promise<PublicJobDetailDTO | null>;
+  findPublicJobSitemap(): Promise<PublicJobSitemapEntryDTO[]>;
 }
 
 export interface IMatchingService {
@@ -141,4 +160,56 @@ export interface IApplicationService {
     employeeId: string,
     applicationId: string,
   ): Promise<{ message: string }>;
+  bulkUpdateApplicationStatus(
+    companyId: string,
+    bulkUpdateApplicationStatusDTO: BulkUpdateApplicationStatusDTO,
+  ): Promise<BulkUpdateApplicationStatusResponseDTO>;
+  getJobPipeline(
+    jobId: string,
+    companyId: string,
+  ): Promise<JobPipelineResponseDTO>;
+  createApplicationNote(
+    companyId: string,
+    applicationId: string,
+    createApplicationNoteDTO: CreateApplicationNoteDTO,
+    authorUserId: string,
+  ): Promise<ApplicationNoteResponseDTO>;
+  listApplicationNotes(
+    companyId: string,
+    applicationId: string,
+  ): Promise<ApplicationNoteResponseDTO[]>;
+  deleteApplicationNote(
+    companyId: string,
+    applicationId: string,
+    noteId: string,
+  ): Promise<{ message: string }>;
+  listApplicationStatusHistory(
+    companyId: string,
+    applicationId: string,
+  ): Promise<ApplicationStatusHistoryEntryDTO[]>;
+}
+
+export interface ISavedSearchService {
+  listSavedSearches(employeeId: string): Promise<SavedSearchResponseDTO[]>;
+  createSavedSearch(
+    employeeId: string,
+    createSavedSearchDTO: CreateSavedSearchDTO,
+  ): Promise<SavedSearchResponseDTO>;
+  updateSavedSearch(
+    employeeId: string,
+    savedSearchId: string,
+    updateSavedSearchDTO: UpdateSavedSearchDTO,
+  ): Promise<SavedSearchResponseDTO>;
+  deleteSavedSearch(
+    employeeId: string,
+    savedSearchId: string,
+  ): Promise<{ message: string }>;
+  previewSavedSearch(
+    employeeId: string,
+    savedSearchId: string,
+  ): Promise<SavedSearchPreviewResponseDTO>;
+}
+
+export interface IEmployerAnalyticsService {
+  getAnalytics(companyId: string): Promise<EmployerAnalyticsResponseDTO>;
 }

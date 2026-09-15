@@ -82,6 +82,21 @@ export default () => ({
     support: process.env.SUPPORT_EMAIL,
   },
 
+  outbox: {
+    // A kill switch for the dispatcher only. Producers always write rows, so
+    // turning this off pauses delivery rather than losing mail — the backlog
+    // drains when it comes back on.
+    enabled: process.env.OUTBOX_ENABLED !== 'false',
+    pollIntervalMs: Number(process.env.OUTBOX_POLL_INTERVAL_MS) || 5000,
+    batchSize: Number(process.env.OUTBOX_BATCH_SIZE) || 20,
+    maxAttempts: Number(process.env.OUTBOX_MAX_ATTEMPTS) || 5,
+    // How long a claimed message stays invisible to other workers. Must exceed
+    // the slowest realistic SMTP round trip, or a slow send is delivered twice.
+    visibilityTimeoutMs:
+      Number(process.env.OUTBOX_VISIBILITY_TIMEOUT_MS) || 60000,
+    retentionDays: Number(process.env.OUTBOX_RETENTION_DAYS) || 30,
+  },
+
   throttle: {
     // @nestjs/throttler v5+ takes `ttl` in MILLISECONDS. The historical
     // THROTTLE_TTL was written in seconds ("60"), which silently produced a
@@ -235,5 +250,14 @@ export default () => ({
 
   firebase: {
     serviceAccount: process.env.FIREBASE_SERVICE_ACCOUNT,
+  },
+
+  posthog: {
+    // Public "project write" key — safe to ship in the browser bundle too.
+    // When empty, both the API service and the web client are no-ops.
+    key: process.env.POSTHOG_KEY,
+    // Ingestion host. Defaults to US cloud when unset. Set to
+    // https://eu.i.posthog.com to keep events in Europe, or a self-hosted URL.
+    host: process.env.POSTHOG_HOST,
   },
 });

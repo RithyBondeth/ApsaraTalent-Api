@@ -2,13 +2,20 @@ import { PaginationDTO } from '@app/contracts/dtos/shared';
 import {
   AdminActionResponseDTO,
   AdminGetUserDTO,
+  AdminHideJobDTO,
+  AdminListJobsDTO,
+  AdminPagedJobsDTO,
+  AdminRestoreJobDTO,
   AdminListAuditDTO,
+  AdminListProblemReportsDTO,
   AdminListReportsDTO,
   AdminListUsersDTO,
   AdminOverviewDTO,
   AdminPagedAuditDTO,
+  AdminPagedProblemReportsDTO,
   AdminPagedReportsDTO,
   AdminPagedUsersDTO,
+  AdminUpdateProblemReportStatusDTO,
   AdminUpdateReportStatusDTO,
   AdminUpdateUserStatusDTO,
   AdminUserDetailDTO,
@@ -68,6 +75,9 @@ import {
   FavoriteCountResponseDTO,
   SearchEmployeeDTO,
   UserIdDTO,
+  ProfileAnalyticsResponseDTO,
+  UpdatePrivacyDTO,
+  UpdatePrivacyResponseDTO,
 } from '../../dtos/user';
 import {
   BlockUserDTO,
@@ -109,6 +119,9 @@ export const I_MODERATION_SERVICE = 'IModerationService';
 export const I_SUPPORT_SERVICE = 'ISupportService';
 export const I_ADMIN_USER_SERVICE = 'IAdminUserService';
 export const I_ADMIN_REPORT_SERVICE = 'IAdminReportService';
+export const I_ADMIN_JOB_SERVICE = 'IAdminJobService';
+export const I_ADMIN_PROBLEM_REPORT_SERVICE = 'IAdminProblemReportService';
+export const I_PROFILE_ANALYTICS_SERVICE = 'IProfileAnalyticsService';
 
 export interface IUpdateEmployeeInfoService {
   updateEmployeeInfo(
@@ -291,6 +304,21 @@ export interface IAdminUserService {
   ): Promise<AdminActionResponseDTO>;
 }
 
+/**
+ * Taking job postings down, and putting them back.
+ *
+ * Its own service rather than a third arm of IAdminUserService: the user half
+ * mutates accounts and the report half works a queue, and this one moderates
+ * content. They share only the audit collaborator.
+ */
+export interface IAdminJobService {
+  listJobs(adminListJobsDTO: AdminListJobsDTO): Promise<AdminPagedJobsDTO>;
+  hideJob(adminHideJobDTO: AdminHideJobDTO): Promise<AdminActionResponseDTO>;
+  restoreJob(
+    adminRestoreJobDTO: AdminRestoreJobDTO,
+  ): Promise<AdminActionResponseDTO>;
+}
+
 export interface IAdminReportService {
   listReports(
     adminListReportsDTO: AdminListReportsDTO,
@@ -299,4 +327,41 @@ export interface IAdminReportService {
     adminUpdateReportStatusDTO: AdminUpdateReportStatusDTO,
   ): Promise<AdminActionResponseDTO>;
   listAudit(adminListAuditDTO: AdminListAuditDTO): Promise<AdminPagedAuditDTO>;
+}
+
+/**
+ * Problem reports from the support form.
+ *
+ * Its own service rather than a branch inside IAdminReportService: user
+ * reports and problem reports share nothing but the word. See
+ * `AdminProblemReportService` for the mapping onto the shared audit log.
+ */
+export interface IAdminProblemReportService {
+  listReports(
+    dto: AdminListProblemReportsDTO,
+  ): Promise<AdminPagedProblemReportsDTO>;
+  updateStatus(
+    dto: AdminUpdateProblemReportStatusDTO,
+  ): Promise<AdminActionResponseDTO>;
+}
+
+export interface IProfileAnalyticsService {
+  /**
+   * Fire-and-forget from the profile-detail read path. Non-throwing: an
+   * analytics miss must not cost the caller their profile page.
+   */
+  recordProfileView(
+    viewerUserId: string | null,
+    viewedUserId: string,
+  ): Promise<void>;
+  /**
+   * Called once per search result set with the user ids of the rows that
+   * appeared. Bumps a per-user daily counter.
+   */
+  recordSearchAppearances(userIds: string[]): Promise<void>;
+  getMyProfileAnalytics(userId: string): Promise<ProfileAnalyticsResponseDTO>;
+  updatePrivacySettings(
+    userId: string,
+    dto: UpdatePrivacyDTO,
+  ): Promise<UpdatePrivacyResponseDTO>;
 }

@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { MatchingService } from './matching.service';
 import { MatchingQueryService } from './matching-query.service';
+import { MatchLinkService } from './match-link.service';
 import { computeSkillScore } from '../utils/matching-score.util';
 import { createMatchingFixtures, expectRpc } from '../matching-test-fixtures';
 
@@ -12,7 +13,6 @@ describe('MatchingService', () => {
     employeeFavorites,
     companyFavorites,
     interviews,
-    email,
     logger,
     redis,
     notifications,
@@ -20,17 +20,30 @@ describe('MatchingService', () => {
     company,
   } = createMatchingFixtures();
 
-  const service = new MatchingService(
+  /*
+    A real collaborator over the same fixtures rather than a mock: the upsert
+    these tests assert on moved into it wholesale, so the existing expectations
+    on `employees.findOne` / `companies.findOne` / `matching.save` still
+    describe the behaviour under test.
+  */
+  const matchLink = new MatchLinkService(
     matching as any,
     employees as any,
     companies as any,
+    redis as any,
+  );
+
+  const analytics = { capture: jest.fn(), identify: jest.fn() };
+  const service = new MatchingService(
+    matching as any,
     employeeFavorites as any,
     companyFavorites as any,
     interviews as any,
-    email as any,
+    analytics as any,
     logger as any,
     redis as any,
     notifications as any,
+    matchLink,
   );
 
   // Read-side methods moved to MatchingQueryService; it shares the same
@@ -48,7 +61,6 @@ describe('MatchingService', () => {
       id: 'match-1',
       ...value,
     }));
-    email.sendEmail.mockResolvedValue(undefined);
   });
 
   it('rejects a like when either profile is missing', async () => {
@@ -109,8 +121,9 @@ describe('MatchingService', () => {
     });
 
     expect(existing.isMatched).toBe(true);
+    // The match email is notification-service's job now — reached through the
+    // emits asserted above, so there is nothing to assert here.
     expect(notifications.emit).toHaveBeenCalledTimes(2);
-    expect(email.sendEmail).toHaveBeenCalled();
     expect(result.notificationTargets).toEqual([
       'company-user',
       'employee-user',
@@ -432,38 +445,6 @@ describe('MatchingService', () => {
     await expectRpc((queryService as any)[method](dto), 500, message);
   });
 
-  it('contains email failures after reciprocal matches', async () => {
-    employees.findOne.mockResolvedValue(employee);
-    companies.findOne.mockResolvedValue(company);
-    matching.findOne.mockResolvedValue({
-      employee,
-      company,
-      employeeLiked: false,
-      companyLiked: true,
-      isMatched: false,
-    });
-    email.sendEmail.mockRejectedValueOnce(new Error('SMTP down'));
-    await service.employeeLikes({ eid: 'employee-1', cid: 'company-1' });
-    await new Promise((resolve) => setImmediate(resolve));
-    expect(logger.warn).toHaveBeenCalledWith(
-      'Failed to send match notification: SMTP down',
-    );
-
-    matching.findOne.mockResolvedValue({
-      employee,
-      company,
-      employeeLiked: true,
-      companyLiked: false,
-      isMatched: false,
-    });
-    email.sendEmail.mockRejectedValueOnce('offline');
-    await service.companyLikes({ eid: 'employee-1', cid: 'company-1' });
-    await new Promise((resolve) => setImmediate(resolve));
-    expect(logger.warn).toHaveBeenCalledWith(
-      'Failed to send match notification: offline',
-    );
-  });
-
   it('covers ignored and empty skill requirements', () => {
     const compute = computeSkillScore as (e: any, c: any) => number | null;
     expect(
@@ -509,7 +490,6 @@ describe('MatchingService', () => {
       service.companyLikes({ eid: 'employee-1', cid: 'company-1' }),
     ).resolves.toEqual(expect.objectContaining({ notificationTargets: [] }));
     expect(notifications.emit).not.toHaveBeenCalled();
-    expect(email.sendEmail).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -637,7 +617,6 @@ describe('MatchingService', () => {
           notificationTargets: ['company-user'],
         }),
       );
-      expect(email.sendEmail).not.toHaveBeenCalled();
       expect(notifications.emit).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({

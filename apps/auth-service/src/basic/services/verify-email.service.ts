@@ -13,6 +13,7 @@ import {
 } from '@app/contracts';
 import { AUTH } from '@app/contracts/constants/domain/auth.constant';
 import { IVerifyEmailService } from '@app/contracts/interfaces/service/auth-service.interface';
+import { CacheCleanupService } from '../../shared/services/cache-cleanup.service';
 
 /**
  * Email verification by 6-digit code.
@@ -32,6 +33,7 @@ export class VerifyEmailService implements IVerifyEmailService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly emailService: EmailService,
+    private readonly cacheCleanupService: CacheCleanupService,
     private readonly logger: PinoLogger,
   ) {}
 
@@ -89,6 +91,9 @@ export class VerifyEmailService implements IVerifyEmailService {
 
       user.isEmailVerified = true;
       await this.clearOtp(user);
+      // `/user/current-user` is cached; a client that refetches straight after
+      // verifying would otherwise be told it is still unverified.
+      await this.cacheCleanupService.clear(user.id);
 
       return new VerifyEmailResponseDTO({
         message: 'Your email was verified successfully. Now you can login',
