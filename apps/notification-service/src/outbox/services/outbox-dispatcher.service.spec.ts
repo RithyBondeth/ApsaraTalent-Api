@@ -97,6 +97,23 @@ describe('OutboxDispatcherService', () => {
       expect(outbox.markSent).toHaveBeenCalledWith('row-2');
     });
 
+    it('keeps delivering the batch when recording a failure itself throws', async () => {
+      const messages = [
+        { id: 'row-1', payload: { to: 'a@example.com' } },
+        { id: 'row-2', payload: { to: 'b@example.com' } },
+      ];
+      outbox.claimBatch.mockResolvedValue(messages);
+      mailer.send.mockRejectedValueOnce(new Error('SMTP unavailable'));
+      outbox.markFailed.mockRejectedValueOnce(new Error('database blip'));
+
+      await createService().drain();
+
+      expect(outbox.markSent).toHaveBeenCalledWith('row-2');
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringContaining('row-1'),
+      );
+    });
+
     it('leaves the backlog untouched when the claim itself fails', async () => {
       outbox.claimBatch.mockRejectedValue(new Error('database unavailable'));
 

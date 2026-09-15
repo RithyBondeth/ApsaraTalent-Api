@@ -1,6 +1,6 @@
 import { EOutboxChannel } from '../database/enums/outbox-channel.enum';
 import { EOutboxStatus } from '../database/enums/outbox-status.enum';
-import { OutboxService } from './outbox.service';
+import { OutboxService, returnedRows } from './outbox.service';
 
 describe('OutboxService', () => {
   const repo = {
@@ -64,7 +64,11 @@ describe('OutboxService', () => {
 
   describe('claimBatch', () => {
     it('claims only due rows that still have attempts left', async () => {
-      repo.query.mockResolvedValue([{ id: 'row-1' }]);
+      // What TypeORM's Postgres driver really returns for UPDATE … RETURNING:
+      // [rows, affectedCount]. The first query is the abandoned-claim sweep.
+      repo.query
+        .mockResolvedValueOnce([[], 0])
+        .mockResolvedValueOnce([[{ id: 'row-1' }], 1]);
 
       const claimed = await createService().claimBatch(
         EOutboxChannel.EMAIL,
@@ -72,7 +76,7 @@ describe('OutboxService', () => {
         60_000,
       );
 
-      const [sql, params] = repo.query.mock.calls[0];
+      const [sql, params] = repo.query.mock.calls[1];
       expect(sql).toContain('FOR UPDATE SKIP LOCKED');
       expect(sql).toContain('"attempts" < "maxAttempts"');
       expect(sql).toContain('"attempts" = "attempts" + 1');
@@ -84,6 +88,49 @@ describe('OutboxService', () => {
         10,
       ]);
       expect(claimed).toEqual([{ id: 'row-1' }]);
+    });
+
+    it('returns no messages for an empty claim instead of the [rows, count] tuple', async () => {
+      // The tuple has length 2 even when nothing is due, which is how an empty
+      // queue logged "Dispatching 2 queued email(s)" on every tick.
+      repo.query.mockResolvedValueOnce([[], 0]).mockResolvedValueOnce([[], 0]);
+
+      await expect(
+        createService().claimBatch(EOutboxChannel.EMAIL, 10, 60_000),
+      ).resolves.toEqual([]);
+    });
+
+    it('buries claims that used their final attempt and were never settled', async () => {
+      repo.query.mockResolvedValue([[], 0]);
+
+      await createService().claimBatch(EOutboxChannel.EMAIL, 10, 60_000);
+
+      const [sql, params] = repo.query.mock.calls[0];
+      expect(sql).toContain('"attempts" >= "maxAttempts"');
+      expect(sql).toContain('"availableAt" <= now()');
+      expect(params).toEqual([
+        EOutboxStatus.FAILED,
+        EOutboxChannel.EMAIL,
+        EOutboxStatus.PROCESSING,
+      ]);
+    });
+  });
+
+  describe('returnedRows', () => {
+    it("unwraps the driver's [rows, affectedCount] tuple", () => {
+      expect(returnedRows([[{ id: 'a' }, { id: 'b' }], 2])).toEqual([
+        { id: 'a' },
+        { id: 'b' },
+      ]);
+    });
+
+    it('accepts a plain row array', () => {
+      expect(returnedRows([{ id: 'a' }])).toEqual([{ id: 'a' }]);
+    });
+
+    it('treats anything else as no rows', () => {
+      expect(returnedRows(undefined)).toEqual([]);
+      expect(returnedRows({ affected: 1 })).toEqual([]);
     });
   });
 

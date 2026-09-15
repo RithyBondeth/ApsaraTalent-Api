@@ -110,7 +110,18 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
       );
       await this.outboxService.markSent(message.id);
     } catch (error) {
-      await this.outboxService.markFailed(message, error);
+      try {
+        await this.outboxService.markFailed(message, error);
+      } catch (settleError) {
+        // Recording the failure must not abort the rest of the batch. The row
+        // stays claimed; its visibility timeout returns it to the queue, or
+        // claimBatch buries it if that was its final attempt.
+        this.logger.error(
+          `Outbox message ${message.id} failed and its failure could not be recorded: ${
+            settleError instanceof Error ? settleError.message : 'Unknown error'
+          }`,
+        );
+      }
     }
   }
 

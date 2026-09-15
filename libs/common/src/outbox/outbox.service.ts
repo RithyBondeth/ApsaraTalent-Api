@@ -8,6 +8,24 @@ import { EOutboxChannel } from '../database/enums/outbox-channel.enum';
 import { EOutboxStatus } from '../database/enums/outbox-status.enum';
 import { IOutboxEnqueueOptions } from './interfaces/outbox.interface';
 
+/**
+ * The rows from a raw `UPDATE … RETURNING`.
+ *
+ * TypeORM's Postgres driver does not return the rows for an UPDATE or DELETE:
+ * it returns `[rows, affectedCount]`. Treating that tuple as the rows is what
+ * kept the outbox from delivering anything — the dispatcher saw a two-element
+ * "batch" on every tick (even an empty one), handed the rows *array* to SMTP as
+ * if it were a message, and then crashed trying to record the failure against a
+ * message with no id. A plain row array is accepted too, so this does not break
+ * if the driver's shape changes.
+ */
+export function returnedRows<T>(result: unknown): T[] {
+  if (Array.isArray(result) && Array.isArray(result[0])) {
+    return result[0] as T[];
+  }
+  return Array.isArray(result) ? (result as T[]) : [];
+}
+
 /** Ceiling on the exponential backoff, so a dead SMTP host is retried hourly. */
 const MAX_BACKOFF_MS = 60 * 60 * 1000;
 /** First retry delay; doubles per attempt up to MAX_BACKOFF_MS. */
@@ -83,7 +101,9 @@ export class OutboxService {
     limit: number,
     visibilityTimeoutMs: number,
   ): Promise<OutboxMessage[]> {
-    const rows = await this.outboxRepo.query(
+    await this.buryAbandoned(channel);
+
+    const result: unknown = await this.outboxRepo.query(
       `
       UPDATE "outbox_message"
       SET "status" = $1,
@@ -110,7 +130,32 @@ export class OutboxService {
         limit,
       ],
     );
-    return rows as OutboxMessage[];
+    return returnedRows<OutboxMessage>(result);
+  }
+
+  /**
+   * Move claims that used their final attempt and were never settled to FAILED.
+   *
+   * The claim query only takes rows with attempts left, so a worker that dies —
+   * or throws while recording the result — on a message's last attempt leaves it
+   * PROCESSING with nothing that will ever pick it up again. That silently broke
+   * the promise above that a poisoned message "lands in FAILED". Once its
+   * visibility timeout has lapsed nobody holds the claim, so it is safe to bury.
+   */
+  private async buryAbandoned(channel: EOutboxChannel): Promise<void> {
+    await this.outboxRepo.query(
+      `
+      UPDATE "outbox_message"
+      SET "status" = $1,
+          "lastError" = COALESCE("lastError", 'Final attempt was claimed but never settled'),
+          "updatedAt" = now()
+      WHERE "channel" = $2
+        AND "status" = $3
+        AND "attempts" >= "maxAttempts"
+        AND "availableAt" <= now();
+      `,
+      [EOutboxStatus.FAILED, channel, EOutboxStatus.PROCESSING],
+    );
   }
 
   async markSent(id: string): Promise<void> {
