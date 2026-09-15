@@ -117,7 +117,7 @@ describe('OutboxService', () => {
   });
 
   describe('returnedRows', () => {
-    it('unwraps the driver\'s [rows, affectedCount] tuple', () => {
+    it("unwraps the driver's [rows, affectedCount] tuple", () => {
       expect(returnedRows([[{ id: 'a' }, { id: 'b' }], 2])).toEqual([
         { id: 'a' },
         { id: 'b' },
