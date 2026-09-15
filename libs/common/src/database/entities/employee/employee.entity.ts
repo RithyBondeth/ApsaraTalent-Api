@@ -62,7 +62,7 @@ export class Employee {
   @Column({ nullable: true })
   location: string;
 
-  @Column()
+  @Column({ nullable: true })
   phone: string;
 
   @Column({ nullable: true })
