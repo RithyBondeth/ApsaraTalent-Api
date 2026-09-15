@@ -190,14 +190,7 @@ export class RegisterService implements IRegisterService {
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      const message =
-        (error as Error)?.message ||
-        'An error occurred while registering company.';
-      this.logger.error(message);
-      throw new RpcException({
-        message,
-        statusCode: 500,
-      });
+      throw this.registrationFailure(error, 'company');
     } finally {
       await queryRunner.release();
     }
@@ -397,14 +390,7 @@ export class RegisterService implements IRegisterService {
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      const message =
-        (error as Error)?.message ||
-        'An error occurred while registering employee.';
-      this.logger.error(message);
-      throw new RpcException({
-        message,
-        statusCode: 500,
-      });
+      throw this.registrationFailure(error, 'employee');
     } finally {
       await queryRunner.release();
     }
@@ -470,6 +456,32 @@ export class RegisterService implements IRegisterService {
             })
           : undefined,
       }),
+    });
+  }
+
+  /**
+   * The driver's message names tables and constraints, so it goes to the log
+   * only. `user.email` is the one unique column written here: a violation
+   * means a concurrent signup won the race past the existence check, and the
+   * caller gets the same answer that check would have given.
+   */
+  private registrationFailure(
+    error: unknown,
+    role: 'company' | 'employee',
+  ): RpcException {
+    this.logger.error(
+      { err: error },
+      `${role} registration failed: ${(error as Error)?.message ?? 'unknown error'}`,
+    );
+    if ((error as { code?: string })?.code === '23505') {
+      return new RpcException({
+        message: 'This credential already registered!',
+        statusCode: 401,
+      });
+    }
+    return new RpcException({
+      message: `An error occurred while registering ${role}.`,
+      statusCode: 500,
     });
   }
 }

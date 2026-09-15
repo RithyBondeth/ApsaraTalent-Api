@@ -149,7 +149,7 @@ describe('RegisterService', () => {
       .catch((caught) => caught)) as RpcException;
 
     expect(error.getError()).toEqual({
-      message: 'database unavailable',
+      message: 'An error occurred while registering employee.',
       statusCode: 500,
     });
     expect(runner.rollbackTransaction).toHaveBeenCalled();
@@ -231,6 +231,42 @@ describe('RegisterService', () => {
     );
     expect(result.message).toContain('verify your email');
   });
+
+  it('never forwards database driver messages to the client', async () => {
+    manager.save.mockRejectedValueOnce(
+      new Error(
+        'null value in column "phone" of relation "employee" violates not-null constraint',
+      ),
+    );
+    const error = (await service
+      .employeeRegister({ authEmail: true, email: 'a@b.co', skills: [] } as any)
+      .catch((caught) => caught)) as RpcException;
+
+    expect(JSON.stringify(error.getError())).not.toMatch(/relation|column/);
+    expect(logger.error).toHaveBeenCalled();
+  });
+
+  it.each(['companyRegister', 'employeeRegister'] as const)(
+    '%s reports a unique violation from a concurrent signup as already registered',
+    async (method) => {
+      manager.save.mockRejectedValueOnce(
+        Object.assign(new Error('duplicate key value'), { code: '23505' }),
+      );
+      const failure = (await service[method]({
+        authEmail: true,
+        email: 'race@example.com',
+        name: 'Apsara',
+        skills: [],
+      } as any).catch((caught) => caught)) as RpcException;
+
+      expect(failure.getError()).toEqual({
+        message: 'This credential already registered!',
+        statusCode: 401,
+      });
+      expect(runner.rollbackTransaction).toHaveBeenCalled();
+      expect(runner.release).toHaveBeenCalled();
+    },
+  );
 
   it('rolls back company registration failures and uses a defensive error message', async () => {
     manager.save.mockRejectedValueOnce(null);

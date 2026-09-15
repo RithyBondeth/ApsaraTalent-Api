@@ -6,13 +6,16 @@ describe('VerifyEmailService', () => {
   const repository = { findOne: jest.fn(), save: jest.fn() };
   const email = { sendEmail: jest.fn() };
   const logger = { error: jest.fn(), debug: jest.fn() };
+  const cacheCleanup = { clear: jest.fn() };
   const service = new VerifyEmailService(
     repository as any,
     email as any,
+    cacheCleanup as any,
     logger as any,
   );
 
   const pendingUser = (over: Record<string, unknown> = {}) => ({
+    id: 'user-1',
     email: 'person@example.com',
     isEmailVerified: false,
     emailVerificationOtp: '123456',
@@ -37,6 +40,7 @@ describe('VerifyEmailService', () => {
       expect(user.emailVerificationOtp).toBeNull();
       expect(user.emailVerificationOtpExpires).toBeNull();
       expect(user.emailVerificationAttempts).toBe(0);
+      expect(cacheCleanup.clear).toHaveBeenCalledWith('user-1');
     });
 
     it('counts a wrong guess without burning the code', async () => {
@@ -50,6 +54,7 @@ describe('VerifyEmailService', () => {
       expect(user.emailVerificationAttempts).toBe(1);
       expect(user.emailVerificationOtp).toBe('123456');
       expect(user.isEmailVerified).toBe(false);
+      expect(cacheCleanup.clear).not.toHaveBeenCalled();
     });
 
     it('burns the code once the attempt budget is spent', async () => {
