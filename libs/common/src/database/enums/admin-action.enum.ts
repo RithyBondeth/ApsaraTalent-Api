@@ -9,4 +9,6 @@ export enum EAdminAction {
   USER_BANNED = 'user_banned',
   USER_REINSTATED = 'user_reinstated',
   REPORT_STATUS_CHANGED = 'report_status_changed',
+  JOB_HIDDEN = 'job_hidden',
+  JOB_RESTORED = 'job_restored',
 }

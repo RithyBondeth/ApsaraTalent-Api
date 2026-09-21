@@ -10,6 +10,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
+import { activeUserSql } from '@app/common/utils/discovery-status.util';
 import { CACHE_TTL } from '@app/contracts/constants/domain/cache-ttl.constant';
 import {
   BLOCK_NOT_EXISTS,
@@ -153,6 +154,7 @@ export class CompanyRecommendationsService implements ICompanyRecommendationsSer
             .innerJoin('user.employee', 'employee')
             .innerJoin('employee.careerScopes', 'cs')
             .where('cs.id IN (:...scopeIds)', { scopeIds })
+            .andWhere(activeUserSql('user'))
             .groupBy('user.id')
             .limit(RECO_POOL_CAP);
           if (likedEmployeeIds.length > 0) {
@@ -176,6 +178,7 @@ export class CompanyRecommendationsService implements ICompanyRecommendationsSer
           .createQueryBuilder('user')
           .select('user.id', 'userId')
           .innerJoin('user.employee', 'employee')
+          .where(activeUserSql('user'))
           .groupBy('user.id')
           .limit(RECO_POOL_CAP - userIds.length);
         if (likedEmployeeIds.length > 0) {

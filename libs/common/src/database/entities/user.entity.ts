@@ -48,6 +48,20 @@ export class User {
   @Column({ type: 'timestamptz', nullable: true })
   statusChangedAt: Date | null;
 
+  /**
+   * When the account owner requested deletion. Null for normal accounts.
+   *
+   * A cron in user-service hard-deletes rows whose value is older than the
+   * grace window (`AccountLifecycleService.GRACE_PERIOD_MS`). During grace,
+   * the account is still usable — the settings page carries a banner offering
+   * "Cancel deletion", which clears the column. Deliberately **not** a
+   * TypeORM `@DeleteDateColumn`: that would make TypeORM filter these rows
+   * out of every query, and the grace period only works if the user can still
+   * log in and reach the cancel button.
+   */
+  @Column({ type: 'timestamptz', nullable: true })
+  deletedAt: Date | null;
+
   @OneToOne(() => Employee, (employee) => employee.user)
   employee: Employee;
 
@@ -88,6 +102,17 @@ export class User {
 
   @Column({ default: false })
   profileCompleted: boolean;
+
+  /**
+   * When true, this user's own visits to other profiles are recorded as
+   * anonymous (the `ProfileView.viewerHidden` flag is set at write time).
+   * Counts still move — profile owners can tell "you have visitors" apart
+   * from "nobody has looked" — but the viewer is not named on the recent
+   * viewers list. The user's own analytics summary is unaffected: this is
+   * a browsing-side preference, not a listening-side one.
+   */
+  @Column({ default: false })
+  browsePrivately: boolean;
 
   // Auth related fields
   @Column({ nullable: true })

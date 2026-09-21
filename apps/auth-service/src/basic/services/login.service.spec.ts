@@ -13,11 +13,13 @@ describe('LoginService', () => {
     generateTwoFactorChallengeToken: jest.fn(async () => 'challenge-token'),
   };
   const cache = { clear: jest.fn() };
+  const analytics = { capture: jest.fn(), identify: jest.fn() };
   const logger = { error: jest.fn() };
   const service = new LoginService(
     repository as any,
     jwt as any,
     cache as any,
+    analytics as any,
     logger as any,
   );
 

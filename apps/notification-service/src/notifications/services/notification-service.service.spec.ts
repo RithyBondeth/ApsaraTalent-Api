@@ -17,6 +17,8 @@ describe('NotificationService', () => {
   };
   const users = { findOne: jest.fn() };
   const push = { sendToToken: jest.fn() };
+  const preferences = { canDeliver: jest.fn() };
+  const notificationEmail = { send: jest.fn() };
   const logger = {
     setContext: jest.fn(),
     info: jest.fn(),
@@ -31,6 +33,8 @@ describe('NotificationService', () => {
     notifications as any,
     users as any,
     push as any,
+    preferences as any,
+    notificationEmail as any,
     logger as any,
     redis as any,
   );
@@ -38,6 +42,10 @@ describe('NotificationService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     redis.get.mockResolvedValue(null);
+    // Every existing push assertion predates preferences and assumes delivery
+    // is allowed; the suppression path is covered explicitly below.
+    preferences.canDeliver.mockResolvedValue(true);
+    notificationEmail.send.mockResolvedValue(undefined);
   });
 
   const entity = (overrides: Record<string, unknown> = {}) => ({
@@ -78,6 +86,128 @@ describe('NotificationService', () => {
     });
     expect(result).toHaveLength(2);
     expect(result[0]).toMatchObject({ id: 'n1', isRead: false });
+  });
+
+  it('still records the notification when push is suppressed by preferences', async () => {
+    const created = entity();
+    notifications.create.mockReturnValue(created);
+    notifications.save.mockResolvedValue(created);
+    preferences.canDeliver.mockResolvedValue(false);
+
+    const result = await service.createNotification({
+      userId: 'u1',
+      title: 'Title',
+      message: 'Message',
+      type: 'chat',
+      sendPush: true,
+    });
+
+    // The feed is the record of what happened. Muting push must not also erase
+    // the user's only way to find out what they missed.
+    expect(notifications.save).toHaveBeenCalled();
+    expect(result.id).toBe('n1');
+    expect(push.sendToToken).not.toHaveBeenCalled();
+    // No point looking up a device token for a push that will not be sent.
+    expect(users.findOne).not.toHaveBeenCalled();
+  });
+
+  it('asks about the category the notification type maps onto', async () => {
+    const created = entity();
+    notifications.create.mockReturnValue(created);
+    notifications.save.mockResolvedValue(created);
+    users.findOne.mockResolvedValue({ pushNotificationToken: 'device-token' });
+    push.sendToToken.mockResolvedValue({ success: true });
+
+    await service.createNotification({
+      userId: 'u1',
+      title: 'Title',
+      message: 'Message',
+      type: 'like',
+      sendPush: true,
+    });
+
+    // 'like' and 'match' are one preference — nobody wants to be asked twice.
+    expect(preferences.canDeliver).toHaveBeenCalledWith({
+      userId: 'u1',
+      category: 'match',
+      channel: 'push',
+    });
+  });
+
+  it('skips delivery when the payload carries no userId', async () => {
+    const created = entity();
+    notifications.create.mockReturnValue(created);
+    notifications.save.mockResolvedValue(created);
+
+    const result = await service.createNotification({
+      title: 'Title',
+      message: 'Message',
+      type: 'application',
+      sendPush: true,
+    });
+
+    // The row is still returned; what is skipped is everything that needs an
+    // address — cache invalidation, preferences, push and email.
+    expect(result.id).toBe('n1');
+    expect(redis.invalidateNotificationCaches).not.toHaveBeenCalled();
+    expect(preferences.canDeliver).not.toHaveBeenCalled();
+    expect(notificationEmail.send).not.toHaveBeenCalled();
+    expect(logger.warn).toHaveBeenCalled();
+  });
+
+  it('offers the notification for email unless the caller opts out', async () => {
+    const created = entity();
+    notifications.create.mockReturnValue(created);
+    notifications.save.mockResolvedValue(created);
+
+    await service.createNotification({
+      userId: 'u1',
+      title: 'You were shortlisted',
+      message: 'Acme moved your application forward.',
+      type: 'application',
+    });
+
+    expect(notificationEmail.send).toHaveBeenCalledWith({
+      userId: 'u1',
+      title: 'You were shortlisted',
+      message: 'Acme moved your application forward.',
+      category: 'application',
+    });
+  });
+
+  it('respects an explicit opt-out from email', async () => {
+    const created = entity();
+    notifications.create.mockReturnValue(created);
+    notifications.save.mockResolvedValue(created);
+
+    await service.createNotification({
+      userId: 'u1',
+      title: 'Title',
+      message: 'Message',
+      type: 'application',
+      sendEmail: false,
+    });
+
+    expect(notificationEmail.send).not.toHaveBeenCalled();
+  });
+
+  it('still returns the saved notification when the email fails', async () => {
+    const created = entity();
+    notifications.create.mockReturnValue(created);
+    notifications.save.mockResolvedValue(created);
+    notificationEmail.send.mockRejectedValue(new Error('smtp down'));
+
+    // The row is what the user actually sees in the app. A mail problem must
+    // not make the caller think nothing was recorded.
+    const result = await service.createNotification({
+      userId: 'u1',
+      title: 'Title',
+      message: 'Message',
+      type: 'application',
+    });
+
+    expect(result.id).toBe('n1');
+    expect(logger.warn).toHaveBeenCalled();
   });
 
   it('sends push data only to the stored recipient device token', async () => {

@@ -8,3 +8,5 @@ export * from './employee';
 export * from './admin/admin.dto';
 export * from './moderation/moderation.dto';
 export * from './support/support.dto';
+export * from './account-lifecycle.dto';
+export * from './profile-analytics.dto';

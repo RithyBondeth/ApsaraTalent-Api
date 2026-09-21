@@ -3,10 +3,12 @@ import { UserBlock } from '@app/common/database/entities/moderation/user-block.e
 import { User } from '@app/common/database/entities/user.entity';
 import { RedisService } from '@app/common/redis/redis.service';
 import { Injectable } from '@nestjs/common';
+import { ProfileAnalyticsService } from '../../users/services/profile-analytics.service';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PinoLogger } from 'nestjs-pino';
-import { In, Not, Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
+import { activeUserSql } from '@app/common/utils/discovery-status.util';
 import {
   CountAllUsersResponseDTO,
   EmployeeResponseDTO,
@@ -32,6 +34,7 @@ export class FindEmployeeService implements IFindEmployeeService {
     private readonly blockRepository: Repository<UserBlock>,
     private readonly logger: PinoLogger,
     private readonly redisService: RedisService,
+    private readonly profileAnalytics: ProfileAnalyticsService,
   ) {}
 
   /**
@@ -105,21 +108,27 @@ export class FindEmployeeService implements IFindEmployeeService {
     this.logger.info('All employees cache MISS');
 
     try {
-      const employees = await this.employeeRepository.find({
-        where: {
-          isHide: false,
-          ...(hasFilter ? { id: Not(In(excludeEmployeeIds)) } : {}),
-        },
-        relations: [
-          'skills',
-          'careerScopes',
-          'experiences',
-          'socials',
-          'educations',
-        ],
-        skip,
-        take: limit,
-      });
+      const qb = this.employeeRepository
+        .createQueryBuilder('employee')
+        .leftJoinAndSelect('employee.user', 'user')
+        .leftJoinAndSelect('employee.skills', 'skills')
+        .leftJoinAndSelect('employee.careerScopes', 'careerScopes')
+        .leftJoinAndSelect('employee.experiences', 'experiences')
+        .leftJoinAndSelect('employee.socials', 'socials')
+        .leftJoinAndSelect('employee.educations', 'educations')
+        .where('employee.isHide = false')
+        // Discovery: hide suspended and banned employees.
+        .andWhere(activeUserSql('user'))
+        .skip(skip)
+        .take(limit);
+
+      if (hasFilter) {
+        qb.andWhere('employee.id NOT IN (:...excludeEmployeeIds)', {
+          excludeEmployeeIds,
+        });
+      }
+
+      const employees = await qb.getMany();
       if (!employees)
         throw new RpcException({
           message: 'There are no employees available',
@@ -176,6 +185,14 @@ export class FindEmployeeService implements IFindEmployeeService {
             message: 'This profile is not available.',
           });
         }
+        // The read is going to succeed for a real viewer looking at someone
+        // else's profile. Record it here rather than at the return points so
+        // both cache-hit and cache-miss paths count. Fire-and-forget: the
+        // service swallows its own errors.
+        void this.profileAnalytics.recordProfileView(
+          requesterId,
+          targetUser.id,
+        );
       }
     }
 

@@ -4,7 +4,9 @@ import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-serv
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { AdminJobController } from './controllers/admin-job.controller';
 import { AdminReportController } from './controllers/admin-report.controller';
+import { AdminProblemReportController } from './controllers/admin-problem-report.controller';
 import { AdminUserController } from './controllers/admin-user.controller';
 
 /**
@@ -33,7 +35,12 @@ import { AdminUserController } from './controllers/admin-user.controller';
     ]),
     JwtModule,
   ],
-  controllers: [AdminUserController, AdminReportController],
+  controllers: [
+    AdminUserController,
+    AdminReportController,
+    AdminProblemReportController,
+    AdminJobController,
+  ],
   providers: [AdminGuard],
 })
 export class AdminModule {}

@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { NOTIFICATION_SERVICE } from '@app/contracts/constants/service-actions/notification-service.constant';
 import { NotificationController } from './controllers/notification.controller';
+import { NotificationPreferenceController } from './controllers/notification-preference.controller';
 
 @Module({
   imports: [
@@ -22,6 +23,6 @@ import { NotificationController } from './controllers/notification.controller';
     ]),
     JwtModule,
   ],
-  controllers: [NotificationController],
+  controllers: [NotificationController, NotificationPreferenceController],
 })
 export class NotificationModule {}

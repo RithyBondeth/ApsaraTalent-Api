@@ -18,7 +18,12 @@ jest.mock('@app/common', () => ({
 describe('ChatController', () => {
   const client = {};
   const storage = { exists: jest.fn() };
-  const controller = new ChatController(client as any, storage as any);
+  const matchGuard = { assertMatched: jest.fn(), areMatched: jest.fn() };
+  const controller = new ChatController(
+    client as any,
+    storage as any,
+    matchGuard as any,
+  );
   const rpc = rpcCall as jest.Mock;
 
   beforeEach(() => jest.clearAllMocks());

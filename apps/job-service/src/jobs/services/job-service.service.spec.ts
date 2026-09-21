@@ -1,14 +1,24 @@
 import 'reflect-metadata';
 import { RpcException } from '@nestjs/microservices';
 import { JobService } from './job-service.service';
-import { generateJobListKey } from '@app/common/redis/redis-keys.util';
+import {
+  generateJobListKey,
+  generatePublicJobKey,
+} from '@app/common/redis/redis-keys.util';
+import { EUserStatus } from '@app/common/database/enums/user-status.enum';
 
 describe('JobService', () => {
   const repository = {
     find: jest.fn(),
+    findOne: jest.fn(),
     createQueryBuilder: jest.fn(),
   };
-  const logger = { setContext: jest.fn(), info: jest.fn(), error: jest.fn() };
+  const logger = {
+    setContext: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  };
   const redis = {
     get: jest.fn(),
     set: jest.fn(),
@@ -65,21 +75,28 @@ describe('JobService', () => {
 
   it('returns and caches active jobs on a cache miss', async () => {
     redis.get.mockResolvedValue(null);
-    repository.find.mockResolvedValue([
-      { id: 'job-1', title: 'Engineer', company: { id: 'company-1' } },
+    const qb = queryBuilder([
+      [{ id: 'job-1', title: 'Engineer', company: { id: 'company-1' } }],
+      1,
     ]);
+    repository.createQueryBuilder.mockReturnValue(qb);
 
     const result = await service.findAllJobs({ skip: 0, limit: 20 });
 
     expect(result).toHaveLength(1);
-    expect(repository.find).toHaveBeenCalledWith(
-      expect.objectContaining({
-        relations: ['company', 'company.user'],
-        skip: 0,
-        take: 20,
-        order: { createdAt: 'DESC' },
-      }),
+    // Filters both the expiry clause and the active-account clause. Doing them
+    // in one query means the find() `where` array's OR shape no longer fits.
+    expect(qb.where).toHaveBeenCalledWith(
+      expect.stringContaining('expireDate'),
+      expect.any(Object),
     );
+    const andWhereSql = qb.andWhere.mock.calls.flat().join(' ');
+    expect(andWhereSql).toMatch(/status/);
+    // Suspended-and-expired must be re-admitted at read time; without this,
+    // an account is invisible for hours after its suspension expired.
+    expect(andWhereSql).toMatch(/suspendedUntil/);
+    expect(qb.skip).toHaveBeenCalledWith(0);
+    expect(qb.take).toHaveBeenCalledWith(20);
     expect(redis.set).toHaveBeenCalledWith(
       `${generateJobListKey()}:skip:0:limit:20`,
       result,
@@ -89,7 +106,9 @@ describe('JobService', () => {
 
   it('wraps job-list database failures', async () => {
     redis.get.mockResolvedValue(null);
-    repository.find.mockRejectedValue(new Error('database unavailable'));
+    const qb = queryBuilder([[], 0]);
+    qb.getMany = jest.fn().mockRejectedValue(new Error('database unavailable'));
+    repository.createQueryBuilder.mockReturnValue(qb);
     await expectInternalError(service.findAllJobs({}));
   });
 
@@ -109,6 +128,7 @@ describe('JobService', () => {
       qb[method] = jest.fn(() => qb);
     }
     qb.getManyAndCount = jest.fn().mockResolvedValue(result);
+    qb.getMany = jest.fn().mockResolvedValue(result[0]);
     return qb;
   }
 
@@ -380,5 +400,193 @@ describe('JobService', () => {
     expect(logger.error).toHaveBeenCalledWith(
       'An error occurred while searching for jobs',
     );
+  });
+
+  describe('findOneJob', () => {
+    const activeCompany = {
+      id: 'company-1',
+      name: 'Acme',
+      avatar: 'avatar.png',
+      industry: 'Software',
+      location: 'Phnom Penh',
+      companySize: 40,
+      user: { id: 'user-1', status: EUserStatus.ACTIVE },
+    };
+
+    const row = (overrides: Record<string, unknown> = {}) => ({
+      id: 'job-1',
+      title: 'Backend Engineer',
+      description: 'Build things',
+      type: 'full_time',
+      experienceRequired: '3 - 5 years',
+      educationRequired: "Bachelor's Degree",
+      skillsRequired: 'Node.js, Redis',
+      requiredSkills: [{ name: 'Node.js' }, { name: 'Redis' }],
+      salary: '$2000',
+      salaryMin: '2000.00',
+      salaryMax: '3000.00',
+      salaryCurrency: 'USD',
+      workMode: 'remote',
+      location: 'Phnom Penh',
+      languagesRequired: ['English'],
+      openingsCount: 2,
+      expireDate: null,
+      createdAt: new Date('2026-08-01T00:00:00.000Z'),
+      company: activeCompany,
+      ...overrides,
+    });
+
+    it('returns a public job and caches it', async () => {
+      redis.get.mockResolvedValue(null);
+      repository.findOne.mockResolvedValue(row());
+
+      const job = await service.findOneJob({ jobId: 'job-1' });
+
+      expect(job).toMatchObject({
+        id: 'job-1',
+        title: 'Backend Engineer',
+        skills: ['Node.js', 'Redis'],
+        createdAt: '2026-08-01T00:00:00.000Z',
+        company: { id: 'company-1', name: 'Acme' },
+      });
+      expect(redis.set).toHaveBeenCalledWith(
+        generatePublicJobKey('job-1'),
+        expect.anything(),
+        expect.any(Number),
+      );
+    });
+
+    it('never exposes the company user relation', async () => {
+      redis.get.mockResolvedValue(null);
+      repository.findOne.mockResolvedValue(row());
+
+      const job = await service.findOneJob({ jobId: 'job-1' });
+
+      // The authenticated DTO carries a `user` with twenty-odd @Exclude()
+      // fields. This one is served without a session, so it has no user at all.
+      expect((job as any)?.company).not.toHaveProperty('user');
+      expect(JSON.stringify(job)).not.toContain('user-1');
+    });
+
+    it('coerces the decimal salary columns pg returns as strings', async () => {
+      redis.get.mockResolvedValue(null);
+      repository.findOne.mockResolvedValue(row());
+
+      const job = await service.findOneJob({ jobId: 'job-1' });
+
+      // JSON-LD and the salary range both need numbers.
+      expect(job?.salaryMin).toBe(2000);
+      expect(job?.salaryMax).toBe(3000);
+    });
+
+    it('serves a cache hit without rebuilding the DTO', async () => {
+      redis.get.mockResolvedValue({ id: 'job-1', skills: ['Node.js'] });
+
+      const job = await service.findOneJob({ jobId: 'job-1' });
+
+      // Plain properties, so a hit and a miss are the same object — no getter
+      // reconstruction step to forget.
+      expect(job).toEqual({ id: 'job-1', skills: ['Node.js'] });
+      expect(repository.findOne).not.toHaveBeenCalled();
+    });
+
+    it('returns null for a job that does not exist', async () => {
+      redis.get.mockResolvedValue(null);
+      repository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.findOneJob({ jobId: 'missing' }),
+      ).resolves.toBeNull();
+    });
+
+    it.each([EUserStatus.SUSPENDED, EUserStatus.BANNED])(
+      'refuses to serve a posting from a %s account',
+      async (status) => {
+        redis.get.mockResolvedValue(null);
+        repository.findOne.mockResolvedValue(
+          row({ company: { ...activeCompany, user: { id: 'u', status } } }),
+        );
+
+        // Anonymous means crawlable, and a crawled scam posting outlives the
+        // ban that was supposed to remove it.
+        await expect(
+          service.findOneJob({ jobId: 'job-1' }),
+        ).resolves.toBeNull();
+        expect(redis.set).not.toHaveBeenCalled();
+      },
+    );
+
+    it('serves a posting whose suspension has already expired', async () => {
+      redis.get.mockResolvedValue(null);
+      repository.findOne.mockResolvedValue(
+        row({
+          company: {
+            ...activeCompany,
+            user: {
+              id: 'u',
+              status: EUserStatus.SUSPENDED,
+              suspendedUntil: new Date(Date.now() - 86_400_000),
+            },
+          },
+        }),
+      );
+
+      await expect(
+        service.findOneJob({ jobId: 'job-1' }),
+      ).resolves.not.toBeNull();
+    });
+
+    it('refuses a posting with no owning account at all', async () => {
+      redis.get.mockResolvedValue(null);
+      repository.findOne.mockResolvedValue(row({ company: { id: 'c' } }));
+
+      await expect(service.findOneJob({ jobId: 'job-1' })).resolves.toBeNull();
+    });
+
+    it('reports a database failure as an internal RPC error', async () => {
+      redis.get.mockResolvedValue(null);
+      repository.findOne.mockRejectedValue(new Error('database unavailable'));
+
+      await expectInternalError(service.findOneJob({ jobId: 'job-1' }));
+    });
+  });
+
+  describe('findPublicJobSitemap', () => {
+    it('returns ids and timestamps only', async () => {
+      redis.get.mockResolvedValue(null);
+      repository.find.mockResolvedValue([
+        { id: 'job-1', createdAt: new Date('2026-08-01T00:00:00.000Z') },
+      ]);
+
+      await expect(service.findPublicJobSitemap()).resolves.toEqual([
+        { id: 'job-1', updatedAt: '2026-08-01T00:00:00.000Z' },
+      ]);
+      expect(redis.set).toHaveBeenCalled();
+    });
+
+    it('warns when the entry cap is reached', async () => {
+      redis.get.mockResolvedValue(null);
+      repository.find.mockResolvedValue(
+        Array.from({ length: 45_000 }, (_, index) => ({
+          id: `job-${index}`,
+          createdAt: new Date('2026-08-01T00:00:00.000Z'),
+        })),
+      );
+
+      await service.findPublicJobSitemap();
+
+      // Silently truncating would drop postings out of the index with nothing
+      // anywhere saying so.
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('45000-entry cap'),
+      );
+    });
+
+    it('reports a database failure as an internal RPC error', async () => {
+      redis.get.mockResolvedValue(null);
+      repository.find.mockRejectedValue(new Error('database unavailable'));
+
+      await expectInternalError(service.findPublicJobSitemap());
+    });
   });
 });

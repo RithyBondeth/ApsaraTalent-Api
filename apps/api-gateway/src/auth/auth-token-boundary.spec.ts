@@ -83,6 +83,33 @@ describe('authentication token boundary', () => {
     expect(result).not.toHaveProperty('refreshToken');
   });
 
+  it("takes a native client's refresh token from the body and still hides rotated tokens", async () => {
+    (authClient.send as jest.Mock).mockReturnValue(
+      of({
+        message: 'Refreshed',
+        accessToken: 'new-access-secret',
+        refreshToken: 'new-refresh-secret',
+        user: { id: 'user-1', role: 'employee' },
+      }),
+    );
+
+    const result = await controller.refreshToken(
+      { cookies: {} } as any,
+      response,
+      { refreshToken: 'refresh-secret' },
+    );
+
+    // The input path changed; the output boundary did not. Rotated tokens
+    // still leave only as httpOnly cookies.
+    expect(response.cookie).toHaveBeenCalledWith(
+      'refresh-token',
+      'new-refresh-secret',
+      expect.objectContaining({ httpOnly: true }),
+    );
+    expect(result).not.toHaveProperty('accessToken');
+    expect(result).not.toHaveProperty('refreshToken');
+  });
+
   it('never serializes stored authentication secrets in user responses', () => {
     const output = instanceToPlain(
       new UserResponseDTO({
