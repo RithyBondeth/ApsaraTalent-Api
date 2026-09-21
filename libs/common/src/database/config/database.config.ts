@@ -21,9 +21,14 @@ import { UserBlock } from '../entities/moderation/user-block.entity';
 import { UserReport } from '../entities/moderation/user-report.entity';
 import { Notification } from '../entities/notification.entity';
 import { NotificationPreference } from '../entities/notification-preference.entity';
+import { ApplicationNote } from '../entities/application-note.entity';
+import { ApplicationStatusHistory } from '../entities/application-status-history.entity';
 import { ProblemReport } from '../entities/problem-report.entity';
+import { ProfileSearchAppearance } from '../entities/profile-search-appearance.entity';
+import { ProfileView } from '../entities/profile-view.entity';
 import { OutboxMessage } from '../entities/outbox-message.entity';
 import { ResumeTemplate } from '../entities/resume-template.entity';
+import { SavedSearch } from '../entities/saved-search.entity';
 import { Social } from '../entities/social.entity';
 import { User } from '../entities/user.entity';
 import { Application } from '../entities/application.entity';
@@ -62,6 +67,20 @@ export const databaseConfig = async (
     OutboxMessage,
     NotificationPreference,
     ProblemReport,
+    // Registering an entity with TypeOrmModule.forFeature in a service module
+    // is not enough: an entity absent from this list has no metadata on the
+    // DataSource, so every repository call for it throws
+    // "No metadata for X was found" before reaching Postgres.
+    //
+    // All five below had entity files, tables and working service modules,
+    // and every route that touched them answered 500 in production.
+    // `database.config.spec.ts` now fails if an entity file is added without
+    // being listed here.
+    SavedSearch,
+    ProfileView,
+    ProfileSearchAppearance,
+    ApplicationNote,
+    ApplicationStatusHistory,
   ],
   // Load relations as separate batched queries instead of a single multi-join.
   // This prevents the cartesian-product row explosion (and embedding/column
