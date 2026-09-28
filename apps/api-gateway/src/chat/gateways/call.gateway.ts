@@ -1,5 +1,6 @@
 import {
   SubscribeMessage,
+  OnGatewayDisconnect,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
@@ -22,6 +23,8 @@ import {
 } from '@app/contracts';
 import { ICallGateway } from '@app/contracts/interfaces/gateway/call-gateway.interface';
 import { isOriginAllowed } from '@app/common';
+import { ChatMatchGuardService } from '../services/chat-match-guard.service';
+import { CallSessionService } from '../services/call-session.service';
 
 @WebSocketGateway({
   namespace: '/chat',
@@ -38,11 +41,22 @@ import { isOriginAllowed } from '@app/common';
     credentials: true,
   },
 })
-export class CallGateway implements ICallGateway {
+export class CallGateway implements ICallGateway, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
   constructor(
     private readonly chatNotificationService: ChatNotificationService,
+    private readonly chatMatchGuard: ChatMatchGuardService,
+    private readonly callSessions: CallSessionService,
   ) {}
+
+  private reject<T extends { success: boolean }>(
+    client: Socket,
+    response: new (partial: Partial<T>) => T,
+    message: string,
+  ): T {
+    client.emit('error', { message });
+    return new response({ success: false } as Partial<T>);
+  }
 
   @SubscribeMessage(CHAT_WEBSOCKET_EVENTS.CALL_OFFER)
   async handleCallOffer(
@@ -63,8 +77,38 @@ export class CallGateway implements ICallGateway {
     }
 
     const callerId = client.data.userId as string;
-    const profile =
-      await this.chatNotificationService.getCallerProfile(callerId);
+    const matched = await this.chatMatchGuard.areMatched(
+      callerId,
+      callOfferDTO.receiverId,
+    );
+    if (!matched) {
+      client.emit('error', {
+        message: 'You can only call someone you have matched with.',
+      });
+      return new CallOfferResponseDTO({ success: false });
+    }
+    if (
+      !this.callSessions.register(
+        callOfferDTO.callId,
+        callerId,
+        callOfferDTO.receiverId,
+        client.id,
+      )
+    ) {
+      return this.reject(
+        client,
+        CallOfferResponseDTO,
+        'One of the participants is already in a call.',
+      );
+    }
+
+    let profile: { name: string; avatar: string };
+    try {
+      profile = await this.chatNotificationService.getCallerProfile(callerId);
+    } catch (error) {
+      this.callSessions.cancel(callOfferDTO.callId);
+      throw error;
+    }
 
     this.server
       .to(callOfferDTO.receiverId)
@@ -96,6 +140,20 @@ export class CallGateway implements ICallGateway {
       client.emit('error', { message: 'Invalid call answer payload' });
       return new CallAnswerResponseDTO({ success: false });
     }
+    if (
+      !this.callSessions.answer(
+        callAnswerDTO.callId,
+        client.data.userId as string,
+        callAnswerDTO.callerId,
+        client.id,
+      )
+    ) {
+      return this.reject(
+        client,
+        CallAnswerResponseDTO,
+        'Invalid or expired call session.',
+      );
+    }
 
     this.server
       .to(callAnswerDTO.callerId)
@@ -124,6 +182,19 @@ export class CallGateway implements ICallGateway {
       client.emit('error', { message: 'Invalid ICE candidate payload' });
       return new IceCandidateResponseDTO({ success: false });
     }
+    if (
+      !this.callSessions.canSignal(
+        iceCandidateDTO.callId,
+        client.data.userId as string,
+        iceCandidateDTO.targetUserId,
+      )
+    ) {
+      return this.reject(
+        client,
+        IceCandidateResponseDTO,
+        'Invalid or expired call session.',
+      );
+    }
 
     this.server
       .to(iceCandidateDTO.targetUserId)
@@ -147,6 +218,19 @@ export class CallGateway implements ICallGateway {
     if (!callDeclineDTO?.callId || !callDeclineDTO?.callerId) {
       client.emit('error', { message: 'Invalid call decline payload' });
       return new CallDeclinedResponseDTO({ success: false });
+    }
+    if (
+      !this.callSessions.decline(
+        callDeclineDTO.callId,
+        client.data.userId as string,
+        callDeclineDTO.callerId,
+      )
+    ) {
+      return this.reject(
+        client,
+        CallDeclinedResponseDTO,
+        'Invalid or expired call session.',
+      );
     }
 
     this.server
@@ -177,6 +261,19 @@ export class CallGateway implements ICallGateway {
       client.emit('error', { message: 'Invalid call end payload' });
       return new CallEndResponseDTO({ success: false });
     }
+    if (
+      !this.callSessions.end(
+        callEndDTO.callId,
+        client.data.userId as string,
+        callEndDTO.targetUserId,
+      )
+    ) {
+      return this.reject(
+        client,
+        CallEndResponseDTO,
+        'Invalid or expired call session.',
+      );
+    }
 
     this.server
       .to(callEndDTO.targetUserId)
@@ -196,5 +293,25 @@ export class CallGateway implements ICallGateway {
     });
 
     return new CallEndResponseDTO({ success: true });
+  }
+
+  async handleDisconnect(client: Socket): Promise<void> {
+    for (const ended of this.callSessions.disconnect(client.id)) {
+      this.server.to(ended.peerId).emit(CHAT_WEBSOCKET_EVENTS.CALL_ENDED, {
+        callId: ended.session.callId,
+        reason: 'disconnected',
+      });
+      const content =
+        this.chatNotificationService.resolveCallEndContent('disconnected');
+      try {
+        await this.chatNotificationService.emitCallLogMessage(this.server, {
+          senderId: ended.disconnectedUserId,
+          receiverId: ended.peerId,
+          content,
+        });
+      } catch {
+        // The socket is already gone; cleanup must still release both users.
+      }
+    }
   }
 }

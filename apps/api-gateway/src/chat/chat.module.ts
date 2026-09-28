@@ -14,6 +14,7 @@ import { SocketStateService } from './services/socket-state.service';
 import { ChatNotificationService } from './services/chat-notification.service';
 import { ChatRateLimiterService } from './services/chat-rate-limiter.service';
 import { ChatMessageService } from './services/chat-message.service';
+import { CallSessionService } from './services/call-session.service';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { ChatMessageService } from './services/chat-message.service';
     ChatNotificationService,
     ChatMessageService,
     ChatMatchGuardService,
+    CallSessionService,
   ],
 })
 export class ChatModule {}
