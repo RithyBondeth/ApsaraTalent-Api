@@ -131,6 +131,13 @@ describe('PushNotificationService external boundary', () => {
       expect.objectContaining({
         token: 'device-token',
         data: expect.objectContaining({ count: '2' }),
+        android: expect.objectContaining({
+          priority: 'high',
+          notification: expect.objectContaining({ tag: 'chat-sender-1' }),
+        }),
+        apns: expect.objectContaining({
+          payload: { aps: expect.objectContaining({ contentAvailable: true }) },
+        }),
         webpush: expect.objectContaining({
           fcmOptions: { link: '/chat/sender-1' },
           notification: expect.objectContaining({ tag: 'chat-sender-1' }),

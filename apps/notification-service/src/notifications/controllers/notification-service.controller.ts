@@ -14,6 +14,8 @@ import {
   DeleteNotificationResponseDTO,
   CreateNotificationCurrentUserResponseDTO,
   CreateNotificationCurrentUserDTO,
+  DeviceTokenDTO,
+  DeviceTokenResponseDTO,
 } from '@app/contracts/dtos/notification';
 import {
   I_NOTIFICATION_SERVICE,
@@ -44,6 +46,20 @@ export class NotificationController implements INotificationRpcController {
     @Payload() notificationUserDTO: NotificationUserDTO,
   ): Promise<UnreadCountResponseDTO> {
     return this.notificationService.getUnreadCount(notificationUserDTO);
+  }
+
+  @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.REGISTER_DEVICE_TOKEN)
+  async registerDeviceToken(
+    @Payload() deviceTokenDTO: DeviceTokenDTO,
+  ): Promise<DeviceTokenResponseDTO> {
+    return this.notificationService.registerDeviceToken(deviceTokenDTO);
+  }
+
+  @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.REMOVE_DEVICE_TOKEN)
+  async removeDeviceToken(
+    @Payload() deviceTokenDTO: DeviceTokenDTO,
+  ): Promise<DeviceTokenResponseDTO> {
+    return this.notificationService.removeDeviceToken(deviceTokenDTO);
   }
 
   @MessagePattern(NOTIFICATION_SERVICE.ACTIONS.MARK_READ)
