@@ -11,6 +11,8 @@ describe('RPC NotificationController', () => {
     'createNotification',
     'deleteNotification',
     'deleteAllNotifications',
+    'registerDeviceToken',
+    'removeDeviceToken',
   ])
     service[method] = jest.fn().mockResolvedValue({ success: true });
   const controller = new NotificationController(service as any);
@@ -28,6 +30,8 @@ describe('RPC NotificationController', () => {
       ['createForCurrentUser', 'createNotification'],
       ['deleteNotification', 'deleteNotification'],
       ['deleteAllNotifications', 'deleteAllNotifications'],
+      ['registerDeviceToken', 'registerDeviceToken'],
+      ['removeDeviceToken', 'removeDeviceToken'],
     ];
     for (const [controllerMethod, serviceMethod] of cases) {
       const payload = { userId: 'user-1' } as any;

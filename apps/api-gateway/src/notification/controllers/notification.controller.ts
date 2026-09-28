@@ -10,6 +10,7 @@ import {
   Post,
   Query,
   Req,
+  Put,
   UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -24,6 +25,8 @@ import {
   DeleteNotificationResponseDTO,
   CreateNotificationCurrentUserResponseDTO,
   CreateNotificationCurrentUserDTO,
+  DeviceTokenBodyDTO,
+  DeviceTokenResponseDTO,
 } from '@app/contracts/dtos/notification';
 import { rpcCall } from '../../utils/rpc-call';
 
@@ -57,6 +60,32 @@ export class NotificationController implements INotificationController {
       this.notificationClient,
       NOTIFICATION_SERVICE.ACTIONS.GET_UNREAD_COUNT,
       { userId: req.user.id },
+    );
+  }
+
+  @Put('device-token')
+  @UseGuards(AuthGuard)
+  async registerDeviceToken(
+    @Req() req: any,
+    @Body() body: DeviceTokenBodyDTO,
+  ): Promise<DeviceTokenResponseDTO> {
+    return rpcCall<DeviceTokenResponseDTO>(
+      this.notificationClient,
+      NOTIFICATION_SERVICE.ACTIONS.REGISTER_DEVICE_TOKEN,
+      { userId: req.user.id, token: body.token },
+    );
+  }
+
+  @Delete('device-token')
+  @UseGuards(AuthGuard)
+  async removeDeviceToken(
+    @Req() req: any,
+    @Body() body: DeviceTokenBodyDTO,
+  ): Promise<DeviceTokenResponseDTO> {
+    return rpcCall<DeviceTokenResponseDTO>(
+      this.notificationClient,
+      NOTIFICATION_SERVICE.ACTIONS.REMOVE_DEVICE_TOKEN,
+      { userId: req.user.id, token: body.token },
     );
   }
 

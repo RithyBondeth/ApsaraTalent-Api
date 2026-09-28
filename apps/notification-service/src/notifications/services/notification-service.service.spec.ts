@@ -15,7 +15,7 @@ describe('NotificationService', () => {
     count: jest.fn(),
     delete: jest.fn(),
   };
-  const users = { findOne: jest.fn() };
+  const users = { findOne: jest.fn(), update: jest.fn() };
   const push = { sendToToken: jest.fn() };
   const preferences = { canDeliver: jest.fn() };
   const notificationEmail = { send: jest.fn() };
@@ -57,6 +57,46 @@ describe('NotificationService', () => {
     isRead: false,
     createdAt: new Date('2026-01-01'),
     ...overrides,
+  });
+
+  it('moves a device token to the authenticated user', async () => {
+    users.update
+      .mockResolvedValueOnce({ affected: 1 })
+      .mockResolvedValueOnce({ affected: 1 });
+
+    await expect(
+      service.registerDeviceToken({ userId: 'u1', token: 'token-123' }),
+    ).resolves.toEqual({ success: true });
+    expect(users.update).toHaveBeenNthCalledWith(
+      1,
+      { pushNotificationToken: 'token-123' },
+      { pushNotificationToken: null },
+    );
+    expect(users.update).toHaveBeenNthCalledWith(
+      2,
+      { id: 'u1' },
+      { pushNotificationToken: 'token-123' },
+    );
+  });
+
+  it('rejects device registration for a missing authenticated user', async () => {
+    users.update
+      .mockResolvedValueOnce({ affected: 0 })
+      .mockResolvedValueOnce({ affected: 0 });
+    await expect(
+      service.registerDeviceToken({ userId: 'missing', token: 'token-123' }),
+    ).rejects.toBeInstanceOf(RpcException);
+  });
+
+  it('removes only the current installation token', async () => {
+    users.update.mockResolvedValue({ affected: 1 });
+    await expect(
+      service.removeDeviceToken({ userId: 'u1', token: 'token-123' }),
+    ).resolves.toEqual({ success: true });
+    expect(users.update).toHaveBeenCalledWith(
+      { id: 'u1', pushNotificationToken: 'token-123' },
+      { pushNotificationToken: null },
+    );
   });
 
   it('creates an unread notification and invalidates the recipient cache', async () => {
@@ -253,6 +293,30 @@ describe('NotificationService', () => {
     ).resolves.toEqual(expect.objectContaining({ id: 'n1' }));
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('firebase down'),
+    );
+  });
+
+  it('clears an exact device token after Firebase reports it invalid', async () => {
+    const created = entity();
+    notifications.create.mockReturnValue(created);
+    notifications.save.mockResolvedValue(created);
+    users.findOne.mockResolvedValue({ pushNotificationToken: 'stale-token' });
+    users.update.mockResolvedValue({ affected: 1 });
+    push.sendToToken.mockResolvedValue({
+      success: false,
+      error: 'messaging/registration-token-not-registered',
+    });
+
+    await service.createNotification({
+      userId: 'u1',
+      title: 'Title',
+      message: 'Message',
+      sendPush: true,
+    });
+
+    expect(users.update).toHaveBeenCalledWith(
+      { id: 'u1', pushNotificationToken: 'stale-token' },
+      { pushNotificationToken: null },
     );
   });
 

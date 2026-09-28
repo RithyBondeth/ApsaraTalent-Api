@@ -7,3 +7,4 @@ export * from './delete-notification.dto';
 export * from './create-notification.dto';
 export * from './notification-rpc.dto';
 export * from './notification-preference.dto';
+export * from './device-token.dto';
