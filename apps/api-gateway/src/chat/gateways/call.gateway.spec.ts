@@ -6,6 +6,7 @@ import {
 } from '@app/contracts';
 import { GATEWAY_OPTIONS } from '@nestjs/websockets/constants';
 import { CallGateway } from './call.gateway';
+import { CallSessionService } from '../services/call-session.service';
 
 describe('CallGateway', () => {
   const notifications = {
@@ -13,22 +14,35 @@ describe('CallGateway', () => {
     emitCallLogMessage: jest.fn(),
     resolveCallEndContent: jest.fn(),
   };
-  const gateway = new CallGateway(notifications as any);
+  const matchGuard = { areMatched: jest.fn() };
+  let sessions: CallSessionService;
+  let gateway: CallGateway;
   const roomEmit = jest.fn();
   const server = { to: jest.fn(() => ({ emit: roomEmit })) } as any;
 
   function client(userId?: string) {
-    return { data: { userId }, emit: jest.fn() } as any;
+    return {
+      id: userId ? `socket-${userId}` : 'socket-anonymous',
+      data: { userId },
+      emit: jest.fn(),
+    } as any;
   }
 
   beforeEach(() => {
     jest.clearAllMocks();
+    sessions = new CallSessionService();
+    gateway = new CallGateway(
+      notifications as any,
+      matchGuard as any,
+      sessions,
+    );
     gateway.server = server;
     notifications.getCallerProfile.mockResolvedValue({
       name: 'Sok',
       avatar: 'a.png',
     });
     notifications.resolveCallEndContent.mockReturnValue('Call ended');
+    matchGuard.areMatched.mockResolvedValue(true);
   });
 
   it('applies the configured signaling CORS policy', () => {
@@ -76,7 +90,26 @@ describe('CallGateway', () => {
     expect(result.success).toBe(true);
   });
 
+  it('refuses a call offer when the users are not matched', async () => {
+    matchGuard.areMatched.mockResolvedValue(false);
+    const socket = client('caller');
+
+    const result = await gateway.handleCallOffer(socket, {
+      callId: 'call-1',
+      receiverId: 'receiver',
+      offer: { type: 'offer', sdp: 'sdp' },
+    } as any);
+
+    expect(matchGuard.areMatched).toHaveBeenCalledWith('caller', 'receiver');
+    expect(socket.emit).toHaveBeenCalledWith('error', {
+      message: 'You can only call someone you have matched with.',
+    });
+    expect(server.to).not.toHaveBeenCalled();
+    expect(result.success).toBe(false);
+  });
+
   it('forwards answers and ICE candidates only with valid payloads', async () => {
+    sessions.register('call-1', 'caller', 'receiver', 'socket-caller');
     await gateway.handleCallAnswer(client('receiver'), {
       callId: 'call-1',
       callerId: 'caller',
@@ -99,6 +132,7 @@ describe('CallGateway', () => {
   });
 
   it('records a declined call after notifying the caller', async () => {
+    sessions.register('call-1', 'caller', 'receiver', 'socket-caller');
     const result = await gateway.handleCallDecline(client('receiver'), {
       callId: 'call-1',
       callerId: 'caller',
@@ -115,6 +149,7 @@ describe('CallGateway', () => {
   });
 
   it('maps and records call-end reasons', async () => {
+    sessions.register('call-1', 'caller', 'receiver', 'socket-caller');
     await gateway.handleCallEnd(client('caller'), {
       callId: 'call-1',
       targetUserId: 'receiver',
@@ -191,9 +226,22 @@ describe('CallGateway', () => {
       } as any),
     ).rejects.toThrow('profile unavailable');
     expect(server.to).not.toHaveBeenCalled();
+
+    notifications.getCallerProfile.mockResolvedValueOnce({
+      name: 'Sok',
+      avatar: 'a.png',
+    });
+    await expect(
+      gateway.handleCallOffer(client('caller'), {
+        callId: 'call-2',
+        receiverId: 'receiver',
+        offer: { type: 'offer', sdp: 'sdp' },
+      } as any),
+    ).resolves.toEqual(expect.objectContaining({ success: true }));
   });
 
   it('surfaces call-log persistence failures after notifying the peer', async () => {
+    sessions.register('call-1', 'caller', 'receiver', 'socket-caller');
     notifications.emitCallLogMessage.mockRejectedValueOnce(
       new Error('chat persistence unavailable'),
     );
@@ -206,5 +254,87 @@ describe('CallGateway', () => {
     expect(roomEmit).toHaveBeenCalledWith(CHAT_WEBSOCKET_EVENTS.CALL_DECLINED, {
       callId: 'call-1',
     });
+  });
+
+  it('rejects forged signaling and does not create a call log', async () => {
+    sessions.register('call-1', 'caller', 'receiver', 'socket-caller');
+    const attacker = client('attacker');
+
+    const ice = await gateway.handleIceCandidate(attacker, {
+      callId: 'call-1',
+      targetUserId: 'receiver',
+      candidate: { candidate: 'ice' },
+    } as any);
+    const ended = await gateway.handleCallEnd(attacker, {
+      callId: 'call-1',
+      targetUserId: 'receiver',
+      reason: 'ended',
+    });
+
+    expect(ice.success).toBe(false);
+    expect(ended.success).toBe(false);
+    expect(attacker.emit).toHaveBeenCalledWith('error', {
+      message: 'Invalid or expired call session.',
+    });
+    expect(server.to).not.toHaveBeenCalled();
+    expect(notifications.emitCallLogMessage).not.toHaveBeenCalled();
+  });
+
+  it('rejects an answer from anyone except the offered receiver', async () => {
+    sessions.register('call-1', 'caller', 'receiver', 'socket-caller');
+    const attacker = client('attacker');
+
+    const result = await gateway.handleCallAnswer(attacker, {
+      callId: 'call-1',
+      callerId: 'caller',
+      answer: { type: 'answer', sdp: 'sdp' },
+    } as any);
+
+    expect(result.success).toBe(false);
+    expect(server.to).not.toHaveBeenCalled();
+  });
+
+  it('rejects concurrent calls involving an already busy participant', async () => {
+    await gateway.handleCallOffer(client('caller'), {
+      callId: 'call-1',
+      receiverId: 'receiver',
+      offer: { type: 'offer', sdp: 'sdp' },
+    } as any);
+    jest.clearAllMocks();
+    matchGuard.areMatched.mockResolvedValue(true);
+
+    const busyCaller = client('other-caller');
+    const result = await gateway.handleCallOffer(busyCaller, {
+      callId: 'call-2',
+      receiverId: 'receiver',
+      offer: { type: 'offer', sdp: 'sdp' },
+    } as any);
+
+    expect(result.success).toBe(false);
+    expect(busyCaller.emit).toHaveBeenCalledWith('error', {
+      message: 'One of the participants is already in a call.',
+    });
+    expect(server.to).not.toHaveBeenCalled();
+  });
+
+  it('releases a call and notifies its peer when a signaling socket disconnects', async () => {
+    sessions.register('call-1', 'caller', 'receiver', 'socket-caller');
+    sessions.answer('call-1', 'receiver', 'caller', 'socket-receiver');
+
+    await gateway.handleDisconnect(client('receiver'));
+
+    expect(server.to).toHaveBeenCalledWith('caller');
+    expect(roomEmit).toHaveBeenCalledWith(CHAT_WEBSOCKET_EVENTS.CALL_ENDED, {
+      callId: 'call-1',
+      reason: 'disconnected',
+    });
+    expect(notifications.emitCallLogMessage).toHaveBeenCalledWith(server, {
+      senderId: 'receiver',
+      receiverId: 'caller',
+      content: 'Call ended',
+    });
+    expect(
+      sessions.register('call-2', 'caller', 'receiver', 'new-socket'),
+    ).toBe(true);
   });
 });
