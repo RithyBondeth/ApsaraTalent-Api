@@ -144,6 +144,22 @@ export class PushNotificationService implements IPushNotificationService {
           ...(icon && { imageUrl: icon }),
         },
         data: normalizedData,
+        android: {
+          priority: 'high',
+          notification: {
+            sound: 'default',
+            ...(tag && { tag }),
+          },
+        },
+        apns: {
+          payload: {
+            aps: {
+              sound: 'default',
+              badge: 1,
+              contentAvailable: true,
+            },
+          },
+        },
         webpush: {
           notification: {
             title: pushNotificationPayload.title,

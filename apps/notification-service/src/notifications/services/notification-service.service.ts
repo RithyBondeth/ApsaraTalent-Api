@@ -12,6 +12,8 @@ import {
   NotificationUserDTO,
   ReadAllNotificationResponseDTO,
   DeleteNotificationResponseDTO,
+  DeviceTokenDTO,
+  DeviceTokenResponseDTO,
 } from '@app/contracts/dtos/notification';
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
@@ -65,6 +67,37 @@ export class NotificationService implements INotificationService {
           createdAt: n.createdAt,
         }),
     );
+  }
+
+  async registerDeviceToken(
+    deviceTokenDTO: DeviceTokenDTO,
+  ): Promise<DeviceTokenResponseDTO> {
+    // An FCM token identifies one app installation. Moving it prevents a user
+    // who signed out offline from leaking the next account's pushes.
+    await this.userRepo.update(
+      { pushNotificationToken: deviceTokenDTO.token },
+      { pushNotificationToken: null },
+    );
+    const result = await this.userRepo.update(
+      { id: deviceTokenDTO.userId },
+      { pushNotificationToken: deviceTokenDTO.token },
+    );
+    if (!result.affected) throw new RpcException('User not found');
+    return new DeviceTokenResponseDTO({ success: true });
+  }
+
+  async removeDeviceToken(
+    deviceTokenDTO: DeviceTokenDTO,
+  ): Promise<DeviceTokenResponseDTO> {
+    // Match both values so an old device cannot erase a newer registration.
+    await this.userRepo.update(
+      {
+        id: deviceTokenDTO.userId,
+        pushNotificationToken: deviceTokenDTO.token,
+      },
+      { pushNotificationToken: null },
+    );
+    return new DeviceTokenResponseDTO({ success: true });
   }
 
   async createNotification(
@@ -150,6 +183,18 @@ export class NotificationService implements INotificationService {
             this.logger.warn(
               `Push skipped for userId=${userId}: ${result.reason}`,
             );
+          } else {
+            const error = result?.error || 'Unknown Firebase error';
+            this.logger.warn(`Push failed for userId=${userId}: ${error}`);
+            if (
+              error.includes('registration-token-not-registered') ||
+              error.includes('invalid-registration-token')
+            ) {
+              await this.userRepo.update(
+                { id: userId, pushNotificationToken: token },
+                { pushNotificationToken: null },
+              );
+            }
           }
         }
       } catch (error: any) {

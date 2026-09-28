@@ -43,6 +43,22 @@ describe('Gateway NotificationController', () => {
         NOTIFICATION_SERVICE.ACTIONS.DELETE_ALL_NOTIFICATIONS,
         { userId: 'user-1' },
       ],
+      [
+        () =>
+          controller.registerDeviceToken(req, {
+            token: 'device-token-long-enough',
+          }),
+        NOTIFICATION_SERVICE.ACTIONS.REGISTER_DEVICE_TOKEN,
+        { userId: 'user-1', token: 'device-token-long-enough' },
+      ],
+      [
+        () =>
+          controller.removeDeviceToken(req, {
+            token: 'device-token-long-enough',
+          }),
+        NOTIFICATION_SERVICE.ACTIONS.REMOVE_DEVICE_TOKEN,
+        { userId: 'user-1', token: 'device-token-long-enough' },
+      ],
     ];
     for (const [invoke, action, payload] of cases) {
       await invoke();

@@ -11,6 +11,9 @@ import {
   NotificationListByUserResponseDTO,
   ReadAllNotificationResponseDTO,
   UnreadCountResponseDTO,
+  DeviceTokenBodyDTO,
+  DeviceTokenDTO,
+  DeviceTokenResponseDTO,
 } from '@app/contracts/dtos';
 
 export interface INotificationController {
@@ -30,6 +33,14 @@ export interface INotificationController {
     req: any,
     createNotificationCurrentUserDTO: CreateNotificationCurrentUserDTO,
   ): Promise<CreateNotificationCurrentUserResponseDTO>;
+  registerDeviceToken(
+    req: any,
+    body: DeviceTokenBodyDTO,
+  ): Promise<DeviceTokenResponseDTO>;
+  removeDeviceToken(
+    req: any,
+    body: DeviceTokenBodyDTO,
+  ): Promise<DeviceTokenResponseDTO>;
 }
 
 export interface INotificationRpcController {
@@ -55,4 +66,10 @@ export interface INotificationRpcController {
   deleteAllNotifications(
     notificationUserDTO: NotificationUserDTO,
   ): Promise<DeleteNotificationResponseDTO>;
+  registerDeviceToken(
+    deviceTokenDTO: DeviceTokenDTO,
+  ): Promise<DeviceTokenResponseDTO>;
+  removeDeviceToken(
+    deviceTokenDTO: DeviceTokenDTO,
+  ): Promise<DeviceTokenResponseDTO>;
 }

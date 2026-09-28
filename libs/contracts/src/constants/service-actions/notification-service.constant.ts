@@ -9,6 +9,8 @@ export const NOTIFICATION_SERVICE = {
     GET_UNREAD_COUNT: { cmd: 'getUnreadNotificationCount' },
     DELETE_NOTIFICATION: { cmd: 'deleteNotification' },
     DELETE_ALL_NOTIFICATIONS: { cmd: 'deleteAllNotifications' },
+    REGISTER_DEVICE_TOKEN: { cmd: 'registerNotificationDeviceToken' },
+    REMOVE_DEVICE_TOKEN: { cmd: 'removeNotificationDeviceToken' },
     GET_PREFERENCES: { cmd: 'getNotificationPreferences' },
     UPDATE_PREFERENCES: { cmd: 'updateNotificationPreferences' },
     UNSUBSCRIBE: { cmd: 'unsubscribeFromNotificationEmails' },

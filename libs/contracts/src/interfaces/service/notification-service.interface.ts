@@ -10,6 +10,8 @@ import {
   NotificationIdDTO,
   NotificationUserDTO,
   ReadAllNotificationResponseDTO,
+  DeviceTokenDTO,
+  DeviceTokenResponseDTO,
 } from '@app/contracts/dtos/notification';
 import { IPushNotificationPayload } from '../domain/notification.interface';
 
@@ -38,6 +40,12 @@ export interface INotificationService {
   deleteAllNotifications(
     notificationUserDTO: NotificationUserDTO,
   ): Promise<DeleteNotificationResponseDTO>;
+  registerDeviceToken(
+    deviceTokenDTO: DeviceTokenDTO,
+  ): Promise<DeviceTokenResponseDTO>;
+  removeDeviceToken(
+    deviceTokenDTO: DeviceTokenDTO,
+  ): Promise<DeviceTokenResponseDTO>;
 }
 
 export interface IPushNotificationService {
