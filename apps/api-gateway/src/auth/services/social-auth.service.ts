@@ -23,6 +23,15 @@ import {
   ISocialAuthResult,
   ISuccessHtmlOptions,
 } from '@app/contracts';
+import { RedisService } from '@app/common/redis/redis.service';
+import { randomBytes } from 'crypto';
+import { mobileCallbackUrl } from '../socials/shared/mobile-oauth.util';
+
+interface MobileOAuthExchange {
+  accessToken: string;
+  refreshToken?: string | null;
+  remember: boolean;
+}
 
 @Injectable()
 export class SocialAuthService implements ISocialAuthService {
@@ -31,6 +40,7 @@ export class SocialAuthService implements ISocialAuthService {
   constructor(
     @Inject(AUTH_SERVICE.NAME) private readonly authService: ClientProxy,
     private readonly configService: ConfigService,
+    private readonly redisService: RedisService,
   ) {}
 
   async handleCallback(
@@ -78,6 +88,19 @@ export class SocialAuthService implements ISocialAuthService {
       // New user: no tokens yet (they need to pick a role first).
       // Still send a success postMessage so the frontend can redirect to signup.
       if (result.newUser && !result.accessToken) {
+        if (req.session?.mobileOAuthRedirectUri) {
+          res.redirect(
+            mobileCallbackUrl(req.session.mobileOAuthRedirectUri, {
+              status: 'new_user',
+              provider: result.provider,
+              email: result.email,
+              firstname: result.firstname,
+              lastname: result.lastname,
+              picture: result.picture,
+            }),
+          );
+          return;
+        }
         const html = this.buildSuccessHtml({
           targetOrigin: frontendOrigin,
           successType,
@@ -91,6 +114,26 @@ export class SocialAuthService implements ISocialAuthService {
 
       if (!result.accessToken) {
         throw new BadRequestException(failureMessage);
+      }
+
+      if (req.session?.mobileOAuthRedirectUri) {
+        const code = randomBytes(32).toString('base64url');
+        await this.redisService.set<MobileOAuthExchange>(
+          `oauth:mobile:${code}`,
+          {
+            accessToken: result.accessToken,
+            refreshToken: result.refreshToken,
+            remember: rememberMe,
+          },
+          120_000,
+        );
+        res.redirect(
+          mobileCallbackUrl(req.session.mobileOAuthRedirectUri, {
+            status: 'success',
+            code,
+          }),
+        );
+        return;
       }
 
       this.setSocialAuthCookies(res, remember, result);
@@ -109,6 +152,16 @@ export class SocialAuthService implements ISocialAuthService {
         error instanceof Error ? error.stack : String(error),
       );
 
+      if (req.session?.mobileOAuthRedirectUri) {
+        res.redirect(
+          mobileCallbackUrl(req.session.mobileOAuthRedirectUri, {
+            status: 'error',
+            error: 'Authentication failed. Please try again.',
+          }),
+        );
+        return;
+      }
+
       const errorHtml = this.buildErrorHtml({
         targetOrigin: frontendOrigin,
         errorType,
@@ -118,6 +171,15 @@ export class SocialAuthService implements ISocialAuthService {
       res.setHeader('Content-Type', 'text/html');
       res.status(HttpStatus.UNAUTHORIZED).send(errorHtml);
     }
+  }
+
+  async exchangeMobileCode(code: string): Promise<MobileOAuthExchange | null> {
+    if (!/^[A-Za-z0-9_-]{43}$/.test(code)) return null;
+    const key = `oauth:mobile:${code}`;
+    const exchange = await this.redisService.get<MobileOAuthExchange>(key);
+    if (!exchange) return null;
+    await this.redisService.del(key);
+    return exchange;
   }
 
   /* ------------------------------------------------------------------ */

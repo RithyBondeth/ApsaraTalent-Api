@@ -20,10 +20,20 @@ describe('SocialAuthService', () => {
         : 'test',
     ),
   };
-  const service = new SocialAuthService(client as any, config as any);
+  const redis = { get: jest.fn(), set: jest.fn(), del: jest.fn() };
+  const service = new SocialAuthService(
+    client as any,
+    config as any,
+    redis as any,
+  );
 
   function response() {
-    const res = { setHeader: jest.fn(), send: jest.fn(), status: jest.fn() };
+    const res = {
+      setHeader: jest.fn(),
+      send: jest.fn(),
+      status: jest.fn(),
+      redirect: jest.fn(),
+    };
     res.status.mockReturnValue(res);
     return res;
   }
@@ -43,6 +53,70 @@ describe('SocialAuthService', () => {
   }
 
   beforeEach(() => jest.clearAllMocks());
+
+  it('redirects returning mobile users with a short-lived exchange code', async () => {
+    const res = response();
+    client.send.mockReturnValue(
+      of({ accessToken: 'access', refreshToken: 'refresh' }),
+    );
+    await service.handleCallback(
+      options(res, {
+        req: {
+          session: {
+            remember: true,
+            mobileOAuthRedirectUri: 'apsaratalent://oauth/callback',
+          },
+        },
+      }),
+    );
+
+    expect(redis.set).toHaveBeenCalledWith(
+      expect.stringMatching(/^oauth:mobile:/),
+      { accessToken: 'access', refreshToken: 'refresh', remember: true },
+      120_000,
+    );
+    expect(res.redirect).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^apsaratalent:\/\/oauth\/callback\?status=success&code=/,
+      ),
+    );
+    expect(setAuthTokenCookies).not.toHaveBeenCalled();
+  });
+
+  it('redirects new mobile users with profile data and no token code', async () => {
+    const res = response();
+    client.send.mockReturnValue(
+      of({ newUser: true, provider: 'google', email: 'person@example.com' }),
+    );
+    await service.handleCallback(
+      options(res, {
+        req: {
+          session: {
+            mobileOAuthRedirectUri: 'apsaratalent://oauth/callback',
+          },
+        },
+      }),
+    );
+
+    expect(res.redirect).toHaveBeenCalledWith(
+      'apsaratalent://oauth/callback?status=new_user&provider=google&email=person%40example.com',
+    );
+    expect(redis.set).not.toHaveBeenCalled();
+  });
+
+  it('consumes a valid mobile exchange code', async () => {
+    const exchange = {
+      accessToken: 'access',
+      refreshToken: 'refresh',
+      remember: false,
+    };
+    redis.get.mockResolvedValueOnce(exchange);
+
+    await expect(service.exchangeMobileCode('a'.repeat(43))).resolves.toEqual(
+      exchange,
+    );
+    expect(redis.del).toHaveBeenCalledWith(`oauth:mobile:${'a'.repeat(43)}`);
+  });
 
   it('returns signup HTML for new users without setting token cookies', async () => {
     const res = response();
