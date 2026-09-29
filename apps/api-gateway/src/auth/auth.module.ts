@@ -21,6 +21,8 @@ import { IceServersService } from './services/ice-servers.service';
 import { SocialAuthService } from './services/social-auth.service';
 import { LoginAuditService } from './services/login-audit.service';
 import { LoginHistoryCleanupService } from './services/login-history-cleanup.service';
+import { MobileSocialAuthController } from './socials/controllers/mobile-social-auth.controller';
+import { RedisModule } from '@app/common/redis/redis.module';
 
 @Module({
   imports: [
@@ -43,6 +45,7 @@ import { LoginHistoryCleanupService } from './services/login-history-cleanup.ser
     DatabaseModule,
     TypeOrmModule.forFeature([LoginHistory]),
     TelegramModule,
+    RedisModule,
   ],
   controllers: [
     AuthController,
@@ -50,6 +53,7 @@ import { LoginHistoryCleanupService } from './services/login-history-cleanup.ser
     LinkedInController,
     GithubController,
     FacebookController,
+    MobileSocialAuthController,
   ],
   providers: [
     GoogleStrategy,
