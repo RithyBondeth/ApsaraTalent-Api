@@ -97,7 +97,7 @@
     "firebase-admin": "^14.3.0",
     "helmet": "^8.3.0",
     "ioredis": "^5.8.2",
-    "joi": "^18.2.5",
+    "joi": "^18.2.6",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.3.0",
     "mustache": "^4.2.0",
