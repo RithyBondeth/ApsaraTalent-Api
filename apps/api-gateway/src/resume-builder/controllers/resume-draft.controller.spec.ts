@@ -36,6 +36,7 @@ describe('Resume drafts', () => {
       'set',
       'where',
       'returning',
+      'setParameter',
     ])
       query[method] = jest.fn().mockReturnValue(query);
     query.execute = jest
@@ -78,7 +79,17 @@ describe('Resume drafts', () => {
     const dto = { id, name: 'Resume', content };
     await controller.create(request, dto);
     await controller.create(request, dto);
-    expect(query.values).toHaveBeenCalledWith({ ...dto, userId: 'owner' });
+    expect(query.values).toHaveBeenCalledWith({
+      id,
+      name: 'Resume',
+      userId: 'owner',
+      content: expect.any(Function),
+    });
+    expect(query.values.mock.calls[0][0].content()).toBe(':content::jsonb');
+    expect(query.setParameter).toHaveBeenCalledWith(
+      'content',
+      JSON.stringify(content),
+    );
     expect(query.orIgnore).toHaveBeenCalledTimes(2);
   });
 
@@ -99,6 +110,7 @@ describe('Resume drafts', () => {
       { id, userId: 'owner', revision: 1 },
     );
     expect(query.set.mock.calls[0][0].revision()).toBe('"revision" + 1');
+    expect(query.set.mock.calls[0][0].content()).toBe(':content::jsonb');
   });
 
   it('rejects stale writes but accepts an identical retry after a lost response', async () => {

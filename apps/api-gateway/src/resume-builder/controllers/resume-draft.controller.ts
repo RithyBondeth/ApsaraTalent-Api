@@ -119,8 +119,9 @@ export class ResumeDraftController {
         id: dto.id,
         userId: req.user.id,
         name: dto.name,
-        content: dto.content,
+        content: () => ':content::jsonb',
       })
+      .setParameter('content', JSON.stringify(dto.content))
       .orIgnore()
       .execute();
     const record = await this.read(req, dto.id);
@@ -148,9 +149,10 @@ export class ResumeDraftController {
       .update(ResumeDraft)
       .set({
         name: dto.name,
-        content: dto.content,
+        content: () => ':content::jsonb',
         revision: () => '"revision" + 1',
       })
+      .setParameter('content', JSON.stringify(dto.content))
       .where('"id" = :id AND "userId" = :userId AND "revision" = :revision', {
         id,
         userId: req.user.id,
