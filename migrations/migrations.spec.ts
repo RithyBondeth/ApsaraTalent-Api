@@ -147,6 +147,21 @@ describe('database migration contracts', () => {
     );
   });
 
+  it('normalizes legacy application status storage before adding labels', async () => {
+    const query = jest.fn().mockResolvedValue(undefined);
+    await new AddApplicationPipelineStatuses1786500008000().up({
+      query,
+    } as any);
+    const sql = query.mock.calls.map(([statement]) => statement).join('\n');
+    expect(sql).toContain("status_kind <> 'e'");
+    expect(sql).toContain(
+      'ALTER COLUMN status TYPE public.application_status_enum',
+    );
+    expect(sql.indexOf('ALTER COLUMN status TYPE')).toBeLessThan(
+      sql.indexOf("ADD VALUE IF NOT EXISTS 'interviewing'"),
+    );
+  });
+
   it('documents experience normalization as intentionally irreversible', async () => {
     const migration = new NormalizeExperienceLevels1781136000000();
     await expect(migration.down()).resolves.toBeUndefined();
