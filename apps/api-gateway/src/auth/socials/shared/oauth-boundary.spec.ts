@@ -66,6 +66,42 @@ describe('OAuth HTTP boundary', () => {
   );
 
   it.each(guards)(
+    '%s guard accepts only the app callback',
+    async (_name, guard) => {
+      const parent = Object.getPrototypeOf(Object.getPrototypeOf(guard));
+      const activate = jest
+        .spyOn(parent, 'canActivate')
+        .mockResolvedValue(true);
+      const accepted = request({
+        query: {
+          mobile: 'true',
+          redirect_uri: 'apsaratalent://oauth/callback',
+        },
+        session: {},
+      });
+      await guard.canActivate({
+        switchToHttp: () => ({ getRequest: () => accepted }),
+      } as any);
+      expect(accepted.session.mobileOAuthRedirectUri).toBe(
+        'apsaratalent://oauth/callback',
+      );
+
+      const rejected = request({
+        query: {
+          mobile: 'true',
+          redirect_uri: 'https://evil.example/callback',
+        },
+        session: {},
+      });
+      await guard.canActivate({
+        switchToHttp: () => ({ getRequest: () => rejected }),
+      } as any);
+      expect(rejected.session.mobileOAuthRedirectUri).toBeUndefined();
+      activate.mockRestore();
+    },
+  );
+
+  it.each(guards)(
     '%s guard persists only explicit string remember choices',
     async (_name, guard) => {
       const parent = Object.getPrototypeOf(Object.getPrototypeOf(guard));
