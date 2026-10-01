@@ -153,6 +153,8 @@ describe('database migration contracts', () => {
       query,
     } as any);
     const sql = query.mock.calls.map(([statement]) => statement).join('\n');
+    expect(sql).toContain('ADD COLUMN status public.application_status_enum');
+    expect(sql).toContain("NOT NULL DEFAULT 'pending'");
     expect(sql).toContain("status_kind <> 'e'");
     expect(sql).toContain(
       'ALTER COLUMN status TYPE public.application_status_enum',

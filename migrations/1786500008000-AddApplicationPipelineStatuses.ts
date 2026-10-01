@@ -58,13 +58,19 @@ export class AddApplicationPipelineStatuses1786500008000 implements MigrationInt
            AND status_column.attnum > 0
            AND NOT status_column.attisdropped;
 
-        IF status_type IS NULL THEN
-          RAISE EXCEPTION 'application.status does not exist';
-        END IF;
-
         canonical_type := to_regtype('public.application_status_enum');
 
-        IF status_kind = 'e' AND canonical_type IS NULL THEN
+        IF status_type IS NULL THEN
+          IF canonical_type IS NULL THEN
+            CREATE TYPE public.application_status_enum AS ENUM (
+              'pending', 'reviewed', 'shortlisted', 'rejected', 'hired'
+            );
+          END IF;
+
+          ALTER TABLE public.application
+            ADD COLUMN status public.application_status_enum
+            NOT NULL DEFAULT 'pending';
+        ELSIF status_kind = 'e' AND canonical_type IS NULL THEN
           IF status_schema <> 'public' THEN
             EXECUTE format(
               'ALTER TYPE %I.%I SET SCHEMA public',
