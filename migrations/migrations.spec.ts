@@ -28,6 +28,9 @@ import { AddNotificationPreferences1786500013000 } from './1786500013000-AddNoti
 import { AddProblemReports1786500014000 } from './1786500014000-AddProblemReports';
 import { AddInterviewTimezoneAndReminders1786500015000 } from './1786500015000-AddInterviewTimezoneAndReminders';
 import { AddUserDeletedAt1786500016000 } from './1786500016000-AddUserDeletedAt';
+import { AddApplicationNotesAndHistory1786500017000 } from './1786500017000-AddApplicationNotesAndHistory';
+import { AddSavedSearches1786500018000 } from './1786500018000-AddSavedSearches';
+import { AddProfileAnalytics1786500019000 } from './1786500019000-AddProfileAnalytics';
 import { OptionalEmployeePhone1786500020000 } from './1786500020000-OptionalEmployeePhone';
 import { ResumeDrafts1790726400000 } from './1790726400000-ResumeDrafts';
 
@@ -83,6 +86,12 @@ describe('database migration contracts', () => {
       new AddInterviewTimezoneAndReminders1786500015000(),
     ],
     ['user deletedAt', new AddUserDeletedAt1786500016000()],
+    [
+      'application notes and history',
+      new AddApplicationNotesAndHistory1786500017000(),
+    ],
+    ['saved searches', new AddSavedSearches1786500018000()],
+    ['profile analytics', new AddProfileAnalytics1786500019000()],
     ['optional employee phone', new OptionalEmployeePhone1786500020000()],
     ['account resume drafts', new ResumeDrafts1790726400000()],
   ] as const;
@@ -155,6 +164,7 @@ describe('database migration contracts', () => {
     const sql = query.mock.calls.map(([statement]) => statement).join('\n');
     expect(sql).toContain('ADD COLUMN status public.application_status_enum');
     expect(sql).toContain("NOT NULL DEFAULT 'pending'");
+    expect(sql).toContain("to_regclass('public.application') IS NOT NULL");
     expect(sql).toContain("status_kind <> 'e'");
     expect(sql).toContain(
       'ALTER COLUMN status TYPE public.application_status_enum',
@@ -162,6 +172,16 @@ describe('database migration contracts', () => {
     expect(sql.indexOf('ALTER COLUMN status TYPE')).toBeLessThan(
       sql.indexOf("ADD VALUE IF NOT EXISTS 'interviewing'"),
     );
+  });
+
+  it('skips application pipeline schema when the legacy tables are absent', async () => {
+    const query = jest.fn().mockResolvedValue(undefined);
+    await new AddApplicationPipelineColumns1786500009000().up({ query } as any);
+    await new AddApplicationNotesAndHistory1786500017000().up({ query } as any);
+    const sql = query.mock.calls.map(([statement]) => statement).join('\n');
+    expect(sql).toContain("to_regclass('public.application') IS NOT NULL");
+    expect(sql).toContain("to_regclass('public.application') IS NULL");
+    expect(sql).toContain("to_regclass('public.interview') IS NOT NULL");
   });
 
   it('documents experience normalization as intentionally irreversible', async () => {

@@ -16,16 +16,20 @@ export class OptionalEmployeePhone1786500020000 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      ALTER TABLE "employee" ALTER COLUMN "phone" DROP NOT NULL;
+      DO $$ BEGIN
+        IF to_regclass('public.employee') IS NOT NULL THEN
+          ALTER TABLE "employee" ALTER COLUMN "phone" DROP NOT NULL;
+        END IF;
+      END $$;
     `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`
-      UPDATE "employee" SET "phone" = '' WHERE "phone" IS NULL;
-    `);
-    await queryRunner.query(`
-      ALTER TABLE "employee" ALTER COLUMN "phone" SET NOT NULL;
-    `);
+    await queryRunner.query(`DO $$ BEGIN
+      IF to_regclass('public.employee') IS NOT NULL THEN
+        UPDATE "employee" SET "phone" = '' WHERE "phone" IS NULL;
+        ALTER TABLE "employee" ALTER COLUMN "phone" SET NOT NULL;
+      END IF;
+    END $$;`);
   }
 }
