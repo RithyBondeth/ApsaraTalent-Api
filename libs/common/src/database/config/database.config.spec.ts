@@ -1,4 +1,5 @@
 import { databaseConfig } from './database.config';
+import { ResumeDraft } from '../entities/resume-draft.entity';
 
 describe('databaseConfig', () => {
   it('maps database settings and applies safe pool limits', async () => {
@@ -27,5 +28,6 @@ describe('databaseConfig', () => {
     expect(result.entities).toEqual(
       expect.arrayContaining([expect.any(Function)]),
     );
+    expect(result.entities).toContain(ResumeDraft);
   });
 });
