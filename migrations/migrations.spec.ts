@@ -29,6 +29,7 @@ import { AddProblemReports1786500014000 } from './1786500014000-AddProblemReport
 import { AddInterviewTimezoneAndReminders1786500015000 } from './1786500015000-AddInterviewTimezoneAndReminders';
 import { AddUserDeletedAt1786500016000 } from './1786500016000-AddUserDeletedAt';
 import { OptionalEmployeePhone1786500020000 } from './1786500020000-OptionalEmployeePhone';
+import { ResumeDrafts1790726400000 } from './1790726400000-ResumeDrafts';
 
 // Read rather than imported: the tsconfig does not enable resolveJsonModule,
 // and reading it the same way scripts/ci/migration-rehearsal.mjs does keeps
@@ -83,6 +84,7 @@ describe('database migration contracts', () => {
     ],
     ['user deletedAt', new AddUserDeletedAt1786500016000()],
     ['optional employee phone', new OptionalEmployeePhone1786500020000()],
+    ['account resume drafts', new ResumeDrafts1790726400000()],
   ] as const;
 
   it.each(migrations)(
