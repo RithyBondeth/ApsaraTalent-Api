@@ -31,19 +31,16 @@ export class AddInterviewTimezoneAndReminders1786500015000 implements MigrationI
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      ALTER TABLE "interview"
-        ADD COLUMN IF NOT EXISTS "timezone" character varying(64),
-        ADD COLUMN IF NOT EXISTS "reminder24hSentAt" TIMESTAMP WITH TIME ZONE,
-        ADD COLUMN IF NOT EXISTS "reminder1hSentAt" TIMESTAMP WITH TIME ZONE;
-    `);
-
-    // The reminder query looks for pending/accepted interviews starting within
-    // a fixed window, with the relevant reminder column still NULL. Ordering
-    // by scheduledAt makes that scan proportional to the reminder window, not
-    // to the whole table.
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS "IDX_interview_scheduled_at"
-        ON "interview" ("scheduledAt");
+      DO $$ BEGIN
+        IF to_regclass('public.interview') IS NOT NULL THEN
+          ALTER TABLE "interview"
+            ADD COLUMN IF NOT EXISTS "timezone" character varying(64),
+            ADD COLUMN IF NOT EXISTS "reminder24hSentAt" TIMESTAMP WITH TIME ZONE,
+            ADD COLUMN IF NOT EXISTS "reminder1hSentAt" TIMESTAMP WITH TIME ZONE;
+          CREATE INDEX IF NOT EXISTS "IDX_interview_scheduled_at"
+            ON "interview" ("scheduledAt");
+        END IF;
+      END $$;
     `);
   }
 
@@ -51,11 +48,13 @@ export class AddInterviewTimezoneAndReminders1786500015000 implements MigrationI
     await queryRunner.query(
       `DROP INDEX IF EXISTS "IDX_interview_scheduled_at";`,
     );
-    await queryRunner.query(`
-      ALTER TABLE "interview"
-        DROP COLUMN IF EXISTS "reminder1hSentAt",
-        DROP COLUMN IF EXISTS "reminder24hSentAt",
-        DROP COLUMN IF EXISTS "timezone";
-    `);
+    await queryRunner.query(`DO $$ BEGIN
+      IF to_regclass('public.interview') IS NOT NULL THEN
+        ALTER TABLE "interview"
+          DROP COLUMN IF EXISTS "reminder1hSentAt",
+          DROP COLUMN IF EXISTS "reminder24hSentAt",
+          DROP COLUMN IF EXISTS "timezone";
+      END IF;
+    END $$;`);
   }
 }

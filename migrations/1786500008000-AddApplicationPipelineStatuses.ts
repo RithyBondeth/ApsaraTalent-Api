@@ -67,9 +67,11 @@ export class AddApplicationPipelineStatuses1786500008000 implements MigrationInt
             );
           END IF;
 
-          ALTER TABLE public.application
-            ADD COLUMN status public.application_status_enum
-            NOT NULL DEFAULT 'pending';
+          IF to_regclass('public.application') IS NOT NULL THEN
+            ALTER TABLE public.application
+              ADD COLUMN status public.application_status_enum
+              NOT NULL DEFAULT 'pending';
+          END IF;
         ELSIF status_kind = 'e' AND canonical_type IS NULL THEN
           IF status_schema <> 'public' THEN
             EXECUTE format(

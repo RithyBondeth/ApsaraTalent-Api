@@ -35,26 +35,28 @@ export class AddJobModeration1786500010000 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      ALTER TABLE "job"
-        ADD COLUMN IF NOT EXISTS "hiddenAt" TIMESTAMP WITH TIME ZONE,
-        ADD COLUMN IF NOT EXISTS "hiddenReason" TEXT,
-        ADD COLUMN IF NOT EXISTS "hiddenBy" uuid;
-    `);
-
-    // Every read path now carries "hiddenAt" IS NULL, so this index is on the
-    // hot path for job search, the feed and both recommendation services.
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS "IDX_job_hidden_at" ON "job" ("hiddenAt");
+      DO $$ BEGIN
+        IF to_regclass('public.job') IS NOT NULL THEN
+          ALTER TABLE "job"
+            ADD COLUMN IF NOT EXISTS "hiddenAt" TIMESTAMP WITH TIME ZONE,
+            ADD COLUMN IF NOT EXISTS "hiddenReason" TEXT,
+            ADD COLUMN IF NOT EXISTS "hiddenBy" uuid;
+          CREATE INDEX IF NOT EXISTS "IDX_job_hidden_at"
+            ON "job" ("hiddenAt");
+        END IF;
+      END $$;
     `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_job_hidden_at";`);
-    await queryRunner.query(`
-      ALTER TABLE "job"
-        DROP COLUMN IF EXISTS "hiddenAt",
-        DROP COLUMN IF EXISTS "hiddenReason",
-        DROP COLUMN IF EXISTS "hiddenBy";
-    `);
+    await queryRunner.query(`DO $$ BEGIN
+      IF to_regclass('public.job') IS NOT NULL THEN
+        ALTER TABLE "job"
+          DROP COLUMN IF EXISTS "hiddenAt",
+          DROP COLUMN IF EXISTS "hiddenReason",
+          DROP COLUMN IF EXISTS "hiddenBy";
+      END IF;
+    END $$;`);
   }
 }

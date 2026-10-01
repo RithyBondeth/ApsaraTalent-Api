@@ -33,45 +33,38 @@ export class AddApplicationPipelineColumns1786500009000 implements MigrationInte
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      ALTER TABLE "application"
-        ADD COLUMN IF NOT EXISTS "rejectionReason" TEXT,
-        ADD COLUMN IF NOT EXISTS "reviewedAt" TIMESTAMP WITH TIME ZONE,
-        ADD COLUMN IF NOT EXISTS "statusChangedAt" TIMESTAMP WITH TIME ZONE;
-    `);
-
-    // The applicant list reads (job, status) and nothing else; there was no
-    // index on "jobId" at all, so it was a sequential scan over every
-    // application on the platform to answer "who applied to this job".
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS "IDX_application_job_status"
-        ON "application" ("jobId", "status");
-    `);
-
-    await queryRunner.query(`
-      ALTER TABLE "interview"
-        ADD COLUMN IF NOT EXISTS "applicationId" uuid;
-    `);
-
-    await queryRunner.query(`
       DO $$
       BEGIN
-        IF NOT EXISTS (
-          SELECT 1 FROM pg_constraint WHERE conname = 'FK_interview_application'
-        ) THEN
+        IF to_regclass('public.application') IS NOT NULL THEN
+          ALTER TABLE "application"
+            ADD COLUMN IF NOT EXISTS "rejectionReason" TEXT,
+            ADD COLUMN IF NOT EXISTS "reviewedAt" TIMESTAMP WITH TIME ZONE,
+            ADD COLUMN IF NOT EXISTS "statusChangedAt" TIMESTAMP WITH TIME ZONE;
+
+          CREATE INDEX IF NOT EXISTS "IDX_application_job_status"
+            ON "application" ("jobId", "status");
+        END IF;
+
+        IF to_regclass('public.interview') IS NOT NULL
+          AND to_regclass('public.application') IS NOT NULL THEN
           ALTER TABLE "interview"
-            ADD CONSTRAINT "FK_interview_application"
-            FOREIGN KEY ("applicationId") REFERENCES "application"("id")
-            ON DELETE SET NULL;
+            ADD COLUMN IF NOT EXISTS "applicationId" uuid;
+
+          IF NOT EXISTS (
+            SELECT 1 FROM pg_constraint
+             WHERE conname = 'FK_interview_application'
+          ) THEN
+            ALTER TABLE "interview"
+              ADD CONSTRAINT "FK_interview_application"
+              FOREIGN KEY ("applicationId") REFERENCES "application"("id")
+              ON DELETE SET NULL;
+          END IF;
+
+          CREATE INDEX IF NOT EXISTS "IDX_interview_application"
+            ON "interview" ("applicationId");
         END IF;
       END
       $$;
-    `);
-
-    // Reading an application's interviews is the pipeline's own lookup, and
-    // Postgres does not index a foreign key for you.
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS "IDX_interview_application"
-        ON "interview" ("applicationId");
     `);
   }
 
@@ -79,21 +72,23 @@ export class AddApplicationPipelineColumns1786500009000 implements MigrationInte
     await queryRunner.query(
       `DROP INDEX IF EXISTS "IDX_interview_application";`,
     );
-    await queryRunner.query(`
-      ALTER TABLE "interview"
-        DROP CONSTRAINT IF EXISTS "FK_interview_application";
-    `);
-    await queryRunner.query(`
-      ALTER TABLE "interview" DROP COLUMN IF EXISTS "applicationId";
-    `);
+    await queryRunner.query(`DO $$ BEGIN
+      IF to_regclass('public.interview') IS NOT NULL THEN
+        ALTER TABLE "interview"
+          DROP CONSTRAINT IF EXISTS "FK_interview_application";
+        ALTER TABLE "interview" DROP COLUMN IF EXISTS "applicationId";
+      END IF;
+    END $$;`);
     await queryRunner.query(
       `DROP INDEX IF EXISTS "IDX_application_job_status";`,
     );
-    await queryRunner.query(`
-      ALTER TABLE "application"
-        DROP COLUMN IF EXISTS "rejectionReason",
-        DROP COLUMN IF EXISTS "reviewedAt",
-        DROP COLUMN IF EXISTS "statusChangedAt";
-    `);
+    await queryRunner.query(`DO $$ BEGIN
+      IF to_regclass('public.application') IS NOT NULL THEN
+        ALTER TABLE "application"
+          DROP COLUMN IF EXISTS "rejectionReason",
+          DROP COLUMN IF EXISTS "reviewedAt",
+          DROP COLUMN IF EXISTS "statusChangedAt";
+      END IF;
+    END $$;`);
   }
 }
