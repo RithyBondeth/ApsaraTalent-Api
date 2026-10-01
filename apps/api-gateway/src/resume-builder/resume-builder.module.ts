@@ -8,9 +8,13 @@ import { ResumeBuilderController } from './controllers/resume-builder.controller
 import { ResumeTemplateController } from './controllers/resume-template.controller';
 import { AiProfileBioService } from './services/ai-profile-bio.service';
 import { AdminGuard } from '@app/common/guards/admin.guard';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ResumeDraft } from '@app/common/database/entities/resume-draft.entity';
+import { ResumeDraftController } from './controllers/resume-draft.controller';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([ResumeDraft]),
     ClientsModule.registerAsync([
       {
         name: RESUME_BUILDER_SERVICE.NAME,
@@ -27,7 +31,11 @@ import { AdminGuard } from '@app/common/guards/admin.guard';
     UploadfileModule,
     JwtModule,
   ],
-  controllers: [ResumeBuilderController, ResumeTemplateController],
+  controllers: [
+    ResumeBuilderController,
+    ResumeTemplateController,
+    ResumeDraftController,
+  ],
   providers: [AiProfileBioService, AiQuotaGuard, AdminGuard],
 })
 export class ResumeBuilderModule {}

@@ -2,7 +2,10 @@ import { Controller, Get, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
 import { IPublicUserController } from '@app/contracts/interfaces/controller/user-controllers/public-user-controller.interface';
-import { LandingStatsResponseDTO } from '@app/contracts/dtos/user';
+import {
+  CareerScopesResponseDTO,
+  LandingStatsResponseDTO,
+} from '@app/contracts/dtos/user';
 import { rpcCall } from '../../utils/rpc-call';
 
 @Controller('public/user')
@@ -36,5 +39,14 @@ export class PublicUserController implements IPublicUserController {
       companies: companies?.totalCompanies ?? 0,
       employees: employees?.totalEmployees ?? 0,
     });
+  }
+
+  @Get('career-scopes')
+  async getCareerScopes(): Promise<CareerScopesResponseDTO[]> {
+    return rpcCall<CareerScopesResponseDTO[]>(
+      this.userClient,
+      USER_SERVICE.ACTIONS.FIND_ALL_CAREER_SCOPES,
+      {},
+    );
   }
 }

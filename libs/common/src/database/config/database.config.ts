@@ -29,6 +29,7 @@ import { ProfileView } from '../entities/profile-view.entity';
 import { OutboxMessage } from '../entities/outbox-message.entity';
 import { ResumeTemplate } from '../entities/resume-template.entity';
 import { SavedSearch } from '../entities/saved-search.entity';
+import { ResumeDraft } from '../entities/resume-draft.entity';
 import { Social } from '../entities/social.entity';
 import { User } from '../entities/user.entity';
 import { Application } from '../entities/application.entity';
@@ -57,6 +58,7 @@ export const databaseConfig = async (
     Value,
     Image,
     ResumeTemplate,
+    ResumeDraft,
     CompanyFavoriteEmployee,
     EmployeeFavoriteCompany,
     Interview,
