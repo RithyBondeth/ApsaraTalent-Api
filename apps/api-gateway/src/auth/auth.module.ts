@@ -7,6 +7,9 @@ import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PassportModule } from '@nestjs/passport';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
+import { MobileOAuthController } from './socials/controllers/mobile-oauth.controller';
+import { MobileOAuthService } from './services/mobile-oauth.service';
+import { RedisModule } from '@app/common/redis/redis.module';
 import { AuthController } from './basic/controllers/auth.controller';
 import { FacebookController } from './socials/controllers/facebook.controller';
 import { GithubController } from './socials/controllers/github.controller';
@@ -39,6 +42,7 @@ import { LoginHistoryCleanupService } from './services/login-history-cleanup.ser
     ]),
     ThrottlerModule,
     PassportModule,
+    RedisModule,
     JwtModule,
     DatabaseModule,
     TypeOrmModule.forFeature([LoginHistory]),
@@ -46,6 +50,7 @@ import { LoginHistoryCleanupService } from './services/login-history-cleanup.ser
   ],
   controllers: [
     AuthController,
+    MobileOAuthController,
     GoogleController,
     LinkedInController,
     GithubController,
@@ -59,6 +64,7 @@ import { LoginHistoryCleanupService } from './services/login-history-cleanup.ser
     ResumeParseService,
     IceServersService,
     SocialAuthService,
+    MobileOAuthService,
     LoginAuditService,
     LoginHistoryCleanupService,
   ],

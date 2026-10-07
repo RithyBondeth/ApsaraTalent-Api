@@ -74,33 +74,33 @@ export class CompanyRegisterDTO {
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => JobDTO)
+  @Type(() => RegisterCompanyJobDTO)
   @IsOptional()
-  jobs?: JobDTO[];
+  jobs?: RegisterCompanyJobDTO[];
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => BenefitDTO)
+  @Type(() => RegisterCompanyBenefitDTO)
   @IsOptional()
-  benefits?: BenefitDTO[];
+  benefits?: RegisterCompanyBenefitDTO[];
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => ValueDTO)
+  @Type(() => RegisterCompanyValueDTO)
   @IsOptional()
-  values?: ValueDTO[];
+  values?: RegisterCompanyValueDTO[];
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CareerScopeDTO)
+  @Type(() => RegisterCompanyCareerScopeDTO)
   @IsOptional()
-  careerScopes?: CareerScopeDTO[];
+  careerScopes?: RegisterCompanyCareerScopeDTO[];
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => SocialDTO)
+  @Type(() => RegisterCompanySocialDTO)
   @IsOptional()
-  socials?: SocialDTO[];
+  socials?: RegisterCompanySocialDTO[];
 
   @IsUrl()
   @IsOptional()
@@ -113,7 +113,7 @@ export class CompanyRegisterDTO {
   companyType?: string;
 }
 
-class JobDTO {
+class RegisterCompanyJobDTO {
   @IsString()
   @IsNotEmpty()
   title: string;
@@ -182,19 +182,19 @@ class JobDTO {
   expireDate: Date;
 }
 
-class BenefitDTO {
+class RegisterCompanyBenefitDTO {
   @IsString()
   @IsNotEmpty()
   label: string;
 }
 
-class ValueDTO {
+class RegisterCompanyValueDTO {
   @IsString()
   @IsNotEmpty()
   label: string;
 }
 
-class CareerScopeDTO {
+class RegisterCompanyCareerScopeDTO {
   @IsString()
   @IsNotEmpty()
   name: string;
@@ -204,7 +204,7 @@ class CareerScopeDTO {
   description?: string;
 }
 
-class SocialDTO {
+class RegisterCompanySocialDTO {
   @IsString()
   @IsOptional()
   platform?: string;

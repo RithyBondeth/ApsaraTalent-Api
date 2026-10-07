@@ -129,6 +129,7 @@ describe('authentication token boundary', () => {
     const service = new SocialAuthService(
       authClient,
       new ConfigService({ frontend: { origin: 'https://app.example.com' } }),
+      {} as any,
     );
     const html = (service as any).buildSuccessHtml({
       targetOrigin: 'https://app.example.com',

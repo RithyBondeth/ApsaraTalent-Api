@@ -20,7 +20,11 @@ describe('SocialAuthService', () => {
         : 'test',
     ),
   };
-  const service = new SocialAuthService(client as any, config as any);
+  const service = new SocialAuthService(
+    client as any,
+    config as any,
+    {} as any,
+  );
 
   function response() {
     const res = { setHeader: jest.fn(), send: jest.fn(), status: jest.fn() };

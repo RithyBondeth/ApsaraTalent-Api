@@ -80,33 +80,33 @@ export class EmployeeRegisterDTO {
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => EducationDTO)
+  @Type(() => RegisterEmployeeEducationDTO)
   @IsOptional()
-  educations?: EducationDTO[];
+  educations?: RegisterEmployeeEducationDTO[];
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => SkillDTO)
+  @Type(() => RegisterEmployeeSkillDTO)
   @IsOptional()
-  skills?: SkillDTO[];
+  skills?: RegisterEmployeeSkillDTO[];
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => ExperienceDTO)
+  @Type(() => RegisterEmployeeExperienceDTO)
   @IsOptional()
-  experiences?: ExperienceDTO[];
+  experiences?: RegisterEmployeeExperienceDTO[];
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CareerScopeDTO)
+  @Type(() => RegisterEmployeeCareerScopeDTO)
   @IsOptional()
-  careerScopes?: CareerScopeDTO[];
+  careerScopes?: RegisterEmployeeCareerScopeDTO[];
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => SocialDTO)
+  @Type(() => RegisterEmployeeSocialDTO)
   @IsOptional()
-  socials?: SocialDTO[];
+  socials?: RegisterEmployeeSocialDTO[];
 
   @IsEnum(EWorkMode)
   @IsOptional()
@@ -140,7 +140,7 @@ export class EmployeeRegisterDTO {
   expectedSalaryMax?: number;
 }
 
-class SkillDTO {
+class RegisterEmployeeSkillDTO {
   @IsString()
   @IsNotEmpty()
   name: string;
@@ -150,7 +150,7 @@ class SkillDTO {
   description?: string;
 }
 
-class ExperienceDTO {
+class RegisterEmployeeExperienceDTO {
   @IsString()
   @IsNotEmpty()
   title: string;
@@ -175,7 +175,7 @@ class ExperienceDTO {
   endDate: Date;
 }
 
-class CareerScopeDTO {
+class RegisterEmployeeCareerScopeDTO {
   @IsString()
   @IsNotEmpty()
   name: string;
@@ -185,7 +185,7 @@ class CareerScopeDTO {
   description?: string;
 }
 
-class SocialDTO {
+class RegisterEmployeeSocialDTO {
   @IsString()
   @IsOptional()
   platform?: string;
@@ -195,7 +195,7 @@ class SocialDTO {
   url?: string;
 }
 
-class EducationDTO {
+class RegisterEmployeeEducationDTO {
   @IsString()
   @IsOptional()
   school?: string;

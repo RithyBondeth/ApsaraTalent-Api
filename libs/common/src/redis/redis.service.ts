@@ -89,6 +89,36 @@ export class RedisService {
     }
   }
 
+  /** Authentication grants fail closed and are consumed atomically across
+   * gateway replicas. They must never use the best-effort cache operations. */
+  async issueGrant(key: string, value: unknown, ttlMs: number): Promise<void> {
+    const client = await this.getReadyClient();
+    if (!client) throw new Error('Authentication grant storage unavailable');
+    const result = await this.withOperationTimeout(
+      client.set(key, JSON.stringify(value), { PX: ttlMs, NX: true }),
+    );
+    if (result !== 'OK') throw new Error('Authentication grant was not stored');
+  }
+
+  async consumeGrant<T>(key: string, challenge: string): Promise<T | null> {
+    const client = await this.getReadyClient();
+    if (!client) throw new Error('Authentication grant storage unavailable');
+    const result = await this.withOperationTimeout(
+      client.eval(
+        `
+      local value = redis.call('GET', KEYS[1])
+      if not value then return nil end
+      local grant = cjson.decode(value)
+      if grant.challenge ~= ARGV[1] then return nil end
+      redis.call('DEL', KEYS[1])
+      return value
+    `,
+        { keys: [key], arguments: [challenge] },
+      ),
+    );
+    return typeof result === 'string' ? (JSON.parse(result) as T) : null;
+  }
+
   /**
    * Check-and-increment several fixed-window counters as ONE atomic operation.
    *

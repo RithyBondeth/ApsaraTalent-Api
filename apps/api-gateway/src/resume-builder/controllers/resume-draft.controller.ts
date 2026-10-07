@@ -1,4 +1,9 @@
 import {
+  ApiProperty,
+  ApiOkResponse,
+  ApiCreatedResponse,
+} from '@nestjs/swagger';
+import {
   Body,
   Controller,
   Delete,
@@ -15,6 +20,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import {
   IsInt,
   IsObject,
@@ -31,28 +37,54 @@ import { ResumeDraft } from '@app/common/database/entities/resume-draft.entity';
 
 // Drafts may be incomplete. BuildResumeDTO validation applies when exporting.
 export class SaveResumeDraftDTO {
+  @ApiProperty({ maxLength: 120, minLength: 1 })
   @IsString()
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @MinLength(1)
   @MaxLength(120)
   name: string;
 
+  @ApiProperty({
+    type: Object,
+    additionalProperties: true,
+    description:
+      'Incomplete resume document, including design and sectionOrder. Maximum 2 MB.',
+  })
   @IsObject()
   content: Record<string, unknown>;
 }
 
 export class UpdateResumeDraftDTO extends SaveResumeDraftDTO {
+  @ApiProperty({ minimum: 1 })
   @IsInt()
   @Min(1)
   revision: number;
 }
 
 export class CreateResumeDraftDTO extends SaveResumeDraftDTO {
+  @ApiProperty({ format: 'uuid' })
   @IsUUID()
   id: string;
 }
 
+export class ResumeDraftSummaryDTO {
+  @ApiProperty({ format: 'uuid' }) id: string;
+  @ApiProperty() name: string;
+  @ApiProperty({ minimum: 1 }) revision: number;
+  @ApiProperty({ format: 'date-time' }) createdAt: string;
+  @ApiProperty({ format: 'date-time' }) updatedAt: string;
+}
+export class ResumeDraftRecordDTO extends ResumeDraftSummaryDTO {
+  @ApiProperty({ type: Object, additionalProperties: true }) content: Record<
+    string,
+    unknown
+  >;
+}
+
 type AuthRequest = { user: AuthenticatedUser };
+// The validated JSON document replaces the entire jsonb column. TypeORM's
+// recursive partial type cannot infer that from the draft's unknown values.
+type DraftContentWrite = QueryDeepPartialEntity<ResumeDraft>['content'];
 
 @Controller('resume/drafts')
 @UseGuards(AuthGuard)
@@ -64,7 +96,7 @@ export class ResumeDraftController {
 
   private validateContent(content: Record<string, unknown>) {
     if (
-      Buffer.byteLength(JSON.stringify(content), 'utf8') > 200_000 ||
+      Buffer.byteLength(JSON.stringify(content), 'utf8') > 2_000_000 ||
       !content.personalInfo ||
       typeof content.personalInfo !== 'object' ||
       Array.isArray(content.personalInfo) ||
@@ -87,12 +119,13 @@ export class ResumeDraftController {
       typeof content.template !== 'string'
     ) {
       throw new BadRequestException(
-        'Invalid resume draft or draft exceeds 200 KB.',
+        'Invalid resume draft or draft exceeds 2 MB.',
       );
     }
   }
 
   @Get()
+  @ApiOkResponse({ type: ResumeDraftSummaryDTO, isArray: true })
   list(@Req() req: AuthRequest) {
     return this.drafts.find({
       where: { userId: req.user.id },
@@ -102,6 +135,7 @@ export class ResumeDraftController {
   }
 
   @Get(':id')
+  @ApiOkResponse({ type: ResumeDraftRecordDTO })
   async read(@Req() req: AuthRequest, @Param('id', ParseUUIDPipe) id: string) {
     const draft = await this.drafts.findOneBy({ id, userId: req.user.id });
     if (!draft) throw new NotFoundException('Resume not found.');
@@ -109,6 +143,7 @@ export class ResumeDraftController {
   }
 
   @Post()
+  @ApiCreatedResponse({ type: ResumeDraftRecordDTO })
   async create(@Req() req: AuthRequest, @Body() dto: CreateResumeDraftDTO) {
     this.validateContent(dto.content);
     await this.drafts
@@ -119,7 +154,7 @@ export class ResumeDraftController {
         id: dto.id,
         userId: req.user.id,
         name: dto.name,
-        content: dto.content,
+        content: dto.content as DraftContentWrite,
       })
       .orIgnore()
       .execute();
@@ -136,6 +171,7 @@ export class ResumeDraftController {
   }
 
   @Put(':id')
+  @ApiOkResponse({ type: ResumeDraftRecordDTO })
   async update(
     @Req() req: AuthRequest,
     @Param('id', ParseUUIDPipe) id: string,
@@ -148,7 +184,7 @@ export class ResumeDraftController {
       .update(ResumeDraft)
       .set({
         name: dto.name,
-        content: dto.content,
+        content: dto.content as DraftContentWrite,
         revision: () => '"revision" + 1',
       })
       .where('"id" = :id AND "userId" = :userId AND "revision" = :revision', {

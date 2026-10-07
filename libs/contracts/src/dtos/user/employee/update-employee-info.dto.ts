@@ -18,7 +18,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-class SkillDTO {
+class UpdateEmployeeSkillDTO {
   @IsString()
   @IsOptional()
   id?: string;
@@ -32,7 +32,7 @@ class SkillDTO {
   description?: string;
 }
 
-class ExperienceDTO {
+class UpdateEmployeeExperienceDTO {
   @IsString()
   @IsOptional()
   id?: string;
@@ -61,7 +61,7 @@ class ExperienceDTO {
   endDate?: Date;
 }
 
-class CareerScopeDTO {
+class UpdateEmployeeCareerScopeDTO {
   @IsString()
   @IsOptional()
   id?: string;
@@ -75,7 +75,7 @@ class CareerScopeDTO {
   description?: string;
 }
 
-class SocialDTO {
+class UpdateEmployeeSocialDTO {
   @IsString()
   @IsOptional()
   id?: string;
@@ -89,7 +89,7 @@ class SocialDTO {
   url?: string;
 }
 
-class EducationDTO {
+class UpdateEmployeeEducationDTO {
   @IsString()
   @IsOptional()
   id?: string;
@@ -156,33 +156,33 @@ export class UpdateEmployeeInfoDTO {
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => EducationDTO)
+  @Type(() => UpdateEmployeeEducationDTO)
   @IsOptional()
-  educations?: EducationDTO[];
+  educations?: UpdateEmployeeEducationDTO[];
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => SkillDTO)
+  @Type(() => UpdateEmployeeSkillDTO)
   @IsOptional()
-  skills?: SkillDTO[];
+  skills?: UpdateEmployeeSkillDTO[];
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => ExperienceDTO)
+  @Type(() => UpdateEmployeeExperienceDTO)
   @IsOptional()
-  experiences?: ExperienceDTO[];
+  experiences?: UpdateEmployeeExperienceDTO[];
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CareerScopeDTO)
+  @Type(() => UpdateEmployeeCareerScopeDTO)
   @IsOptional()
-  careerScopes?: CareerScopeDTO[];
+  careerScopes?: UpdateEmployeeCareerScopeDTO[];
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => SocialDTO)
+  @Type(() => UpdateEmployeeSocialDTO)
   @IsOptional()
-  socials?: SocialDTO[];
+  socials?: UpdateEmployeeSocialDTO[];
 
   @IsEnum(EWorkMode)
   @IsOptional()

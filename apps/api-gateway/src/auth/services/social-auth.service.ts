@@ -1,3 +1,5 @@
+import { MobileOAuthService } from './mobile-oauth.service';
+import { NativeOAuthFlow } from '../socials/shared/native-oauth';
 import {
   BadRequestException,
   HttpStatus,
@@ -31,6 +33,7 @@ export class SocialAuthService implements ISocialAuthService {
   constructor(
     @Inject(AUTH_SERVICE.NAME) private readonly authService: ClientProxy,
     private readonly configService: ConfigService,
+    private readonly mobileOAuth: MobileOAuthService,
   ) {}
 
   async handleCallback(
@@ -50,6 +53,10 @@ export class SocialAuthService implements ISocialAuthService {
     } = socialAuthParams;
 
     try {
+      const native = req.session?.nativeOAuth as NativeOAuthFlow | undefined;
+      if (native && req.query?.state !== native.state) {
+        throw new BadRequestException('Invalid sign-in state');
+      }
       const remember = req.session?.remember;
       const rememberMe = this.getRememberFlag(remember);
 
@@ -73,6 +80,38 @@ export class SocialAuthService implements ISocialAuthService {
 
       if (!result) {
         throw new BadRequestException(failureMessage);
+      }
+
+      if (native) {
+        if (!result.newUser && !result.accessToken)
+          throw new BadRequestException(failureMessage);
+        const callback = new URL(native.redirect);
+        callback.searchParams.set('state', native.state);
+        if (result.newUser && !result.accessToken) {
+          callback.searchParams.set('status', 'new_user');
+          for (const key of [
+            'email',
+            'firstname',
+            'lastname',
+            'picture',
+            'provider',
+          ] as const) {
+            const value = result[key];
+            if (value) callback.searchParams.set(key, value);
+          }
+        } else {
+          const code = await this.mobileOAuth.issue(
+            result,
+            rememberMe,
+            native.challenge,
+          );
+          callback.searchParams.set('status', 'success');
+          callback.searchParams.set('code', code);
+        }
+        delete req.session.nativeOAuth;
+        res.setHeader('Cache-Control', 'no-store');
+        res.redirect(callback.toString());
+        return;
       }
 
       // New user: no tokens yet (they need to pick a role first).
@@ -109,6 +148,21 @@ export class SocialAuthService implements ISocialAuthService {
         error instanceof Error ? error.stack : String(error),
       );
 
+      const native = req.session?.nativeOAuth as NativeOAuthFlow | undefined;
+      if (native) {
+        delete req.session.nativeOAuth;
+        const callback = new URL(native.redirect);
+        callback.searchParams.set('state', native.state);
+        callback.searchParams.set('status', 'error');
+        callback.searchParams.set(
+          'error',
+          'Authentication failed. Please try again.',
+        );
+        res.setHeader('Cache-Control', 'no-store');
+        res.redirect(callback.toString());
+        return;
+      }
+
       const errorHtml = this.buildErrorHtml({
         targetOrigin: frontendOrigin,
         errorType,
@@ -118,6 +172,12 @@ export class SocialAuthService implements ISocialAuthService {
       res.setHeader('Content-Type', 'text/html');
       res.status(HttpStatus.UNAUTHORIZED).send(errorHtml);
     }
+  }
+
+  async exchangeNativeCode(code: string, verifier: string, res: Response) {
+    const grant = await this.mobileOAuth.consume(code, verifier);
+    this.setSocialAuthCookies(res, grant.remember, grant.result);
+    return { isAuthenticated: true, message: 'Signed in successfully.' };
   }
 
   /* ------------------------------------------------------------------ */

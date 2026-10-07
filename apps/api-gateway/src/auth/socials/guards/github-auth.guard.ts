@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard, IAuthModuleOptions } from '@nestjs/passport';
 import { Request } from 'express';
+import { captureNativeOAuth } from '../shared/native-oauth';
 import { buildPublicCallbackUrl } from '../shared/oauth-callback-url.util';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class GithubAuthGuard extends AuthGuard('github') {
   canActivate(context: ExecutionContext) {
     const req = context.switchToHttp().getRequest<Request>();
 
+    captureNativeOAuth(req);
     const remember = req.query.remember;
     if (typeof remember === 'string') {
       (req.session as any).remember = remember === 'true';
@@ -23,6 +25,7 @@ export class GithubAuthGuard extends AuthGuard('github') {
   getAuthenticateOptions(context: ExecutionContext): IAuthModuleOptions {
     const req = context.switchToHttp().getRequest<Request>();
     return {
+      state: (req.session as any).nativeOAuth?.state,
       callbackURL: buildPublicCallbackUrl(req, 'github'),
     };
   }
