@@ -6,11 +6,13 @@ import {
 import { AuthGuard, IAuthModuleOptions } from '@nestjs/passport';
 import { Request } from 'express';
 import { buildPublicCallbackUrl } from '../shared/oauth-callback-url.util';
+import { captureMobileOAuthRequest } from '../shared/mobile-oauth.util';
 
 @Injectable()
 export class FacebookAuthGuard extends AuthGuard('facebook') {
   canActivate(context: ExecutionContext) {
     const req = context.switchToHttp().getRequest<Request>();
+    captureMobileOAuthRequest(req);
 
     const remember = req.query.remember;
     if (typeof remember === 'string') {
