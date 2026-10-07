@@ -1,5 +1,6 @@
 import { AuthUser, User } from '@app/common/decorators/user.decorator';
 import { AuthGuard } from '@app/common/guards/auth.guard';
+import { AdminGuard } from '@app/common/guards/admin.guard';
 import { IUserController } from '@app/contracts/interfaces/controller/user-controllers/user-controller.interface';
 import {
   Body,
@@ -62,7 +63,14 @@ export class UserController implements IUserController {
     private readonly userAccessService: UserAccessService,
   ) {}
 
+  /*
+    Both raw user reads select email, phone and last-login details for any
+    account, so under AuthGuard alone any signed-in user could page through
+    every account's contact data. Neither client calls them; the admin console
+    reads users through /admin/users. Admin-only until something needs more.
+  */
   @Get('all')
+  @UseGuards(AdminGuard)
   async findAllUsers(
     @Query() paginationDTO: PaginationDTO,
   ): Promise<UserResponseDTO[]> {
@@ -74,6 +82,7 @@ export class UserController implements IUserController {
   }
 
   @Get('one/:userId')
+  @UseGuards(AdminGuard)
   async findOneUserById(
     @Param('userId', ParseUUIDPipe) userId: string,
   ): Promise<UserResponseDTO> {
