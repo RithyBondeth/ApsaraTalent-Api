@@ -29,7 +29,12 @@ export class AddSavedSearches1786500018000 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      CREATE TABLE IF NOT EXISTS "saved_search" (
+      DO $$ BEGIN
+        IF to_regclass('public.employee') IS NULL THEN
+          RETURN;
+        END IF;
+
+        CREATE TABLE IF NOT EXISTS "saved_search" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "employeeId" uuid,
         "name" text NOT NULL,
@@ -44,12 +49,10 @@ export class AddSavedSearches1786500018000 implements MigrationInterface {
         CONSTRAINT "FK_saved_search_employee"
           FOREIGN KEY ("employeeId") REFERENCES "employee"("id")
           ON DELETE CASCADE
-      );
-    `);
-
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS "IDX_saved_search_freq_last_notified"
-        ON "saved_search" ("frequency", "lastNotifiedAt");
+        );
+        CREATE INDEX IF NOT EXISTS "IDX_saved_search_freq_last_notified"
+          ON "saved_search" ("frequency", "lastNotifiedAt");
+      END $$;
     `);
   }
 

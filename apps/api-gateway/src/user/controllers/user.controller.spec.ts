@@ -1,4 +1,6 @@
+import { AdminGuard } from '@app/common/guards/admin.guard';
 import { USER_SERVICE } from '@app/contracts/constants/service-actions/user-service.constant';
+import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { rpcCall } from '../../utils/rpc-call';
 import { UserController } from './user.controller';
 
@@ -15,6 +17,23 @@ describe('UserController', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (rpcCall as jest.Mock).mockResolvedValue([]);
+  });
+
+  it('restricts the raw user reads to administrators', () => {
+    for (const method of ['findAllUsers', 'findOneUserById'] as const) {
+      const guards =
+        Reflect.getMetadata(
+          GUARDS_METADATA,
+          UserController.prototype[method],
+        ) ?? [];
+      expect(guards).toContain(AdminGuard);
+    }
+    const currentUserGuards =
+      Reflect.getMetadata(
+        GUARDS_METADATA,
+        UserController.prototype.getCurrentUser,
+      ) ?? [];
+    expect(currentUserGuards).not.toContain(AdminGuard);
   });
 
   it('forwards general user reads and current-user identity', async () => {

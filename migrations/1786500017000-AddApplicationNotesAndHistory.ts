@@ -24,7 +24,14 @@ export class AddApplicationNotesAndHistory1786500017000 implements MigrationInte
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      CREATE TABLE IF NOT EXISTS "application_note" (
+      DO $$
+      BEGIN
+        IF to_regclass('public.application') IS NULL
+          OR to_regclass('public.user') IS NULL THEN
+          RETURN;
+        END IF;
+
+        CREATE TABLE IF NOT EXISTS "application_note" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "applicationId" uuid,
         "authorId" uuid,
@@ -37,16 +44,12 @@ export class AddApplicationNotesAndHistory1786500017000 implements MigrationInte
         CONSTRAINT "FK_application_note_author"
           FOREIGN KEY ("authorId") REFERENCES "user"("id")
           ON DELETE SET NULL
-      );
-    `);
+        );
 
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS "IDX_application_note_application_created"
-        ON "application_note" ("applicationId", "createdAt");
-    `);
+        CREATE INDEX IF NOT EXISTS "IDX_application_note_application_created"
+          ON "application_note" ("applicationId", "createdAt");
 
-    await queryRunner.query(`
-      CREATE TABLE IF NOT EXISTS "application_status_history" (
+        CREATE TABLE IF NOT EXISTS "application_status_history" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "applicationId" uuid,
         "from" "public"."application_status_enum",
@@ -61,12 +64,12 @@ export class AddApplicationNotesAndHistory1786500017000 implements MigrationInte
         CONSTRAINT "FK_application_status_history_actor"
           FOREIGN KEY ("actorId") REFERENCES "user"("id")
           ON DELETE SET NULL
-      );
-    `);
+        );
 
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS "IDX_application_status_history_app_created"
-        ON "application_status_history" ("applicationId", "createdAt");
+        CREATE INDEX IF NOT EXISTS "IDX_application_status_history_app_created"
+          ON "application_status_history" ("applicationId", "createdAt");
+      END
+      $$;
     `);
   }
 

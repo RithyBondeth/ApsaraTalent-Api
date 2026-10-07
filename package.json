@@ -125,7 +125,7 @@
     "redis": "^5.5.5",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
-    "sharp": "^0.35.4",
+    "sharp": "^0.35.5",
     "socket.io": "^4.8.3",
     "swagger-ui-express": "^5.0.1",
     "twilio": "^6.1.0",
@@ -168,7 +168,7 @@
     "webpack": "^5.110.1"
   },
   "optionalDependencies": {
-    "@img/sharp-linuxmusl-x64": "0.35.4"
+    "@img/sharp-linuxmusl-x64": "0.35.5"
   },
   "overrides": {
     "@grpc/grpc-js": "1.14.5",

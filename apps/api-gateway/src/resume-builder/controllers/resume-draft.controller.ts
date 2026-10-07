@@ -20,7 +20,6 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import {
   IsInt,
   IsObject,
@@ -82,9 +81,6 @@ export class ResumeDraftRecordDTO extends ResumeDraftSummaryDTO {
 }
 
 type AuthRequest = { user: AuthenticatedUser };
-// The validated JSON document replaces the entire jsonb column. TypeORM's
-// recursive partial type cannot infer that from the draft's unknown values.
-type DraftContentWrite = QueryDeepPartialEntity<ResumeDraft>['content'];
 
 @Controller('resume/drafts')
 @UseGuards(AuthGuard)
@@ -154,8 +150,9 @@ export class ResumeDraftController {
         id: dto.id,
         userId: req.user.id,
         name: dto.name,
-        content: dto.content as DraftContentWrite,
+        content: () => ':content::jsonb',
       })
+      .setParameter('content', JSON.stringify(dto.content))
       .orIgnore()
       .execute();
     const record = await this.read(req, dto.id);
@@ -184,9 +181,10 @@ export class ResumeDraftController {
       .update(ResumeDraft)
       .set({
         name: dto.name,
-        content: dto.content as DraftContentWrite,
+        content: () => ':content::jsonb',
         revision: () => '"revision" + 1',
       })
+      .setParameter('content', JSON.stringify(dto.content))
       .where('"id" = :id AND "userId" = :userId AND "revision" = :revision', {
         id,
         userId: req.user.id,
