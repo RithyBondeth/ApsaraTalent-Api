@@ -43,7 +43,7 @@ jest.mock('@nestjs/swagger', () => {
   return {
     DocumentBuilder,
     SwaggerModule: {
-      createDocument: jest.fn(() => ({ openapi: '3.0.0' })),
+      createDocument: jest.fn(() => ({ openapi: '3.0.0', paths: {} })),
       setup: jest.fn(),
     },
   };
@@ -107,6 +107,7 @@ describe('API gateway startup wiring', () => {
       ),
       set: jest.fn(),
       enableShutdownHooks: jest.fn(),
+      useBodyParser: jest.fn(),
       useGlobalFilters: jest.fn(),
       useGlobalPipes: jest.fn(),
       use: jest.fn(),
@@ -134,6 +135,7 @@ describe('API gateway startup wiring', () => {
     expect(app.useWebSocketAdapter).toHaveBeenCalledTimes(1);
     expect(app.useStaticAssets).toHaveBeenCalledTimes(2);
     expect(app.listen).toHaveBeenCalledWith(3456);
+    expect(app.useBodyParser).toHaveBeenCalledWith('json', { limit: '2mb' });
 
     const cors = app.enableCors.mock.calls[0][0];
     const allowed = jest.fn();
@@ -182,6 +184,7 @@ describe('API gateway startup wiring', () => {
       ),
       set: jest.fn(),
       enableShutdownHooks: jest.fn(),
+      useBodyParser: jest.fn(),
       useGlobalFilters: jest.fn(),
       useGlobalPipes: jest.fn(),
       use: jest.fn(),

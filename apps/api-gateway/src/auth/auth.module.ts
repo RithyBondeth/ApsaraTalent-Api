@@ -7,6 +7,9 @@ import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PassportModule } from '@nestjs/passport';
 import { AUTH_SERVICE } from '@app/contracts/constants/service-actions/auth-service.constant';
+import { MobileOAuthController } from './socials/controllers/mobile-oauth.controller';
+import { MobileOAuthService } from './services/mobile-oauth.service';
+import { RedisModule } from '@app/common/redis/redis.module';
 import { AuthController } from './basic/controllers/auth.controller';
 import { FacebookController } from './socials/controllers/facebook.controller';
 import { GithubController } from './socials/controllers/github.controller';
@@ -21,8 +24,6 @@ import { IceServersService } from './services/ice-servers.service';
 import { SocialAuthService } from './services/social-auth.service';
 import { LoginAuditService } from './services/login-audit.service';
 import { LoginHistoryCleanupService } from './services/login-history-cleanup.service';
-import { MobileSocialAuthController } from './socials/controllers/mobile-social-auth.controller';
-import { RedisModule } from '@app/common/redis/redis.module';
 
 @Module({
   imports: [
@@ -41,19 +42,19 @@ import { RedisModule } from '@app/common/redis/redis.module';
     ]),
     ThrottlerModule,
     PassportModule,
+    RedisModule,
     JwtModule,
     DatabaseModule,
     TypeOrmModule.forFeature([LoginHistory]),
     TelegramModule,
-    RedisModule,
   ],
   controllers: [
     AuthController,
+    MobileOAuthController,
     GoogleController,
     LinkedInController,
     GithubController,
     FacebookController,
-    MobileSocialAuthController,
   ],
   providers: [
     GoogleStrategy,
@@ -63,6 +64,7 @@ import { RedisModule } from '@app/common/redis/redis.module';
     ResumeParseService,
     IceServersService,
     SocialAuthService,
+    MobileOAuthService,
     LoginAuditService,
     LoginHistoryCleanupService,
   ],

@@ -1,3 +1,5 @@
+import { MobileOAuthService } from './mobile-oauth.service';
+import { NativeOAuthFlow } from '../socials/shared/native-oauth';
 import {
   BadRequestException,
   HttpStatus,
@@ -23,15 +25,6 @@ import {
   ISocialAuthResult,
   ISuccessHtmlOptions,
 } from '@app/contracts';
-import { RedisService } from '@app/common/redis/redis.service';
-import { randomBytes } from 'crypto';
-import { mobileCallbackUrl } from '../socials/shared/mobile-oauth.util';
-
-interface MobileOAuthExchange {
-  accessToken: string;
-  refreshToken?: string | null;
-  remember: boolean;
-}
 
 @Injectable()
 export class SocialAuthService implements ISocialAuthService {
@@ -40,7 +33,7 @@ export class SocialAuthService implements ISocialAuthService {
   constructor(
     @Inject(AUTH_SERVICE.NAME) private readonly authService: ClientProxy,
     private readonly configService: ConfigService,
-    private readonly redisService: RedisService,
+    private readonly mobileOAuth: MobileOAuthService,
   ) {}
 
   async handleCallback(
@@ -60,6 +53,10 @@ export class SocialAuthService implements ISocialAuthService {
     } = socialAuthParams;
 
     try {
+      const native = req.session?.nativeOAuth as NativeOAuthFlow | undefined;
+      if (native && req.query?.state !== native.state) {
+        throw new BadRequestException('Invalid sign-in state');
+      }
       const remember = req.session?.remember;
       const rememberMe = this.getRememberFlag(remember);
 
@@ -85,22 +82,41 @@ export class SocialAuthService implements ISocialAuthService {
         throw new BadRequestException(failureMessage);
       }
 
+      if (native) {
+        if (!result.newUser && !result.accessToken)
+          throw new BadRequestException(failureMessage);
+        const callback = new URL(native.redirect);
+        callback.searchParams.set('state', native.state);
+        if (result.newUser && !result.accessToken) {
+          callback.searchParams.set('status', 'new_user');
+          for (const key of [
+            'email',
+            'firstname',
+            'lastname',
+            'picture',
+            'provider',
+          ] as const) {
+            const value = result[key];
+            if (value) callback.searchParams.set(key, value);
+          }
+        } else {
+          const code = await this.mobileOAuth.issue(
+            result,
+            rememberMe,
+            native.challenge,
+          );
+          callback.searchParams.set('status', 'success');
+          callback.searchParams.set('code', code);
+        }
+        delete req.session.nativeOAuth;
+        res.setHeader('Cache-Control', 'no-store');
+        res.redirect(callback.toString());
+        return;
+      }
+
       // New user: no tokens yet (they need to pick a role first).
       // Still send a success postMessage so the frontend can redirect to signup.
       if (result.newUser && !result.accessToken) {
-        if (req.session?.mobileOAuthRedirectUri) {
-          res.redirect(
-            mobileCallbackUrl(req.session.mobileOAuthRedirectUri, {
-              status: 'new_user',
-              provider: result.provider,
-              email: result.email,
-              firstname: result.firstname,
-              lastname: result.lastname,
-              picture: result.picture,
-            }),
-          );
-          return;
-        }
         const html = this.buildSuccessHtml({
           targetOrigin: frontendOrigin,
           successType,
@@ -114,26 +130,6 @@ export class SocialAuthService implements ISocialAuthService {
 
       if (!result.accessToken) {
         throw new BadRequestException(failureMessage);
-      }
-
-      if (req.session?.mobileOAuthRedirectUri) {
-        const code = randomBytes(32).toString('base64url');
-        await this.redisService.set<MobileOAuthExchange>(
-          `oauth:mobile:${code}`,
-          {
-            accessToken: result.accessToken,
-            refreshToken: result.refreshToken,
-            remember: rememberMe,
-          },
-          120_000,
-        );
-        res.redirect(
-          mobileCallbackUrl(req.session.mobileOAuthRedirectUri, {
-            status: 'success',
-            code,
-          }),
-        );
-        return;
       }
 
       this.setSocialAuthCookies(res, remember, result);
@@ -152,13 +148,18 @@ export class SocialAuthService implements ISocialAuthService {
         error instanceof Error ? error.stack : String(error),
       );
 
-      if (req.session?.mobileOAuthRedirectUri) {
-        res.redirect(
-          mobileCallbackUrl(req.session.mobileOAuthRedirectUri, {
-            status: 'error',
-            error: 'Authentication failed. Please try again.',
-          }),
+      const native = req.session?.nativeOAuth as NativeOAuthFlow | undefined;
+      if (native) {
+        delete req.session.nativeOAuth;
+        const callback = new URL(native.redirect);
+        callback.searchParams.set('state', native.state);
+        callback.searchParams.set('status', 'error');
+        callback.searchParams.set(
+          'error',
+          'Authentication failed. Please try again.',
         );
+        res.setHeader('Cache-Control', 'no-store');
+        res.redirect(callback.toString());
         return;
       }
 
@@ -173,13 +174,10 @@ export class SocialAuthService implements ISocialAuthService {
     }
   }
 
-  async exchangeMobileCode(code: string): Promise<MobileOAuthExchange | null> {
-    if (!/^[A-Za-z0-9_-]{43}$/.test(code)) return null;
-    const key = `oauth:mobile:${code}`;
-    const exchange = await this.redisService.get<MobileOAuthExchange>(key);
-    if (!exchange) return null;
-    await this.redisService.del(key);
-    return exchange;
+  async exchangeNativeCode(code: string, verifier: string, res: Response) {
+    const grant = await this.mobileOAuth.consume(code, verifier);
+    this.setSocialAuthCookies(res, grant.remember, grant.result);
+    return { isAuthenticated: true, message: 'Signed in successfully.' };
   }
 
   /* ------------------------------------------------------------------ */

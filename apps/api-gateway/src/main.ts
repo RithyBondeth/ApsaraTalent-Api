@@ -42,6 +42,8 @@ async function bootstrap() {
   const app =
     await NestFactory.create<NestExpressApplication>(ApiGatewayModule);
   app.enableShutdownHooks();
+  // Resume drafts and PDF requests may include an avatar capped at 1.5 MB.
+  app.useBodyParser('json', { limit: '2mb' });
   const configService = app.get<ConfigService>(ConfigService);
   const isProduction = process.env.NODE_ENV === 'production';
 
@@ -193,6 +195,31 @@ async function bootstrap() {
       .build();
 
     const document = SwaggerModule.createDocument(app, swaggerConfig);
+    document['x-apsara-realtime-refresh'] = [
+      'newNotification',
+      'badgeIncrement',
+      'interviewUpdate',
+      'unmatchUpdate',
+    ];
+    document['x-apsara-ai-stream'] = {
+      mediaType: 'text/event-stream',
+      envelope: {
+        chunk: { t: 'chunk', v: 'text fragment' },
+        done: { t: 'done' },
+        error: { t: 'error' },
+      },
+      completionRequired: true,
+    };
+    for (const [path, item] of Object.entries(document.paths)) {
+      if (!path.endsWith('/stream') || !item.post) continue;
+      item.post.responses = {
+        '200': {
+          description:
+            'SSE chunk/done/error envelopes. JSON records are carried inside chunk.v.',
+          content: { 'text/event-stream': { schema: { type: 'string' } } },
+        },
+      };
+    }
     SwaggerModule.setup('docs', app, document);
   }
 

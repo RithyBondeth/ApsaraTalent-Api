@@ -5,15 +5,15 @@ import {
 } from '@nestjs/common';
 import { AuthGuard, IAuthModuleOptions } from '@nestjs/passport';
 import { Request } from 'express';
+import { captureNativeOAuth } from '../shared/native-oauth';
 import { buildPublicCallbackUrl } from '../shared/oauth-callback-url.util';
-import { captureMobileOAuthRequest } from '../shared/mobile-oauth.util';
 
 @Injectable()
 export class FacebookAuthGuard extends AuthGuard('facebook') {
   canActivate(context: ExecutionContext) {
     const req = context.switchToHttp().getRequest<Request>();
-    captureMobileOAuthRequest(req);
 
+    captureNativeOAuth(req);
     const remember = req.query.remember;
     if (typeof remember === 'string') {
       (req.session as any).remember = remember === 'true';
@@ -25,6 +25,7 @@ export class FacebookAuthGuard extends AuthGuard('facebook') {
   getAuthenticateOptions(context: ExecutionContext): IAuthModuleOptions {
     const req = context.switchToHttp().getRequest<Request>();
     return {
+      state: (req.session as any).nativeOAuth?.state,
       callbackURL: buildPublicCallbackUrl(req, 'facebook'),
     };
   }

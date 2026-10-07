@@ -129,7 +129,7 @@ describe('Resume drafts', () => {
   });
 
   it('rejects invalid and oversized content before writing', async () => {
-    for (const bad of [{}, { ...content, summary: 'x'.repeat(200001) }]) {
+    for (const bad of [{}, { ...content, summary: 'x'.repeat(2000001) }]) {
       await expect(
         controller.create(request, { id, name: 'Resume', content: bad }),
       ).rejects.toBeInstanceOf(BadRequestException);

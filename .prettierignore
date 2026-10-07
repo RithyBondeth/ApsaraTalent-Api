@@ -1,0 +1,3 @@
+
+# Canonical OpenAPI snapshots are verified by the contract exporter.
+contracts/openapi.json

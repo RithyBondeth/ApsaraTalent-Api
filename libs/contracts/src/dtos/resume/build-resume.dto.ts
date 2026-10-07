@@ -64,7 +64,7 @@ export class PersonalInfoDTO {
   socials?: { [platform: string]: string };
 }
 
-export class ExperienceDTO {
+export class ResumeExperienceDTO {
   @IsString()
   @MaxLength(250)
   company: string;
@@ -212,8 +212,8 @@ export class BuildResumeDTO {
   @IsArray()
   @ArrayMaxSize(30)
   @ValidateNested({ each: true })
-  @Type(() => ExperienceDTO)
-  experience: ExperienceDTO[];
+  @Type(() => ResumeExperienceDTO)
+  experience: ResumeExperienceDTO[];
 
   @IsArray()
   @ArrayMaxSize(100)

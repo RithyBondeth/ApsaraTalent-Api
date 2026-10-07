@@ -241,6 +241,9 @@ let exitCode = 0;
 try {
   const env = parseEnv(await readFile(envFile, 'utf8'));
   assertIsolated(env);
+  await run(process.execPath, [
+    join(root, 'scripts/contracts/check-dto-names.mjs'),
+  ]);
   runtimeDir = await mkdtemp(join(tmpdir(), 'apsara-e2e-'));
 
   // Pulls occasionally fail on hosted runners with transient registry TLS or
@@ -289,6 +292,17 @@ try {
 
   const apiGateway = startService('api-gateway', env, false);
   await waitForReady('http://127.0.0.1:13000/health/ready', apiGateway);
+
+  await run(
+    process.execPath,
+    [
+      join(root, 'scripts/contracts/export-contract.mjs'),
+      ...(process.env.E2E_CONTRACT_UPDATE === '1' ? [] : ['--check']),
+    ],
+    {
+      env: { ...process.env, API_SPEC_URL: 'http://127.0.0.1:13000/docs-json' },
+    },
+  );
 
   await run(
     process.execPath,

@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { FacebookController } from '../controllers/facebook.controller';
 import { GithubController } from '../controllers/github.controller';
 import { GoogleController } from '../controllers/google.controller';
@@ -15,6 +15,7 @@ describe('OAuth HTTP boundary', () => {
     return {
       headers: {},
       protocol: 'http',
+      path: '/social/google/login',
       query: {},
       session: {},
       get: jest.fn(() => 'localhost:3000'),
@@ -60,6 +61,7 @@ describe('OAuth HTTP boundary', () => {
         switchToHttp: () => ({ getRequest: () => req }),
       } as any;
       expect(guard.getAuthenticateOptions(context)).toEqual({
+        state: undefined,
         callbackURL: `https://api.example.com/social/${provider}/callback`,
       });
     },
@@ -76,13 +78,16 @@ describe('OAuth HTTP boundary', () => {
         query: {
           mobile: 'true',
           redirect_uri: 'apsaratalent://oauth/callback',
+          state: 's'.repeat(43),
+          code_challenge: 'c'.repeat(43),
+          code_challenge_method: 'S256',
         },
         session: {},
       });
       await guard.canActivate({
         switchToHttp: () => ({ getRequest: () => accepted }),
       } as any);
-      expect(accepted.session.mobileOAuthRedirectUri).toBe(
+      expect(accepted.session.nativeOAuth.redirect).toBe(
         'apsaratalent://oauth/callback',
       );
 
@@ -93,10 +98,12 @@ describe('OAuth HTTP boundary', () => {
         },
         session: {},
       });
-      await guard.canActivate({
-        switchToHttp: () => ({ getRequest: () => rejected }),
-      } as any);
-      expect(rejected.session.mobileOAuthRedirectUri).toBeUndefined();
+      expect(() =>
+        guard.canActivate({
+          switchToHttp: () => ({ getRequest: () => rejected }),
+        } as any),
+      ).toThrow(BadRequestException);
+      expect(rejected.session.nativeOAuth).toBeUndefined();
       activate.mockRestore();
     },
   );
