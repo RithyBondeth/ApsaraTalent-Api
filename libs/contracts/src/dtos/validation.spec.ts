@@ -96,6 +96,24 @@ describe('request DTO transformation and validation', () => {
     await expect(validate(notifications)).resolves.toEqual([]);
   });
 
+  it('transforms numeric job filters from URL strings before validation', async () => {
+    const dto = plainToInstance(SearchJobDTO, {
+      companySizeMin: '5',
+      companySizeMax: '50',
+      salaryMin: '0',
+      salaryMax: '1000.50',
+    });
+    await expect(validate(dto)).resolves.toEqual([]);
+    expect(dto).toEqual(
+      expect.objectContaining({
+        companySizeMin: 5,
+        companySizeMax: 50,
+        salaryMin: 0,
+        salaryMax: 1000.5,
+      }),
+    );
+  });
+
   it('rejects malformed job-search security and range inputs', async () => {
     const dto = plainToInstance(SearchJobDTO, {
       keyword: 'x',
