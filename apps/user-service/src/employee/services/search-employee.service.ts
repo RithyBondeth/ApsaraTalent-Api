@@ -250,7 +250,9 @@ export class SearchEmployeeService implements ISearchEmployeeService {
           }
           qb.addOrderBy('employee.id', 'ASC');
         } else if (field === 'yearsOfExperience') {
-          qb.orderBy(
+          // TypeORM's joined pagination treats dotted ORDER BY expressions
+          // as entity paths. Select the expression under an alias first.
+          qb.addSelect(
             `CASE "employee"."yearsOfExperience"
               WHEN 'No Experience' THEN 0
               WHEN 'Less than 1 year' THEN 1
@@ -260,8 +262,10 @@ export class SearchEmployeeService implements ISearchEmployeeService {
               WHEN '10+ years' THEN 5
               ELSE 6
             END`,
-            order,
-          ).addOrderBy('employee.id', 'ASC');
+            'experience_rank',
+          )
+            .orderBy('experience_rank', order)
+            .addOrderBy('employee.id', 'ASC');
         } else {
           qb.orderBy(`employee.${field}`, order).addOrderBy(
             'employee.id',

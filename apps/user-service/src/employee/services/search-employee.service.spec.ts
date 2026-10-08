@@ -29,6 +29,7 @@ describe('SearchEmployeeService', () => {
       'where',
       'andWhere',
       'orderBy',
+      'addSelect',
       'addOrderBy',
       'skip',
       'take',
@@ -152,10 +153,11 @@ describe('SearchEmployeeService', () => {
       expect.stringContaining('cs_candidate.embedding'),
       expect.objectContaining({ searchScopes: ['Engineering'] }),
     );
-    expect(qb.orderBy).toHaveBeenCalledWith(
+    expect(qb.addSelect).toHaveBeenCalledWith(
       expect.stringContaining('No Experience'),
-      'DESC',
+      'experience_rank',
     );
+    expect(qb.orderBy).toHaveBeenCalledWith('experience_rank', 'DESC');
     expect(result.data[0]).toEqual(
       expect.objectContaining({ userId: undefined }),
     );

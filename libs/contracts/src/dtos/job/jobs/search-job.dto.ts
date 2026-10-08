@@ -32,10 +32,12 @@ export class SearchJobDTO {
 
   @IsOptional()
   @IsNumber()
+  @Type(() => Number)
   companySizeMin?: number;
 
   @IsOptional()
   @IsNumber()
+  @Type(() => Number)
   companySizeMax?: number;
 
   @IsOptional()
@@ -48,10 +50,12 @@ export class SearchJobDTO {
 
   @IsOptional()
   @IsNumber()
+  @Type(() => Number)
   salaryMin?: number;
 
   @IsOptional()
   @IsNumber()
+  @Type(() => Number)
   salaryMax?: number;
 
   @IsOptional()
