@@ -22,7 +22,7 @@ the only thing the release reads.
 
 Create the key at Neon Console → Account settings → API keys, and read the
 project id from Neon Console → project → Settings → General (it looks like
-`winter-frost-12345678`, and is *not* the `ep-...` endpoint id in
+`winter-frost-12345678`, and is _not_ the `ep-...` endpoint id in
 `DATABASE_URL`). Prefer a project-scoped key if your account offers one; the
 release only ever lists, creates, and deletes branches in this one project.
 
@@ -41,6 +41,7 @@ single migration runs.
 
 API repository variables:
 
+- `RAILWAY_PROJECT_ID`: the existing production project ID. Preflight checks the token's project, production environment, and all seven services before migrations. It also matches Railway-generated gateway domains to `PRODUCTION_API_URL`.
 - `PRODUCTION_API_URL`: public HTTPS origin of `api-gateway`.
 
 Web repository secrets:
@@ -55,9 +56,8 @@ Web repository secrets:
 Web repository variables:
 
 - `SENTRY_ORG` and `SENTRY_PROJECT`.
-- `PRODUCTION_WEB_URL`: the public site origin. Optional but recommended — when
-  set, the deploy verifies the production alias and not only the fresh
-  deployment URL.
+- `PRODUCTION_WEB_URL`: the required public site origin. The web workflow
+  verifies the staged build before promotion and the production alias after it.
 
 Protect `main`, require the verification workflow, and require review before
 merging. The two workflows deploy only from `main`; pull requests build and
@@ -84,7 +84,7 @@ mid-deploy — after some services have already switched over.
 
 **Do not assume the private hostname matches the display name.** Railway sets
 each service's `RAILWAY_PRIVATE_DOMAIN` independently, and in this project the
-gateway's is `apsaratalent-api.railway.internal` — *not* `api-gateway`, which
+gateway's is `apsaratalent-api.railway.internal` — _not_ `api-gateway`, which
 does not resolve at all. The six internal services do happen to match their
 slugified names, which is exactly what made the gateway's mismatch easy to miss.
 

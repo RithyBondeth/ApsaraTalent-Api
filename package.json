@@ -64,7 +64,8 @@
     "check:env:all": "npm run check:env -- .env .env.development .env.production",
     "sentry:sourcemaps": "node scripts/upload-sourcemaps.mjs",
     "contracts:update": "node scripts/contracts/export-contract.mjs",
-    "contracts:check": "node scripts/contracts/export-contract.mjs --check"
+    "contracts:check": "node scripts/contracts/export-contract.mjs --check",
+    "test:release": "node --test scripts/ci/release-preflight.test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1120.0",
