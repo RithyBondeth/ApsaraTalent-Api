@@ -117,7 +117,7 @@ jobs:
         run: npm ci
 
       - name: Run automated tests
-        run: npm run test:cov -- --runInBand
+        run: npm run test:cov -- --runInBand && npm run test:release
 
       - name: Upload coverage report
         if: always()
@@ -434,27 +434,48 @@ jobs:
     name: Validate production release destination
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [secrets, dependencies, lint, test, build, containers, monitoring, monitoring-containers]
+    needs:
+      [
+        secrets,
+        dependencies,
+        lint,
+        test,
+        build,
+        containers,
+        monitoring,
+        monitoring-containers,
+      ]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
       NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
       NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
       PRODUCTION_API_URL: ${{ vars.PRODUCTION_API_URL }}
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
       # NEON_* is in this list because the restore point is a release
       # requirement, not a nice-to-have: failing here costs a red build, while
       # failing after `migration:run` costs a recovery.
       - name: Require every release credential before migrations
         shell: bash
         run: |
-          for name in DATABASE_URL RAILWAY_TOKEN NEON_API_KEY NEON_PROJECT_ID PRODUCTION_API_URL; do
+          for name in DATABASE_URL RAILWAY_TOKEN RAILWAY_PROJECT_ID NEON_API_KEY NEON_PROJECT_ID PRODUCTION_API_URL; do
             if [[ -z "${!name}" ]]; then
               echo "::error::$name is required before a production migration can run."
               exit 1
             fi
           done
+
+      - name: Install pinned Railway CLI
+        run: npm install --global @railway/cli@5.30.4
+
+      - name: Verify token access, project, services and gateway domain before migrations
+        run: node scripts/ci/release-preflight.mjs
 
   migration-rehearsal:
     name: Rehearse migrations against production data
@@ -735,7 +756,7 @@ jobs:
         if: failure()
         continue-on-error: true
         env:
-          DEPLOY_VERIFY_TIMEOUT_MS: "30000"
+          DEPLOY_VERIFY_TIMEOUT_MS: '30000'
         run: node scripts/ci/verify-deployment.mjs "$PRODUCTION_API_URL"
 
       # Railway rollback is deliberately not automated here. Rolling back one
